@@ -1,0 +1,12 @@
+{
+  "menuBarUserItemText": "Account",
+  "menuBarManageAccountText": "Settings",
+  "menuBarLogoutText": "Logout",
+  "welcomeLoginButtonText": "Login",
+  "siteHeader": "Pakkasmarja management",
+  "news": "News",
+  "deliveries": "Deliveries",
+  "contracts": "Contracts",
+  "welcome": "Welcome",
+  "redirectingTokeycloak": "Redirecting to keycloak..."
+}
