@@ -1,7 +1,7 @@
 import * as React from "react";
 import { BrowserRouter, Route } from "react-router-dom";
-import MainPage from "../containers/MainPage";
-import Login from "../containers/Login";
+import MainPage from "./index/MainPage";
+import Login from "./login/Login";
 
 class App extends React.Component {
   public render() {

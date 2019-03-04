@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import strings from "../localization/strings";
+import strings from "../../localization/strings";
 import { KeycloakInstance } from "keycloak-js";
 import {
   Container,
@@ -8,6 +8,10 @@ import {
   Menu,
   Dropdown
 } from "semantic-ui-react"
+import { StoreState } from "src/types";
+import { Dispatch } from "redux";
+import { connect } from "react-redux";
+import * as actions from "../../actions/";
 
 export interface Props {
   siteName: string,
@@ -67,4 +71,17 @@ class MenuContainer extends React.Component<Props, object> {
   }
 }
 
-export default MenuContainer;
+export function mapStateToProps(state: StoreState) {
+  return {
+    authenticated: state.authenticated,
+    keycloak: state.keycloak
+  };
+}
+
+export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
+  return {
+    onLogout: () => dispatch(actions.userLogout())
+  };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(MenuContainer);

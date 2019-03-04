@@ -1,5 +1,5 @@
 {
-  "name": "pakkasmarja-berries-management",
+  "name": "pakkasmarja-web",
   "version": "0.0.1",
   "private": true,
   "dependencies": {
@@ -12,9 +12,11 @@
     "localized-strings": "0.0.11",
     "lodash": "^4.17.11",
     "moment": "^2.23.0",
+    "node-sass": "^4.11.0",
     "node-sass-chokidar": "^1.3.3",
     "npm": "^6.4.0",
     "npm-run-all": "^4.1.3",
+    "pakkasmarja-client": "0.0.6",
     "react": "^16.4.2",
     "react-dom": "^16.4.2",
     "react-dropzone": "^7.0.1",
@@ -47,6 +49,7 @@
     "@types/react-infinite-scroller": "^1.0.7",
     "@types/react-router-dom": "^4.3.0",
     "@types/react-select": "^2.0.4",
+    "@types/urijs": "^1.15.38",
     "typescript": "^3.0.1"
   }
 }

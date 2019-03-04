@@ -4,10 +4,14 @@ import {
   Grid,
   Header
 } from "semantic-ui-react";
-
-import BasicLayout from "./BasicLayout";
+import * as actions from "../../actions";
+import BasicLayout from "../generic/BasicLayout";
 import { Redirect } from "react-router";
-import strings from "../localization/strings";
+import strings from "../../localization/strings";
+import { StoreState } from "src/types";
+import { Dispatch } from "redux";
+import { KeycloakInstance } from "keycloak-js";
+import { connect } from "react-redux";
 
 export interface Props {
   authenticated: boolean,
@@ -66,4 +70,17 @@ class Login extends React.Component<Props, State> {
   }
 }
 
-export default Login;
+export function mapStateToProps(state: StoreState) {
+  return {
+    authenticated: state.authenticated,
+    keycloak: state.keycloak
+  }
+}
+
+export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
+  return {
+    onLogin: (keycloak: KeycloakInstance, authenticated: boolean) => dispatch(actions.userLogin(keycloak, authenticated))
+  };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Login);
