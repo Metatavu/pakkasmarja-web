@@ -14,7 +14,7 @@ import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import { KeycloakInstance } from "keycloak-js";
 
-import "../../styles/commons.scss";
+import "../../styles/common.scss";
 
 interface Props {
   authenticated: boolean,
