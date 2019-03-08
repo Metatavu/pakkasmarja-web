@@ -54,7 +54,7 @@ class WatchNews extends React.Component<Props, State> {
   render() {
     if (this.state.news) {
       return (
-        <BasicLayout>
+        <BasicLayout> 
           <Container>
             <Header as='h2'>
               {this.state.news.title}
