@@ -54,13 +54,14 @@ class WatchNews extends React.Component<Props, State> {
   render() {
     if (this.state.news) {
       return (
-        <BasicLayout> 
+        
+        <BasicLayout>
+          <Header >
+            <h2 style={{wordWrap: "break-word"}}>{this.state.news.title.toString()}</h2>
+            <Header.Subheader><Moment format="DD.MM.YYYY HH:mm">{this.state.news.createdAt}</Moment></Header.Subheader>
+          </Header>
+          <Divider />
           <Container>
-            <Header as='h2'>
-              {this.state.news.title}
-              <Header.Subheader><Moment format="DD.MM.YYYY HH:mm">{this.state.news.createdAt}</Moment></Header.Subheader>
-            </Header>
-            <Divider />
             <div dangerouslySetInnerHTML={{ __html: this.state.news.contents }} />
           </Container>
         </BasicLayout>
