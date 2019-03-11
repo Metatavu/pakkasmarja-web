@@ -1,6 +1,5 @@
 import * as React from "react";
 import * as actions from "../../actions/";
-//import strings from "../../localization/strings";
 import BasicLayout from "../generic/BasicLayout";
 import { StoreState } from "src/types";
 import { Dispatch } from "redux";

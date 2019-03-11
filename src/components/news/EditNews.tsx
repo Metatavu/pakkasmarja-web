@@ -4,7 +4,6 @@ import * as actions from "../../actions/";
 import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-//import strings from "../../localization/strings";
 import "../../styles/common.scss";
 import BasicLayout from "../generic/BasicLayout";
 import { Form, Button, Confirm } from "semantic-ui-react";
