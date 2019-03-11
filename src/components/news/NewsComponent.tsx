@@ -62,7 +62,7 @@ class NewsComponent extends React.Component<Props, State> {
           this.props.data.title.length < 70 ?
           <Item.Header>{this.props.data.title}</Item.Header> 
           :
-          <Item.Header>{this.props.data.title.replace(/(.{70})..+/, "$1...")}</Item.Header>
+          <Item.Header style={{wordWrap: "break-word", maxWidth:"100%"}}>{this.props.data.title.replace(/(.{70})..+/, "$1...")}</Item.Header>
         }
           <Item.Description><Moment format="DD.MM.YYYY HH:mm">{this.props.data.createdAt}</Moment></Item.Description>
         </Item.Content>
