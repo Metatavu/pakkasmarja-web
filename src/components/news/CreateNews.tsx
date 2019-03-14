@@ -49,6 +49,7 @@ class CreateNews extends React.Component<Props, State> {
    * Handle form submit
    */
   private handleSubmit = async (e: React.SyntheticEvent) => {
+
     e.preventDefault();
 
     if (!this.props.keycloak || !this.props.keycloak.token ) {
