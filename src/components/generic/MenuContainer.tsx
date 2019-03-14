@@ -53,7 +53,7 @@ class MenuContainer extends React.Component<Props, object> {
             <Link to="/news">{strings.deliveries}</Link>
           </Menu.Item>
           <Menu.Item as="div">
-            <Link to="/news">{strings.contracts}</Link>
+            <Link to="/contracts">{strings.contracts}</Link>
           </Menu.Item>
           { this.props.authenticated &&
             <Menu.Menu position="right">
