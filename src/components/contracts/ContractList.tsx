@@ -110,7 +110,7 @@ class ContractList extends React.Component<Props, State> {
     return (
       <BasicLayout>
         <Segment>
-          <Header>
+          <Header className="jaaa">
             {strings.frozenContracts}
           </Header>
           <Item.Group divided>
