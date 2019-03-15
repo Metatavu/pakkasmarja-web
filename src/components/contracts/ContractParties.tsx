@@ -1,6 +1,6 @@
 import * as React from "react";
 import "../../styles/common.scss";
-import { Grid, Header } from "semantic-ui-react";
+import { Grid, Header, Divider } from "semantic-ui-react";
 import { Contact } from "pakkasmarja-client";
 
 /**
@@ -48,9 +48,12 @@ export default class ContractParties extends React.Component<Props, State> {
 
     return (
       <div className="contract-section">
-        <Header as="h2">
-          Osapuolet
-        </Header>
+        <Divider horizontal>
+          <Header as='h2'>
+            Osapuolet
+         </Header>
+        </Divider>
+
         <Grid>
           <Grid.Row columns="2">
             <Grid.Column>
@@ -63,15 +66,15 @@ export default class ContractParties extends React.Component<Props, State> {
           <Grid.Row columns="2">
             <Grid.Column>
               <p>
-                { farmerCompanyName ? farmerCompanyName  : `${farmerFirstName} ${farmerLastName}` }
+                {farmerCompanyName ? farmerCompanyName : `${farmerFirstName} ${farmerLastName}`}
               </p>
             </Grid.Column>
             <Grid.Column>
               <p>
-                { this.props.companyName }
+                {this.props.companyName}
               </p>
               <p>
-                { this.props.companyBusinessId }
+                {this.props.companyBusinessId}
               </p>
             </Grid.Column>
           </Grid.Row>

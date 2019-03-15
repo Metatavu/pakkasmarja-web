@@ -1,6 +1,6 @@
 import * as React from "react";
 import "../../styles/common.scss";
-import { Input, Header, Form, Checkbox, TextArea, Modal, Grid } from "semantic-ui-react";
+import { Input, Header, Form, Checkbox, TextArea, Modal, Grid, Divider } from "semantic-ui-react";
 import { Contract, ItemGroup } from "pakkasmarja-client";
 
 /**
@@ -10,7 +10,7 @@ interface Props {
   itemGroup?: ItemGroup;
   contract?: Contract;
   contracts?: Contract[];
-  onUserInputChange: (key:any, value:any) => void;
+  onUserInputChange: (key: any, value: any) => void;
   proposedAmount: number;
   contractAmount?: number;
   quantityComment: string;
@@ -56,7 +56,6 @@ export default class ContractAmount extends React.Component<Props, State> {
     const pastContracts = this.props.contracts.filter(contract => contract.year < new Date().getFullYear());
     console.log("PAST", pastContracts);
     this.setState({ pastContracts: pastContracts });
-    console.log("STATE: ",this.state.pastContracts);
   }
 
   /**
@@ -78,19 +77,21 @@ export default class ContractAmount extends React.Component<Props, State> {
 
     return (
       <div className="contract-section">
-        <Header as="h2">
-          Määrä
-        </Header>
+        <Divider horizontal>
+          <Header as='h2'>
+            Määrä
+         </Header>
+        </Divider>
         {
-          category == "FRESH" && 
-            <p>
-              Tuoremarjasopimuksessa sopimusmäärä on aiesopimus, johon molemmat osapuolet sitoutuvat, ellei kyseessä poikkeustilanne.
+          category == "FRESH" &&
+          <p>
+            Tuoremarjasopimuksessa sopimusmäärä on aiesopimus, johon molemmat osapuolet sitoutuvat, ellei kyseessä poikkeustilanne.
             </p>
         }
         <Form>
           <Form.Field>
             <label>Määrä</label>
-            <Input 
+            <Input
               placeholder="Määrä"
               value={quantityValue}
               onChange={(event: any) => this.props.onUserInputChange("proposedQuantity", event.target.value)}
@@ -98,7 +99,7 @@ export default class ContractAmount extends React.Component<Props, State> {
             />
           </Form.Field>
           <p>
-            { `Pakkasmarjan ehdotus: ${this.props.contract.contractQuantity} kg` }
+            {`Pakkasmarjan ehdotus: ${this.props.contract.contractQuantity} kg`}
           </p>
           <p onClick={() => this.setState({ showPastContracts: true })}>
             Näytä edellisten vuosien sopimusmäärät ja toimitusmäärät

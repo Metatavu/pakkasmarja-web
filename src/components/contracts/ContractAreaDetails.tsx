@@ -1,6 +1,6 @@
 import * as React from "react";
 import "../../styles/common.scss";
-import { Grid, Header, Button, Input } from "semantic-ui-react";
+import { Grid, Header, Button, Input, Divider } from "semantic-ui-react";
 import { ItemGroup, AreaDetail } from "pakkasmarja-client";
 
 /**
@@ -11,7 +11,7 @@ interface Props {
   areaDetails?: AreaDetail[];
   areaDetailValues: AreaDetail[];
   isActiveContract: boolean;
-  onUserInputChange: (key:any, value:any) => void;
+  onUserInputChange: (key: any, value: any) => void;
 }
 
 /**
@@ -228,10 +228,12 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
 
     return (
       <div className="contract-section">
-        <Header as="h2">
-          Tuotannossa olevat hehtaarit
-        </Header>
-        <Grid>
+        <Divider horizontal>
+          <Header as='h2'>
+            Tuotannossa olevat hehtaarit
+         </Header>
+        </Divider>
+        <Grid >
           {
             this.renderAreaDetailHeaders()
           }
@@ -243,15 +245,15 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
             })
           }
         </Grid>
-          {
-            !this.props.isActiveContract &&
-              <Button onClick={this.createEmptyAreaDetail}>
-                LISÄÄ RIVI
-              </Button>
-          }
-          {
-            this.renderProfitTextElements()
-          }
+        {
+          !this.props.isActiveContract &&
+            <Button style={{ marginTop: "2.5%", marginBottom: "2.5%",width:"100%" }} color="red" onClick={this.createEmptyAreaDetail}>
+              LISÄÄ RIVI
+          </Button>
+        }
+        {
+          this.renderProfitTextElements()
+        }
       </div>
     );
   }
