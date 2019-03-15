@@ -4,7 +4,7 @@ import { connect } from "react-redux";
 import { Dispatch } from "redux";
 import "../../styles/common.scss";
 import { ContractTableData, StoreState, ContractData, ContractDataKey } from "src/types";
-import { Contract, ItemGroup, Price, Contact, DeliveryPlace, AreaDetail } from "pakkasmarja-client";
+import { Contract, ItemGroup, Price, Contact, DeliveryPlace, AreaDetail, SignAuthenticationService } from "pakkasmarja-client";
 import Api from "pakkasmarja-client";
 import BasicLayout from "../generic/BasicLayout";
 import { Dimmer, Loader, Container } from "semantic-ui-react";
@@ -12,6 +12,8 @@ import ContractHeader from "./ContractHeader";
 import ContractParties from "./ContractParties";
 import ContractPrices from "./ContractPrices";
 import ContractAmount from "./ContractAmount";
+import ContractFooter from "./ContractFooter";
+import { Redirect } from "react-router";
 
 /**
  * Interface for component State
@@ -37,6 +39,11 @@ interface State {
   companyName: string;
   companyBusinessId: string;
   contractData: ContractData;
+  companyApprovalRequired: boolean;
+  rejectModalOpen: boolean;
+  signAuthenticationServices: SignAuthenticationService[];
+  redirect: boolean;
+  redirectWithProps: boolean;
 }
 
 /**
@@ -56,6 +63,11 @@ class ContractView extends React.Component<Props, State> {
       loadingText: "",
       companyName: "Pakkasmarja Oy",
       companyBusinessId: "0434204-0",
+      companyApprovalRequired: false,
+      rejectModalOpen: false,
+      signAuthenticationServices: [],
+      redirect: false,
+      redirectWithProps: false,
       contractData: {
         rejectComment: "",
         proposedQuantity: 0,
@@ -74,14 +86,14 @@ class ContractView extends React.Component<Props, State> {
   public componentDidMount = async () => {
     this.setState({ loading: true });
 
-    const contractId = this.props.match.params.contractId; 
+    const contractId = this.props.match.params.contractId;
     const contract = await this.loadContract(contractId);
     const itemGroup = await this.loadItemGroup(contract);
     const prices = await this.loadPrices(contract);
     const contact = await this.loadContact(contract);
     const deliveryPlaces = await this.loadDeliveryPlaces();
 
-    this.setState({ 
+    this.setState({
       loading: false,
       contract: contract,
       itemGroup: itemGroup,
@@ -157,6 +169,59 @@ class ContractView extends React.Component<Props, State> {
   }
 
   /**
+   * Accept button clicked
+   */
+  private acceptContractClicked = async () => {
+    if (!this.props.keycloak || !this.state.contract || !this.props.keycloak.token) {
+      return;
+    }
+
+    const contractData = this.state.contractData;
+    const contract = this.state.contract;
+
+    contract.deliverAll = contractData.deliverAllChecked;
+    contract.deliveryPlaceId = contractData.deliveryPlaceId;
+    contract.deliveryPlaceComment = contractData.deliveryPlaceComment;
+    contract.proposedQuantity = contractData.proposedQuantity;
+    contract.quantityComment = contractData.quantityComment;
+
+    if (contractData.areaDetailValues && contractData.areaDetailValues.length > 0) {
+      
+      const areaDetails: AreaDetail[] = [];
+      contractData.areaDetailValues.forEach((areaDetailObject: any) => {
+        areaDetails.push({
+          size: areaDetailObject.size,
+          species: areaDetailObject.species,
+          name: areaDetailObject.name,
+          profitEstimation: areaDetailObject.profitEstimation
+        });
+      });
+
+      contract.areaDetails = areaDetails;
+    }
+
+    const contractsService = await Api.getContractsService(this.props.keycloak.token);
+
+    if (this.state.companyApprovalRequired) {
+      contract.status = "ON_HOLD";
+      await contractsService.updateContract(contract, contract.id || "");
+      this.setState({ redirect: true });
+    } else {
+      await contractsService.updateContract(contract, contract.id || "");
+      const signAuthenticationServicesService = await Api.getSignAuthenticationServicesService(this.props.keycloak.token);
+      const signAuthenticationServices = await signAuthenticationServicesService.listSignAuthenticationServices();
+      this.setState({ signAuthenticationServices: signAuthenticationServices, redirectWithProps: true });
+    }
+  }
+
+  /**
+   * Decline button clicked
+   */
+  private declineContractClicked = () => {
+    this.setState({ rejectModalOpen: true });
+  }
+
+  /**
    * On user input change
    * 
    * @param key key
@@ -174,6 +239,18 @@ class ContractView extends React.Component<Props, State> {
    * Render method
    */
   public render() {
+    if (this.state.redirect) {
+      return <Redirect to="/contracts" push={true} />;
+    }
+
+    if (this.state.redirect) {
+     return <Redirect to={{
+                      pathname: "/contracts",
+                      contract: this.state.contract,
+                      authServices: this.state.signAuthenticationServices
+                      }} push={true} />
+    }
+
     if (this.state.loading) {
       return (
         <BasicLayout>
@@ -188,19 +265,19 @@ class ContractView extends React.Component<Props, State> {
     return (
       <BasicLayout>
         <Container text>
-          <ContractHeader 
+          <ContractHeader
             itemGroup={this.state.itemGroup}
           />
-          <ContractParties 
+          <ContractParties
             companyName={this.state.companyName}
             companyBusinessId={this.state.companyBusinessId}
             contact={this.state.contact}
           />
-          <ContractPrices 
+          <ContractPrices
             itemGroup={this.state.itemGroup}
             prices={this.state.prices}
           />
-          <ContractAmount 
+          <ContractAmount
             itemGroup={this.state.itemGroup}
             contract={this.state.contract}
             onUserInputChange={this.updateContractData}
@@ -208,6 +285,13 @@ class ContractView extends React.Component<Props, State> {
             proposedAmount={this.state.contractData.proposedQuantity}
             quantityComment={this.state.contractData.quantityComment}
             deliverAllChecked={this.state.contractData.deliverAllChecked}
+          />
+          <ContractFooter
+            isActiveContract={this.state.contract ? this.state.contract.status === "APPROVED" : false}
+            //Puuttuu downloadContractPdf={this.downloadContractPdfClicked}
+            acceptContract={this.acceptContractClicked}
+            declineContract={this.declineContractClicked}
+            approveButtonText={this.state.companyApprovalRequired ? "EHDOTA MUUTOSTA" : "HYVÄKSYN"}
           />
         </Container>
       </BasicLayout>
