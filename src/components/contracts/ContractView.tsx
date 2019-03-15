@@ -17,6 +17,7 @@ import ContractDeliveryPlace from "./ContractDeliveryPlace";
 import ContractFooter from "./ContractFooter";
 import { Redirect } from "react-router";
 
+
 /**
  * Interface for component State
  */
@@ -46,7 +47,7 @@ interface State {
   rejectModalOpen: boolean;
   signAuthenticationServices: SignAuthenticationService[];
   redirect: boolean;
-  redirectWithProps: boolean;
+  navigateToTerms: boolean;
 }
 
 /**
@@ -70,7 +71,7 @@ class ContractView extends React.Component<Props, State> {
       rejectModalOpen: false,
       signAuthenticationServices: [],
       redirect: false,
-      redirectWithProps: false,
+      navigateToTerms: false,
       contractData: {
         rejectComment: "",
         proposedQuantity: 0,
@@ -215,7 +216,7 @@ class ContractView extends React.Component<Props, State> {
       await contractsService.updateContract(contract, contract.id || "");
       const signAuthenticationServicesService = await Api.getSignAuthenticationServicesService(this.props.keycloak.token);
       const signAuthenticationServices = await signAuthenticationServicesService.listSignAuthenticationServices();
-      this.setState({ signAuthenticationServices: signAuthenticationServices, redirectWithProps: true });
+      this.setState({ signAuthenticationServices: signAuthenticationServices, navigateToTerms: true });
     }
   }
 
@@ -242,19 +243,39 @@ class ContractView extends React.Component<Props, State> {
   }
 
   /**
+   * Download contract as pdf
+   */
+  private downloadContractPdfClicked = async () => {
+    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.contract|| !this.state.contract.id) {
+      return;
+    }
+
+    const pdfService = Api.getContractsService(this.props.keycloak.token);
+    const pdfData = await pdfService.getContractDocument(this.state.contract.id, "2019", "PDF");
+    console.log(pdfData);
+    const file = new Blob([pdfData], { type: 'application/pdf' });
+    const fileURL = URL.createObjectURL(file);
+    window.open(fileURL, "_blank");
+
+
+    /*const pdfService = api.getPdfService(this.props.accessToken.access_token);
+    const pdfPath = await pdfService.findPdf(this.state.contract.id, new Date().getFullYear().toString(), `${new Date().toLocaleDateString()}.pdf`);
+
+    Alert.alert(
+      'Lataus onnistui!',
+      `PDF tiedosto on tallennettu polkuun ${pdfPath}. Palaa sopimuksiin painamalla OK.`,
+      [
+        {text: 'OK', onPress: () => this.props.navigation.navigate('Contracts', {})},
+      ]
+    );*/
+  }
+
+  /**
    * Render method
    */
   public render() {
-    if (this.state.redirect) {
-      return <Redirect to="/contracts" push={true} />;
-    }
-
-    if (this.state.redirect) {
-     return <Redirect to={{
-                      pathname: "/contracts",
-                      contract: this.state.contract,
-                      authServices: this.state.signAuthenticationServices
-                      }} push={true} />
+    if (this.state.navigateToTerms && this.state.contact) {
+      return <Redirect to={`/contracts/${this.state.contact.id}/terms`} push={true} />;
     }
 
     if (this.state.loading) {
@@ -308,7 +329,7 @@ class ContractView extends React.Component<Props, State> {
           />
           <ContractFooter
             isActiveContract={this.state.contract ? this.state.contract.status === "APPROVED" : false}
-            //Puuttuu downloadContractPdf={this.downloadContractPdfClicked}
+            downloadContractPdf={this.downloadContractPdfClicked}
             acceptContract={this.acceptContractClicked}
             declineContract={this.declineContractClicked}
             approveButtonText={this.state.companyApprovalRequired ? "EHDOTA MUUTOSTA" : "HYVÄKSYN"}
