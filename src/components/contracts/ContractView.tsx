@@ -15,6 +15,7 @@ import ContractAmount from "./ContractAmount";
 import ContractAreaDetails from "./ContractAreaDetails";
 import ContractDeliveryPlace from "./ContractDeliveryPlace";
 import ContractFooter from "./ContractFooter";
+import ContractRejectModal from "./ContractRejectModal";
 import { Redirect } from "react-router";
 
 /**
@@ -191,7 +192,7 @@ class ContractView extends React.Component<Props, State> {
     contract.quantityComment = contractData.quantityComment;
 
     if (contractData.areaDetailValues && contractData.areaDetailValues.length > 0) {
-      
+
       const areaDetails: AreaDetail[] = [];
       contractData.areaDetailValues.forEach((areaDetailObject: any) => {
         areaDetails.push({
@@ -249,12 +250,12 @@ class ContractView extends React.Component<Props, State> {
       return <Redirect to="/contracts" push={true} />;
     }
 
-    if (this.state.redirect) {
-     return <Redirect to={{
-                      pathname: "/contracts",
-                      contract: this.state.contract,
-                      authServices: this.state.signAuthenticationServices
-                      }} push={true} />
+    if (this.state.redirectWithProps) {
+      return <Redirect to={{
+        pathname: "/contracts",
+        contract: this.state.contract,
+        authServices: this.state.signAuthenticationServices
+      }} push={true} />
     }
 
     if (this.state.loading) {
@@ -312,6 +313,14 @@ class ContractView extends React.Component<Props, State> {
             acceptContract={this.acceptContractClicked}
             declineContract={this.declineContractClicked}
             approveButtonText={this.state.companyApprovalRequired ? "EHDOTA MUUTOSTA" : "HYVÄKSYN"}
+          />
+          <ContractRejectModal 
+            onUserInputChange={this.updateContractData}
+            rejectComment={this.state.contractData.rejectComment}
+            modalOpen={this.state.rejectModalOpen}
+            closeModal={() => this.setState({ rejectModalOpen: false })}
+            contract={this.state.contract}
+            contractRejected={() => this.setState({redirect:true})}
           />
         </Container>
       </BasicLayout>
