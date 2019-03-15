@@ -1,6 +1,6 @@
 import * as React from "react";
 import "../../styles/common.scss";
-import { Button } from "semantic-ui-react";
+import { Button, Divider } from "semantic-ui-react";
 import { Redirect } from "react-router-dom";
 
 
@@ -42,19 +42,23 @@ export default class ContractFooter extends React.Component<Props, State> {
     }
     return (
       <React.Fragment>
+        <Divider/>
         {
           this.props.isActiveContract &&
-          <Button.Group>
-            <Button onClick={this.props.downloadContractPdf} labelPosition='left' icon='left chevron' content='Lataa sopimus PDF - muodossa.' />
-            <Button onClick={() => this.setState({ redirect: true })} labelPosition='right' icon='right chevron' content='TAKAISIN' />
+          <Button.Group floated="right" >
+            <Button onClick={this.props.downloadContractPdf} color="red">Lataa sopimus PDF - muodossa.</Button>
+            <Button.Or text="" />
+            <Button  onClick={() => this.setState({ redirect: true })}  color="black">TAKAISIN</Button>
           </Button.Group>
         }
         {
           !this.props.isActiveContract &&
-          <Button.Group>
-            <Button onClick={() => this.setState({ redirect: true })} labelPosition='left' icon='left chevron' content='TAKAISIN' />
-            <Button onClick={this.props.declineContract} negative icon='stop' content='EN HYVÄKSY' />
-            <Button onClick={this.props.acceptContract} labelPosition='right' icon='right chevron' content={this.props.approveButtonText} />
+          <Button.Group floated="right" >
+            <Button onClick={this.props.acceptContract} color="red">{this.props.approveButtonText}</Button>
+            <Button.Or text="" />
+            <Button  onClick={this.props.declineContract} inverted color="red">EN HYVÄKSY</Button>
+            <Button.Or text="" />
+            <Button onClick={() => this.setState({ redirect: true })}  color="black">TAKAISIN</Button>
           </Button.Group>
         }
       </React.Fragment>

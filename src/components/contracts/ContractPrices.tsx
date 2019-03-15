@@ -1,6 +1,6 @@
 import * as React from "react";
 import "../../styles/common.scss";
-import { Grid, Header, List } from "semantic-ui-react";
+import { Grid, Header, List, Divider } from "semantic-ui-react";
 import { Price, ItemGroup } from "pakkasmarja-client";
 
 /**
@@ -170,9 +170,11 @@ export default class ContractPrices extends React.Component<Props, State> {
 
     return (
       <div className="contract-section">
-        <Header as="h2">
-          Takuuhinnat
-        </Header>
+        <Divider horizontal>
+          <Header as='h2'>
+            Takuuhinnat
+         </Header>
+        </Divider>
         { this.renderPricesText(itemGroupDisplayName) }
         <p onClick={() => this.setState({ displayPastPrices: !this.state.displayPastPrices })}>
           {

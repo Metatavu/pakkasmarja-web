@@ -69,20 +69,23 @@ class ContractRejectModal extends React.Component<Props, State> {
    */
   public render() {
     return (
-      <Modal open={this.props.modalOpen}>
+      <Modal size="small" open={this.props.modalOpen} onClose={()=>this.closeModal} closeIcon>
         <Modal.Header>Haluatko varmasti hylätä sopimuksen? Kirjoita perustelut alle.</Modal.Header>
         <Modal.Content >
           <Form>
-            <TextArea 
-            value={this.props.rejectComment}
-            onChange={(event: any) => this.props.onUserInputChange("rejectComment", event.target.value)} 
-            style={{ minHeight: 100 }} />
+            <TextArea
+              value={this.props.rejectComment}
+              onChange={(event: any) => this.props.onUserInputChange("rejectComment", event.target.value)}
+              style={{ minHeight: 100 }} />
           </Form>
-          <Button.Group>
-            <Button onClick={this.rejectContract} labelPosition='left' icon='left chevron' content='HYLKÄÄ SOPIMUS' />
-            <Button onClick={this.closeModal} labelPosition='right' icon='right chevron' content='PERUUTA' />
-          </Button.Group>
         </Modal.Content>
+        <Modal.Actions>
+          <Button.Group floated="right" style={{marginBottom:"2.5%"}} >
+            <Button onClick={this.rejectContract} inverted color="red">HYLKÄÄ SOPIMUS</Button>
+            <Button.Or text="" />
+            <Button onClick={this.closeModal} color="black">PERUUTA</Button>
+          </Button.Group>
+        </Modal.Actions>
       </Modal>
     );
   }

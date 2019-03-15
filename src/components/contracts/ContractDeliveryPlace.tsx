@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Contract, DeliveryPlace } from "pakkasmarja-client";
-import { TextArea, Header, Dropdown } from "semantic-ui-react";
+import { TextArea, Header, Dropdown, Divider, Container, Form } from "semantic-ui-react";
 
 /**
  * Interface for component props
@@ -69,48 +69,40 @@ export default class ContractDeliveryPlace extends React.Component<Props, State>
     }) || [];
 
     return (
-      <div className="contract-section">
-        <div>
-          <Header as="h2">
+      <Container>
+        <Divider horizontal>
+          <Header as='h2'>
             Toimituspaikka
-          </Header>
-          <div style={{
-            height: 50,
-            width: "100%",
-            backgroundColor: 'white',
-            borderColor: "red",
-            borderWidth: 1,
-            borderRadius: 4
-          }}>
-            <Dropdown
-              placeholder="Valitse toimituspaikka"
-              value={this.props.selectedPlaceId}
-              options={deliveryPalceOptions}
-              onChange={ (event, data) => { 
-                console.log(data.value);
-                this.props.onUserInputChange("deliveryPlaceId", data.value) }
-              }
-            />
-          </div>
-        </div>
-        <div>
+         </Header>
+        </Divider>
+        <Form>
+          <Dropdown
+            fluid
+            selection
+            placeholder="Valitse toimituspaikka"
+            value={this.props.selectedPlaceId}
+            options={deliveryPalceOptions}
+            onChange={(event, data) => {
+              this.props.onUserInputChange("deliveryPlaceId", data.value)
+            }
+            }
+          />
           {
             this.state.proposedDeliveryPlace &&
             <p>
               {`Pakkasmarjan ehdotus: ${this.state.proposedDeliveryPlace}`}
             </p>
           }
-        </div>
-        <div>
           <p>Kommentti</p>
+
           <TextArea
             value={this.props.deliveryPlaceComment}
             onChange={(event: any) => {
               !this.props.isActiveContract && this.onDeliveryPlaceChange(event.target.value)
             }}
           />
-        </div>
-      </div>
+        </Form>
+      </Container>
     );
   }
 }
