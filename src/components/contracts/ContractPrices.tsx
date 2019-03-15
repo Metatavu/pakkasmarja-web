@@ -117,7 +117,7 @@ export default class ContractPrices extends React.Component<Props, State> {
    */
   private renderPriceRow = (price: Price) => {
     return (
-      <Grid.Row columns="3">
+      <Grid.Row columns="3" key={price.id}>
         <Grid.Column>
           { price.year }
         </Grid.Column>

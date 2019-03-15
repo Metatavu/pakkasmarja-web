@@ -12,6 +12,8 @@ import ContractHeader from "./ContractHeader";
 import ContractParties from "./ContractParties";
 import ContractPrices from "./ContractPrices";
 import ContractAmount from "./ContractAmount";
+import ContractAreaDetails from "./ContractAreaDetails";
+import ContractDeliveryPlace from "./ContractDeliveryPlace";
 
 /**
  * Interface for component State
@@ -27,6 +29,7 @@ interface Props {
  */
 interface State {
   contractId?: string;
+  contracts?: Contract[];
   contract?: Contract;
   itemGroup?: ItemGroup;
   prices?: Price[];
@@ -74,8 +77,9 @@ class ContractView extends React.Component<Props, State> {
   public componentDidMount = async () => {
     this.setState({ loading: true });
 
-    const contractId = this.props.match.params.contractId; 
-    const contract = await this.loadContract(contractId);
+    const contractId = this.props.match.params.contractId;
+    const contracts = await this.loadContracts();
+    const contract = contracts && contracts.find(contract => contract.id === contractId);
     const itemGroup = await this.loadItemGroup(contract);
     const prices = await this.loadPrices(contract);
     const contact = await this.loadContact(contract);
@@ -83,6 +87,7 @@ class ContractView extends React.Component<Props, State> {
 
     this.setState({ 
       loading: false,
+      contracts: contracts,
       contract: contract,
       itemGroup: itemGroup,
       prices: prices,
@@ -92,16 +97,16 @@ class ContractView extends React.Component<Props, State> {
   }
 
   /**
-   * Load contract
+   * Load contracts
    */
-  private loadContract = async (contractId: string) => {
-    if (!this.props.keycloak || !this.props.keycloak.token || !contractId) {
+  private loadContracts = async () => {
+    if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
 
-    this.setState({ loadingText: "Loading contract" });
+    this.setState({ loadingText: "Loading contracts" });
     const contractsService = await Api.getContractsService(this.props.keycloak.token);
-    return await contractsService.findContract(contractId, "application/json");
+    return await contractsService.listContracts("application/json", false);
   }
 
   /**
@@ -165,7 +170,8 @@ class ContractView extends React.Component<Props, State> {
   private updateContractData = (key: ContractDataKey, value: boolean | string | AreaDetail[]) => {
     const contractData = this.state.contractData;
     contractData[key] = value;
-
+    console.log(key);
+    console.log(value);
     this.setState({ contractData: contractData });
     //this.checkIfCompanyApprovalNeeded();
   }
@@ -201,6 +207,7 @@ class ContractView extends React.Component<Props, State> {
             prices={this.state.prices}
           />
           <ContractAmount 
+            contracts={this.state.contracts}
             itemGroup={this.state.itemGroup}
             contract={this.state.contract}
             onUserInputChange={this.updateContractData}
@@ -208,6 +215,20 @@ class ContractView extends React.Component<Props, State> {
             proposedAmount={this.state.contractData.proposedQuantity}
             quantityComment={this.state.contractData.quantityComment}
             deliverAllChecked={this.state.contractData.deliverAllChecked}
+          />
+          <ContractAreaDetails
+            itemGroup={this.state.itemGroup}
+            areaDetails={this.state.contract ? this.state.contract.areaDetails : undefined}
+            areaDetailValues={this.state.contractData.areaDetailValues}
+            isActiveContract={this.state.contract ? this.state.contract.status === "APPROVED" : false}
+            onUserInputChange={this.updateContractData}
+          />
+          <ContractDeliveryPlace
+            onUserInputChange={this.updateContractData}
+            deliveryPlaces={this.state.deliveryPlaces}
+            selectedPlaceId={this.state.contractData.deliveryPlaceId}
+            deliveryPlaceComment={this.state.contractData.deliveryPlaceComment}
+            isActiveContract={this.state.contract ? this.state.contract.status === "APPROVED" : false}
           />
         </Container>
       </BasicLayout>

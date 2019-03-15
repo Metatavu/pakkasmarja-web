@@ -1,6 +1,6 @@
 import * as React from "react";
 import "../../styles/common.scss";
-import { Input, Header, Form, Checkbox, TextArea } from "semantic-ui-react";
+import { Input, Header, Form, Checkbox, TextArea, Modal, Grid } from "semantic-ui-react";
 import { Contract, ItemGroup } from "pakkasmarja-client";
 
 /**
@@ -9,6 +9,7 @@ import { Contract, ItemGroup } from "pakkasmarja-client";
 interface Props {
   itemGroup?: ItemGroup;
   contract?: Contract;
+  contracts?: Contract[];
   onUserInputChange: (key:any, value:any) => void;
   proposedAmount: number;
   contractAmount?: number;
@@ -22,6 +23,7 @@ interface Props {
 interface State {
   showPastContracts: boolean;
   isActiveContract: boolean;
+  pastContracts: Contract[];
 }
 
 /**
@@ -38,18 +40,23 @@ export default class ContractAmount extends React.Component<Props, State> {
     super(props);
     this.state = {
       showPastContracts: false,
-      isActiveContract: false
+      isActiveContract: false,
+      pastContracts: []
     };
   }
 
   /**
-   * 
+   * Component did mount 
    */
   public componentDidMount = () => {
-    if (!this.props.contract) {
+    if (!this.props.contract || !this.props.contracts) {
       return;
     }
-    this.setState({ isActiveContract: this.props.contract.status === "APPROVED" })
+    this.setState({ isActiveContract: this.props.contract.status === "APPROVED" });
+    const pastContracts = this.props.contracts.filter(contract => contract.year < new Date().getFullYear());
+    console.log("PAST", pastContracts);
+    this.setState({ pastContracts: pastContracts });
+    console.log("STATE: ",this.state.pastContracts);
   }
 
   /**
@@ -94,12 +101,17 @@ export default class ContractAmount extends React.Component<Props, State> {
             { `Pakkasmarjan ehdotus: ${this.props.contract.contractQuantity} kg` }
           </p>
           <p onClick={() => this.setState({ showPastContracts: true })}>
-            Edellisten vuosien sopimusmäärät ja toimitusmäärät
+            Näytä edellisten vuosien sopimusmäärät ja toimitusmäärät
           </p>
-          <Form.Field 
-            control={Checkbox}
-            label={{ children: "Haluaisin toimittaa kaiken tilallani viljeltävän sadon tästä marjasta Pakkasmarjalle pakastettavaksi ja tuorekauppaan (lisätietoja sopimuksen kohdasta 100 % toimittajuus)." }}
-          />
+          <Form.Field>
+            <Checkbox
+              checked={this.props.deliverAllChecked}
+              onChange={(event: any) => {
+                !this.state.isActiveContract && this.props.onUserInputChange("deliverAllChecked", !this.props.deliverAllChecked)
+              }}
+              label={"Haluaisin toimittaa kaiken tilallani viljeltävän sadon tästä marjasta Pakkasmarjalle pakastettavaksi ja tuorekauppaan (lisätietoja sopimuksen kohdasta 100 % toimittajuus)."}
+            />
+          </Form.Field>
           <Form.Field>
             <TextArea
               value={this.props.quantityComment}
@@ -110,7 +122,41 @@ export default class ContractAmount extends React.Component<Props, State> {
             />
           </Form.Field>
         </Form>
-        
+        <Modal open={this.state.showPastContracts} onClose={() => this.setState({ showPastContracts: false })} closeIcon>
+          <Modal.Header>Edellisten vuosien sopimusmäärät ja toimitusmäärät</Modal.Header>
+          <Modal.Content>
+            <Grid>
+              <Grid.Row columns="3">
+                <Grid.Column>
+                  Vuosi
+                </Grid.Column>
+                <Grid.Column>
+                  Sovittu määrä (kg)
+                </Grid.Column>
+                <Grid.Column>
+                  Toteutunut määrä (kg)
+                </Grid.Column>
+              </Grid.Row>
+              {
+                this.state.pastContracts.map((contract) => {
+                  return (
+                    <Grid.Row key={contract.id} columns="3">
+                      <Grid.Column>
+                        {contract.year}
+                      </Grid.Column>
+                      <Grid.Column>
+                        {contract.contractQuantity}
+                      </Grid.Column>
+                      <Grid.Column>
+                        {contract.deliveredQuantity}
+                      </Grid.Column>
+                    </Grid.Row>
+                  );
+                })
+              }
+            </Grid>
+          </Modal.Content>
+        </Modal>
       </div>
     );
   }
