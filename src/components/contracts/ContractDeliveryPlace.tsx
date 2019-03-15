@@ -12,7 +12,8 @@ interface Props {
   onUserInputChange: (key: any, value: any) => void,
   selectedPlaceId: string,
   deliveryPlaceComment: string,
-  isActiveContract: boolean
+  isActiveContract: boolean,
+  match?: any;
 };
 
 /**

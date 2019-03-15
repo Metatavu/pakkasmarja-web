@@ -12,7 +12,8 @@ import { Checkbox, Input, Button, Dropdown } from "semantic-ui-react";
  * Interface for component props
  */
 interface Props {
-  keycloak?: Keycloak.KeycloakInstance
+  keycloak?: Keycloak.KeycloakInstance;
+  match?: any;
 };
 
 /**
@@ -29,7 +30,6 @@ interface State {
   signAuthenticationUrl: string;
   modalOpen: boolean;
   type: string;
-  match?: any;
 };
 
 /**
@@ -56,7 +56,7 @@ class ContractTerms extends React.Component<Props, State> {
    * Component did mount
    */
   public componentDidMount = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token) {
+    if (!this.props.keycloak || !this.props.keycloak.token {
       return;
     }
 
@@ -64,9 +64,23 @@ class ContractTerms extends React.Component<Props, State> {
       this.setState({ contract: this.props.navigation.getParam('contract') });
     }*/
 
+    const contractId = this.props.match.params.contractId;
+    const contract = await this.findContract(contractId);
     const signAuthenticationServicesService = await Api.getSignAuthenticationServicesService(this.props.keycloak.token);
     const signAuthenticationServices = await signAuthenticationServicesService.listSignAuthenticationServices();
     this.setState({ authServices: signAuthenticationServices });
+  }
+
+  /**
+   * Find contract
+   */
+  private findContract = async (id: string) => {
+    if (!this.props.keycloak || !this.props.keycloak.token) {
+      return;
+    }
+
+    const contractsService = await Api.getContractsService(this.props.keycloak.token);
+    return await contractsService.findContract(id, "application/json");
   }
 
 
@@ -128,7 +142,7 @@ class ContractTerms extends React.Component<Props, State> {
 
     const contractsService = Api.getContractsService(this.props.keycloak.token);
     const contractSignRequest = await contractsService.createContractDocumentSignRequest({ redirectUrl: "" }, this.state.contract.id || "", this.state.type, this.state.ssn, this.state.selectedSignServiceId);
-    
+    console.log(contractSignRequest);
     if (contractSignRequest && contractSignRequest.redirectUrl) {
       this.setState({ signAuthenticationUrl: contractSignRequest.redirectUrl, modalOpen: true });
     } else {
@@ -209,7 +223,7 @@ class ContractTerms extends React.Component<Props, State> {
             <p>Henkilötunnus:</p>
             <Input
               value={this.state.ssn}
-              onChangeText={(event: any) => this.setState({ ssn: event.target.value })}
+              onChange={(event: any) => this.setState({ ssn: event.target.value })}
             />
           </div>
           <div>

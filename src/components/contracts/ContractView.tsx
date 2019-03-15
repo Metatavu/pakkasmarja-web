@@ -295,8 +295,8 @@ class ContractView extends React.Component<Props, State> {
    * Render method
    */
   public render() {
-    if (this.state.navigateToTerms && this.state.contact) {
-      return <Redirect to={`/contracts/${this.state.contact.id}/terms`} push={true} />;
+    if (this.state.navigateToTerms && this.state.contract) {
+      return <Redirect to={`/contracts/${this.state.contract.id}/terms`} push={true} />;
     }
 
     if (this.state.loading) {
