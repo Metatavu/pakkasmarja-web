@@ -1,6 +1,6 @@
 import * as React from "react";
 import "../../styles/common.scss";
-import { Container, Button } from "semantic-ui-react";
+import { Button } from "semantic-ui-react";
 import { Redirect } from "react-router-dom";
 
 
@@ -44,19 +44,18 @@ export default class ContractFooter extends React.Component<Props, State> {
       <React.Fragment>
         {
           this.props.isActiveContract &&
-          <Container>
-            <Button onClick={this.props.downloadContractPdf}>Lataa sopimus PDF - muodossa.</Button>
-            <Button onClick={() => this.setState({ redirect: true })}>TAKAISIN</Button>
-          </Container>
+          <Button.Group>
+            <Button onClick={this.props.downloadContractPdf} labelPosition='left' icon='left chevron' content='Lataa sopimus PDF - muodossa.' />
+            <Button onClick={() => this.setState({ redirect: true })} labelPosition='right' icon='right chevron' content='TAKAISIN' />
+          </Button.Group>
         }
         {
           !this.props.isActiveContract &&
-          
           <Button.Group>
-          <Button onClick={() => this.setState({ redirect: true })} labelPosition='left' icon='left chevron' content='TAKAISIN' />
-          <Button onClick={this.props.declineContract} negative icon='stop' content='EN HYVÄKSY' />
-          <Button onClick={this.props.acceptContract} labelPosition='right' icon='right chevron' content={this.props.approveButtonText} />
-        </Button.Group>
+            <Button onClick={() => this.setState({ redirect: true })} labelPosition='left' icon='left chevron' content='TAKAISIN' />
+            <Button onClick={this.props.declineContract} negative icon='stop' content='EN HYVÄKSY' />
+            <Button onClick={this.props.acceptContract} labelPosition='right' icon='right chevron' content={this.props.approveButtonText} />
+          </Button.Group>
         }
       </React.Fragment>
     );

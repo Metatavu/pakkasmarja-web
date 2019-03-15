@@ -15,6 +15,7 @@ import ContractAmount from "./ContractAmount";
 import ContractAreaDetails from "./ContractAreaDetails";
 import ContractDeliveryPlace from "./ContractDeliveryPlace";
 import ContractFooter from "./ContractFooter";
+import ContractRejectModal from "./ContractRejectModal";
 import { Redirect } from "react-router";
 
 
@@ -192,7 +193,7 @@ class ContractView extends React.Component<Props, State> {
     contract.quantityComment = contractData.quantityComment;
 
     if (contractData.areaDetailValues && contractData.areaDetailValues.length > 0) {
-      
+
       const areaDetails: AreaDetail[] = [];
       contractData.areaDetailValues.forEach((areaDetailObject: any) => {
         areaDetails.push({
@@ -249,7 +250,7 @@ class ContractView extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token || !this.state.contract|| !this.state.contract.id) {
       return;
     }
-
+    console.log(this.state.contract.id);
     const pdfService = Api.getContractsService(this.props.keycloak.token);
     const pdfData = await pdfService.getContractDocument(this.state.contract.id, "2019", "PDF");
     console.log(pdfData);
@@ -333,6 +334,14 @@ class ContractView extends React.Component<Props, State> {
             acceptContract={this.acceptContractClicked}
             declineContract={this.declineContractClicked}
             approveButtonText={this.state.companyApprovalRequired ? "EHDOTA MUUTOSTA" : "HYVÄKSYN"}
+          />
+          <ContractRejectModal 
+            onUserInputChange={this.updateContractData}
+            rejectComment={this.state.contractData.rejectComment}
+            modalOpen={this.state.rejectModalOpen}
+            closeModal={() => this.setState({ rejectModalOpen: false })}
+            contract={this.state.contract}
+            contractRejected={() => this.setState({redirect:true})}
           />
         </Container>
       </BasicLayout>

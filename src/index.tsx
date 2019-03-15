@@ -10,7 +10,7 @@ import { processAction } from './reducers/index';
 import { StoreState } from './types/index';
 import { AppAction } from './actions';
 import { Provider } from 'react-redux';
-const DEFAULT_API_PATH = "http://dca50237.ngrok.io/rest/v1";
+const DEFAULT_API_PATH = "http://localhost:3000/rest/v1";
 
 Api.configure(/*process.env.REACT_APP_API_BASE_PATH || */DEFAULT_API_PATH);
 

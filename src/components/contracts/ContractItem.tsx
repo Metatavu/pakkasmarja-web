@@ -80,6 +80,21 @@ export default class ContractItem extends React.Component<Props, State> {
   }
 
   /**
+   * Handle item click
+   */
+  private alertCantOpen = (status: string) => {
+    let infoText = "";
+
+    if (status === "REJECTED") {
+      infoText = "Olet hylännyt tämän sopimuksen. Jos näin ei kuuluisi olla, ota yhteyttä pakkasmarjaan.";
+    } else if (status === "ON_HOLD") {
+      infoText = "Sopimus on pakkasmarjalla tarkistettavana.";
+    }
+
+    alert(infoText);
+  }
+
+  /**
    * Render method
    */
   public render() {
@@ -88,10 +103,18 @@ export default class ContractItem extends React.Component<Props, State> {
 
     return (
       <Item>
-        <Item.Content as={Link} to={`contracts/${this.props.contractData.contract.id}`}>
-          <Item.Header>{itemGroupName}</Item.Header>
-            { this.renderItemDescription(contractStatus) }
-        </Item.Content>
+        {
+          contractStatus === "ON_HOLD" || contractStatus === "REJECTED" ? 
+            <Item.Content onClick={() => this.alertCantOpen(contractStatus)}>
+              <Item.Header>{itemGroupName}</Item.Header>
+                { this.renderItemDescription(contractStatus) }
+            </Item.Content> 
+            :
+            <Item.Content as={Link} to={`contracts/${this.props.contractData.contract.id}`}>
+              <Item.Header>{itemGroupName}</Item.Header>
+                { this.renderItemDescription(contractStatus) }
+            </Item.Content>
+        }
       </Item>
     );
   }
