@@ -17,6 +17,7 @@ import ContractDeliveryPlace from "./ContractDeliveryPlace";
 import ContractFooter from "./ContractFooter";
 import ContractRejectModal from "./ContractRejectModal";
 import { Redirect } from "react-router";
+import { PDFService } from "src/api/pdf.service";
 
 
 /**
@@ -93,7 +94,7 @@ class ContractView extends React.Component<Props, State> {
 
     const contractId = this.props.match.params.contractId;
     const contracts = await this.loadContracts();
-    const contract = contracts && contracts.find(contract => contract.id === contractId);
+    const contract = await this.findContract(contractId);
     const itemGroup = await this.loadItemGroup(contract);
     const prices = await this.loadPrices(contract);
     const contact = await this.loadContact(contract);
@@ -120,7 +121,20 @@ class ContractView extends React.Component<Props, State> {
 
     this.setState({ loadingText: "Loading contracts" });
     const contractsService = await Api.getContractsService(this.props.keycloak.token);
-    return await contractsService.listContracts("application/json", false);
+    return await contractsService.listContracts("application/json");
+  }
+
+  /**
+   * Find contract
+   */
+  private findContract = async (id: string) => {
+    if (!this.props.keycloak || !this.props.keycloak.token) {
+      return;
+    }
+
+    this.setState({ loadingText: "Loading contracts" });
+    const contractsService = await Api.getContractsService(this.props.keycloak.token);
+    return await contractsService.findContract(id, "application/json");
   }
 
   /**
@@ -250,25 +264,31 @@ class ContractView extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token || !this.state.contract|| !this.state.contract.id) {
       return;
     }
-    console.log(this.state.contract.id);
-    const pdfService = Api.getContractsService(this.props.keycloak.token);
-    const pdfData = await pdfService.getContractDocument(this.state.contract.id, "2019", "PDF");
-    console.log(pdfData);
-    const file = new Blob([pdfData], { type: 'application/pdf' });
-    const fileURL = URL.createObjectURL(file);
-    window.open(fileURL, "_blank");
+    
+    this.setState({loading: true, loadingText: "Loading pdf..."});
+    const pdfService = new PDFService(process.env.REACT_APP_API_URL || "", this.props.keycloak.token);
+    const pdfData = await pdfService.getPdf(this.state.contract.id, "2019");
+    this.setState({loading: false});
+    this.downloadPdfBlob(pdfData);
+  }
 
-
-    /*const pdfService = api.getPdfService(this.props.accessToken.access_token);
-    const pdfPath = await pdfService.findPdf(this.state.contract.id, new Date().getFullYear().toString(), `${new Date().toLocaleDateString()}.pdf`);
-
-    Alert.alert(
-      'Lataus onnistui!',
-      `PDF tiedosto on tallennettu polkuun ${pdfPath}. Palaa sopimuksiin painamalla OK.`,
-      [
-        {text: 'OK', onPress: () => this.props.navigation.navigate('Contracts', {})},
-      ]
-    );*/
+  /**
+   * Download pdf to users computer
+   * 
+   * @param pdfData pdf data
+   */
+  private downloadPdfBlob = (pdfData: any) => {
+    pdfData.blob().then((blob: any) => {
+      const pdfBlob = new Blob([blob], {type: "application/pdf"});
+      const data = window.URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = data;
+        link.download="file.pdf";
+        link.click();
+        setTimeout(function() {
+          window.URL.revokeObjectURL(data);
+        }, 100);
+    });
   }
 
   /**

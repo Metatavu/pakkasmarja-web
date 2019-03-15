@@ -100,7 +100,6 @@ export default class ContractItem extends React.Component<Props, State> {
   public render() {
     const itemGroupName = this.props.contractData.itemGroup ? this.props.contractData.itemGroup.displayName : "-";
     const contractStatus = this.props.contractData.contract.status;
-
     return (
       <Item>
         {

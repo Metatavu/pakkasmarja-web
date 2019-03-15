@@ -62,7 +62,9 @@ class ContractList extends React.Component<Props, State> {
 
     const contractsService = await Api.getContractsService(this.props.keycloak.token);
     const frozenContracts = await contractsService.listContracts("application/json", false, "FROZEN");
+    console.log(frozenContracts);
     const freshContracts = await contractsService.listContracts("application/json", false, "FRESH");
+    console.log(freshContracts);
     await this.loadItemGroups();
 
     frozenContracts.forEach((frozenContract) => {
