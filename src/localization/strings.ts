@@ -11,6 +11,10 @@ export interface IStrings extends LocalizedStringsMethods {
   news: string
   deliveries: string
   contracts: string
+  frozenContracts: string
+  freshContracts: string
+  contractQuantity: string
+  deliveredQuantity: string
   welcome: string
   redirectingTokeycloak: string
 }

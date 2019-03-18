@@ -12,7 +12,7 @@ import { AppAction } from './actions';
 import { Provider } from 'react-redux';
 const DEFAULT_API_PATH = "http://localhost:3000/rest/v1";
 
-Api.configure(process.env.REACT_APP_API_BASE_PATH || DEFAULT_API_PATH);
+Api.configure(`${process.env.REACT_APP_API_URL}/rest/v1` || DEFAULT_API_PATH);
 
 const store = createStore<StoreState, AppAction, any, any>(processAction, {
   authenticated: false

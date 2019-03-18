@@ -31,6 +31,11 @@ interface State {
 
 class CreateNews extends React.Component<Props, State> {
 
+  /**
+   * Constructor
+   * 
+   * @param props 
+   */
   constructor(props: Props) {
     super(props);
     this.state = {
