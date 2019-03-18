@@ -44,7 +44,7 @@ class Login extends React.Component<Props, State> {
       "url": process.env.REACT_APP_AUTH_SERVER_URL,
       "clientId": process.env.REACT_APP_AUTH_RESOURCE
     };
-    console.log(kcConf);
+    
     const keycloak = Keycloak(kcConf);
     keycloak.init({onLoad: "login-required"}).success((authenticated) => {
       console.log(authenticated);

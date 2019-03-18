@@ -145,7 +145,6 @@ export default class ContractPrices extends React.Component<Props, State> {
     const itemGroupName = this.props.itemGroup.name || "-";
     const itemGroupDisplayName = this.props.itemGroup.displayName || this.props.itemGroup.name || "-";
 
-
     if (itemGroupCategory !== "FROZEN") {
       return (
         <div className="contract-section">

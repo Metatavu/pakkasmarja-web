@@ -60,7 +60,7 @@ export default class ContractItem extends React.Component<Props, State> {
   /**
    * Render contract amount table
    */
-  renderContractAmountTable = () => {
+  private renderContractAmountTable = () => {
     return (
       <Item.Description>
         <ContractAmountTable contractData={this.props.contractData} />

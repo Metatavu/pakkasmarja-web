@@ -1,3 +1,6 @@
+/**
+ * Class for PDF service
+ */
 export class PDFService {
 
   private basePath: string;
@@ -21,7 +24,7 @@ export class PDFService {
    * @param type type
    * @return pdf blob
    */
-  getPdf = async (contractId: string, type: string) => {
+  public getPdf = async (contractId: string, type: string) => {
     const url = `${this.basePath}/rest/v1/contracts/${contractId}/documents/${type}?format=PDF`;
     const response = await fetch(url, {
       method: 'GET',
