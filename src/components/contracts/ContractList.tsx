@@ -7,8 +7,9 @@ import { connect } from "react-redux";
 import "../../styles/common.scss";
 import Api from "pakkasmarja-client";
 import { ItemGroup } from "pakkasmarja-client";
-import { Segment, Item, Header } from "semantic-ui-react";
+import { Segment, Item, Header, Button } from "semantic-ui-react";
 import ContractItem from "./ContractItem";
+import ContractProposalModal from "./ContractProposalModal";
 import strings from "../../localization/strings";
 
 /**
@@ -28,10 +29,15 @@ interface State {
   freshContracts: ContractTableData[];
   itemGroups: ItemGroup[];
   contractsLoading: boolean;
+  proposeContractModalOpen: boolean;
+  selectedBerry: string;
+  proposedContractQuantity: string;
+  proposedContractQuantityComment: string;
+  proposeContractModalType: string;
 }
 
 /**
- * News list component
+ * Class for contract list component
  */
 class ContractList extends React.Component<Props, State> {
 
@@ -47,6 +53,11 @@ class ContractList extends React.Component<Props, State> {
       freshContracts: [],
       itemGroups: [],
       contractsLoading: false,
+      proposeContractModalOpen: false,
+      selectedBerry: "",
+      proposedContractQuantity: "",
+      proposedContractQuantityComment: "",
+      proposeContractModalType: ""
     };
   }
 
@@ -62,9 +73,7 @@ class ContractList extends React.Component<Props, State> {
 
     const contractsService = await Api.getContractsService(this.props.keycloak.token);
     const frozenContracts = await contractsService.listContracts("application/json", false, "FROZEN");
-    console.log(frozenContracts);
     const freshContracts = await contractsService.listContracts("application/json", false, "FRESH");
-    console.log(freshContracts);
     await this.loadItemGroups();
 
     frozenContracts.forEach((frozenContract) => {
@@ -106,11 +115,30 @@ class ContractList extends React.Component<Props, State> {
     this.setState({ itemGroups: itemGroups });
   }
 
-  render() {
+  /**
+   * On contract proposal clicked
+   */
+  private onContractProposalClick = async () => {
+    //TODO: Implement when chat messages are ready
+  }
+
+  /**
+   * On propose new contract clicked
+   * 
+   * @param type type
+   */
+  private onProposeNewContractClick = async (type: string) => {
+    this.setState({ proposeContractModalOpen: true, proposeContractModalType: type });
+  }
+
+  /**
+   * Render method
+   */
+  public render() {
     return (
       <BasicLayout>
         <Segment>
-          <Header className="jaaa">
+          <Header>
             {strings.frozenContracts}
           </Header>
           <Item.Group divided>
@@ -121,6 +149,9 @@ class ContractList extends React.Component<Props, State> {
             }
           </Item.Group>
         </Segment>
+        <Button onClick={() => this.onProposeNewContractClick("FROZEN")} inverted color="red">
+          Ehdota uutta pakastesopimusta
+        </Button>
         <Segment>
           <Header>
             {strings.freshContracts}
@@ -133,11 +164,31 @@ class ContractList extends React.Component<Props, State> {
             }
           </Item.Group>
         </Segment>
+        <Button onClick={() => this.onProposeNewContractClick("FRESH")} inverted color="red">
+          Ehdota uutta tuoresopimusta
+        </Button>
+        <ContractProposalModal
+          modalOpen={this.state.proposeContractModalOpen}
+          itemGroups={this.state.itemGroups}
+          closeModal={() => this.setState({ proposeContractModalOpen: false })}
+          onSelectedBerryChange={(value: string) => this.setState({ selectedBerry: value })}
+          onQuantityChange={(value: string) => this.setState({ proposedContractQuantity: value })}
+          onQuantityCommentChange={(value: string) => this.setState({ proposedContractQuantityComment: value })}
+          quantityComment={this.state.proposedContractQuantityComment}
+          selectedBerry={this.state.selectedBerry}
+          quantity={this.state.proposedContractQuantity}
+          sendContractProposalClicked={() => this.onContractProposalClick()}
+        />
       </BasicLayout>
     );
   }
 }
 
+/**
+ * Redux mapper for mapping store state to component props
+ * 
+ * @param state store state
+ */
 export function mapStateToProps(state: StoreState) {
   return {
     authenticated: state.authenticated,
@@ -145,6 +196,11 @@ export function mapStateToProps(state: StoreState) {
   }
 }
 
+/**
+ * Redux mapper for mapping component dispatches 
+ * 
+ * @param dispatch dispatch method
+ */
 export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
   return {
   };

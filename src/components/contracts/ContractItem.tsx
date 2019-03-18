@@ -1,6 +1,6 @@
 import * as React from "react";
 import "../../styles/common.scss";
-import { Item } from "semantic-ui-react";
+import { Item, Modal } from "semantic-ui-react";
 import { Link } from "react-router-dom";
 import { ContractTableData } from "src/types";
 import { Contract } from "pakkasmarja-client";
@@ -17,6 +17,7 @@ interface Props {
  * Interface for component State
  */
 interface State {
+  open: boolean;
 }
 
 /**
@@ -32,6 +33,7 @@ export default class ContractItem extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
+      open: false
     };
   }
 
@@ -61,7 +63,7 @@ export default class ContractItem extends React.Component<Props, State> {
   renderContractAmountTable = () => {
     return (
       <Item.Description>
-        <ContractAmountTable contractData={this.props.contractData}/>
+        <ContractAmountTable contractData={this.props.contractData} />
       </Item.Description>
     );
   }
@@ -80,9 +82,11 @@ export default class ContractItem extends React.Component<Props, State> {
   }
 
   /**
-   * Handle item click
+   * Returns modal content text
+   * 
+   * @param status status
    */
-  private alertCantOpen = (status: string) => {
+  private getModalContentText = (status: string) => {
     let infoText = "";
 
     if (status === "REJECTED") {
@@ -91,7 +95,7 @@ export default class ContractItem extends React.Component<Props, State> {
       infoText = "Sopimus on pakkasmarjalla tarkistettavana.";
     }
 
-    alert(infoText);
+    return infoText;
   }
 
   /**
@@ -101,20 +105,27 @@ export default class ContractItem extends React.Component<Props, State> {
     const itemGroupName = this.props.contractData.itemGroup ? this.props.contractData.itemGroup.displayName : "-";
     const contractStatus = this.props.contractData.contract.status;
     return (
-      <Item>
-        {
-          contractStatus === "ON_HOLD" || contractStatus === "REJECTED" ? 
-            <Item.Content onClick={() => this.alertCantOpen(contractStatus)}>
-              <Item.Header>{itemGroupName}</Item.Header>
-                { this.renderItemDescription(contractStatus) }
-            </Item.Content> 
-            :
-            <Item.Content as={Link} to={`contracts/${this.props.contractData.contract.id}`}>
-              <Item.Header>{itemGroupName}</Item.Header>
-                { this.renderItemDescription(contractStatus) }
-            </Item.Content>
-        }
-      </Item>
+      <React.Fragment>
+        <Item.Group>
+        <Item>
+          {
+            contractStatus === "ON_HOLD" || contractStatus === "REJECTED" ?
+              <Item.Content onClick={() => this.setState({ open: true })}>
+                <Item.Header>{itemGroupName}</Item.Header>
+                {this.renderItemDescription(contractStatus)}
+              </Item.Content>
+              :
+              <Item.Content as={Link} to={`contracts/${this.props.contractData.contract.id}`}>
+                <Item.Header>{itemGroupName}</Item.Header>
+                {this.renderItemDescription(contractStatus)}
+              </Item.Content>
+          }
+        </Item>
+        </Item.Group>
+        <Modal size="small" open={this.state.open} onClose={() => this.setState({ open: false })} closeIcon>
+          <Modal.Content>{this.getModalContentText(contractStatus)}</Modal.Content>
+        </Modal>
+      </React.Fragment>
     );
   }
 }

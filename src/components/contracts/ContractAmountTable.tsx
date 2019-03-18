@@ -18,7 +18,7 @@ interface State {
 }
 
 /**
- * Class for contract item component
+ * Class for contract amount table component
  */
 export default class ContractAmountTable extends React.Component<Props, State> {
 
@@ -33,7 +33,10 @@ export default class ContractAmountTable extends React.Component<Props, State> {
     };
   }
 
-  render() {
+  /**
+   * Render method
+   */
+  public render() {
     const contractQuantity = this.props.contractData.contract.contractQuantity;
     const deliveredQuantity = this.props.contractData.contract.deliveredQuantity;
 

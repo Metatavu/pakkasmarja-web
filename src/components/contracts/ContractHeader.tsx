@@ -17,7 +17,7 @@ interface State {
 }
 
 /**
- * Class for contract item component
+ * Class for contract header component
  */
 export default class ContractHeader extends React.Component<Props, State> {
 
@@ -34,6 +34,8 @@ export default class ContractHeader extends React.Component<Props, State> {
 
   /**
    * Render header
+   * 
+   * @param itemGroupName item group name
    */
   private renderHeader = (itemGroupName: string) => {
     return <Header as="h1">{itemGroupName}</Header>
@@ -41,6 +43,8 @@ export default class ContractHeader extends React.Component<Props, State> {
 
   /**
    * Render container
+   * 
+   * @param category category
    */
   private renderContainer = (category: string) => {
     return (

@@ -19,7 +19,6 @@ import ContractRejectModal from "./ContractRejectModal";
 import { Redirect } from "react-router";
 import { PDFService } from "src/api/pdf.service";
 
-
 /**
  * Interface for component State
  */
@@ -50,10 +49,11 @@ interface State {
   signAuthenticationServices: SignAuthenticationService[];
   redirect: boolean;
   navigateToTerms: boolean;
+  pdfType: string;
 }
 
 /**
- * Class for contract item component
+ * Class for contract view component
  */
 class ContractView extends React.Component<Props, State> {
 
@@ -74,6 +74,7 @@ class ContractView extends React.Component<Props, State> {
       signAuthenticationServices: [],
       redirect: false,
       navigateToTerms: false,
+      pdfType: "2019",
       contractData: {
         rejectComment: "",
         proposedQuantity: 0,
@@ -99,6 +100,15 @@ class ContractView extends React.Component<Props, State> {
     const prices = await this.loadPrices(contract);
     const contact = await this.loadContact(contract);
     const deliveryPlaces = await this.loadDeliveryPlaces();
+
+    if (contract) {
+      this.updateContractData("quantityComment", contract.quantityComment || "");
+      this.updateContractData("deliveryPlaceComment", contract.deliveryPlaceComment || "");
+      this.updateContractData("deliveryPlaceId", contract.deliveryPlaceId || "");
+      this.updateContractData("deliverAllChecked", contract.deliverAll);
+      this.updateContractData("rejectComment", contract.rejectComment || "");
+      this.updateContractData("proposedQuantity", contract.proposedQuantity || "");
+    }
 
     this.setState({
       loading: false,
@@ -126,6 +136,9 @@ class ContractView extends React.Component<Props, State> {
 
   /**
    * Find contract
+   * 
+   * @param id id
+   * @return Found contract
    */
   private findContract = async (id: string) => {
     if (!this.props.keycloak || !this.props.keycloak.token) {
@@ -139,6 +152,9 @@ class ContractView extends React.Component<Props, State> {
 
   /**
    * Load item group
+   * 
+   * @param contract contract
+   * @return Found itemgroup
    */
   private loadItemGroup = async (contract?: Contract) => {
     if (!this.props.keycloak || !this.props.keycloak.token || !contract || !contract.itemGroupId) {
@@ -152,6 +168,9 @@ class ContractView extends React.Component<Props, State> {
 
   /**
    * Load prices
+   * 
+   * @param contract contract
+   * @return Found prices
    */
   private loadPrices = async (contract?: Contract) => {
     if (!this.props.keycloak || !this.props.keycloak.token || !contract || !contract.itemGroupId) {
@@ -165,6 +184,9 @@ class ContractView extends React.Component<Props, State> {
 
   /**
    * Load contact
+   * 
+   * @param contract contract
+   * @return Found contact
    */
   private loadContact = async (contract?: Contract) => {
     if (!this.props.keycloak || !this.props.keycloak.token || !contract || !contract.contactId) {
@@ -201,13 +223,12 @@ class ContractView extends React.Component<Props, State> {
     const contract = this.state.contract;
 
     contract.deliverAll = contractData.deliverAllChecked;
-    contract.deliveryPlaceId = contractData.deliveryPlaceId;
+    contract.proposedDeliveryPlaceId = contractData.deliveryPlaceId;
     contract.deliveryPlaceComment = contractData.deliveryPlaceComment;
     contract.proposedQuantity = contractData.proposedQuantity;
     contract.quantityComment = contractData.quantityComment;
-
+    
     if (contractData.areaDetailValues && contractData.areaDetailValues.length > 0) {
-
       const areaDetails: AreaDetail[] = [];
       contractData.areaDetailValues.forEach((areaDetailObject: any) => {
         areaDetails.push({
@@ -248,13 +269,31 @@ class ContractView extends React.Component<Props, State> {
    * @param key key
    * @param value value
    */
-  private updateContractData = (key: ContractDataKey, value: boolean | string | AreaDetail[]) => {
+  private updateContractData = (key: ContractDataKey, value: boolean | string | number | AreaDetail[]) => {
     const contractData = this.state.contractData;
     contractData[key] = value;
-    console.log(key);
-    console.log(value);
     this.setState({ contractData: contractData });
-    //this.checkIfCompanyApprovalNeeded();
+    this.checkIfCompanyApprovalNeeded();
+  }
+
+  /**
+   * Check if company approval is needed
+   */
+  private checkIfCompanyApprovalNeeded = () => {
+    if (!this.state.contract) {
+      return;
+    }
+
+    const contractQuantity = this.state.contract.contractQuantity;
+    const currentQuantity = this.state.contractData.proposedQuantity;
+    const contractPlaceId = this.state.contract.deliveryPlaceId;
+    const currentContractPlaceId = this.state.contractData.deliveryPlaceId;
+
+    if (contractQuantity != currentQuantity || contractPlaceId != currentContractPlaceId) {
+      this.setState({ companyApprovalRequired: true });
+    } else {
+      this.setState({ companyApprovalRequired: false });
+    }
   }
 
   /**
@@ -267,7 +306,7 @@ class ContractView extends React.Component<Props, State> {
     
     this.setState({loading: true, loadingText: "Loading pdf..."});
     const pdfService = new PDFService(process.env.REACT_APP_API_URL || "", this.props.keycloak.token);
-    const pdfData = await pdfService.getPdf(this.state.contract.id, "2019");
+    const pdfData = await pdfService.getPdf(this.state.contract.id, this.state.pdfType);
     this.setState({loading: false});
     this.downloadPdfBlob(pdfData);
   }
@@ -281,9 +320,9 @@ class ContractView extends React.Component<Props, State> {
     pdfData.blob().then((blob: any) => {
       const pdfBlob = new Blob([blob], {type: "application/pdf"});
       const data = window.URL.createObjectURL(pdfBlob);
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = data;
-        link.download="file.pdf";
+        link.download = `${new Date().toLocaleDateString()}.pdf`;
         link.click();
         setTimeout(function() {
           window.URL.revokeObjectURL(data);
@@ -295,6 +334,10 @@ class ContractView extends React.Component<Props, State> {
    * Render method
    */
   public render() {
+    if (this.state.redirect) {
+      return <Redirect to={`/contracts`} push={true} />;
+    }
+
     if (this.state.navigateToTerms && this.state.contract) {
       return <Redirect to={`/contracts/${this.state.contract.id}/terms`} push={true} />;
     }
@@ -342,6 +385,7 @@ class ContractView extends React.Component<Props, State> {
             onUserInputChange={this.updateContractData}
           />
           <ContractDeliveryPlace
+            contract={this.state.contract}
             onUserInputChange={this.updateContractData}
             deliveryPlaces={this.state.deliveryPlaces}
             selectedPlaceId={this.state.contractData.deliveryPlaceId}
@@ -353,7 +397,7 @@ class ContractView extends React.Component<Props, State> {
             downloadContractPdf={this.downloadContractPdfClicked}
             acceptContract={this.acceptContractClicked}
             declineContract={this.declineContractClicked}
-            approveButtonText={this.state.companyApprovalRequired ? "EHDOTA MUUTOSTA" : "HYVÄKSYN"}
+            approveButtonText={this.state.companyApprovalRequired ? "Ehdota muutosta" : "Hyväksyn"}
           />
           <ContractRejectModal 
             onUserInputChange={this.updateContractData}

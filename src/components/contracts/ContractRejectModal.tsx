@@ -31,8 +31,11 @@ interface State {
  * Contract reject modal component class
  */
 class ContractRejectModal extends React.Component<Props, State> {
+
   /**
    * Constructor
+   * 
+   * @param props props
    */
   constructor(props: Props) {
     super(props);
@@ -76,14 +79,15 @@ class ContractRejectModal extends React.Component<Props, State> {
             <TextArea
               value={this.props.rejectComment}
               onChange={(event: any) => this.props.onUserInputChange("rejectComment", event.target.value)}
-              style={{ minHeight: 100 }} />
+              className="contract-text-area"
+            />
           </Form>
         </Modal.Content>
         <Modal.Actions>
-          <Button.Group floated="right" style={{marginBottom:"2.5%"}} >
-            <Button onClick={this.rejectContract} inverted color="red">HYLKÄÄ SOPIMUS</Button>
+          <Button.Group floated="right" className="contract-button-group" >
+            <Button onClick={this.rejectContract} inverted color="red">Hylkää sopimus</Button>
             <Button.Or text="" />
-            <Button onClick={this.closeModal} color="black">PERUUTA</Button>
+            <Button onClick={this.closeModal} color="black">Peruuta</Button>
           </Button.Group>
         </Modal.Actions>
       </Modal>

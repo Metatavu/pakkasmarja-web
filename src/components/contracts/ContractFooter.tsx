@@ -22,9 +22,15 @@ interface State {
   redirect: boolean
 };
 
+/**
+ * Class for contact footer component
+ */
 export default class ContractFooter extends React.Component<Props, State> {
+
   /**
    * Constructor
+   * 
+   * @param props props
    */
   constructor(props: Props) {
     super(props);
@@ -48,7 +54,7 @@ export default class ContractFooter extends React.Component<Props, State> {
           <Button.Group floated="right" >
             <Button onClick={this.props.downloadContractPdf} color="red">Lataa sopimus PDF - muodossa.</Button>
             <Button.Or text="" />
-            <Button  onClick={() => this.setState({ redirect: true })}  color="black">TAKAISIN</Button>
+            <Button  onClick={() => this.setState({ redirect: true })}  color="black">Takaisin</Button>
           </Button.Group>
         }
         {
@@ -56,9 +62,9 @@ export default class ContractFooter extends React.Component<Props, State> {
           <Button.Group floated="right" >
             <Button onClick={this.props.acceptContract} color="red">{this.props.approveButtonText}</Button>
             <Button.Or text="" />
-            <Button  onClick={this.props.declineContract} inverted color="red">EN HYVÄKSY</Button>
+            <Button  onClick={this.props.declineContract} inverted color="red">En hyväksy</Button>
             <Button.Or text="" />
-            <Button onClick={() => this.setState({ redirect: true })}  color="black">TAKAISIN</Button>
+            <Button onClick={() => this.setState({ redirect: true })}  color="black">Takaisin</Button>
           </Button.Group>
         }
       </React.Fragment>

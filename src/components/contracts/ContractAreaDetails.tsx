@@ -1,5 +1,6 @@
 import * as React from "react";
 import "../../styles/common.scss";
+import "./styles.scss";
 import { Grid, Header, Button, Input, Divider } from "semantic-ui-react";
 import { ItemGroup, AreaDetail } from "pakkasmarja-client";
 
@@ -22,7 +23,7 @@ interface State {
 }
 
 /**
- * Class for contract item component
+ * Class for contract area details component
  */
 export default class ContractAreaDetails extends React.Component<Props, State> {
 
@@ -176,7 +177,7 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
   }
 
   /**
-   * Render profit p
+   * Render profit text
    */
   private renderProfitTextElements = () => {
     if (!this.props.itemGroup || this.props.areaDetailValues.length <= 0) {
@@ -247,8 +248,8 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
         </Grid>
         {
           !this.props.isActiveContract &&
-            <Button style={{ marginTop: "2.5%", marginBottom: "2.5%",width:"100%" }} color="red" onClick={this.createEmptyAreaDetail}>
-              LISÄÄ RIVI
+            <Button className="contract-full-width-button"color="red" onClick={this.createEmptyAreaDetail}>
+              Lisää rivi
           </Button>
         }
         {

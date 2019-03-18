@@ -23,9 +23,15 @@ interface State {
   proposedDeliveryPlace?: string
 };
 
+/**
+ * Class for contact delivery place component
+ */
 export default class ContractDeliveryPlace extends React.Component<Props, State> {
+
   /**
    * Constructor
+   * 
+   * @param props props
    */
   constructor(props: Props) {
     super(props);
@@ -40,6 +46,11 @@ export default class ContractDeliveryPlace extends React.Component<Props, State>
     if (!this.props.deliveryPlaces || !this.props.contract || !this.props.contract.deliveryPlaceId) {
       return;
     }
+
+    if (this.props.contract && this.props.contract.deliveryPlaceId && !this.props.selectedPlaceId) {
+      this.props.onUserInputChange("deliveryPlaceId", this.props.contract.deliveryPlaceId);
+    }
+
     const proposedId = this.props.contract.deliveryPlaceId;
     const proposedDeliveryPlace = this.props.deliveryPlaces.find(place => place.id === proposedId);
     if (proposedDeliveryPlace) {
@@ -56,6 +67,29 @@ export default class ContractDeliveryPlace extends React.Component<Props, State>
     this.props.onUserInputChange("deliveryPlaceComment", value);
   }
 
+  /**
+   * Render drop down
+   * 
+   * @param deliveryPalceOptions deliveryPalceOptions
+   */
+  private renderDropDown = (deliveryPalceOptions: any) => {
+    if (deliveryPalceOptions.length <= 0) {
+      return <Dropdown fluid/>;
+    }
+
+    return (
+      <Dropdown
+        fluid
+        placeholder="Valitse toimituspaikka"
+        value={this.props.selectedPlaceId}
+        options={deliveryPalceOptions}
+        onChange={(event, data) => {
+          this.props.onUserInputChange("deliveryPlaceId", data.value)
+        }
+        }
+      />
+    );
+  }
 
   /**
    * Render method
@@ -77,17 +111,7 @@ export default class ContractDeliveryPlace extends React.Component<Props, State>
          </Header>
         </Divider>
         <Form>
-          <Dropdown
-            fluid
-            selection
-            placeholder="Valitse toimituspaikka"
-            value={this.props.selectedPlaceId}
-            options={deliveryPalceOptions}
-            onChange={(event, data) => {
-              this.props.onUserInputChange("deliveryPlaceId", data.value)
-            }
-            }
-          />
+          {this.renderDropDown(deliveryPalceOptions)}
           {
             this.state.proposedDeliveryPlace &&
             <p>

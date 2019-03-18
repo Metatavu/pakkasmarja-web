@@ -27,7 +27,7 @@ interface State {
 }
 
 /**
- * Class for contract item component
+ * Class for contract amount component
  */
 export default class ContractAmount extends React.Component<Props, State> {
 
@@ -52,9 +52,9 @@ export default class ContractAmount extends React.Component<Props, State> {
     if (!this.props.contract || !this.props.contracts) {
       return;
     }
+
     this.setState({ isActiveContract: this.props.contract.status === "APPROVED" });
     const pastContracts = this.props.contracts.filter(contract => contract.year < new Date().getFullYear());
-    console.log("PAST", pastContracts);
     this.setState({ pastContracts: pastContracts });
   }
 
@@ -67,13 +67,7 @@ export default class ContractAmount extends React.Component<Props, State> {
     }
 
     const category = this.props.itemGroup.category;
-    let quantityValue = 0;
-
-    if (this.props.contractAmount && !this.props.proposedAmount) {
-      quantityValue = this.props.contractAmount;
-    } else {
-      quantityValue = this.props.proposedAmount;
-    }
+    const quantityValue = this.props.proposedAmount;
 
     return (
       <div className="contract-section">
@@ -86,7 +80,7 @@ export default class ContractAmount extends React.Component<Props, State> {
           category == "FRESH" &&
           <p>
             Tuoremarjasopimuksessa sopimusmäärä on aiesopimus, johon molemmat osapuolet sitoutuvat, ellei kyseessä poikkeustilanne.
-            </p>
+          </p>
         }
         <Form>
           <Form.Field>

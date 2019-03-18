@@ -19,7 +19,7 @@ interface State {
 }
 
 /**
- * Class for contract item component
+ * Class for contract prices component
  */
 export default class ContractPrices extends React.Component<Props, State> {
 
@@ -49,7 +49,7 @@ export default class ContractPrices extends React.Component<Props, State> {
   }
 
   /**
-   * Get item details
+   * Render item details
    * 
    * @param itemGroupName itemGroupName
    */
@@ -58,7 +58,7 @@ export default class ContractPrices extends React.Component<Props, State> {
       case "304100/Mansikka":
       case "309100/Luomu mansikk":
         return (
-          <p>
+          <p className="contract-price-text">
             Takuuhinnan lisäksi yhtiö maksaa viljelijälle bonusta sopimuksen täyttöasteen mukaisesti.
             Lisätietoja sopimuksen kohdasta Sopimuksen mukaiset toimitusmäärät, takuuhinnat ja bonus satokaudella 2018. Sopimusmäärän ylittävältä osalta mahdollinen lisämäärä, mahdollinen bonus ja maksuehto neuvotellaan aina erikseen.
             Kaikki hinnat ovat vähimmäishintoja ja ALV 0%. Toimitusehto on vapaasti yhtiön osoittaman pakastevaraston laiturilla (viljelijä maksaa rahdin). Yhtiöllä on oikeus markkinatilanteen vaatiessa korottaa hintoja haluamallaan tavalla.
@@ -68,7 +68,7 @@ export default class ContractPrices extends React.Component<Props, State> {
       case "304400/Mustaherukka":
       case "309300/Luomu mustahe":
         return (
-          <p>
+          <p className="contract-price-text">
             Tarkistathan sopimusehdoista kohdasta Sopimuksen mukainen toimitusmäärä ja takuuhinta satokaudella muut hintaan vaikuttavat tekijät.
             Sopimusmäärän ylittävältä osalta mahdollinen lisämäärä, hinta ja maksuehto neuvotellaan aina erikseen.
             Kaikki hinnat ovat vähimmäishintoja ja ALV 0%. Toimitusehto on vapaasti yhtiön osoittaman pakastevaraston laiturilla (viljelijä maksaa rahdin). Yhtiöllä on oikeus markkinatilanteen vaatiessa korottaa hintoja haluamallaan tavalla.
@@ -77,7 +77,7 @@ export default class ContractPrices extends React.Component<Props, State> {
         );
       default:
         return (
-          <p>
+          <p className="contract-price-text">
             Sopimusmäärän ylittävältä osalta mahdollinen lisämäärä, hinta ja maksuehto neuvotellaan aina erikseen.
             Kaikki hinnat ovat vähimmäishintoja ja ALV 0%. Toimitusehto on vapaasti yhtiön osoittaman pakastevaraston laiturilla (viljelijä maksaa rahdin). Yhtiöllä on oikeus markkinatilanteen vaatiessa korottaa hintoja haluamallaan tavalla.
             Takuuhinnan maksuehto on viljely- ja ostosopimuksen mukainen.
@@ -114,6 +114,8 @@ export default class ContractPrices extends React.Component<Props, State> {
 
   /**
    * Render price rows
+   * 
+   * @param price price
    */
   private renderPriceRow = (price: Price) => {
     return (
