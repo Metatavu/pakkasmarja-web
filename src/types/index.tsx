@@ -1,9 +1,15 @@
 import { KeycloakInstance } from "keycloak-js";
-import { Contract, ItemGroup, AreaDetail } from "pakkasmarja-client";
+import { Contract, ItemGroup, AreaDetail, Delivery, Product } from "pakkasmarja-client";
 
 export interface StoreState {
   keycloak?: KeycloakInstance,
-  authenticated: boolean
+  authenticated: boolean,
+  deliveries?: DeliveriesState,
+}
+
+export interface DeliveriesState {
+  freshDeliveryData: DeliveryProduct[];
+  frozenDeliveryData: DeliveryProduct[];
 }
 
 /**
@@ -31,3 +37,11 @@ export interface ContractData {
  * Type for contract data key
  */
 export type ContractDataKey = "rejectComment" | "proposedQuantity" | "deliverAllChecked" | "quantityComment" | "areaDetailValues" | "deliveryPlaceId" | "deliveryPlaceComment";
+
+/**
+ * Interface for delivery and product
+ */
+export interface DeliveryProduct {
+  delivery: Delivery;
+  product?: Product;
+}

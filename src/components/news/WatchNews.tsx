@@ -51,13 +51,13 @@ class WatchNews extends React.Component<Props, State> {
   }
 
   render() {
-    if (this.state.news) {
+    if (this.state.news && this.state.news.createdAt) {
       return (
         
         <BasicLayout>
           <Header >
             <h2 style={{wordWrap: "break-word"}}>{this.state.news.title.toString()}</h2>
-            <Header.Subheader><Moment format="DD.MM.YYYY HH:mm">{this.state.news.createdAt}</Moment></Header.Subheader>
+            <Header.Subheader><Moment format="DD.MM.YYYY HH:mm">{this.state.news.createdAt.toString()}</Moment></Header.Subheader>
           </Header>
           <Divider />
           <Container>

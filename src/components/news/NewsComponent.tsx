@@ -63,7 +63,7 @@ class NewsComponent extends React.Component<Props, State> {
           :
           <Item.Header style={{wordWrap: "break-word", maxWidth:"100%"}}>{this.props.data.title.replace(/(.{70})..+/, "$1...")}</Item.Header>
         }
-          <Item.Description><Moment format="DD.MM.YYYY HH:mm">{this.props.data.createdAt}</Moment></Item.Description>
+          <Item.Description><Moment format="DD.MM.YYYY HH:mm">{this.props.data.createdAt&&this.props.data.createdAt.toString()}</Moment></Item.Description>
         </Item.Content>
         <Button.Group floated="right" style={{ maxHeight: "37px" }}>
           <Button as={Link} to={`editNews/${this.props.data.id}`} style={{ display: "flex", alignItems: "center" }} color="red">Edit</Button>
