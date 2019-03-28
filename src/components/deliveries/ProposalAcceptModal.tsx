@@ -4,7 +4,7 @@ import * as actions from "../../actions/";
 import { StoreState, DeliveryProduct } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import { Modal, Header, Button } from "semantic-ui-react";
+import { Modal, Header, Button, Divider } from "semantic-ui-react";
 import Api, { Product, Delivery } from "pakkasmarja-client";
 
 /**
@@ -45,18 +45,17 @@ class ProposalAcceptModal extends React.Component<Props, State> {
   }
 
   /**
-   * Component did mount life-sycle event
+   * Component will receive props life-cycle event
    */
-  async componentDidMount() {
+  async componentWillReceiveProps() {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
-
     const deliveriesService = await Api.getDeliveriesService(this.props.keycloak.token);
     const productsService = await Api.getProductsService(this.props.keycloak.token);
     const products: Product[] = await productsService.listProducts();
 
-    const deliveryId: string = this.props.deliveryId;
+    const deliveryId: string = await this.props.deliveryId;
     deliveriesService.findDelivery(deliveryId).then((delivery) => {
       const deliveryProduct: DeliveryProduct = {
         delivery: delivery,
@@ -64,7 +63,6 @@ class ProposalAcceptModal extends React.Component<Props, State> {
       }
       this.setState({ deliveryProduct });
     });
-
   }
 
   /**
@@ -96,19 +94,29 @@ class ProposalAcceptModal extends React.Component<Props, State> {
       deliveryPlaceId: this.state.deliveryProduct.delivery.deliveryPlaceId
     }
     await deliveriesService.updateDelivery(delivery, this.state.deliveryProduct.delivery.id || "");
-    this.setState({ redirect: true });
+    this.closeModal();
   }
 
   /**
    * Render method
    */
   public render() {
+    if (!this.state.deliveryProduct || !this.state.deliveryProduct.product) {
+      return <React.Fragment></React.Fragment>;
+    }
     return (
       <Modal size="small" open={this.props.modalOpen} onClose={this.closeModal} closeIcon>
         <Modal.Content>
           <Header as="h3">
-            Hyväksytkö?
+            Hyväksytkö toimitusehdotuksen?
           </Header>
+          <Divider />
+          <Header as="h3">Tuotteen nimi </Header><span>{this.state.deliveryProduct.product.name}</span>
+          <Header as="h3">Tuotteen unitname </Header><span>{this.state.deliveryProduct.product.unitName}</span>
+          <Header as="h3">Tuotteen unitSize </Header><span>{this.state.deliveryProduct.product.unitSize}</span>
+          <Header as="h3">Tuotteen units </Header><span>{this.state.deliveryProduct.product.units}</span>
+          <Header as="h3">Toimitus määrä </Header><span>{this.state.deliveryProduct.delivery.amount}</span>
+          <Divider />
           <Button.Group floated="right" className="contract-button-group" >
             <Button onClick={this.closeModal} color="black">Sulje</Button>
             <Button.Or text="" />
