@@ -11,6 +11,8 @@ import { Menu } from "semantic-ui-react";
 import PastDeliveries from "./PastDeliveries"
 import { Delivery } from "pakkasmarja-client"
 import ProposalsView from "./ProposalsView";
+import WeekDeliveryPredictions from "./WeekDeliveryPredictions";
+import IncomingDeliveries from "./IncomingDeliveries";
 
 /**
  * Interface for component props
@@ -29,7 +31,6 @@ interface State {
   itemGroups?: ItemGroup[];
   activeItem?: string;
   deliveries: Delivery[];
-
 }
 
 /**
@@ -97,7 +98,6 @@ class DeliveriesScreen extends React.Component<Props, State> {
     };
 
     this.props.deliveriesLoaded && this.props.deliveriesLoaded(deliveriesState);
-
   }
 
   /**
@@ -122,10 +122,10 @@ class DeliveriesScreen extends React.Component<Props, State> {
           this.state.activeItem === "Ehdotukset" && <ProposalsView />
         }
         {
-          this.state.activeItem === "Viikkoennusteet" && <p>Viikkoennusteet</p>
+          this.state.activeItem === "Viikkoennusteet" && <WeekDeliveryPredictions />
         }
         {
-          this.state.activeItem === "Tulevat toimitukset" && <p>Tulevat toimitukset</p>
+          this.state.activeItem === "Tulevat toimitukset" && <IncomingDeliveries />
         }
         {
           this.state.activeItem === "Tehdyt toimitukset" && <PastDeliveries />

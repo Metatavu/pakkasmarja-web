@@ -1,5 +1,5 @@
 import { KeycloakInstance } from "keycloak-js";
-import { Contract, ItemGroup, AreaDetail, Delivery, Product } from "pakkasmarja-client";
+import { Contract, ItemGroup, AreaDetail, Delivery, Product, WeekDeliveryPrediction } from "pakkasmarja-client";
 
 export interface StoreState {
   keycloak?: KeycloakInstance,
@@ -44,4 +44,12 @@ export type ContractDataKey = "rejectComment" | "proposedQuantity" | "deliverAll
 export interface DeliveryProduct {
   delivery: Delivery;
   product?: Product;
+}
+
+/**
+ * Interface for contract table data
+ */
+export interface WeekDeliveryPredictionTableData {
+  weekDeliveryPrediction: WeekDeliveryPrediction,
+  itemGroup: ItemGroup
 }

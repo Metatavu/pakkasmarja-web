@@ -12,6 +12,8 @@ import ContractView from "./contracts/ContractView";
 import ContractTerms from "./contracts/ContractTerms";
 import Deliveries from "./deliveries/DeliveriesScreen";
 import DeliveryView from "./deliveries/DeliveryView";
+import WeekDeliveryPredictionView from "./deliveries/WeekDeliveryPredictionView";
+import CreateDelivery from "./deliveries/CreateDelivery";
 
 /**
  * App component
@@ -37,6 +39,8 @@ class App extends React.Component {
             <Route exact path="/contracts/:contractId/terms" component={ContractTerms} />
             <Route exact path="/deliveries" component={Deliveries} />
             <Route exact path="/delivery/:deliveryId" component={DeliveryView} />
+            <Route exact path="/createDelivery" component={CreateDelivery} />
+            <Route exact path="/weekDeliveryPredictions/:weekDeliveryPredictionId" component={WeekDeliveryPredictionView} />
           </div>
         </BrowserRouter>
       </MqttConnector>
