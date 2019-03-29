@@ -6,7 +6,6 @@ import { connect } from "react-redux";
 import "../../styles/common.scss";
 import { Segment, Item, Header, Divider, Button } from "semantic-ui-react";
 import Moment from "react-moment";
-import { Link } from "react-router-dom";
 import ProposalAcceptModal from "./ProposalAcceptModal";
 
 
@@ -82,12 +81,12 @@ class ProposalsView extends React.Component<Props, State> {
                   return;
                 }
                 return (
-                  <Item key={deliveryProduct.delivery.id} as={Link} to={`proposal/${deliveryProduct.delivery.id}`}>
+                  <Item key={deliveryProduct.delivery.id}>
                     <Item.Content>
                       <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
                       <Item.Description><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Description>
-                      <Button floated="right" onClick={() => this.setState({ deliveryId: deliveryProduct.delivery.id, proposalAcceptModal: true })}>Tarkasta</Button>
                     </Item.Content>
+                    <Button style={{ display: "flex", alignItems: "center" }} floated="right" onClick={() => this.setState({ deliveryId: deliveryProduct.delivery.id, proposalAcceptModal: true })}>Tarkasta</Button>
                   </Item>
                 )
               })
@@ -108,10 +107,12 @@ class ProposalsView extends React.Component<Props, State> {
                     <Item.Content >
                       <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
                       <Item.Description>
-                        <Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment>
-                        <Button floated="right" onClick={() => this.setState({ deliveryId: deliveryProduct.delivery.id, proposalAcceptModal: true })}>Tarkasta</Button>
-                        </Item.Description>
+                        <Moment format="DD.MM.YYYY HH:mm">
+                          {deliveryProduct.delivery.time.toString()}
+                        </Moment>
+                      </Item.Description>
                     </Item.Content>
+                    <Button style={{ maxHeight: "37px" }} floated="right" color="red" onClick={() => this.setState({ deliveryId: deliveryProduct.delivery.id, proposalAcceptModal: true })}>Tarkasta</Button>
                   </Item>
                 )
               })
