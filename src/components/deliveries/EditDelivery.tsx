@@ -272,8 +272,8 @@ class EditDelivery extends React.Component<Props, State> {
             <Input
               placeholder="Määrä"
               value={this.state.amount}
-              onChange={(event: any) => {
-                this.handleInputChange("amount", event.target.value)
+              onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
+                this.handleInputChange("amount", event.currentTarget.value)
               }}
             />
           </Form.Field>

@@ -150,7 +150,7 @@ class CreateDelivery extends React.Component<Props, State> {
       productId: this.state.selectedProductId,
       userId: this.props.keycloak.subject || "",
       time: this.state.date,
-      status: "PROPOSAL",
+      status: "PLANNED",
       amount: this.state.amount,
       price: "0",
       quality: "NORMAL",
@@ -254,8 +254,8 @@ class CreateDelivery extends React.Component<Props, State> {
             <Input
               placeholder="Määrä"
               value={this.state.amount}
-              onChange={(event: any) => {
-                this.handleInputChange("amount", event.target.value)
+              onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
+                this.handleInputChange("amount", event.currentTarget.value)
               }}
             />
           </Form.Field>
