@@ -50,7 +50,7 @@ class MenuContainer extends React.Component<Props, object> {
             <Link to="/news">{strings.news}</Link>
           </Menu.Item>
           <Menu.Item as="div">
-            <Link to="/news">{strings.deliveries}</Link>
+            <Link to="/deliveries">{strings.deliveries}</Link>
           </Menu.Item>
           <Menu.Item as="div">
             <Link to="/contracts">{strings.contracts}</Link>

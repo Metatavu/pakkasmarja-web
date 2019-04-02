@@ -4,7 +4,7 @@ import { connect } from "react-redux";
 import { Dispatch } from "redux";
 import "../../styles/common.scss";
 import { ContractTableData, StoreState, ContractData, ContractDataKey } from "src/types";
-import { Contract, ItemGroup, Price, Contact, DeliveryPlace, AreaDetail, SignAuthenticationService } from "pakkasmarja-client";
+import { Contract, ItemGroup, Contact,ItemGroupPrice, DeliveryPlace, AreaDetail, SignAuthenticationService } from "pakkasmarja-client";
 import Api from "pakkasmarja-client";
 import BasicLayout from "../generic/BasicLayout";
 import { Dimmer, Loader, Container } from "semantic-ui-react";
@@ -36,7 +36,7 @@ interface State {
   contracts?: Contract[];
   contract?: Contract;
   itemGroup?: ItemGroup;
-  prices?: Price[];
+  prices?: ItemGroupPrice[];
   contact?: Contact;
   deliveryPlaces?: DeliveryPlace[];
   loading: boolean;
@@ -171,7 +171,7 @@ class ContractView extends React.Component<Props, State> {
    * 
    * @param contract contract
    * @return Found prices
-   */
+    */
   private loadPrices = async (contract?: Contract) => {
     if (!this.props.keycloak || !this.props.keycloak.token || !contract || !contract.itemGroupId) {
       return;

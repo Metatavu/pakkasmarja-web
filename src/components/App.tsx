@@ -10,6 +10,10 @@ import WatchNews from "./news/WatchNews";
 import ContractList from "./contracts/ContractList";
 import ContractView from "./contracts/ContractView";
 import ContractTerms from "./contracts/ContractTerms";
+import Deliveries from "./deliveries/DeliveriesScreen";
+import WeekDeliveryPredictionView from "./deliveries/WeekDeliveryPredictionView";
+import CreateDelivery from "./deliveries/CreateDelivery";
+import EditDelivery from "./deliveries/EditDelivery";
 
 /**
  * App component
@@ -33,6 +37,10 @@ class App extends React.Component {
             <Route exact path="/contracts" component={ContractList} />
             <Route exact path="/contracts/:contractId" component={ContractView} />
             <Route exact path="/contracts/:contractId/terms" component={ContractTerms} />
+            <Route exact path="/deliveries" component={Deliveries} />
+            <Route exact path="/createDelivery/:category" component={CreateDelivery} />
+            <Route exact path="/editDelivery/:category/:deliveryId" component={EditDelivery} />
+            <Route exact path="/weekDeliveryPredictions/:weekDeliveryPredictionId" component={WeekDeliveryPredictionView} />
           </div>
         </BrowserRouter>
       </MqttConnector>
