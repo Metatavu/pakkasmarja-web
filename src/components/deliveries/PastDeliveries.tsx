@@ -6,8 +6,7 @@ import { connect } from "react-redux";
 import "../../styles/common.scss";
 import { Segment, Item, Header, Divider } from "semantic-ui-react";
 import Moment from "react-moment";
-import { Link } from "react-router-dom";
-
+import ViewModal from "./ViewModal";
 
 /**
  * Interface for component props
@@ -25,6 +24,8 @@ interface State {
   keycloak?: Keycloak.KeycloakInstance;
   freshPastDeliveries: DeliveryProduct[];
   frozenPastDeliveries: DeliveryProduct[];
+  deliveryId?: string;
+  viewModal: boolean;
 }
 
 /**
@@ -41,8 +42,8 @@ class PastDeliveries extends React.Component<Props, State> {
     super(props);
     this.state = {
       freshPastDeliveries: [],
-      frozenPastDeliveries: []
-
+      frozenPastDeliveries: [],
+      viewModal: false
     };
   }
 
@@ -62,7 +63,6 @@ class PastDeliveries extends React.Component<Props, State> {
     this.setState({ frozenPastDeliveries, freshPastDeliveries });
   }
 
-
   /**
    * Render method
    */
@@ -79,11 +79,12 @@ class PastDeliveries extends React.Component<Props, State> {
                   return;
                 }
                 return (
-                  <Item key={deliveryProduct.delivery.id} as={Link} to={`delivery/${deliveryProduct.delivery.id}`}>
+                  <Item key={deliveryProduct.delivery.id} onClick={() => { this.setState({ deliveryId: deliveryProduct.delivery.id, viewModal: true }) }}>
                     <Item.Content>
                       <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
                       <Item.Description><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Description>
                     </Item.Content>
+                    <Header style={{ margin: "auto", marginRight: 50 }} as="h3">Toimitettu</Header>
                   </Item>
                 )
               })
@@ -100,7 +101,7 @@ class PastDeliveries extends React.Component<Props, State> {
                   return;
                 }
                 return (
-                  <Item key={deliveryProduct.delivery.id} as={Link} to={`delivery/${deliveryProduct.delivery.id}`}>
+                  <Item key={deliveryProduct.delivery.id} onClick={() => { this.setState({ deliveryId: deliveryProduct.delivery.id, viewModal: true }) }}>
                     <Item.Content >
                       <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
                       <Item.Description><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Description>
@@ -111,6 +112,11 @@ class PastDeliveries extends React.Component<Props, State> {
             }
           </Item.Group>
         </Segment>
+        <ViewModal
+          modalOpen={this.state.viewModal}
+          closeModal={() => this.setState({ viewModal: false })}
+          deliveryId={this.state.deliveryId || ""}
+        />
       </React.Fragment>
     );
   }

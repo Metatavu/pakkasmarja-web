@@ -5,7 +5,6 @@ import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
 
-
 /**
  * Interface for component props
  */
@@ -22,7 +21,7 @@ interface State {
 }
 
 /**
- * Class for proposal list component
+ * Class for week delivery prediction view component
  */
 class WeekDeliveryPredictionView extends React.Component<Props, State> {
 

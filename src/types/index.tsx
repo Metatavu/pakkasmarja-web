@@ -39,6 +39,20 @@ export interface ContractData {
 export type ContractDataKey = "rejectComment" | "proposedQuantity" | "deliverAllChecked" | "quantityComment" | "areaDetailValues" | "deliveryPlaceId" | "deliveryPlaceComment";
 
 /**
+ * Type for delivery data value 
+ */
+export type DeliveryDataValue = undefined | string | number | boolean | (string | number | boolean)[] | Date;
+
+/**
+ * Interface for product options
+ */
+export interface Options {
+  key: string | undefined,
+  text: string,
+  value: string | undefined
+}
+
+/**
  * Interface for delivery and product
  */
 export interface DeliveryProduct {

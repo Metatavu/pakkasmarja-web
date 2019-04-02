@@ -8,7 +8,6 @@ import { Segment, Item, Header, Divider, Button } from "semantic-ui-react";
 import Moment from "react-moment";
 import ProposalAcceptModal from "./ProposalAcceptModal";
 
-
 /**
  * Interface for component props
  */
@@ -30,7 +29,7 @@ interface State {
 }
 
 /**
- * Class for proposal list component
+ * Class for proposals view component
  */
 class ProposalsView extends React.Component<Props, State> {
 
@@ -45,7 +44,6 @@ class ProposalsView extends React.Component<Props, State> {
       freshProposals: [],
       frozenProposals: [],
       proposalAcceptModal: false
-
     };
   }
 
@@ -53,12 +51,18 @@ class ProposalsView extends React.Component<Props, State> {
    * Component did mount life-sycle event
    */
   public async componentDidMount() {
+    this.loadData();
+  }
+
+  /**
+   * Load data
+   */
+  private loadData = async () => {
     if (!this.props.keycloak || !this.props.keycloak.token || !this.props.deliveries) {
       return;
     }
     const frozenDeliveryData: DeliveryProduct[] = await this.props.deliveries.frozenDeliveryData;
     const frozenProposals: DeliveryProduct[] = frozenDeliveryData.filter(deliveryData => deliveryData.delivery.status === "PROPOSAL");
-
     const freshDeliveryData: DeliveryProduct[] = await this.props.deliveries.freshDeliveryData;
     const freshProposals: DeliveryProduct[] = freshDeliveryData.filter(deliveryData => deliveryData.delivery.status === "PROPOSAL");
 
@@ -86,7 +90,7 @@ class ProposalsView extends React.Component<Props, State> {
                       <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
                       <Item.Description><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Description>
                     </Item.Content>
-                    <Button style={{ display: "flex", alignItems: "center" }} floated="right" onClick={() => this.setState({ deliveryId: deliveryProduct.delivery.id, proposalAcceptModal: true })}>Tarkasta</Button>
+                    <Button style={{ display: "flex", alignItems: "center" }} color="red" floated="right" onClick={() => this.setState({ deliveryId: deliveryProduct.delivery.id, proposalAcceptModal: true })}>Tarkasta</Button>
                   </Item>
                 )
               })
@@ -112,7 +116,7 @@ class ProposalsView extends React.Component<Props, State> {
                         </Moment>
                       </Item.Description>
                     </Item.Content>
-                    <Button style={{ maxHeight: "37px" }} floated="right" color="red" onClick={() => this.setState({ deliveryId: deliveryProduct.delivery.id, proposalAcceptModal: true })}>Tarkasta</Button>
+                    <Button style={{ maxHeight: "37px", margin: "auto" }} floated="right" color="red" onClick={() => this.setState({ deliveryId: deliveryProduct.delivery.id, proposalAcceptModal: true })}>Tarkasta</Button>
                   </Item>
                 )
               })
@@ -123,6 +127,7 @@ class ProposalsView extends React.Component<Props, State> {
           modalOpen={this.state.proposalAcceptModal}
           closeModal={() => this.setState({ proposalAcceptModal: false })}
           deliveryId={this.state.deliveryId || ""}
+          loadData={this.loadData}
         />
       </React.Fragment>
     );
@@ -149,6 +154,7 @@ export function mapStateToProps(state: StoreState) {
  */
 export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
   return {
+    deliveriesLoaded: (deliveries: DeliveriesState) => dispatch(actions.deliveriesLoaded(deliveries))
   };
 }
 

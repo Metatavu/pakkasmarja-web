@@ -29,7 +29,7 @@ interface State {
 }
 
 /**
- * Class for proposal list component
+ * Class week delivery predictions list component
  */
 class WeekDeliveryPredictions extends React.Component<Props, State> {
 
@@ -52,7 +52,6 @@ class WeekDeliveryPredictions extends React.Component<Props, State> {
    */
   public async componentDidMount() {
     if (!this.props.keycloak || !this.props.keycloak.token) {
-      console.log("nicht");
       return;
     }
     const userId = this.props.keycloak.subject;
@@ -61,7 +60,6 @@ class WeekDeliveryPredictions extends React.Component<Props, State> {
     const itemGroupsService = await Api.getItemGroupsService(this.props.keycloak.token);
 
     const weekDeliveryPredictions: WeekDeliveryPrediction[] = await weekDeliveryPredictionsService.listWeekDeliveryPredictions(undefined, undefined, userId, undefined, undefined, 0, 100);
-    console.log(weekDeliveryPredictions);
     const itemGroups: ItemGroup[] = await itemGroupsService.listItemGroups();
 
     weekDeliveryPredictions.forEach((weekDeliveryPrediction) => {

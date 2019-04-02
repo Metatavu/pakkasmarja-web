@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as Keycloak from 'keycloak-js';
 import * as actions from "../../actions/";
-import { StoreState, DeliveryProduct } from "src/types";
+import { StoreState, DeliveryProduct, DeliveriesState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import { Modal, Header, Button, Divider } from "semantic-ui-react";
@@ -11,10 +11,13 @@ import Api, { Product, Delivery } from "pakkasmarja-client";
  * Interface for component props
  */
 interface Props {
-  modalOpen: boolean,
-  closeModal: () => void,
+  modalOpen: boolean;
+  closeModal: () => void;
   keycloak?: Keycloak.KeycloakInstance;
-  deliveryId: string
+  deliveryId: string;
+  loadData: () => void;
+  deliveries?: DeliveriesState;
+  deliveriesLoaded?: (deliveries: DeliveriesState) => void;
 };
 
 /**
@@ -47,13 +50,13 @@ class ProposalAcceptModal extends React.Component<Props, State> {
   /**
    * Component will receive props life-cycle event
    */
-  async componentWillReceiveProps() {
+  public async componentWillReceiveProps() {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
     const deliveriesService = await Api.getDeliveriesService(this.props.keycloak.token);
     const productsService = await Api.getProductsService(this.props.keycloak.token);
-    const products: Product[] = await productsService.listProducts();
+    const products: Product[] = await productsService.listProducts(undefined, undefined, undefined, undefined, 100);
 
     const deliveryId: string = await this.props.deliveryId;
     deliveriesService.findDelivery(deliveryId).then((delivery) => {
@@ -81,7 +84,6 @@ class ProposalAcceptModal extends React.Component<Props, State> {
     }
 
     const deliveriesService = await Api.getDeliveriesService(this.props.keycloak.token);
-    // miksi pitää laittaa || "" ?!?!?
     const delivery: Delivery = {
       id: this.state.deliveryProduct.delivery.id,
       productId: this.state.deliveryProduct.product.id || "",
@@ -93,8 +95,50 @@ class ProposalAcceptModal extends React.Component<Props, State> {
       quality: this.state.deliveryProduct.delivery.quality,
       deliveryPlaceId: this.state.deliveryProduct.delivery.deliveryPlaceId
     }
-    await deliveriesService.updateDelivery(delivery, this.state.deliveryProduct.delivery.id || "");
+
+    const updateDelivery = await deliveriesService.updateDelivery(delivery, this.state.deliveryProduct.delivery.id || "");
+    const updatedDeliveryProduct: DeliveryProduct = { delivery: updateDelivery, product: this.state.deliveryProduct.product };
+    const updatedDeliveries = this.getUpdatedDeliveryData(updatedDeliveryProduct);
+    this.props.deliveriesLoaded && this.props.deliveriesLoaded(updatedDeliveries);
+    this.props.loadData();
     this.closeModal();
+  }
+
+  /**
+   * Get updated delivery data 
+   * 
+   * @param deliveryProduct deliveryProduct
+   */
+  private getUpdatedDeliveryData = (deliveryProduct: DeliveryProduct): DeliveriesState => {
+    if (!this.props.deliveries) {
+      return { frozenDeliveryData: [], freshDeliveryData: [] };
+    }
+
+    const deliveries = { ... this.props.deliveries };
+    const freshDeliveries = deliveries.freshDeliveryData.map((deliveryData: DeliveryProduct) => {
+      if (deliveryData.delivery.id === deliveryProduct.delivery.id) {
+        return {
+          delivery: deliveryProduct.delivery,
+          product: deliveryProduct.product
+        }
+      }
+      return deliveryData;
+    });
+    const frozenDeliveries = deliveries.frozenDeliveryData.map((deliveryData: DeliveryProduct) => {
+      if (deliveryData.delivery.id === deliveryProduct.delivery.id) {
+        return {
+          delivery: deliveryProduct.delivery,
+          product: deliveryProduct.product
+        }
+      }
+      return deliveryData;
+    });
+
+    const deliveriesState: DeliveriesState = {
+      freshDeliveryData: freshDeliveries || [],
+      frozenDeliveryData: frozenDeliveries || []
+    }
+    return deliveriesState;
   }
 
   /**
@@ -116,7 +160,7 @@ class ProposalAcceptModal extends React.Component<Props, State> {
           <Header as="h3">Tuotteen unitSize </Header><span>{this.state.deliveryProduct.product.unitSize}</span>
           <Header as="h3">Tuotteen units </Header><span>{this.state.deliveryProduct.product.units}</span>
           <Header as="h3">Toimitus määrä </Header><span>{this.state.deliveryProduct.delivery.amount}</span>
-          <Divider />
+          <Divider style={{ paddingBottom: 0, marginBottom: 0 }} />
           <Button.Group floated="right" className="contract-button-group" >
             <Button onClick={this.closeModal} color="black">Sulje</Button>
             <Button.Or text="" />
@@ -148,6 +192,7 @@ export function mapStateToProps(state: StoreState) {
  */
 export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
   return {
+    deliveriesLoaded: (deliveries: DeliveriesState) => dispatch(actions.deliveriesLoaded(deliveries))
   };
 }
 

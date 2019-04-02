@@ -21,6 +21,7 @@ interface Props {
   authenticated: boolean;
   keycloak?: Keycloak.KeycloakInstance;
   deliveriesLoaded?: (deliveries: DeliveriesState) => void;
+  location?: any;
 }
 
 /**
@@ -34,7 +35,7 @@ interface State {
 }
 
 /**
- * Class for contract list component
+ * Class for deliveries screen component
  */
 class DeliveriesScreen extends React.Component<Props, State> {
 
@@ -57,13 +58,13 @@ class DeliveriesScreen extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
-
+    const activeItem = this.props.location.state ? this.props.location.state.activeItem : "";
+    this.setState({ activeItem });
     await this.loadDeliveriesData();
-
   }
 
   /**
-   * Load deliverys
+   * Load deliveries
    */
   private loadDeliveriesData = async () => {
     if (!this.props.keycloak || !this.props.keycloak.token) {
@@ -76,7 +77,7 @@ class DeliveriesScreen extends React.Component<Props, State> {
 
     const freshDeliveries: Delivery[] = await deliveriesService.listDeliveries(userId, undefined, "FRESH", undefined, undefined, undefined, undefined, undefined, 0, 200);
     const frozenDeliveries: Delivery[] = await deliveriesService.listDeliveries(userId, undefined, "FROZEN", undefined, undefined, undefined, undefined, undefined, 0, 200);
-    const products: Product[] = await productsService.listProducts();
+    const products: Product[] = await productsService.listProducts(undefined, undefined, undefined, undefined, 100);
 
     const freshDeliveriesAndProducts: DeliveryProduct[] = freshDeliveries.map((delivery) => {
       return {
@@ -102,8 +103,10 @@ class DeliveriesScreen extends React.Component<Props, State> {
 
   /**
    * Handle menu click
+   * 
+   * @param value value
    */
-  private handleMenuItemClick = (e: any, { name } : any) => this.setState({ activeItem: name })
+  private handleMenuItemClick = (value: string) => this.setState({ activeItem: value })
 
   /**
    * Render method
@@ -112,23 +115,23 @@ class DeliveriesScreen extends React.Component<Props, State> {
     const { activeItem } = this.state
     return (
       <BasicLayout>
-        <Menu fluid widths={4} attached='top' inverted>
-          <Menu.Item color="red" name='Ehdotukset' active={activeItem === 'Ehdotukset'} onClick={this.handleMenuItemClick} />
-          <Menu.Item color="red" name='Viikkoennusteet' active={activeItem === 'Viikkoennusteet'} onClick={this.handleMenuItemClick} />
-          <Menu.Item color="red" name='Tulevat toimitukset' active={activeItem === 'Tulevat toimitukset'} onClick={this.handleMenuItemClick} />
-          <Menu.Item color="red" name='Tehdyt toimitukset' active={activeItem === 'Tehdyt toimitukset'} onClick={this.handleMenuItemClick} />
+        <Menu fluid widths={4} attached='top' inverted color="red">
+          <Menu.Item name='Ehdotukset' active={activeItem === 'proposals'} onClick={() => this.handleMenuItemClick("proposals")} />
+          <Menu.Item color="black" name='Viikkoennusteet' active={activeItem === 'Viikkoennusteet'} onClick={() => this.handleMenuItemClick("Viikkoennusteet")} />
+          <Menu.Item color="black" name='Tulevat toimitukset' active={activeItem === 'incomingDeliveries'} onClick={() => this.handleMenuItemClick("incomingDeliveries")} />
+          <Menu.Item color="black" name='Tehdyt toimitukset' active={activeItem === 'pastDeliveries'} onClick={() => this.handleMenuItemClick("pastDeliveries")} />
         </Menu>
         {
-          this.state.activeItem === "Ehdotukset" && <ProposalsView />
+          this.state.activeItem === "proposals" && <ProposalsView />
         }
         {
           this.state.activeItem === "Viikkoennusteet" && <WeekDeliveryPredictions />
         }
         {
-          this.state.activeItem === "Tulevat toimitukset" && <IncomingDeliveries />
+          this.state.activeItem === "incomingDeliveries" && <IncomingDeliveries />
         }
         {
-          this.state.activeItem === "Tehdyt toimitukset" && <PastDeliveries />
+          this.state.activeItem === "pastDeliveries" && <PastDeliveries />
         }
       </BasicLayout>
     );

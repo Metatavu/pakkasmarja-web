@@ -4,8 +4,10 @@ import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
-import { Header, Modal, TextArea } from "semantic-ui-react";
+import { Header, Modal, TextArea, Form, Divider, Button } from "semantic-ui-react";
 import Dropzone from 'react-dropzone'
+import { FileService, FileResponse } from "src/api/file.service";
+import { DeliveryNote } from "pakkasmarja-client";
 
 
 /**
@@ -16,8 +18,7 @@ interface Props {
   keycloak?: Keycloak.KeycloakInstance;
   modalOpen: boolean;
   closeModal: () => void;
-  onNoteChange: (text: string, value: any) => void;
-  note: string;
+  addDeliveryNote: (deliveryNote: DeliveryNote) => void;
 }
 
 /**
@@ -25,10 +26,13 @@ interface Props {
  */
 interface State {
   keycloak?: Keycloak.KeycloakInstance;
+  noteText?: string;
+  imgLabel?: string;
+  url?: string;
 }
 
 /**
- * Class for proposal list component
+ * Class for delivery note modal
  */
 class DeliveryNoteModal extends React.Component<Props, State> {
 
@@ -44,12 +48,6 @@ class DeliveryNoteModal extends React.Component<Props, State> {
   }
 
   /**
-   * Component did mount life-cycle event
-   */
-  public componentDidMount = () => {
-  }
-
-  /**
    * Close modal
    */
   private closeModal = () => {
@@ -57,24 +55,46 @@ class DeliveryNoteModal extends React.Component<Props, State> {
   }
 
   /**
-   * On delivery place comment change
+   * On note data value change
    * 
    * @param value value
    */
   private onNoteDataChange = (value: string) => {
-    this.props.onNoteChange("text", value);
+    this.setState({ noteText: value });
   }
 
   /**
-   * On file dropped
+   * On file drop uploads image to server and adds deliveryNote to state
+   * 
+   * @param file file
    */
   private onFileDropped = async (files: File[]) => {
     const file = files[0];
     if (!file) {
       return;
     }
+    if (this.props.keycloak && this.props.keycloak.token && process.env.REACT_APP_API_URL) {
+      const fileService = new FileService(process.env.REACT_APP_API_URL, this.props.keycloak.token);
+      let image: FileResponse | undefined = undefined;
+      if (file) {
+        image = await fileService.uploadFile(file);
+        this.setState({ url: image.url, imgLabel: file.name });
+      }
+    }
+  }
 
-    console.log(file);
+  /**
+   * Adds delivery note to parent component state
+   */
+  private addDeliveryNote = async () => {
+    if(this.state.noteText){
+      const deliveryNote: DeliveryNote = {
+        image: this.state.url,
+        text: this.state.noteText
+      }
+      this.props.addDeliveryNote(deliveryNote);
+      this.closeModal();
+    }
   }
 
   /**
@@ -90,20 +110,39 @@ class DeliveryNoteModal extends React.Component<Props, State> {
           <Header as="h5">
             Huomio
           </Header>
-          <TextArea
-            value={this.props.note}
-            onChange={(event: any) => {
-              this.onNoteDataChange(event.target.value)
-            }}
-          />
-          <Header as="h5">
-            Kuva
+          <Form>
+            <Form.Field>
+              <TextArea
+                value={this.state.noteText}
+                onChange={(event: React.FormEvent<HTMLTextAreaElement>) => {
+                  this.onNoteDataChange(event.currentTarget.value)
+                }}
+              />
+            </Form.Field>
+            <Header as="h5">
+              Kuva
           </Header>
-          <Dropzone multiple activeStyle={{border: "2px solid #62f442"}} style={{width: "100%", cursor:"pointer"}} onDrop={this.onFileDropped}>
-            <p style={{paddingTop: "25px", paddingBottom: "10px"}} >Lisää kuva pudottamalla tai klikkaamalla</p>
-          </Dropzone>
+            <Form.Field>
+              <Dropzone onDrop={acceptedFiles => this.onFileDropped(acceptedFiles)}>
+                {({ getRootProps, getInputProps }) => (
+                  <section>
+                    <div style={{ border: "1px solid lightgray", borderRadius: 5 }}  {...getRootProps()}>
+                      <input style={{ width: "100%", cursor: "pointer" }} {...getInputProps()} />
+                      <p style={{ marginLeft: 10, paddingTop: 10, paddingBottom: 10 }}>{this.state.imgLabel ? this.state.imgLabel : "Raahaa tai valitse kuva"}</p>
+                    </div>
+                  </section>
+                )}
+              </Dropzone>
+            </Form.Field>
+          </Form>
+          <Divider style={{ paddingBottom: 0, marginBottom: 0 }} />
+          <Button.Group floated="right" className="contract-button-group" >
+            <Button onClick={this.closeModal} color="black">Sulje</Button>
+            <Button.Or text="" />
+            <Button onClick={this.addDeliveryNote} color="red">Lisää</Button>
+          </Button.Group>
         </Modal.Content>
-      </Modal>
+      </Modal >
     );
   }
 }

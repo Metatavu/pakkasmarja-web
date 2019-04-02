@@ -1,5 +1,6 @@
 import * as React from "react";
 import * as actions from "../../actions/";
+import * as _ from "lodash";
 import { StoreState, DeliveriesState, DeliveryProduct, Options, DeliveryDataValue } from "src/types";
 import Api, { Product, DeliveryPlace, ItemGroupCategory, Delivery, DeliveryNote } from "pakkasmarja-client";
 import { Dispatch } from "redux";
@@ -19,8 +20,8 @@ import fi from 'date-fns/esm/locale/fi';
 interface Props {
   authenticated: boolean;
   keycloak?: Keycloak.KeycloakInstance;
-  match?: any;
   deliveries?: DeliveriesState;
+  match?: any;
   deliveriesLoaded?: (deliveries: DeliveriesState) => void;
 }
 
@@ -30,20 +31,21 @@ interface Props {
 interface State {
   products: Product[];
   deliveryPlaces: DeliveryPlace[];
-  selectedProductId: string;
-  selectedPlaceId: string;
+  selectedProductId?: string;
+  selectedPlaceId?: string;
   amount: number;
   date: Date;
   modalOpen: boolean;
   category: string;
   redirect: boolean;
   deliveryNotes: DeliveryNote[];
+  deliveryId?: string
 }
 
 /**
- * Class for create delivery component
+ * Class for edit delivery component
  */
-class CreateDelivery extends React.Component<Props, State> {
+class EditDelivery extends React.Component<Props, State> {
 
   /**
    * Constructor
@@ -56,13 +58,11 @@ class CreateDelivery extends React.Component<Props, State> {
       redirect: false,
       products: [],
       deliveryPlaces: [],
-      selectedProductId: "",
-      selectedPlaceId: "",
-      amount: 0,
       date: new Date(),
       modalOpen: false,
       category: "",
-      deliveryNotes: []
+      deliveryNotes: [],
+      amount: 0
     };
     registerLocale('fi', fi);
   }
@@ -71,24 +71,36 @@ class CreateDelivery extends React.Component<Props, State> {
    * Component did mount life-cycle event
    */
   public componentDidMount = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token) {
+    if (!this.props.keycloak || !this.props.keycloak.token || !this.props.deliveries) {
       return;
     }
+
     const category: ItemGroupCategory = this.props.match.params.category;
+    const deliveryId: ItemGroupCategory = this.props.match.params.deliveryId;
     const productsService = await Api.getProductsService(this.props.keycloak.token);
     const deliveryPlacesService = await Api.getDeliveryPlacesService(this.props.keycloak.token);
+    const deliveriesService = await Api.getDeliveriesService(this.props.keycloak.token);
+    const delivery = await deliveriesService.findDelivery(deliveryId);
     const deliveryPlaces = await deliveryPlacesService.listDeliveryPlaces();
     const products: Product[] = await productsService.listProducts(undefined, category, undefined, undefined, 100);
 
     this.setState({
       products,
       deliveryPlaces,
-      category
+      category,
+      deliveryId,
+      amount: delivery.amount,
+      selectedProductId: delivery.productId,
+      selectedPlaceId: delivery.deliveryPlaceId,
+      date: delivery.time
     });
   }
 
   /**
-   * Handle inputchange
+   * Handle input change
+   * 
+   * @param key key
+   * @param value value
    */
   private handleInputChange = (key: string, value: DeliveryDataValue) => {
     const state: State = this.state;
@@ -101,20 +113,18 @@ class CreateDelivery extends React.Component<Props, State> {
    * Render drop down
    * 
    * @param options options
-   * @param placeholder placeholder
    * @param key key
    */
-  private renderDropDown = (options: Options[], placeholder: string, key: string) => {
+  private renderDropDown = (options: Options[], key: string) => {
     if (options.length <= 0) {
       return <Dropdown fluid />;
     }
-    const value = this.state[key];
 
+    const value = this.state[key];
     return (
       <Dropdown
         selection
         fluid
-        placeholder={placeholder}
         value={value}
         options={options}
         onChange={(event, data) => {
@@ -140,28 +150,29 @@ class CreateDelivery extends React.Component<Props, State> {
    * Handles delivery submit
    */
   private handleDeliverySubmit = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.selectedPlaceId || !this.state.selectedProductId || !this.state.date) {
+    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.selectedPlaceId || !this.state.selectedProductId || !this.state.date || !this.state.deliveryId) {
       return;
     }
-    const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
 
+    const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
     const delivery: Delivery = {
       id: "",
       productId: this.state.selectedProductId,
       userId: this.props.keycloak.subject || "",
       time: this.state.date,
-      status: "PROPOSAL",
+      status: "PLANNED",
       amount: this.state.amount,
       price: "0",
       quality: "NORMAL",
       deliveryPlaceId: this.state.selectedPlaceId
     }
 
-    const createdDelivery = await deliveryService.createDelivery(delivery);
-    const updatedDeliveries = this.getUpdatedDeliveryData(createdDelivery);
+    const updatedDelivery = await deliveryService.updateDelivery(delivery, this.state.deliveryId);
+    const updatedDeliveries = this.getUpdatedDeliveryData(updatedDelivery);
     this.props.deliveriesLoaded && this.props.deliveriesLoaded(updatedDeliveries);
+
     await Promise.all(this.state.deliveryNotes.map((deliveryNote): Promise<DeliveryNote | null> => {
-      return this.createDeliveryNote(createdDelivery.id || "", deliveryNote);
+      return this.createDeliveryNote(updatedDelivery.id || "", deliveryNote);
     }));
 
     this.setState({ redirect: true });
@@ -177,23 +188,30 @@ class CreateDelivery extends React.Component<Props, State> {
       return { frozenDeliveryData: [], freshDeliveryData: [] };
     }
 
-    const deliveryProduct: DeliveryProduct = {
-      delivery: delivery,
-      product: this.state.products.find(product => product.id === delivery.productId)
-    };
-
     const deliveries = { ... this.props.deliveries };
-    if (this.state.category === "FROZEN") {
-      deliveries.frozenDeliveryData.push(deliveryProduct);
-    } else {
-      deliveries.freshDeliveryData.push(deliveryProduct);
-    }
+    const freshDeliveries = deliveries.freshDeliveryData.map((deliveryData: DeliveryProduct) => {
+      if (deliveryData.delivery.id === delivery.id) {
+        return {
+          delivery: delivery,
+          product: this.state.products.find(product => product.id === delivery.productId)
+        }
+      }
+      return deliveryData;
+    });
+    const frozenDeliveries = deliveries.frozenDeliveryData.map((deliveryData: DeliveryProduct) => {
+      if (deliveryData.delivery.id === delivery.id) {
+        return {
+          delivery: delivery,
+          product: this.state.products.find(product => product.id === delivery.productId)
+        }
+      }
+      return deliveryData;
+    });
 
     const deliveriesState: DeliveriesState = {
-      freshDeliveryData: deliveries.freshDeliveryData || [],
-      frozenDeliveryData: deliveries.frozenDeliveryData || []
+      freshDeliveryData: freshDeliveries || [],
+      frozenDeliveryData: frozenDeliveries || []
     }
-
     return deliveriesState;
   }
 
@@ -237,17 +255,17 @@ class CreateDelivery extends React.Component<Props, State> {
         text: deliveryPlace.name || "",
         value: deliveryPlace.id || ""
       };
-    });
+    }) || [];
 
     return (
       <BasicLayout>
         <Header as="h2">
-          Uusi toimitus
+          Editoi toimitusta
         </Header>
         <Form>
           <Form.Field>
             <label>Tuote</label>
-            {this.renderDropDown(productOptions, "Valitse tuote", "selectedProductId")}
+            {this.renderDropDown(productOptions, "selectedProductId")}
           </Form.Field>
           <Form.Field>
             <label>Määrä</label>
@@ -265,16 +283,16 @@ class CreateDelivery extends React.Component<Props, State> {
               onChange={(date: Date) => {
                 this.handleInputChange("date", date)
               }}
-              selected={this.state.date}
+              selected={new Date(this.state.date)}
               locale="fi"
             />
           </Form.Field>
           <Form.Field style={{ marginTop: 20 }}>
             <label>Toimituspaikka</label>
-            {this.renderDropDown(deliveryPlaceOptions, "Valitse toimituspaikka", "selectedPlaceId")}
+            {this.renderDropDown(deliveryPlaceOptions, "selectedPlaceId")}
           </Form.Field>
           <Button color="red" inverted onClick={() => this.setState({ modalOpen: true })}>Lisää huomio {`(${this.state.deliveryNotes.length})`}</Button>
-          <Button floated="right" color="red" style={{ marginTop: "10px" }} onClick={this.handleDeliverySubmit} type='submit'>Create</Button>
+          <Button floated="right" color="red" style={{ marginTop: "10px" }} onClick={this.handleDeliverySubmit} type='submit'>Editoi</Button>
         </Form>
         <DeliveryNoteModal
           modalOpen={this.state.modalOpen}
@@ -310,4 +328,4 @@ export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(CreateDelivery);
+export default connect(mapStateToProps, mapDispatchToProps)(EditDelivery);
