@@ -10,6 +10,8 @@ import WatchNews from "./news/WatchNews";
 import ContractList from "./contracts/ContractList";
 import ContractView from "./contracts/ContractView";
 import ContractTerms from "./contracts/ContractTerms";
+import ContractManagementList from "./contract-management/ContractManagementList";
+import CreateContract from "./contract-management/CreateContract";
 
 /**
  * App component
@@ -33,6 +35,9 @@ class App extends React.Component {
             <Route exact path="/contracts" component={ContractList} />
             <Route exact path="/contracts/:contractId" component={ContractView} />
             <Route exact path="/contracts/:contractId/terms" component={ContractTerms} />
+            <Route exact path="/contractManagement" component={ContractManagementList} />
+            <Route exact path="/createContract" component={CreateContract} />
+            <Route exact path="/contractManagement/:contractId" component={ContractView} />
           </div>
         </BrowserRouter>
       </MqttConnector>

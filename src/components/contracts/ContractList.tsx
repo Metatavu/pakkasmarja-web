@@ -11,6 +11,7 @@ import { Segment, Item, Header, Button } from "semantic-ui-react";
 import ContractItem from "./ContractItem";
 import ContractProposalModal from "./ContractProposalModal";
 import strings from "../../localization/strings";
+import { Link } from "react-router-dom";
 
 /**
  * Interface for component props
@@ -137,6 +138,14 @@ class ContractList extends React.Component<Props, State> {
   public render() {
     return (
       <BasicLayout>
+        {
+          "rolecheck?" === "rolecheck?" &&
+          <Segment>
+            <Button as={Link} to={`contractManagement`} inverted color="red">
+              Sopimusten hallinta
+            </Button>
+          </Segment>
+        }
         <Segment>
           <Header>
             {strings.frozenContracts}
