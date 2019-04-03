@@ -7,11 +7,11 @@ import { connect } from "react-redux";
 import "../../styles/common.scss";
 import "./styles.scss";
 import ErrorMessage from "../generic/ErrorMessage";
-import * as Autocomplete from "react-autocomplete";
 import Api, { Contact, ItemGroup, Contract, DeliveryPlace } from "pakkasmarja-client";
 import { Form, Button, Dropdown, Input, TextArea } from "semantic-ui-react";
 import * as moment from "moment";
 import { Redirect } from "react-router";
+import Select from 'react-select';
 
 /**
  * Interface for component props
@@ -28,7 +28,7 @@ interface Props {
  */
 interface State {
   errorMessage?: string;
-  selectedContactId: string;
+  selectedOption: {value: string | undefined, label: string} | null | undefined;
   contacts: Contact[];
   itemGroups: ItemGroup[];
   itemGroupId: string;
@@ -56,7 +56,7 @@ class CreateContract extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      selectedContactId: "",
+      selectedOption: {value: "", label: ""},
       contacts: [],
       itemGroups: [],
       itemGroupId: "",
@@ -128,25 +128,24 @@ class CreateContract extends React.Component<Props, State> {
    * Render autocomplete field
    */
   private renderAutoCompleteField = () => {
-    console.log(this.state.selectedContactId);
+    const options = this.state.contacts.map((contact: Contact) => {
+      return {
+        label: contact.companyName || `${contact.firstName} ${contact.lastName}`,
+        value: contact.id
+      };
+    });
+    
     return (
-      <Autocomplete
-        wrapperStyle={{ width: "100%" }}
-        menuStyle={{ zIndex: 9999, width: "100%" }}
-        getItemValue={(item) => item.label}
-        items={this.state.contacts.map((contact: Contact) => {
-          return {
-            label: contact.companyName || `${contact.firstName} ${contact.lastName}`,
-            value: contact.id
-          };
-        })}
-        renderItem={(item, isHighlighted) =>
-          <div style={{ background: isHighlighted ? 'lightgray' : 'white' }}>
-            {item.label}
-          </div>
-        }
-        value={this.state.selectedContactId}
-        onSelect={(value, item) => this.setState({ selectedContactId: item.value })}
+      <Select
+        value={this.state.selectedOption}
+        onChange={(selectedOption) => {
+          if (Array.isArray(selectedOption)) {
+            console.log("Unexpected type passed to ReactSelect onChange handler");
+            return;
+          }
+          this.setState({ selectedOption: selectedOption })
+        }}
+        options={options}
       />
     );
   }
@@ -223,7 +222,7 @@ class CreateContract extends React.Component<Props, State> {
     }
 
     const contract: Contract = {
-      contactId: this.state.selectedContactId,
+      contactId: this.state.selectedOption ? this.state.selectedOption.value : "",
       itemGroupId: this.state.itemGroupId,
       sapId: this.state.sapId,
       status: this.state.status,
