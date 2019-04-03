@@ -123,15 +123,12 @@ class DeliveryNoteModal extends React.Component<Props, State> {
               Kuva
           </Header>
             <Form.Field>
-              <Dropzone onDrop={acceptedFiles => this.onFileDropped(acceptedFiles)}>
-                {({ getRootProps, getInputProps }) => (
-                  <section>
-                    <div style={{ border: "1px solid lightgray", borderRadius: 5 }}  {...getRootProps()}>
-                      <input style={{ width: "100%", cursor: "pointer" }} {...getInputProps()} />
-                      <p style={{ marginLeft: 10, paddingTop: 10, paddingBottom: 10 }}>{this.state.imgLabel ? this.state.imgLabel : "Raahaa tai valitse kuva"}</p>
-                    </div>
-                  </section>
-                )}
+              <Dropzone multiple activeStyle={{border: "2px solid #62f442"}} style={{width: "100%", cursor:"pointer"}} onDrop={this.onFileDropped}>
+                <p style={{paddingTop: "25px", paddingBottom: "10px"}} >
+                  {
+                    this.state.imgLabel || "Lisää kuva pudottamalla tai klikkaamalla"
+                  }
+                </p>
               </Dropzone>
             </Form.Field>
           </Form>
