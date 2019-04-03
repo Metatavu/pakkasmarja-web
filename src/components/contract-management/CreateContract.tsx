@@ -11,6 +11,7 @@ import * as Autocomplete from "react-autocomplete";
 import Api, { Contact, ItemGroup, Contract, DeliveryPlace } from "pakkasmarja-client";
 import { Form, Button, Dropdown, Input, TextArea } from "semantic-ui-react";
 import * as moment from "moment";
+import { Redirect } from "react-router";
 
 /**
  * Interface for component props
@@ -39,6 +40,7 @@ interface State {
   deliveryPlaceId: string;
   deliveryPlaceComment: string;
   sapComment: string;
+  redirect: boolean;
 }
 
 /**
@@ -65,7 +67,8 @@ class CreateContract extends React.Component<Props, State> {
       deliveryPlaces: [],
       deliveryPlaceId: "",
       deliveryPlaceComment: "",
-      sapComment: ""
+      sapComment: "",
+      redirect: false
     };
   }
 
@@ -125,6 +128,7 @@ class CreateContract extends React.Component<Props, State> {
    * Render autocomplete field
    */
   private renderAutoCompleteField = () => {
+    console.log(this.state.selectedContactId);
     return (
       <Autocomplete
         wrapperStyle={{ width: "100%" }}
@@ -142,8 +146,7 @@ class CreateContract extends React.Component<Props, State> {
           </div>
         }
         value={this.state.selectedContactId}
-        onChange={(e, value) => this.setState({ selectedContactId: value })}
-        onSelect={(value, item) => this.setState({ selectedContactId: value })}
+        onSelect={(value, item) => this.setState({ selectedContactId: item.value })}
       />
     );
   }
@@ -214,7 +217,11 @@ class CreateContract extends React.Component<Props, State> {
   /**
    * Handle form submit
    */
-  private handleFormSubmit = () => {
+  private handleFormSubmit = async () => {
+    if (!this.props.keycloak || !this.props.keycloak.token) {
+      return;
+    }
+
     const contract: Contract = {
       contactId: this.state.selectedContactId,
       itemGroupId: this.state.itemGroupId,
@@ -229,7 +236,10 @@ class CreateContract extends React.Component<Props, State> {
       year: moment().year()
     };
 
+    const contractsService = await Api.getContractsService(this.props.keycloak.token);
     console.log(contract);
+    await contractsService.createContract(contract);
+    this.setState({ redirect: true });
   }
 
   /**
@@ -243,6 +253,12 @@ class CreateContract extends React.Component<Props, State> {
             errorMessage={this.state.errorMessage}
           />
         </BasicLayout>
+      );
+    }
+
+    if (this.state.redirect) {
+      return (
+        <Redirect to="contractManagement" />
       );
     }
 
@@ -301,7 +317,7 @@ class CreateContract extends React.Component<Props, State> {
           </Form.Field>
           <Form.Field>
             <label>Tila</label>
-            { this.renderDropDown(statusOptions, this.state.status, (value: Contract.StatusEnum) => { this.setState({ status: value }) }, "Valitse tila") }
+            { this.renderDropDown(statusOptions, this.state.status, (value: Contract.StatusEnum) => { console.log(value);this.setState({ status: value }) }, "Valitse tila") }
           </Form.Field>
           <Form.Field>
             <label>Määrän kommentti</label>
@@ -313,7 +329,7 @@ class CreateContract extends React.Component<Props, State> {
           </Form.Field>
           <Form.Field>
             <label>Toimituspaikka</label>
-            { this.renderDropDown(deliveryPlaceOptions, this.state.deliveryPlaceId, (value: Contract.StatusEnum) => { this.setState({ deliveryPlaceId: value }) }, "Valitse toimituspaikka") }
+            { this.renderDropDown(deliveryPlaceOptions, this.state.deliveryPlaceId, (value: string) => { console.log(value); this.setState({ deliveryPlaceId: value }) }, "Valitse toimituspaikka") }
           </Form.Field>
           <Form.Field>
             <label>Toimituspaikan kommentti</label>

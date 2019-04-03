@@ -1,13 +1,13 @@
 import * as React from "react";
 import "../../styles/common.scss";
 import { Grid, Header, List, Divider } from "semantic-ui-react";
-import { Price, ItemGroup } from "pakkasmarja-client";
+import {  ItemGroup, ItemGroupPrice } from "pakkasmarja-client";
 
 /**
  * Interface for component State
  */
 interface Props {
-  prices?: Price[];
+  prices?: ItemGroupPrice[];
   itemGroup?: ItemGroup;
 }
 
@@ -91,7 +91,7 @@ export default class ContractPrices extends React.Component<Props, State> {
    * 
    * @param prices prices
    */
-  private renderActivePriceRows = (prices: Price[]) => {
+  private renderActivePriceRows = (prices: ItemGroupPrice[]) => {
     return prices.filter(price => price.year === new Date().getFullYear()).map((price) => {
       return (
         this.renderPriceRow(price)
@@ -104,7 +104,7 @@ export default class ContractPrices extends React.Component<Props, State> {
    * 
    * @param prices prices 
    */
-  private renderPastPriceRows = (prices: Price[]) => {
+  private renderPastPriceRows = (prices: ItemGroupPrice[]) => {
     return prices.filter(price => price.year < new Date().getFullYear()).map((price) => {
       return (
         this.renderPriceRow(price)
@@ -117,7 +117,7 @@ export default class ContractPrices extends React.Component<Props, State> {
    * 
    * @param price price
    */
-  private renderPriceRow = (price: Price) => {
+  private renderPriceRow = (price: ItemGroupPrice) => {
     return (
       <Grid.Row columns="3" key={price.id}>
         <Grid.Column>
