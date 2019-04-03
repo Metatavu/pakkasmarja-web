@@ -92,7 +92,7 @@ class IncomingDeliveries extends React.Component<Props, State> {
     } else if (status === "PLANNED") {
       return (
         <Button.Group floated="right" style={{ maxHeight: "37px" }}>
-          <Button as={Link} to={`/editDelivery/${category}/${deliveryProduct.delivery.id}`} color="red">Editoi</Button>
+          <Button as={Link} to={`/editDelivery/${category}/${deliveryProduct.delivery.id}`} color="red">Muokkaa</Button>
           <Button.Or text="" />
           <Button onClick={() => this.handleBeginDelivery(deliveryProduct)} color="green">Aloita toimitus</Button>
         </Button.Group>
