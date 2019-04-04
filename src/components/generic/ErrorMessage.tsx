@@ -1,11 +1,21 @@
 import * as React from "react";
 
+/**
+ * Interface for component props
+ */
 interface Props {
   errorMessage: string;
 }
 
+/**
+ * Class for error message component
+ */
 class ErrorMessage extends React.Component<Props, {}> {
-  render() {
+
+  /**
+   * Render method
+   */
+  public render() {
     return (
       <div>
         <h1>Virhe!</h1>

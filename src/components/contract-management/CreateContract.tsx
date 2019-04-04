@@ -41,6 +41,7 @@ interface State {
   deliveryPlaceComment: string;
   sapComment: string;
   redirect: boolean;
+  loading: boolean;
 }
 
 /**
@@ -68,7 +69,8 @@ class CreateContract extends React.Component<Props, State> {
       deliveryPlaceId: "",
       deliveryPlaceComment: "",
       sapComment: "",
-      redirect: false
+      redirect: false,
+      loading: false
     };
   }
 
@@ -99,7 +101,7 @@ class CreateContract extends React.Component<Props, State> {
   }
 
   /**
-   * Load contacts
+   * Load item groups
    */
   private loadItemGroups = async () => {
     if (!this.props.keycloak || !this.props.keycloak.token) {
@@ -112,7 +114,7 @@ class CreateContract extends React.Component<Props, State> {
   }
 
   /**
-   * Load contacts
+   * Load delivery places
    */
   private loadDeliveryPlaces = async () => {
     if (!this.props.keycloak || !this.props.keycloak.token) {
@@ -154,8 +156,11 @@ class CreateContract extends React.Component<Props, State> {
    * Render drop down
    * 
    * @param options options
+   * @param value value
+   * @param onChange onChange function
+   * @param placeholder placeholder
    */
-  private renderDropDown = (options: any, value: string | number, callBack: (value: string) => void, placeholder: string) => {
+  private renderDropDown = (options: any, value: string | number, onChange: (value: string) => void, placeholder: string) => {
     if (options.length <= 0) {
       return <Dropdown fluid/>;
     }
@@ -168,7 +173,7 @@ class CreateContract extends React.Component<Props, State> {
         value={value}
         options={options}
         onChange={(event, data) => {
-          callBack(data.value as string)
+          onChange(data.value as string)
         }
         }
       />
@@ -186,6 +191,11 @@ class CreateContract extends React.Component<Props, State> {
 
   /**
    * Render text input
+   * 
+   * @param value value
+   * @param onChange on change function
+   * @param placeholder placeholder
+   * @param disabled disabled
    */
   private renderTextInput = (value: string | number, onChange: (value: string) => void, placeholder: string, disabled: boolean) => {
     return (
@@ -200,6 +210,10 @@ class CreateContract extends React.Component<Props, State> {
 
   /**
    * Render text area
+   * 
+   * @param value value
+   * @param onChange on change function
+   * @param placeholder placeholder
    */
   private renderTextArea = (value: string, onchange: (value: string) => void, placeholder: string) => {
     return (
@@ -234,11 +248,12 @@ class CreateContract extends React.Component<Props, State> {
       deliverAll: false,
       year: moment().year()
     };
-
+    
     const contractsService = await Api.getContractsService(this.props.keycloak.token);
-    console.log(contract);
+
+    this.setState({ loading: true });
     await contractsService.createContract(contract);
-    this.setState({ redirect: true });
+    this.setState({ loading: false, redirect: true });
   }
 
   /**
@@ -338,7 +353,7 @@ class CreateContract extends React.Component<Props, State> {
             <label>Huomautuskenttä (SAP)</label>
             { this.renderTextArea(this.state.sapComment, (value: string) => { this.setState({ sapComment: value }) }, "") }
           </Form.Field>
-          <Button onClick={this.handleFormSubmit}>Tallenna</Button>
+          <Button loading={this.state.loading} onClick={this.handleFormSubmit}>Tallenna</Button>
         </Form>
       </BasicLayout>
     );

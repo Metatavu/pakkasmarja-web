@@ -8,7 +8,7 @@ import "../../styles/common.scss";
 import "./styles.scss";
 import Api, { Contract, Contact, DeliveryPlace } from "pakkasmarja-client";
 import { ItemGroup } from "pakkasmarja-client";
-import { Header, Button } from "semantic-ui-react";
+import { Header, Button, Dropdown, Form } from "semantic-ui-react";
 import ErrorMessage from "../generic/ErrorMessage";
 import { Table } from 'semantic-ui-react';
 import Moment from 'react-moment';
@@ -38,6 +38,11 @@ interface State {
   proposedContractQuantityComment: string;
   proposeContractModalType: string;
   errorMessage?: string;
+  filters: {
+    itemGroupId?: string;
+    accepted?: boolean;
+    year?: number;
+  };
 }
 
 /**
@@ -62,7 +67,12 @@ class ContractManagementList extends React.Component<Props, State> {
       selectedBerry: "",
       proposedContractQuantity: "",
       proposedContractQuantityComment: "",
-      proposeContractModalType: ""
+      proposeContractModalType: "",
+      filters: {
+        itemGroupId: undefined,
+        accepted: undefined,
+        year: undefined
+      }
     };
   }
 
@@ -77,8 +87,8 @@ class ContractManagementList extends React.Component<Props, State> {
     this.setState({ contractsLoading: true, errorMessage: undefined });
 
     const contractsService = await Api.getContractsService(this.props.keycloak.token);
-    const contracts: Contract[] | HttpErrorResponse = await contractsService.listContracts("application/json", true);
-    console.log(contracts);
+    const contracts: Contract[] | HttpErrorResponse = await contractsService.listContracts("application/json", true, undefined, undefined, undefined, undefined, 0, 500);
+
     if (this.isHttpErrorResponse(contracts)) {
       this.renderErrorMessage(contracts);
       return;
@@ -101,7 +111,6 @@ class ContractManagementList extends React.Component<Props, State> {
         deliveryPlace: deliveryPlace
       });
 
-      console.log(contractsState);
       this.setState({ contractData: contractsState });
     });
 
@@ -175,6 +184,84 @@ class ContractManagementList extends React.Component<Props, State> {
   }
 
   /**
+   * Render drop down
+   * 
+   * @param options options
+   * @param value value
+   * @param onChange onChange function
+   * @param placeholder placeholder
+   */
+  private renderDropDown = (options: any, value: string | number, onChange: (value: string) => void, placeholder: string) => {
+    if (options.length <= 0) {
+      return <Dropdown fluid/>;
+    }
+
+    const optionsWithPlaceholder = [{key: placeholder, value: undefined, text: placeholder}].concat(options);
+
+    return (
+      <Dropdown
+        fluid
+        placeholder={placeholder}
+        selection
+        value={value}
+        options={optionsWithPlaceholder}
+        onChange={(event, data) => {
+          onChange(data.value as string)
+        }
+        }
+      />
+    );
+  }
+
+  /**
+   * Get filtered contract data
+   * 
+   * @return filtered contract data
+   */
+  private getFilteredContractData = () => {
+    return this.state.contractData && this.state.contractData.filter((contractData) => {
+      if (!contractData.contract || !contractData.itemGroup) {
+        return false;
+      }
+
+      if (!this.state.filters.accepted && !this.state.filters.itemGroupId && !this.state.filters.year) {
+        return true;
+      }
+
+      const filterYear = this.state.filters.year;
+      const contractYear = contractData.contract.year;
+      const filterItemGroup = this.state.filters.itemGroupId;
+      const contractItemGroup = contractData.contract.itemGroupId;
+      const filterAccepted = this.state.filters.accepted;
+
+      if (filterYear && filterYear !== contractYear) {
+        return false;
+      }
+
+      if (filterItemGroup && filterItemGroup !== contractItemGroup) {
+        return false;
+      }
+
+      if (filterAccepted && contractData.contract.status === "APPROVED") {
+        return false;
+      }
+
+      return true;
+    });
+  }
+
+  /**
+   * Handle item group change
+   * 
+   * @param value value
+   */
+  private handleItemGroupChange = (value: string) => {
+    const filters = {... this.state.filters};
+    filters.itemGroupId = value;
+    this.setState({ filters });
+  }
+
+  /**
    * Render method
    */
   public render() {
@@ -187,104 +274,139 @@ class ContractManagementList extends React.Component<Props, State> {
         </BasicLayout>
       );
     }
+
+    const itemGroupOptions = this.state.itemGroups.map((itemGroup) => {
+      return {
+        key: itemGroup.id,
+        value: itemGroup.id,
+        text: itemGroup.name
+      };
+    });
+
     return (
       <BasicLayout>
-          <Header floated='left' className="contracts-header">
-            <p>Sopimukset</p>
-          </Header>
-          <Header floated='left' className="contracts-header">
-            <Button as={Link} to="createContract" color="red">Uusi sopimus</Button>
-          </Header>
-          <Table celled unstackable>
-            <Table.Header>
-              <Table.Row>
-                <Table.HeaderCell>
-                  Toimittajan nimi
-                </Table.HeaderCell>
-                <Table.HeaderCell>
-                  Tila
-                </Table.HeaderCell>
-                <Table.HeaderCell>
-                  Marjalaji
-                </Table.HeaderCell>
-                <Table.HeaderCell>
-                  Sopimusmäärä
-                </Table.HeaderCell>
-                <Table.HeaderCell>
-                  Toimitettu määrä
-                </Table.HeaderCell>
-                <Table.HeaderCell>
-                  Toimituspaikka
-                </Table.HeaderCell>
-                <Table.HeaderCell>
-                  Huomautuskenttä
-                </Table.HeaderCell>
-                <Table.HeaderCell>
-                  Viljelijän allekirjoituspäivä
-                </Table.HeaderCell>
-                <Table.HeaderCell>
-                  Alkupäivä
-                </Table.HeaderCell>
-                <Table.HeaderCell>
-                  Loppupäivä
-                </Table.HeaderCell>
-                <Table.HeaderCell>
-                  Pakkasmarjan hyväksyntäpäivä
-                </Table.HeaderCell>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {
-                this.state.contractData && this.state.contractData.map((contractData) => {
-                  return (
-                    <Table.Row>
-                      <Table.Cell>
-                        { contractData.contact ? contractData.contact.companyName : "-" }
-                      </Table.Cell>
-                      <Table.Cell>
-                        { contractData.contract.status }
-                      </Table.Cell>
-                      <Table.Cell>
-                        { contractData.itemGroup ? contractData.itemGroup.displayName : "" }
-                      </Table.Cell>
-                      <Table.Cell>
-                        { contractData.contract.contractQuantity }
-                      </Table.Cell>
-                      <Table.Cell>
-                        { contractData.contract.deliveredQuantity }
-                      </Table.Cell>
-                      <Table.Cell>
-                        { contractData.deliveryPlace ? contractData.deliveryPlace.name : "" }
-                      </Table.Cell>
-                      <Table.Cell>
-                        { contractData.contract.remarks }
-                      </Table.Cell>
-                      <Table.Cell>
+        <Header floated='left' className="contracts-header">
+          <p>Sopimukset</p>
+        </Header>
+        <Header floated='left' className="contracts-header">
+          <Button as={Link} to="createContract" color="red">Uusi sopimus</Button>
+        </Header>
+        <Form style={{width: "100%", clear:"both"}}>
+          <Form.Group widths='equal'>
+            <Form.Field>
+              { this.renderDropDown(itemGroupOptions, this.state.filters.itemGroupId || "", this.handleItemGroupChange, "Valitse marjalaji") }
+            </Form.Field>
+            <Form.Field>
+              { this.renderDropDown(itemGroupOptions, this.state.filters.itemGroupId || "", this.handleItemGroupChange, "Valitse marjalaji") }
+            </Form.Field>
+            <Form.Field>
+              { this.renderDropDown(itemGroupOptions, this.state.filters.itemGroupId || "", this.handleItemGroupChange, "Valitse marjalaji") }
+            </Form.Field>
+          </Form.Group>
+        </Form>
+        
+        <Table celled unstackable>
+          <Table.Header>
+            <Table.Row>
+              <Table.HeaderCell>
+                Toimittajan nimi
+              </Table.HeaderCell>
+              <Table.HeaderCell>
+                Tila
+              </Table.HeaderCell>
+              <Table.HeaderCell>
+                Marjalaji
+              </Table.HeaderCell>
+              <Table.HeaderCell>
+                Sopimusmäärä
+              </Table.HeaderCell>
+              <Table.HeaderCell>
+                Toimitettu määrä
+              </Table.HeaderCell>
+              <Table.HeaderCell>
+                Toimituspaikka
+              </Table.HeaderCell>
+              <Table.HeaderCell>
+                Huomautuskenttä
+              </Table.HeaderCell>
+              <Table.HeaderCell>
+                Viljelijän allekirjoituspäivä
+              </Table.HeaderCell>
+              <Table.HeaderCell>
+                Alkupäivä
+              </Table.HeaderCell>
+              <Table.HeaderCell>
+                Loppupäivä
+              </Table.HeaderCell>
+              <Table.HeaderCell>
+                Pakkasmarjan hyväksyntäpäivä
+              </Table.HeaderCell>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
+            {
+              this.getFilteredContractData().map((contractData) => {
+                return (
+                  <Table.Row>
+                    <Table.Cell>
+                      { contractData.contact ? contractData.contact.companyName : "-" }
+                    </Table.Cell>
+                    <Table.Cell>
+                      { contractData.contract.status }
+                    </Table.Cell>
+                    <Table.Cell>
+                      { contractData.itemGroup ? contractData.itemGroup.displayName : "" }
+                    </Table.Cell>
+                    <Table.Cell>
+                      { contractData.contract.contractQuantity }
+                    </Table.Cell>
+                    <Table.Cell>
+                      { contractData.contract.deliveredQuantity }
+                    </Table.Cell>
+                    <Table.Cell>
+                      { contractData.deliveryPlace ? contractData.deliveryPlace.name : "" }
+                    </Table.Cell>
+                    <Table.Cell>
+                      { contractData.contract.remarks }
+                    </Table.Cell>
+                    <Table.Cell>
+                      {
+                        contractData.contract.signDate && 
                         <Moment format="DD.MM.YYYY">
                           { contractData.contract.signDate }
                         </Moment>
-                      </Table.Cell>
-                      <Table.Cell>
+                      }
+                    </Table.Cell>
+                    <Table.Cell>
+                      {
+                        contractData.contract.startDate && 
                         <Moment format="DD.MM.YYYY">
                           { contractData.contract.startDate }
                         </Moment>
-                      </Table.Cell>
-                      <Table.Cell>
+                      }
+                    </Table.Cell>
+                    <Table.Cell>
+                      {
+                        contractData.contract.startDate && 
                         <Moment format="DD.MM.YYYY">
                           { contractData.contract.endDate }
                         </Moment>
-                      </Table.Cell>
-                      <Table.Cell>
+                      }
+                    </Table.Cell>
+                    <Table.Cell>
+                      {
+                        contractData.contract.startDate && 
                         <Moment format="DD.MM.YYYY">
                           { contractData.contract.termDate }
                         </Moment>
-                      </Table.Cell>
-                    </Table.Row>
-                  );
-                })
-              }
-            </Table.Body>
-          </Table>
+                      }
+                    </Table.Cell>
+                  </Table.Row>
+                );
+              })
+            }
+          </Table.Body>
+        </Table>
       </BasicLayout>
     );
   }
