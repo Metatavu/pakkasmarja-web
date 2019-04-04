@@ -73,12 +73,11 @@ class ContractManagementList extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
-    
+
     this.setState({ contractsLoading: true, errorMessage: undefined });
 
     const contractsService = await Api.getContractsService(this.props.keycloak.token);
-    const contracts: Contract[] | HttpErrorResponse = await contractsService.listContracts("application/json", true);
-    console.log(contracts);
+    const contracts: Contract[] | HttpErrorResponse = await contractsService.listContracts("application/json", true, undefined, undefined, undefined, undefined, undefined, 100);
     if (this.isHttpErrorResponse(contracts)) {
       this.renderErrorMessage(contracts);
       return;
@@ -101,7 +100,6 @@ class ContractManagementList extends React.Component<Props, State> {
         deliveryPlace: deliveryPlace
       });
 
-      console.log(contractsState);
       this.setState({ contractData: contractsState });
     });
 
@@ -123,13 +121,13 @@ class ContractManagementList extends React.Component<Props, State> {
   private renderErrorMessage = (response: HttpErrorResponse) => {
     switch (response.code) {
       case 403:
-        this.setState({ 
-          errorMessage: "Sinulla ei ole oikeuksia hallita sopimukisa. Jos näin ei pitäisi olla, ole yhteydessä Pakkasmarjaan." 
+        this.setState({
+          errorMessage: "Sinulla ei ole oikeuksia hallita sopimukisa. Jos näin ei pitäisi olla, ole yhteydessä Pakkasmarjaan."
         });
         break;
       default:
-        this.setState({ 
-          errorMessage: "Jokin meni pieleen sopimuksia ladattaessa. Yritä hetken kuluttua uudelleen." 
+        this.setState({
+          errorMessage: "Jokin meni pieleen sopimuksia ladattaessa. Yritä hetken kuluttua uudelleen."
         });
         break;
     }
@@ -181,7 +179,7 @@ class ContractManagementList extends React.Component<Props, State> {
     if (this.state.errorMessage) {
       return (
         <BasicLayout>
-          <ErrorMessage 
+          <ErrorMessage
             errorMessage={this.state.errorMessage}
           />
         </BasicLayout>
@@ -189,102 +187,107 @@ class ContractManagementList extends React.Component<Props, State> {
     }
     return (
       <BasicLayout>
-          <Header floated='left' className="contracts-header">
-            <p>Sopimukset</p>
-          </Header>
-          <Header floated='left' className="contracts-header">
-            <Button as={Link} to="createContract" color="red">Uusi sopimus</Button>
-          </Header>
-          <Table celled unstackable>
-            <Table.Header>
-              <Table.Row>
-                <Table.HeaderCell>
-                  Toimittajan nimi
+        <Header floated='left' className="contracts-header">
+          <p>Sopimukset</p>
+        </Header>
+        <Header floated='left' className="contracts-header">
+          <Button as={Link} to="createContract" color="red">Uusi sopimus</Button>
+        </Header>
+        <Table celled >
+          <Table.Header>
+            <Table.Row>
+              <Table.HeaderCell>
+                Toimittajan nimi
+                </Table.HeaderCell>
+              <Table.HeaderCell>
+                Tila
+                </Table.HeaderCell>
+              <Table.HeaderCell>
+                Marjalaji
+                </Table.HeaderCell>
+              <Table.HeaderCell>
+                Sopimusmäärä
+                </Table.HeaderCell>
+              <Table.HeaderCell singleLine>
+                Toimitettu määrä
+                </Table.HeaderCell>
+              <Table.HeaderCell>
+                Toimituspaikka
+                </Table.HeaderCell>
+              <Table.HeaderCell>
+                Huomautuskenttä
+                </Table.HeaderCell>
+              <Table.HeaderCell>
+                Viljelijän allekirjoituspäivä
+                </Table.HeaderCell>
+              <Table.HeaderCell>
+                Alkupäivä
+                </Table.HeaderCell>
+              <Table.HeaderCell>
+                Loppupäivä
+                </Table.HeaderCell>
+              <Table.HeaderCell>
+                Pakkasmarjan hyväksyntäpäivä
                 </Table.HeaderCell>
                 <Table.HeaderCell>
-                  Tila
                 </Table.HeaderCell>
-                <Table.HeaderCell>
-                  Marjalaji
-                </Table.HeaderCell>
-                <Table.HeaderCell>
-                  Sopimusmäärä
-                </Table.HeaderCell>
-                <Table.HeaderCell>
-                  Toimitettu määrä
-                </Table.HeaderCell>
-                <Table.HeaderCell>
-                  Toimituspaikka
-                </Table.HeaderCell>
-                <Table.HeaderCell>
-                  Huomautuskenttä
-                </Table.HeaderCell>
-                <Table.HeaderCell>
-                  Viljelijän allekirjoituspäivä
-                </Table.HeaderCell>
-                <Table.HeaderCell>
-                  Alkupäivä
-                </Table.HeaderCell>
-                <Table.HeaderCell>
-                  Loppupäivä
-                </Table.HeaderCell>
-                <Table.HeaderCell>
-                  Pakkasmarjan hyväksyntäpäivä
-                </Table.HeaderCell>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {
-                this.state.contractData && this.state.contractData.map((contractData) => {
-                  return (
-                    <Table.Row>
-                      <Table.Cell>
-                        { contractData.contact ? contractData.contact.companyName : "-" }
-                      </Table.Cell>
-                      <Table.Cell>
-                        { contractData.contract.status }
-                      </Table.Cell>
-                      <Table.Cell>
-                        { contractData.itemGroup ? contractData.itemGroup.displayName : "" }
-                      </Table.Cell>
-                      <Table.Cell>
-                        { contractData.contract.contractQuantity }
-                      </Table.Cell>
-                      <Table.Cell>
-                        { contractData.contract.deliveredQuantity }
-                      </Table.Cell>
-                      <Table.Cell>
-                        { contractData.deliveryPlace ? contractData.deliveryPlace.name : "" }
-                      </Table.Cell>
-                      <Table.Cell>
-                        { contractData.contract.remarks }
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Moment format="DD.MM.YYYY">
-                          { contractData.contract.signDate }
-                        </Moment>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Moment format="DD.MM.YYYY">
-                          { contractData.contract.startDate }
-                        </Moment>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Moment format="DD.MM.YYYY">
-                          { contractData.contract.endDate }
-                        </Moment>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Moment format="DD.MM.YYYY">
-                          { contractData.contract.termDate }
-                        </Moment>
-                      </Table.Cell>
-                    </Table.Row>
-                  );
-                })
-              }
-            </Table.Body>
-          </Table>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
+            {
+              this.state.contractData && this.state.contractData.map((contractData) => {
+                return (
+                  <Table.Row key={contractData.contract.id}>
+                    <Table.Cell>
+                      {contractData.contact ? contractData.contact.companyName : "-"}
+                    </Table.Cell>
+                    <Table.Cell>
+                      {contractData.contract.status}
+                    </Table.Cell>
+                    <Table.Cell>
+                      {contractData.itemGroup ? contractData.itemGroup.displayName : ""}
+                    </Table.Cell>
+                    <Table.Cell>
+                      {contractData.contract.contractQuantity}
+                    </Table.Cell>
+                    <Table.Cell>
+                      {contractData.contract.deliveredQuantity}
+                    </Table.Cell>
+                    <Table.Cell>
+                      {contractData.deliveryPlace ? contractData.deliveryPlace.name : ""}
+                    </Table.Cell>
+                    <Table.Cell >
+                      {contractData.contract.remarks}
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Moment format="DD.MM.YYYY">
+                        {contractData.contract.signDate}
+                      </Moment>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Moment format="DD.MM.YYYY">
+                        {contractData.contract.startDate}
+                      </Moment>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Moment format="DD.MM.YYYY">
+                        {contractData.contract.endDate}
+                      </Moment>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Moment format="DD.MM.YYYY">
+                        {contractData.contract.termDate}
+                      </Moment>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Button as={Link} to={`/editContract/${contractData.contract.id}`}  color="red">Muokkaa</Button>
+                    </Table.Cell>
+                  </Table.Row>
+                );
+              })
+            }
+          </Table.Body>
+        </Table>
       </BasicLayout>
     );
   }
