@@ -1,6 +1,5 @@
 import * as React from "react";
 import * as actions from "../../actions/";
-import BasicLayout from "../generic/BasicLayout";
 import { StoreState, ContractManagementTableData, HttpErrorResponse } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
@@ -8,11 +7,13 @@ import "../../styles/common.scss";
 import "./styles.scss";
 import Api, { Contract, Contact, DeliveryPlace } from "pakkasmarja-client";
 import { ItemGroup } from "pakkasmarja-client";
-import { Header, Button, Dropdown, Form } from "semantic-ui-react";
+import { Header, Button, Dropdown, Form, List } from "semantic-ui-react";
 import ErrorMessage from "../generic/ErrorMessage";
 import { Table } from 'semantic-ui-react';
 import Moment from 'react-moment';
 import { Link } from "react-router-dom";
+import TableBasicLayout from "../contract-management/TableBasicLayout";
+import BasicLayout from "../generic/BasicLayout";
 
 /**
  * Interface for component props
@@ -88,7 +89,7 @@ class ContractManagementList extends React.Component<Props, State> {
 
     const contractsService = await Api.getContractsService(this.props.keycloak.token);
     const contracts: Contract[] | HttpErrorResponse = await contractsService.listContracts("application/json", true, undefined, undefined, undefined, undefined, 0, 500);
-    
+
     if (this.isHttpErrorResponse(contracts)) {
       this.renderErrorMessage(contracts);
       return;
@@ -193,10 +194,10 @@ class ContractManagementList extends React.Component<Props, State> {
    */
   private renderDropDown = (options: any, value: string | number, onChange: (value: string) => void, placeholder: string) => {
     if (options.length <= 0) {
-      return <Dropdown fluid/>;
+      return <Dropdown fluid />;
     }
 
-    const optionsWithPlaceholder = [{key: placeholder, value: undefined, text: placeholder}].concat(options);
+    const optionsWithPlaceholder = [{ key: placeholder, value: undefined, text: placeholder }].concat(options);
 
     return (
       <Dropdown
@@ -256,7 +257,7 @@ class ContractManagementList extends React.Component<Props, State> {
    * @param value value
    */
   private handleItemGroupChange = (value: string) => {
-    const filters = {... this.state.filters};
+    const filters = { ... this.state.filters };
     filters.itemGroupId = value;
     this.setState({ filters });
   }
@@ -284,27 +285,26 @@ class ContractManagementList extends React.Component<Props, State> {
     });
 
     return (
-      <BasicLayout>
+      <TableBasicLayout>
         <Header floated='left' className="contracts-header">
           <p>Sopimukset</p>
         </Header>
         <Header floated='left' className="contracts-header">
           <Button as={Link} to="createContract" color="red">Uusi sopimus</Button>
         </Header>
-        <Form style={{width: "100%", clear:"both"}}>
+        <Form style={{ width: "100%", clear: "both" }}>
           <Form.Group widths='equal'>
             <Form.Field>
-              { this.renderDropDown(itemGroupOptions, this.state.filters.itemGroupId || "", this.handleItemGroupChange, "Valitse marjalaji") }
+              {this.renderDropDown(itemGroupOptions, this.state.filters.itemGroupId || "", this.handleItemGroupChange, "Valitse marjalaji")}
             </Form.Field>
             <Form.Field>
-              { this.renderDropDown(itemGroupOptions, this.state.filters.itemGroupId || "", this.handleItemGroupChange, "Valitse marjalaji") }
+              {this.renderDropDown(itemGroupOptions, this.state.filters.itemGroupId || "", this.handleItemGroupChange, "Valitse marjalaji")}
             </Form.Field>
             <Form.Field>
-              { this.renderDropDown(itemGroupOptions, this.state.filters.itemGroupId || "", this.handleItemGroupChange, "Valitse marjalaji") }
+              {this.renderDropDown(itemGroupOptions, this.state.filters.itemGroupId || "", this.handleItemGroupChange, "Valitse marjalaji")}
             </Form.Field>
           </Form.Group>
         </Form>
-        
         <Table celled unstackable>
           <Table.Header>
             <Table.Row>
@@ -368,8 +368,8 @@ class ContractManagementList extends React.Component<Props, State> {
                     <Table.Cell>
                       {contractData.deliveryPlace ? contractData.deliveryPlace.name : ""}
                     </Table.Cell>
-                    <Table.Cell >
-                      {contractData.contract.remarks}
+                    <Table.Cell  >
+                      <div className="handleOverflow">{contractData.contract.remarks}</div>
                     </Table.Cell>
                     <Table.Cell>
                       <Moment format="DD.MM.YYYY">
@@ -392,7 +392,28 @@ class ContractManagementList extends React.Component<Props, State> {
                       </Moment>
                     </Table.Cell>
                     <Table.Cell>
-                      <Button as={Link} to={`/editContract/${contractData.contract.id}`}  color="red">Muokkaa</Button>
+                      <List>
+                        <List.Item>
+                          <List.Content  as={Link} to={`/watchContract/${contractData.contract.id}`}>
+                            <p>Katso sopimusta</p>
+                          </List.Content>
+                        </List.Item>
+                        <List.Item>
+                          <List.Content  as={Link} to={`/editContract/${contractData.contract.id}`}>
+                            <p>Muokkaa sopimusta</p>
+                          </List.Content>
+                        </List.Item>
+                        <List.Item>
+                          <List.Content as={Link} to={`/editContractDocument/${contractData.contract.id}`}>
+                            <p>Muokkaa mallia (2018)</p>
+                          </List.Content>
+                        </List.Item>
+                        <List.Item>
+                          <List.Content>
+                            <p onClick={()=> console.log("hiphip hurraa")}>Katso pdf:nä</p>
+                          </List.Content>
+                        </List.Item>
+                      </List>
                     </Table.Cell>
                   </Table.Row>
                 );
@@ -400,7 +421,7 @@ class ContractManagementList extends React.Component<Props, State> {
             }
           </Table.Body>
         </Table>
-      </BasicLayout>
+      </TableBasicLayout>
     );
   }
 }
