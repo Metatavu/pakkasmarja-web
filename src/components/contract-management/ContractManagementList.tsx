@@ -83,12 +83,12 @@ class ContractManagementList extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
-    
+
     this.setState({ contractsLoading: true, errorMessage: undefined });
 
     const contractsService = await Api.getContractsService(this.props.keycloak.token);
     const contracts: Contract[] | HttpErrorResponse = await contractsService.listContracts("application/json", true, undefined, undefined, undefined, undefined, 0, 500);
-
+    
     if (this.isHttpErrorResponse(contracts)) {
       this.renderErrorMessage(contracts);
       return;
@@ -132,13 +132,13 @@ class ContractManagementList extends React.Component<Props, State> {
   private renderErrorMessage = (response: HttpErrorResponse) => {
     switch (response.code) {
       case 403:
-        this.setState({ 
-          errorMessage: "Sinulla ei ole oikeuksia hallita sopimukisa. Jos näin ei pitäisi olla, ole yhteydessä Pakkasmarjaan." 
+        this.setState({
+          errorMessage: "Sinulla ei ole oikeuksia hallita sopimukisa. Jos näin ei pitäisi olla, ole yhteydessä Pakkasmarjaan."
         });
         break;
       default:
-        this.setState({ 
-          errorMessage: "Jokin meni pieleen sopimuksia ladattaessa. Yritä hetken kuluttua uudelleen." 
+        this.setState({
+          errorMessage: "Jokin meni pieleen sopimuksia ladattaessa. Yritä hetken kuluttua uudelleen."
         });
         break;
     }
@@ -268,7 +268,7 @@ class ContractManagementList extends React.Component<Props, State> {
     if (this.state.errorMessage) {
       return (
         <BasicLayout>
-          <ErrorMessage 
+          <ErrorMessage
             errorMessage={this.state.errorMessage}
           />
         </BasicLayout>
@@ -320,7 +320,7 @@ class ContractManagementList extends React.Component<Props, State> {
               <Table.HeaderCell>
                 Sopimusmäärä
               </Table.HeaderCell>
-              <Table.HeaderCell>
+              <Table.HeaderCell singleLine>
                 Toimitettu määrä
               </Table.HeaderCell>
               <Table.HeaderCell>
@@ -341,65 +341,58 @@ class ContractManagementList extends React.Component<Props, State> {
               <Table.HeaderCell>
                 Pakkasmarjan hyväksyntäpäivä
               </Table.HeaderCell>
+              <Table.HeaderCell>
+              </Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
             {
-              this.getFilteredContractData().map((contractData) => {
+              this.state.contractData && this.state.contractData.map((contractData) => {
                 return (
-                  <Table.Row>
+                  <Table.Row key={contractData.contract.id}>
                     <Table.Cell>
-                      { contractData.contact ? contractData.contact.companyName : "-" }
+                      {contractData.contact ? contractData.contact.companyName : "-"}
                     </Table.Cell>
                     <Table.Cell>
-                      { contractData.contract.status }
+                      {contractData.contract.status}
                     </Table.Cell>
                     <Table.Cell>
-                      { contractData.itemGroup ? contractData.itemGroup.displayName : "" }
+                      {contractData.itemGroup ? contractData.itemGroup.displayName : ""}
                     </Table.Cell>
                     <Table.Cell>
-                      { contractData.contract.contractQuantity }
+                      {contractData.contract.contractQuantity}
                     </Table.Cell>
                     <Table.Cell>
-                      { contractData.contract.deliveredQuantity }
+                      {contractData.contract.deliveredQuantity}
                     </Table.Cell>
                     <Table.Cell>
-                      { contractData.deliveryPlace ? contractData.deliveryPlace.name : "" }
+                      {contractData.deliveryPlace ? contractData.deliveryPlace.name : ""}
+                    </Table.Cell>
+                    <Table.Cell >
+                      {contractData.contract.remarks}
                     </Table.Cell>
                     <Table.Cell>
-                      { contractData.contract.remarks }
+                      <Moment format="DD.MM.YYYY">
+                        {contractData.contract.signDate}
+                      </Moment>
                     </Table.Cell>
                     <Table.Cell>
-                      {
-                        contractData.contract.signDate && 
-                        <Moment format="DD.MM.YYYY">
-                          { contractData.contract.signDate }
-                        </Moment>
-                      }
+                      <Moment format="DD.MM.YYYY">
+                        {contractData.contract.startDate}
+                      </Moment>
                     </Table.Cell>
                     <Table.Cell>
-                      {
-                        contractData.contract.startDate && 
-                        <Moment format="DD.MM.YYYY">
-                          { contractData.contract.startDate }
-                        </Moment>
-                      }
+                      <Moment format="DD.MM.YYYY">
+                        {contractData.contract.endDate}
+                      </Moment>
                     </Table.Cell>
                     <Table.Cell>
-                      {
-                        contractData.contract.startDate && 
-                        <Moment format="DD.MM.YYYY">
-                          { contractData.contract.endDate }
-                        </Moment>
-                      }
+                      <Moment format="DD.MM.YYYY">
+                        {contractData.contract.termDate}
+                      </Moment>
                     </Table.Cell>
                     <Table.Cell>
-                      {
-                        contractData.contract.startDate && 
-                        <Moment format="DD.MM.YYYY">
-                          { contractData.contract.termDate }
-                        </Moment>
-                      }
+                      <Button as={Link} to={`/editContract/${contractData.contract.id}`}  color="red">Muokkaa</Button>
                     </Table.Cell>
                   </Table.Row>
                 );
