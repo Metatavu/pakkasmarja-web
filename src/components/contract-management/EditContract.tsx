@@ -256,8 +256,7 @@ class EditContract extends React.Component<Props, State> {
       proposedDeliveryPlaceId: this.state.contract.proposedDeliveryPlaceId
     };
     const contractsService = await Api.getContractsService(this.props.keycloak.token);
-    const log = await contractsService.updateContract(contractUpdate, this.state.contract.id);
-    console.log(log);
+    await contractsService.updateContract(contractUpdate, this.state.contract.id);
     this.setState({ redirect: true });
   }
 
@@ -316,7 +315,7 @@ class EditContract extends React.Component<Props, State> {
         <Form>
           <Form.Field>
             <Header>
-              {`${this.state.contact.companyName} - ${this.state.itemGroup.name}`}
+              {`${this.state.contact.companyName || "Kontaktia ei löytynyt"} - ${this.state.itemGroup.name || "Tuoteryhmää ei löytynyt"}` }
             </Header>
           </Form.Field>
           <Form.Field>
