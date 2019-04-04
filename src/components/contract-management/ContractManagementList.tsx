@@ -13,6 +13,7 @@ import ErrorMessage from "../generic/ErrorMessage";
 import { Table } from 'semantic-ui-react';
 import Moment from 'react-moment';
 import { Link } from "react-router-dom";
+import * as moment from 'moment';
 
 /**
  * Interface for component props
@@ -40,7 +41,7 @@ interface State {
   errorMessage?: string;
   filters: {
     itemGroupId?: string;
-    accepted?: boolean;
+    status?: Contract.StatusEnum;
     year?: number;
   };
 }
@@ -70,7 +71,7 @@ class ContractManagementList extends React.Component<Props, State> {
       proposeContractModalType: "",
       filters: {
         itemGroupId: undefined,
-        accepted: undefined,
+        status: undefined,
         year: undefined
       }
     };
@@ -224,7 +225,7 @@ class ContractManagementList extends React.Component<Props, State> {
         return false;
       }
 
-      if (!this.state.filters.accepted && !this.state.filters.itemGroupId && !this.state.filters.year) {
+      if (!this.state.filters.status && !this.state.filters.itemGroupId && !this.state.filters.year) {
         return true;
       }
 
@@ -232,7 +233,8 @@ class ContractManagementList extends React.Component<Props, State> {
       const contractYear = contractData.contract.year;
       const filterItemGroup = this.state.filters.itemGroupId;
       const contractItemGroup = contractData.contract.itemGroupId;
-      const filterAccepted = this.state.filters.accepted;
+      const filterStatus = this.state.filters.status;
+      const contractStatus = contractData.contract.status;
 
       if (filterYear && filterYear !== contractYear) {
         return false;
@@ -242,7 +244,7 @@ class ContractManagementList extends React.Component<Props, State> {
         return false;
       }
 
-      if (filterAccepted && contractData.contract.status === "APPROVED") {
+      if (filterStatus && filterStatus !== contractStatus) {
         return false;
       }
 
@@ -259,6 +261,100 @@ class ContractManagementList extends React.Component<Props, State> {
     const filters = {... this.state.filters};
     filters.itemGroupId = value;
     this.setState({ filters });
+  }
+
+  /**
+   * Handle year change
+   * 
+   * @param value value
+   */
+  private handleYearChange = (value: string) => {
+    const filters = {... this.state.filters};
+    filters.year = parseInt(value);
+    this.setState({ filters });
+  }
+
+  /**
+   * Handle status change
+   * 
+   * @param value value
+   */
+  private handleStatusChange = (value: Contract.StatusEnum) => {
+    const filters = {... this.state.filters};
+    filters.status = value;
+    this.setState({ filters });
+  }
+
+  /**
+   * Get status text
+   */
+  private getStatusText = (statusEnum: Contract.StatusEnum) => {
+    switch (statusEnum) {
+      case "APPROVED":
+        return "Hyväksytty";
+      case "DRAFT":
+        return "Vedos";
+      case "ON_HOLD":
+        return "Odottaa";
+      case "REJECTED":
+        return "Hylätty";
+      case "TERMINATED":
+        return "Päättynyt";
+    }
+  }
+
+  /**
+   * Get xlsx
+   */
+  private getXlsx = async () => {
+    if (!this.props.keycloak || !this.props.keycloak.token) {
+      return;
+    }
+
+    const query: any = {
+      listAll: "true"
+    };
+
+    if (this.state.filters.itemGroupId) {
+      query.itemGroupId = this.state.filters.itemGroupId;
+    }
+
+    if (this.state.filters.year) {
+      query.year = this.state.filters.year;
+    }
+
+    if (this.state.filters.status) {
+      query.status = this.state.filters.status;
+    }
+
+    fetch(`${process.env.REACT_APP_API_URL}/rest/v1/contracts?${this.parseQuery(query)}`, {
+      headers: {
+        "Authorization": `Bearer ${this.props.keycloak.token}`,
+        "Accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      },
+      method: "GET"
+    })
+    .then(response => response.blob())
+    .then(blob => {
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = "contracts.xlsx";
+      document.body.appendChild(link);
+      link.click();    
+      link.remove();       
+    });
+  }
+
+  /**
+   * Parse query
+   * 
+   * @param query query
+   */
+  private parseQuery(query: any) {
+    return Object.keys(query).map(function(key) {
+      return `${key}=${query[key]}`;
+    }).join('&');
   }
 
   /**
@@ -283,6 +379,37 @@ class ContractManagementList extends React.Component<Props, State> {
       };
     });
 
+    const yearOptions = [];
+    for (let i = moment().year(); i >= (moment().year() - 10); i--) {
+      yearOptions.push({
+        key: i,
+        value: i,
+        text: i
+      });
+    }
+
+    const statusOptions =  [{
+      key: "APPROVED",
+      value: "APPROVED",
+      text: this.getStatusText("APPROVED")
+    }, {
+      key: "ON_HOLD",
+      value: "ON_HOLD",
+      text: this.getStatusText("ON_HOLD")
+    }, {
+      key: "DRAFT",
+      value: "DRAFT",
+      text: this.getStatusText("DRAFT")
+    }, {
+      key: "TERMINATED",
+      value: "TERMINATED",
+      text: this.getStatusText("TERMINATED")
+    }, {
+      key: "REJECTED",
+      value: "REJECTED",
+      text: this.getStatusText("REJECTED")
+    }];
+
     return (
       <BasicLayout>
         <Header floated='left' className="contracts-header">
@@ -297,10 +424,13 @@ class ContractManagementList extends React.Component<Props, State> {
               { this.renderDropDown(itemGroupOptions, this.state.filters.itemGroupId || "", this.handleItemGroupChange, "Valitse marjalaji") }
             </Form.Field>
             <Form.Field>
-              { this.renderDropDown(itemGroupOptions, this.state.filters.itemGroupId || "", this.handleItemGroupChange, "Valitse marjalaji") }
+              { this.renderDropDown(yearOptions, this.state.filters.year || "", this.handleYearChange, "Vuosi") }
             </Form.Field>
             <Form.Field>
-              { this.renderDropDown(itemGroupOptions, this.state.filters.itemGroupId || "", this.handleItemGroupChange, "Valitse marjalaji") }
+              { this.renderDropDown(statusOptions, this.state.filters.status || "", this.handleStatusChange, "Tila") }
+            </Form.Field>
+            <Form.Field>
+              <Button onClick={this.getXlsx} color="grey">Lataa XLSX- tiedostona</Button>
             </Form.Field>
           </Form.Group>
         </Form>
@@ -347,14 +477,14 @@ class ContractManagementList extends React.Component<Props, State> {
           </Table.Header>
           <Table.Body>
             {
-              this.state.contractData && this.state.contractData.map((contractData) => {
+              this.getFilteredContractData().map((contractData) => {
                 return (
                   <Table.Row key={contractData.contract.id}>
                     <Table.Cell>
                       {contractData.contact ? contractData.contact.companyName : "-"}
                     </Table.Cell>
                     <Table.Cell>
-                      {contractData.contract.status}
+                      {this.getStatusText(contractData.contract.status)}
                     </Table.Cell>
                     <Table.Cell>
                       {contractData.itemGroup ? contractData.itemGroup.displayName : ""}
