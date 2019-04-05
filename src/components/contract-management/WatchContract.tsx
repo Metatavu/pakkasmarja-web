@@ -8,7 +8,7 @@ import "../../styles/common.scss";
 import "./styles.scss";
 import ErrorMessage from "../generic/ErrorMessage";
 import Api, { Contact, ItemGroup, Contract, DeliveryPlace } from "pakkasmarja-client";
-import { Button, Header, Divider, Grid, Container } from "semantic-ui-react";
+import { Button, Header, Divider, Grid, Container, Dimmer, Loader } from "semantic-ui-react";
 import { Redirect } from "react-router";
 
 /**
@@ -30,6 +30,7 @@ interface State {
   contact: Contact;
   itemGroup: ItemGroup;
   redirect: boolean;
+  contractLoading: boolean;
 }
 
 /**
@@ -48,7 +49,8 @@ class WatchContract extends React.Component<Props, State> {
       deliveryPlace: {},
       itemGroup: {},
       contact: {},
-      redirect: false
+      redirect: false,
+      contractLoading: false
     };
   }
 
@@ -59,10 +61,13 @@ class WatchContract extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
+
+    this.setState({ contractLoading: true });
     await this.loadContract();
     await this.loadContact();
     await this.loadItemGroup();
     await this.loadDeliveryPlace();
+    this.setState({ contractLoading: false });
   }
 
   /**
@@ -123,6 +128,18 @@ class WatchContract extends React.Component<Props, State> {
    * Render method
    */
   public render() {
+    if (this.state.contractLoading) {
+      return (
+        <BasicLayout>
+          <Dimmer active inverted>
+            <Loader inverted>
+              Ladataan sopimusta
+            </Loader>
+          </Dimmer>
+        </BasicLayout>
+      );
+    }
+
     if (this.state.errorMessage) {
       return (
         <BasicLayout>

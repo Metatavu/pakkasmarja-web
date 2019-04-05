@@ -1,16 +1,17 @@
 import * as React from "react";
 import * as actions from "../../actions/";
 import BasicLayout from "../generic/BasicLayout";
-import { StoreState } from "src/types";
+import { StoreState, Options } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
 import "./styles.scss";
 import ErrorMessage from "../generic/ErrorMessage";
 import Api, { Contact, ItemGroup, Contract, DeliveryPlace } from "pakkasmarja-client";
-import { Form, Button, Dropdown, Input, TextArea, Header, Divider } from "semantic-ui-react";
+import { Form, Button, Dropdown, Input, TextArea, Header, Divider, Dimmer, Loader } from "semantic-ui-react";
 import * as moment from "moment";
 import { Redirect } from "react-router";
+import { Link } from "react-router-dom";
 
 /**
  * Interface for component props
@@ -42,6 +43,8 @@ interface State {
   quantity: number;
   sapComment: string;
   redirect: boolean;
+  contractEditLoading: boolean;
+  buttonLoading: boolean;
 }
 
 /**
@@ -71,7 +74,9 @@ class EditContract extends React.Component<Props, State> {
       quantity: 0,
       deliveryPlaceComment: "",
       sapComment: "",
-      redirect: false
+      redirect: false,
+      contractEditLoading: false,
+      buttonLoading: false
     };
   }
 
@@ -83,12 +88,15 @@ class EditContract extends React.Component<Props, State> {
       return;
     }
 
+    this.setState({ contractEditLoading: true });
+
     await this.loadContract();
     await this.loadContacts();
     await this.loadItemGroups();
     await this.loadDeliveryPlaces();
 
     this.loadContractManagementData();
+    this.setState({ contractEditLoading: false });
   }
 
   /**
@@ -156,7 +164,7 @@ class EditContract extends React.Component<Props, State> {
     const contract: Contract = this.state.contract;
     const proposedDeliveryPlace: DeliveryPlace = this.state.deliveryPlaces.find((deliveryPlace) => deliveryPlace.id == contract.proposedDeliveryPlaceId) || {};
     const deliveryPlace: DeliveryPlace = this.state.deliveryPlaces.find((deliveryPlace) => deliveryPlace.id == contract.deliveryPlaceId) || {};
-    const deliveryPlaceId : string = deliveryPlace.id ||""
+    const deliveryPlaceId: string = deliveryPlace.id || ""
     const itemGroup: ItemGroup = this.state.itemGroups.find((itemGroup) => itemGroup.id == contract.itemGroupId) || {};
     const contact: Contact = this.state.contacts.find((contact) => contact.id == contract.contactId) || {};
     const deliveryPlaceComment: string = contract.deliveryPlaceComment || "";
@@ -186,7 +194,7 @@ class EditContract extends React.Component<Props, State> {
    * 
    * @param options options
    */
-  private renderDropDown = (options: any, value: string | number, callBack: (value: string) => void, placeholder: string) => {
+  private renderDropDown = (options: Options[], value: string | number, callBack: (value: string) => void, placeholder: string) => {
     if (options.length <= 0) {
       return <Dropdown fluid />;
     }
@@ -209,12 +217,13 @@ class EditContract extends React.Component<Props, State> {
   /**
    * Render text input
    */
-  private renderTextInput = (value: string | number, onChange: (value: string) => void, placeholder: string, disabled: boolean) => {
+  private renderTextInput = (value: string | number, onChange: (value: string) => void, placeholder: string | number, disabled: boolean) => {
     return (
       <Input
+        type="number"
         placeholder={placeholder}
         value={value}
-        onChange={(event: any) => onChange(event.target.value)}
+        onChange={(event: React.FormEvent<HTMLInputElement>) => onChange(event.currentTarget.value)}
         disabled={disabled}
       />
     );
@@ -227,8 +236,8 @@ class EditContract extends React.Component<Props, State> {
     return (
       <TextArea
         value={value}
-        onChange={(event: any) => {
-          onchange(event.target.value)
+        onChange={(event: React.FormEvent<HTMLTextAreaElement>) => {
+          onchange(event.currentTarget.value)
         }}
         placeholder={placeholder}
       />
@@ -242,28 +251,44 @@ class EditContract extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token || !this.state.contract || !this.state.contract.id) {
       return;
     }
+
+    this.setState({ buttonLoading: true });
+
     const contractUpdate: Contract = {
       itemGroupId: this.state.itemGroup.id,
       sapId: this.state.sapId,
       status: this.state.status,
       quantityComment: this.state.quantityComment,
       contractQuantity: this.state.quantity,
-      deliveryPlaceId: this.state.deliveryPlace.id,
+      deliveryPlaceId: this.state.deliveryPlaceId,
       deliveryPlaceComment: this.state.deliveryPlaceComment,
       remarks: this.state.sapComment,
       deliverAll: false,
       year: moment().year(),
       proposedDeliveryPlaceId: this.state.contract.proposedDeliveryPlaceId
     };
+
     const contractsService = await Api.getContractsService(this.props.keycloak.token);
     await contractsService.updateContract(contractUpdate, this.state.contract.id);
-    this.setState({ redirect: true });
+    this.setState({ buttonLoading: false, redirect: true });
   }
 
   /**
    * Render method
    */
   public render() {
+    if (this.state.contractEditLoading) {
+      return (
+        <BasicLayout>
+          <Dimmer active inverted>
+            <Loader inverted>
+              Ladataan sopimusta
+            </Loader>
+          </Dimmer>
+        </BasicLayout>
+      );
+    }
+
     if (this.state.errorMessage) {
       return (
         <BasicLayout>
@@ -315,7 +340,7 @@ class EditContract extends React.Component<Props, State> {
         <Form>
           <Form.Field>
             <Header>
-              {`${this.state.contact.companyName || "Kontaktia ei löytynyt"} - ${this.state.itemGroup.name || "Tuoteryhmää ei löytynyt"}` }
+              {`${this.state.contact.companyName || "Kontaktia ei löytynyt"} - ${this.state.itemGroup.name || "Tuoteryhmää ei löytynyt"}`}
             </Header>
           </Form.Field>
           <Form.Field>
@@ -327,7 +352,7 @@ class EditContract extends React.Component<Props, State> {
             {this.renderDropDown(statusOptions, this.state.status, (value: Contract.StatusEnum) => { this.setState({ status: value }) }, "Valitse tila")}
           </Form.Field>
           <Form.Field>
-          <Divider />
+            <Divider />
             <label>Sopimusmäärä</label>
             {this.renderTextInput(this.state.quantity, (value: string) => { this.setState({ quantity: parseInt(value) }) }, "0", false)}
           </Form.Field>
@@ -350,7 +375,11 @@ class EditContract extends React.Component<Props, State> {
             <label>Huomautuskenttä (SAP)</label>
             {this.renderTextArea(this.state.sapComment, (value: string) => { this.setState({ sapComment: value }) }, "")}
           </Form.Field>
-          <Button floated="right" color="red" onClick={this.handleFormEdit}>Tallenna muutokset</Button>
+          <Button.Group floated="right">
+            <Button inverted color="red" as={Link} to={"/contractManagement"}>Takaisin</Button>
+            <Button.Or text="" />
+            <Button floated="right" color="red" loading={this.state.buttonLoading} onClick={this.handleFormEdit}>Tallenna muutokset</Button>
+          </Button.Group>
         </Form>
       </BasicLayout>
     );
@@ -359,7 +388,7 @@ class EditContract extends React.Component<Props, State> {
 
 /**
  * Redux mapper for mapping store state to component props
- * 
+ *
  * @param state store state
  */
 export function mapStateToProps(state: StoreState) {
@@ -370,8 +399,8 @@ export function mapStateToProps(state: StoreState) {
 }
 
 /**
- * Redux mapper for mapping component dispatches 
- * 
+ * Redux mapper for mapping component dispatches
+ *
  * @param dispatch dispatch method
  */
 export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {

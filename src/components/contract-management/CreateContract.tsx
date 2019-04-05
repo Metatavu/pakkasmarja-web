@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as actions from "../../actions/";
 import BasicLayout from "../generic/BasicLayout";
-import { StoreState } from "src/types";
+import { StoreState, Options } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
@@ -12,6 +12,7 @@ import { Form, Button, Dropdown, Input, TextArea } from "semantic-ui-react";
 import * as moment from "moment";
 import { Redirect } from "react-router";
 import Select from 'react-select';
+import { Link } from "react-router-dom";
 
 /**
  * Interface for component props
@@ -28,7 +29,7 @@ interface Props {
  */
 interface State {
   errorMessage?: string;
-  selectedOption: {value: string | undefined, label: string} | null | undefined;
+  selectedOption: { value: string | undefined, label: string } | null | undefined;
   contacts: Contact[];
   itemGroups: ItemGroup[];
   itemGroupId: string;
@@ -41,7 +42,7 @@ interface State {
   deliveryPlaceComment: string;
   sapComment: string;
   redirect: boolean;
-  loading: boolean;
+  buttonLoading: boolean;
 }
 
 /**
@@ -57,7 +58,7 @@ class CreateContract extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      selectedOption: {value: "", label: ""},
+      selectedOption: { value: "", label: "" },
       contacts: [],
       itemGroups: [],
       itemGroupId: "",
@@ -70,7 +71,7 @@ class CreateContract extends React.Component<Props, State> {
       deliveryPlaceComment: "",
       sapComment: "",
       redirect: false,
-      loading: false
+      buttonLoading: false
     };
   }
 
@@ -136,13 +137,12 @@ class CreateContract extends React.Component<Props, State> {
         value: contact.id
       };
     });
-    
+
     return (
       <Select
         value={this.state.selectedOption}
         onChange={(selectedOption) => {
           if (Array.isArray(selectedOption)) {
-            console.log("Unexpected type passed to ReactSelect onChange handler");
             return;
           }
           this.setState({ selectedOption: selectedOption })
@@ -160,9 +160,9 @@ class CreateContract extends React.Component<Props, State> {
    * @param onChange onChange function
    * @param placeholder placeholder
    */
-  private renderDropDown = (options: any, value: string | number, onChange: (value: string) => void, placeholder: string) => {
+  private renderDropDown = (options: Options[], value: string | number, onChange: (value: string) => void, placeholder: string) => {
     if (options.length <= 0) {
-      return <Dropdown fluid/>;
+      return <Dropdown fluid />;
     }
 
     return (
@@ -202,7 +202,7 @@ class CreateContract extends React.Component<Props, State> {
       <Input
         placeholder={placeholder}
         value={value}
-        onChange={(event: any) => onChange(event.target.value)}
+        onChange={(event: React.FormEvent<HTMLInputElement>) => onChange(event.currentTarget.value)}
         disabled={disabled}
       />
     );
@@ -219,8 +219,8 @@ class CreateContract extends React.Component<Props, State> {
     return (
       <TextArea
         value={value}
-        onChange={(event: any) => {
-          onchange(event.target.value)
+        onChange={(event: React.FormEvent<HTMLTextAreaElement>) => {
+          onchange(event.currentTarget.value)
         }}
         placeholder={placeholder}
       />
@@ -235,6 +235,7 @@ class CreateContract extends React.Component<Props, State> {
       return;
     }
 
+    this.setState({ buttonLoading: true });
     const contract: Contract = {
       contactId: this.state.selectedOption ? this.state.selectedOption.value : "",
       itemGroupId: this.state.itemGroupId,
@@ -248,12 +249,10 @@ class CreateContract extends React.Component<Props, State> {
       deliverAll: false,
       year: moment().year()
     };
-    
-    const contractsService = await Api.getContractsService(this.props.keycloak.token);
 
-    this.setState({ loading: true });
+    const contractsService = await Api.getContractsService(this.props.keycloak.token);
     await contractsService.createContract(contract);
-    this.setState({ loading: false, redirect: true });
+    this.setState({ buttonLoading: false, redirect: true });
   }
 
   /**
@@ -263,7 +262,7 @@ class CreateContract extends React.Component<Props, State> {
     if (this.state.errorMessage) {
       return (
         <BasicLayout>
-          <ErrorMessage 
+          <ErrorMessage
             errorMessage={this.state.errorMessage}
           />
         </BasicLayout>
@@ -276,7 +275,7 @@ class CreateContract extends React.Component<Props, State> {
       );
     }
 
-    const itemGroupOptions = this.state.itemGroups.map((itemGroup) => {
+    const itemGroupOptions: Options[] = this.state.itemGroups.map((itemGroup) => {
       return {
         key: itemGroup.id,
         value: itemGroup.id,
@@ -306,7 +305,7 @@ class CreateContract extends React.Component<Props, State> {
       text: "Päättynyt"
     }];
 
-    const deliveryPlaceOptions = this.state.deliveryPlaces.map((deliveryPlace) => {
+    const deliveryPlaceOptions: Options[] = this.state.deliveryPlaces.map((deliveryPlace) => {
       return {
         key: deliveryPlace.id,
         value: deliveryPlace.id,
@@ -319,41 +318,45 @@ class CreateContract extends React.Component<Props, State> {
         <Form>
           <Form.Field>
             <label>Sopimus</label>
-            { this.renderAutoCompleteField() }
+            {this.renderAutoCompleteField()}
           </Form.Field>
           <Form.Field>
             <label>Marjalaji</label>
-            { this.renderDropDown(itemGroupOptions, this.state.itemGroupId, this.handleItemGroupChange, "Valitse marjalaji") }
+            {this.renderDropDown(itemGroupOptions, this.state.itemGroupId, this.handleItemGroupChange, "Valitse marjalaji")}
           </Form.Field>
           <Form.Field>
             <label>SAP id</label>
-            { this.renderTextInput(this.state.sapId, (value: string) => { this.setState({ sapId: value }) } , "SAP id", false) }
+            {this.renderTextInput(this.state.sapId, (value: string) => { this.setState({ sapId: value }) }, "SAP id", false)}
           </Form.Field>
           <Form.Field>
             <label>Tila</label>
-            { this.renderDropDown(statusOptions, this.state.status, (value: Contract.StatusEnum) => { console.log(value);this.setState({ status: value }) }, "Valitse tila") }
+            {this.renderDropDown(statusOptions, this.state.status, (value: Contract.StatusEnum) => { this.setState({ status: value }) }, "Valitse tila")}
           </Form.Field>
           <Form.Field>
             <label>Määrän kommentti</label>
-            { this.renderTextArea(this.state.quantityComment, (value: string) => { this.setState({ quantityComment: value }) }, "Määrän kommentti") }
+            {this.renderTextArea(this.state.quantityComment, (value: string) => { this.setState({ quantityComment: value }) }, "Määrän kommentti")}
           </Form.Field>
           <Form.Field>
             <label>Määrä</label>
-            { this.renderTextInput(this.state.quantity, (value: string) => { this.setState({ quantity: parseInt(value) }) } , "0", false) }
+            {this.renderTextInput(this.state.quantity, (value: string) => { this.setState({ quantity: parseInt(value) || 0 }) }, "0", false)}
           </Form.Field>
           <Form.Field>
             <label>Toimituspaikka</label>
-            { this.renderDropDown(deliveryPlaceOptions, this.state.deliveryPlaceId, (value: string) => { console.log(value); this.setState({ deliveryPlaceId: value }) }, "Valitse toimituspaikka") }
+            {this.renderDropDown(deliveryPlaceOptions, this.state.deliveryPlaceId, (value: string) => { this.setState({ deliveryPlaceId: value }) }, "Valitse toimituspaikka")}
           </Form.Field>
           <Form.Field>
             <label>Toimituspaikan kommentti</label>
-            { this.renderTextArea(this.state.deliveryPlaceComment, (value: string) => { this.setState({ deliveryPlaceComment: value }) }, "Toimituspaikan kommentti") }
+            {this.renderTextArea(this.state.deliveryPlaceComment, (value: string) => { this.setState({ deliveryPlaceComment: value }) }, "Toimituspaikan kommentti")}
           </Form.Field>
           <Form.Field>
             <label>Huomautuskenttä (SAP)</label>
-            { this.renderTextArea(this.state.sapComment, (value: string) => { this.setState({ sapComment: value }) }, "") }
+            {this.renderTextArea(this.state.sapComment, (value: string) => { this.setState({ sapComment: value }) }, "")}
           </Form.Field>
-          <Button loading={this.state.loading} onClick={this.handleFormSubmit}>Tallenna</Button>
+          <Button.Group floated="right">
+            <Button inverted color="red" as={Link} to={"/contractManagement"}>Takaisin</Button>
+            <Button.Or text="" />
+            <Button floated="right" color="red" loading={this.state.buttonLoading} onClick={this.handleFormSubmit}>Tallenna sopimus</Button>
+          </Button.Group>
         </Form>
       </BasicLayout>
     );

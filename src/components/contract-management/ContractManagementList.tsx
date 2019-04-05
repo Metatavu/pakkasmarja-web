@@ -1,13 +1,13 @@
 import * as React from "react";
 import * as actions from "../../actions/";
-import { StoreState, ContractManagementTableData, HttpErrorResponse } from "src/types";
+import { StoreState, ContractManagementTableData, HttpErrorResponse, FilterContracts } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
 import "./styles.scss";
-import Api, { Contract, Contact, DeliveryPlace } from "pakkasmarja-client";
+import Api, { Contract, Contact, DeliveryPlace, ContractDocumentTemplate, ItemGroupDocumentTemplate } from "pakkasmarja-client";
 import { ItemGroup } from "pakkasmarja-client";
-import { Header, Button, Dropdown, Form, List } from "semantic-ui-react";
+import { Header, Button, Dropdown, Form, List, Dimmer, Loader } from "semantic-ui-react";
 import ErrorMessage from "../generic/ErrorMessage";
 import { Table } from 'semantic-ui-react';
 import Moment from 'react-moment';
@@ -15,6 +15,7 @@ import { Link } from "react-router-dom";
 import * as moment from 'moment';
 import TableBasicLayout from "../contract-management/TableBasicLayout";
 import BasicLayout from "../generic/BasicLayout";
+import { PDFService } from "src/api/pdf.service";
 
 /**
  * Interface for component props
@@ -40,11 +41,7 @@ interface State {
   proposedContractQuantityComment: string;
   proposeContractModalType: string;
   errorMessage?: string;
-  filters: {
-    itemGroupId?: string;
-    status?: Contract.StatusEnum;
-    year?: number;
-  };
+  filters: FilterContracts;
 }
 
 /**
@@ -120,7 +117,7 @@ class ContractManagementList extends React.Component<Props, State> {
   }
 
   /**
-   * check if object is http error response
+   * Check if object is http error response
    */
   private isHttpErrorResponse(object: Contract[] | HttpErrorResponse): object is HttpErrorResponse {
     return 'code' in object;
@@ -270,7 +267,7 @@ class ContractManagementList extends React.Component<Props, State> {
    * @param value value
    */
   private handleYearChange = (value: string) => {
-    const filters = {... this.state.filters};
+    const filters = { ... this.state.filters };
     filters.year = parseInt(value);
     this.setState({ filters });
   }
@@ -281,7 +278,7 @@ class ContractManagementList extends React.Component<Props, State> {
    * @param value value
    */
   private handleStatusChange = (value: Contract.StatusEnum) => {
-    const filters = {... this.state.filters};
+    const filters = { ... this.state.filters };
     filters.status = value;
     this.setState({ filters });
   }
@@ -312,7 +309,7 @@ class ContractManagementList extends React.Component<Props, State> {
       return;
     }
 
-    const query: any = {
+    const query: FilterContracts = {
       listAll: "true"
     };
 
@@ -335,15 +332,61 @@ class ContractManagementList extends React.Component<Props, State> {
       },
       method: "GET"
     })
-    .then(response => response.blob())
-    .then(blob => {
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = "contracts.xlsx";
-      document.body.appendChild(link);
-      link.click();    
-      link.remove();       
+      .then(response => response.blob())
+      .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = "contracts.xlsx";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      });
+  }
+
+  /**
+   * Download contract as pdf
+   */
+  private getPdf = async (contractData: ContractManagementTableData) => {
+    if (!this.props.keycloak || !this.props.keycloak.token || !contractData.contract.id || !contractData.itemGroup || !contractData.itemGroup.id) {
+      return;
+    }
+    const contractsService = await Api.getContractsService(this.props.keycloak.token);
+
+    let documentTemplate: ContractDocumentTemplate = await contractsService.findContractDocumentTemplate(contractData.contract.id, "");
+    documentTemplate = documentTemplate[0];
+    let type: string = "";
+    if (documentTemplate) {
+      type = documentTemplate.type;
+    } else {
+      const documentTemplateService = await Api.getItemGroupsService(this.props.keycloak.token);
+      let documentTemplate: ItemGroupDocumentTemplate = await documentTemplateService.findItemGroupDocumentTemplate(contractData.itemGroup.id, "") || {};
+      documentTemplate = documentTemplate[0];
+      type = documentTemplate.type || "";
+    }
+
+    const pdfService = new PDFService(process.env.REACT_APP_API_URL || "", this.props.keycloak.token);
+    const pdfData: Response = await pdfService.getPdf(contractData.contract.id, type);
+    this.downloadPdfBlob(pdfData, type, contractData.contract);
+  }
+
+  /**
+   * Download pdf to users computer
+   * 
+   * @param pdfData pdf data
+   */
+  private downloadPdfBlob = (pdfData: Response, downloadTitle: string, contract: Contract) => {
+
+    pdfData.blob().then((blob: Blob) => {
+      const pdfBlob = new Blob([blob], { type: "application/pdf" });
+      const data = window.URL.createObjectURL(pdfBlob);
+      const link = document.createElement("a");
+      link.href = data;
+      link.download = `${contract.id}-${downloadTitle}.pdf`;
+      link.click();
+      setTimeout(function () {
+        window.URL.revokeObjectURL(data);
+      }, 100);
     });
   }
 
@@ -352,8 +395,8 @@ class ContractManagementList extends React.Component<Props, State> {
    * 
    * @param query query
    */
-  private parseQuery(query: any) {
-    return Object.keys(query).map(function(key) {
+  private parseQuery(query: FilterContracts) {
+    return Object.keys(query).map(function (key) {
       return `${key}=${query[key]}`;
     }).join('&');
   }
@@ -368,6 +411,18 @@ class ContractManagementList extends React.Component<Props, State> {
           <ErrorMessage
             errorMessage={this.state.errorMessage}
           />
+        </BasicLayout>
+      );
+    }
+
+    if (this.state.contractsLoading) {
+      return (
+        <BasicLayout>
+          <Dimmer active inverted>
+            <Loader inverted>
+              Ladataan sopimuksia
+            </Loader>
+          </Dimmer>
         </BasicLayout>
       );
     }
@@ -389,7 +444,7 @@ class ContractManagementList extends React.Component<Props, State> {
       });
     }
 
-    const statusOptions =  [{
+    const statusOptions = [{
       key: "APPROVED",
       value: "APPROVED",
       text: this.getStatusText("APPROVED")
@@ -416,68 +471,57 @@ class ContractManagementList extends React.Component<Props, State> {
         <Header floated='left' className="contracts-header">
           <p>Sopimukset</p>
         </Header>
-        <Header floated='left' className="contracts-header">
-          <Button as={Link} to="createContract" color="red">Uusi sopimus</Button>
-        </Header>
         <Form style={{ width: "100%", clear: "both" }}>
           <Form.Group widths='equal'>
             <Form.Field>
               {this.renderDropDown(itemGroupOptions, this.state.filters.itemGroupId || "", this.handleItemGroupChange, "Valitse marjalaji")}
             </Form.Field>
             <Form.Field>
-              { this.renderDropDown(yearOptions, this.state.filters.year || "", this.handleYearChange, "Vuosi") }
+              {this.renderDropDown(yearOptions, this.state.filters.year || "", this.handleYearChange, "Vuosi")}
             </Form.Field>
             <Form.Field>
-              { this.renderDropDown(statusOptions, this.state.filters.status || "", this.handleStatusChange, "Tila") }
+              {this.renderDropDown(statusOptions, this.state.filters.status || "", this.handleStatusChange, "Tila")}
             </Form.Field>
             <Form.Field>
               <Button onClick={this.getXlsx} color="grey">Lataa XLSX- tiedostona</Button>
             </Form.Field>
           </Form.Group>
         </Form>
-        <Table celled unstackable>
+        <Table celled fixed unstackable>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>
+              <Table.HeaderCell width={1}>
                 Toimittajan nimi
               </Table.HeaderCell>
-              <Table.HeaderCell>
+              <Table.HeaderCell width={1}>
                 Tila
               </Table.HeaderCell>
-              <Table.HeaderCell>
+              <Table.HeaderCell width={1}>
                 Marjalaji
               </Table.HeaderCell>
-              <Table.HeaderCell>
+              <Table.HeaderCell width={1}>
                 Sopimusmäärä
               </Table.HeaderCell>
-              <Table.HeaderCell singleLine>
+              <Table.HeaderCell width={1}>
                 Toimitettu määrä
               </Table.HeaderCell>
-              <Table.HeaderCell>
+              <Table.HeaderCell width={1}>
                 Toimituspaikka
               </Table.HeaderCell>
-              <Table.HeaderCell>
+              <Table.HeaderCell width={2}>
                 Huomautuskenttä
               </Table.HeaderCell>
-              <Table.HeaderCell>
-                Viljelijän allekirjoituspäivä
+              <Table.HeaderCell width={2}>
+                Päivämäärät
               </Table.HeaderCell>
-              <Table.HeaderCell>
-                Alkupäivä
-              </Table.HeaderCell>
-              <Table.HeaderCell>
-                Loppupäivä
-              </Table.HeaderCell>
-              <Table.HeaderCell>
-                Pakkasmarjan hyväksyntäpäivä
-              </Table.HeaderCell>
-              <Table.HeaderCell>
+              <Table.HeaderCell width={2}>
+                <Button as={Link} to="createContract" color="red" style={{ width: "100%" }}>Uusi sopimus</Button>
               </Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
             {
-              this.getFilteredContractData().map((contractData) => {
+              this.getFilteredContractData().map((contractData: ContractManagementTableData) => {
                 return (
                   <Table.Row key={contractData.contract.id}>
                     <Table.Cell>
@@ -502,45 +546,85 @@ class ContractManagementList extends React.Component<Props, State> {
                       <div className="handleOverflow">{contractData.contract.remarks}</div>
                     </Table.Cell>
                     <Table.Cell>
-                      <Moment format="DD.MM.YYYY">
-                        {contractData.contract.signDate}
-                      </Moment>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Moment format="DD.MM.YYYY">
-                        {contractData.contract.startDate}
-                      </Moment>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Moment format="DD.MM.YYYY">
-                        {contractData.contract.endDate}
-                      </Moment>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Moment format="DD.MM.YYYY">
-                        {contractData.contract.termDate}
-                      </Moment>
-                    </Table.Cell>
-                    <Table.Cell>
                       <List>
                         <List.Item>
-                          <List.Content  as={Link} to={`/watchContract/${contractData.contract.id}`}>
-                            <p>Katso sopimusta</p>
-                          </List.Content>
-                        </List.Item>
-                        <List.Item>
-                          <List.Content  as={Link} to={`/editContract/${contractData.contract.id}`}>
-                            <p>Muokkaa sopimusta</p>
-                          </List.Content>
-                        </List.Item>
-                        <List.Item>
-                          <List.Content as={Link} to={`/editContractDocument/${contractData.contract.id}`}>
-                            <p>Muokkaa mallia (2018)</p>
+                          <List.Content>
+                            {"Viljelijän allekirjoituspäivä: "}
+                            {
+                              contractData.contract.signDate !== null
+                                ?
+                                <Moment format="DD.MM.YYYY">
+                                  {contractData.contract.signDate}
+                                </Moment>
+                                :
+                                "  -"
+                            }
                           </List.Content>
                         </List.Item>
                         <List.Item>
                           <List.Content>
-                            <p onClick={()=> console.log("hiphip hurraa")}>Katso pdf:nä</p>
+                            {"Aloituspäivä: "}
+                            {
+                              contractData.contract.startDate !== null
+                                ?
+                                <Moment format="DD.MM.YYYY">
+                                  {contractData.contract.startDate}
+                                </Moment>
+                                :
+                                "  -"
+                            }
+                          </List.Content>
+                        </List.Item>
+                        <List.Item>
+                          <List.Content>
+                            {"Loppupäivä: "}
+                            {
+                              contractData.contract.endDate !== null
+                                ?
+                                <Moment format="DD.MM.YYYY">
+                                  {contractData.contract.endDate}
+                                </Moment>
+                                :
+                                "  -"
+                            }
+                          </List.Content>
+                        </List.Item>
+                        <List.Item>
+                          <List.Content>
+                            {"Pakkasmarjan hyväksyntäpäivä: "}
+                            {
+                              contractData.contract.termDate !== null
+                                ?
+                                <Moment format="DD.MM.YYYY">
+                                  {contractData.contract.termDate}
+                                </Moment>
+                                :
+                                " -"
+                            }
+                          </List.Content>
+                        </List.Item>
+                      </List>
+                    </Table.Cell>
+                    <Table.Cell >
+                      <List>
+                        <List.Item>
+                          <List.Content as={Link} to={`/watchContract/${contractData.contract.id}`}>
+                            <p className="plink">Katso sopimusta</p>
+                          </List.Content>
+                        </List.Item>
+                        <List.Item>
+                          <List.Content as={Link} to={`/editContract/${contractData.contract.id}`}>
+                            <p className="plink">Muokkaa sopimusta</p>
+                          </List.Content>
+                        </List.Item>
+                        <List.Item>
+                          <List.Content as={Link} to={`/editContractDocument/${contractData.contract.id}`}>
+                            <p className="plink">Muokkaa sopimusmallia</p>
+                          </List.Content>
+                        </List.Item>
+                        <List.Item>
+                          <List.Content>
+                            <p className="plink" onClick={() => this.getPdf(contractData)}>Sopimusmalli PDF</p>
                           </List.Content>
                         </List.Item>
                       </List>

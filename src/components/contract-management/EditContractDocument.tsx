@@ -8,7 +8,7 @@ import "../../styles/common.scss";
 import "./styles.scss";
 import ErrorMessage from "../generic/ErrorMessage";
 import Api, { Contact, ItemGroup, Contract, DeliveryPlace, ContractDocumentTemplate, ItemGroupDocumentTemplate } from "pakkasmarja-client";
-import { Button, Header, Divider } from "semantic-ui-react";
+import { Button, Header, Divider, Dimmer, Loader } from "semantic-ui-react";
 import { Redirect } from "react-router";
 import CKEditor from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
@@ -38,7 +38,9 @@ interface State {
   headerContent: string,
   footerContent: string,
   contractDocumentTemplate?: ContractDocumentTemplate;
-  type: string
+  type: string;
+  loading: boolean;
+  buttonLoading: boolean;
 }
 
 /**
@@ -61,7 +63,9 @@ class EditContractDocument extends React.Component<Props, State> {
       content: "",
       headerContent: "",
       footerContent: "",
-      type: ""
+      type: "",
+      loading: false,
+      buttonLoading: false
     };
   }
 
@@ -72,10 +76,13 @@ class EditContractDocument extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
+
+    this.setState({ loading: true });
     await this.loadContract();
     await this.loadItemGroup();
     await this.loadContact();
     await this.loadDocumentTemplate();
+    this.setState({ loading: false });
   }
 
   /**
@@ -120,7 +127,7 @@ class EditContractDocument extends React.Component<Props, State> {
   }
 
   /**
-   * Load item group document template
+   * Load document template
    */
   private loadDocumentTemplate = async () => {
     if (!this.props.keycloak || !this.props.keycloak.token || !this.state.itemGroup || !this.state.itemGroup.id || !this.state.contract || !this.state.contract.id) {
@@ -139,7 +146,8 @@ class EditContractDocument extends React.Component<Props, State> {
       });
     } else {
       const documentTemplateService = await Api.getItemGroupsService(this.props.keycloak.token);
-      const documentTemplate: ItemGroupDocumentTemplate = await documentTemplateService.findItemGroupDocumentTemplate(this.state.itemGroup.id, "") || {};
+      let documentTemplate: ItemGroupDocumentTemplate = await documentTemplateService.findItemGroupDocumentTemplate(this.state.itemGroup.id, "") || {};
+      documentTemplate = documentTemplate[0];
       this.setState({
         type: documentTemplate.type ? documentTemplate.type : "",
         content: documentTemplate.contents ? documentTemplate.contents : "",
@@ -150,15 +158,17 @@ class EditContractDocument extends React.Component<Props, State> {
   }
 
   /**
-   * Handle contract document submit
+   * Handle contract document submit.
    */
   private handleDocumentSubmit = async () => {
     if (!this.props.keycloak || !this.props.keycloak.token || !this.state.contract || !this.state.contract.id) {
       return;
     }
+
+    this.setState({ buttonLoading: true });
+
     const contractDocumentService = await Api.getContractsService(this.props.keycloak.token);
     if (!this.state.contractDocumentTemplate) {
-
       const contractDocumentTemplate: ContractDocumentTemplate = {
         contractId: this.state.contract.id,
         type: this.state.type,
@@ -166,10 +176,9 @@ class EditContractDocument extends React.Component<Props, State> {
         header: this.state.headerContent,
         footer: this.state.footerContent
       }
+
       await contractDocumentService.createContractDocumentTemplate(contractDocumentTemplate, this.state.contract.id);
-
     } else {
-
       const contractDocumentTemplate: ContractDocumentTemplate = {
         contractId: this.state.contract.id,
         type: this.state.type,
@@ -180,15 +189,27 @@ class EditContractDocument extends React.Component<Props, State> {
 
       const contractDocumentTemplateId: string = this.state.contractDocumentTemplate && this.state.contractDocumentTemplate.id || "";
       await contractDocumentService.updateContractDocumentTemplate(contractDocumentTemplate, this.state.contract.id, contractDocumentTemplateId);
-      
     }
-    this.setState({ redirect: true });
+
+    this.setState({ buttonLoading: false, redirect: true });
   }
 
   /**
    * Render method
    */
   public render() {
+    if (this.state.loading) {
+      return (
+        <BasicLayout>
+          <Dimmer active inverted>
+            <Loader inverted>
+              Ladataan sopimusmallia
+            </Loader>
+          </Dimmer>
+        </BasicLayout>
+      );
+    }
+
     if (this.state.errorMessage) {
       return (
         <BasicLayout>
@@ -209,44 +230,50 @@ class EditContractDocument extends React.Component<Props, State> {
       <BasicLayout>
         <Divider horizontal>
           <Header as='h2'>
-            {`Muokkaat sopimuksen ${this.state.contact.companyName || "Kontaktia ei löytynyt"} sopimusmallia ${"hakee tähä mallin vuoden"}`}
+            {`Muokkaat sopimuksen ${this.state.contact.companyName || "Kontaktia ei löytynyt"} sopimusmallia ${this.state.contractDocumentTemplate && this.state.contractDocumentTemplate.type || "dokumentin tyyppiä ei löytynyt"}`}
           </Header>
         </Divider>
         <p>Huomaathan, että mallin tallentaminen luo sopimukselle erillisen mallin ja eriyttää mallin marjaryhmän pohjamallista</p>
-        <Header as="h4">Sisältö</Header>
-        <CKEditor
-          editor={ClassicEditor}
-          data={this.state.content}
-          onChange={(e: any, editor: any) => {
-            const content = editor.getData();
-            this.setState({ content });
-          }}
-        />
-        <Divider />
         <Header as="h4">Ylätunniste</Header>
-        <CKEditor
-          editor={ClassicEditor}
-          data={this.state.headerContent}
-          onChange={(e: any, editor: any) => {
-            const headerContent = editor.getData();
-            this.setState({ headerContent });
-          }}
-        />
+        <div>
+          <CKEditor
+            editor={ClassicEditor}
+            data={this.state.headerContent}
+            onChange={(e: any, editor: any) => {
+              const headerContent = editor.getData();
+              this.setState({ headerContent });
+            }}
+          />
+        </div>
+        <Divider />
+        <Header as="h4">Sisältö</Header>
+        <div>
+          <CKEditor
+            editor={ClassicEditor}
+            data={this.state.content}
+            onChange={(e: any, editor: any) => {
+              const content = editor.getData();
+              this.setState({ content });
+            }}
+          />
+        </div>
         <Divider />
         <Header as="h4">Alatunniste</Header>
-        <CKEditor
-          editor={ClassicEditor}
-          data={this.state.footerContent}
-          onChange={(e: any, editor: any) => {
-            const footerContent = editor.getData();
-            this.setState({ footerContent });
-          }}
-        />
+        <div>
+          <CKEditor
+            editor={ClassicEditor}
+            data={this.state.footerContent}
+            onChange={(e: any, editor: any) => {
+              const footerContent = editor.getData();
+              this.setState({ footerContent });
+            }}
+          />
+        </div>
         <Divider />
         <Button.Group floated="right">
           <Button inverted color="red" as={Link} to={"/contractManagement"}>Takaisin</Button>
           <Button.Or text="" />
-          <Button color="red" onClick={this.handleDocumentSubmit}>Muokkaa</Button>
+          <Button color="red" loading={this.state.buttonLoading} onClick={this.handleDocumentSubmit}>Tallenna muutokset</Button>
         </Button.Group>
       </BasicLayout>
     );
