@@ -19,6 +19,9 @@ import Deliveries from "./deliveries/DeliveriesScreen";
 import WeekDeliveryPredictionView from "./deliveries/WeekDeliveryPredictionView";
 import CreateDelivery from "./deliveries/CreateDelivery";
 import EditDelivery from "./deliveries/EditDelivery";
+import ItemGroupsManagementList from "./itemgroups-management/ItemGroupsManagementList";
+import EditItemGroupDocument from "./itemgroups-management/EditItemGroupDocument";
+import ItemGroupPricesList from "./itemgroups-management/ItemGroupPricesList";
 
 /**
  * App component
@@ -52,6 +55,9 @@ class App extends React.Component {
             <Route exact path="/createDelivery/:category" component={CreateDelivery} />
             <Route exact path="/editDelivery/:category/:deliveryId" component={EditDelivery} />
             <Route exact path="/weekDeliveryPredictions/:weekDeliveryPredictionId" component={WeekDeliveryPredictionView} />
+            <Route exact path="/itemgroupsManagement" component={ItemGroupsManagementList} />
+            <Route exact path="/editItemGroupDocument/:itemGroupId" component={EditItemGroupDocument} />
+            <Route exact path="/createAndEditItemGroupPrices/:itemGroupId" component={ItemGroupPricesList} />
           </div>
         </BrowserRouter>
       </MqttConnector>
