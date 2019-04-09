@@ -11,6 +11,7 @@ import { Segment, Item, Header, Button } from "semantic-ui-react";
 import ContractItem from "./ContractItem";
 import ContractProposalModal from "./ContractProposalModal";
 import strings from "../../localization/strings";
+import { Link } from "react-router-dom";
 
 /**
  * Interface for component props
@@ -68,7 +69,7 @@ class ContractList extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
-    
+
     this.setState({ contractsLoading: true });
 
     const contractsService = await Api.getContractsService(this.props.keycloak.token);
@@ -94,7 +95,7 @@ class ContractList extends React.Component<Props, State> {
         contract: freshContract,
         itemGroup: itemGroup
       });
-      
+
       this.setState({ freshContracts: freshContractsState });
     });
 
@@ -137,6 +138,11 @@ class ContractList extends React.Component<Props, State> {
   public render() {
     return (
       <BasicLayout>
+        <Segment>
+          <Button as={Link} to={`contractManagement`} inverted color="red">
+            Sopimusten hallinta
+            </Button>
+        </Segment>
         <Segment>
           <Header>
             {strings.frozenContracts}
