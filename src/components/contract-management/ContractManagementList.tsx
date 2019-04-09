@@ -132,7 +132,7 @@ class ContractManagementList extends React.Component<Props, State> {
     switch (response.code) {
       case 403:
         this.setState({
-          errorMessage: "Sinulla ei ole oikeuksia hallita sopimukisa. Jos näin ei pitäisi olla, ole yhteydessä Pakkasmarjaan."
+          errorMessage: "Sinulla ei ole oikeuksia hallita sopimuksia. Jos näin ei pitäisi olla, ole yhteydessä Pakkasmarjaan."
         });
         break;
       default:
@@ -204,9 +204,7 @@ class ContractManagementList extends React.Component<Props, State> {
         selection
         value={value}
         options={optionsWithPlaceholder}
-        onChange={(event, data) => {
-          onChange(data.value as string)
-        }
+        onChange={(event, data) => { onChange(data.value as string) }
         }
       />
     );
