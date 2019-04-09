@@ -108,7 +108,9 @@ class ItemGroupPricesList extends React.Component<Props, State> {
   }
 
   /**
-   * Handle item group price delet
+   * Handle item group price delete
+   * 
+   * @param itemGroupPriceId itemGroupPriceId
    */
   private handleDelete = async (itemGroupPriceId: string) => {
     if (!this.props.keycloak || !this.props.keycloak.token) {

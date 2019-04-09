@@ -61,6 +61,8 @@ class CreateAndUpdateItemGroupPriceModal extends React.Component<Props, State> {
 
   /**
    * Component did update life-cycle event
+   * 
+   * @param prevProps prevProps
    */
   public async componentDidUpdate(prevProps: Props) {
     if (this.props.edit != prevProps.edit || this.props.itemGroupPriceId != prevProps.itemGroupPriceId) {
@@ -142,6 +144,9 @@ class CreateAndUpdateItemGroupPriceModal extends React.Component<Props, State> {
 
   /**
    * Handle input change
+   * 
+   * @param key key
+   * @param value value
    */
   private handleInputChange = (key: string, value: string | number) => {
     const state: State = this.state;

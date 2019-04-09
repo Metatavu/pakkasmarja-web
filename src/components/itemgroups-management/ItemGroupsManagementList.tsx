@@ -112,6 +112,8 @@ class ItemGroupsManagementList extends React.Component<Props, State> {
    * Format item group document template type
    * 
    * @param itemGroupDocumentTemplate item group document template
+   * 
+   * @return type
    */
   private formatItemGroupDocumentTemplateType = (itemGroupDocumentTemplate: ItemGroupDocumentTemplate) => {
     const type = itemGroupDocumentTemplate.type;

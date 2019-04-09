@@ -33,7 +33,7 @@ interface State {
 };
 
 /**
- * Class for create and update item group price modal component
+ * Class for create item groups
  */
 class CreateItemGroup extends React.Component<Props, State> {
 
