@@ -36,6 +36,7 @@ interface State {
   loading: boolean;
   buttonLoading: boolean;
   itemGroupId: string;
+  itemGroupDocumentTemplateId: string;
   documentTemplateId: string;
   itemGroup : ItemGroup;
 }
@@ -61,6 +62,7 @@ class EditContractDocument extends React.Component<Props, State> {
       loading: false,
       buttonLoading: false,
       itemGroupId: "",
+      itemGroupDocumentTemplateId: "",
       documentTemplateId: "",
       itemGroup: {}
     };
@@ -75,7 +77,11 @@ class EditContractDocument extends React.Component<Props, State> {
     }
 
     const itemGroupId: string = this.props.match.params.itemGroupId;
-    this.setState({ itemGroupId, loading: true });
+    const itemGroupDocumentTemplateId: string = this.props.match.params.itemGroupDocumentTemplateId;
+    this.setState({ 
+      itemGroupId, 
+      itemGroupDocumentTemplateId,
+      loading: true });
     await this.loadItemGroup();
     await this.loadDocumentTemplate();
     this.setState({ loading: false });
@@ -103,16 +109,17 @@ class EditContractDocument extends React.Component<Props, State> {
     }
 
     const documentTemplateService = await Api.getItemGroupsService(this.props.keycloak.token);
-    let documentTemplate: ItemGroupDocumentTemplate = await documentTemplateService.findItemGroupDocumentTemplate(this.state.itemGroupId, "");
-    documentTemplate = documentTemplate[0];
-    this.setState({
-      type: documentTemplate.type ? documentTemplate.type : "",
-      content: documentTemplate.contents ? documentTemplate.contents : "",
-      headerContent: documentTemplate.header ? documentTemplate.header : "",
-      footerContent: documentTemplate.footer ? documentTemplate.footer : "",
-      documentTemplateId: documentTemplate.id ? documentTemplate.id : ""
-    });
+    const documentTemplate: ItemGroupDocumentTemplate = await documentTemplateService.findItemGroupDocumentTemplate(this.state.itemGroupId, "");
 
+    if (documentTemplate[0]) {
+      this.setState({
+        type: documentTemplate[0].type ? documentTemplate[0].type : "",
+        content: documentTemplate[0].contents ? documentTemplate[0].contents : "",
+        headerContent: documentTemplate[0].header ? documentTemplate[0].header : "",
+        footerContent: documentTemplate[0].footer ? documentTemplate[0].footer : "",
+        documentTemplateId: documentTemplate[0].id ? documentTemplate[0].id : ""
+      });
+    }
   }
 
   /**
@@ -162,7 +169,7 @@ class EditContractDocument extends React.Component<Props, State> {
       <BasicLayout>
         <Divider horizontal>
           <Header as='h2'>
-            {`Muokkaat marjalajin ${this.state.itemGroup.name} sopimusmallia ${this.state.type || "(sopimusta ei löytynyt)"}`}
+            {`Muokkaat marjalajin ${this.state.itemGroup.name} sopimusmallia ${this.state.type || "(sopimustyyppiä ei löytynyt)"}`}
           </Header>
         </Divider>
         <Header as="h4">Ylätunniste</Header>
