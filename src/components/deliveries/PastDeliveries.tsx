@@ -70,7 +70,7 @@ class PastDeliveries extends React.Component<Props, State> {
     return (
       <React.Fragment>
         <Segment >
-          <Header as='h2'>Past fresh deliveries</Header>
+          <Header as='h2'>Tehdyt tuore toimitukset</Header>
           <Divider />
           <Item.Group divided>
             {
@@ -79,7 +79,7 @@ class PastDeliveries extends React.Component<Props, State> {
                   return;
                 }
                 return (
-                  <Item key={deliveryProduct.delivery.id} onClick={() => { this.setState({ deliveryId: deliveryProduct.delivery.id, viewModal: true }) }}>
+                  <Item className="open-modal-element" key={deliveryProduct.delivery.id} onClick={() => { this.setState({ deliveryId: deliveryProduct.delivery.id, viewModal: true }) }}>
                     <Item.Content>
                       <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
                       <Item.Description><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Description>
@@ -92,7 +92,7 @@ class PastDeliveries extends React.Component<Props, State> {
           </Item.Group>
         </Segment>
         <Segment >
-          <Header as='h2'>Past frozen deliveries</Header>
+          <Header as='h2'>Tehdyt pakaste toimitukset</Header>
           <Divider />
           <Item.Group divided>
             {
@@ -101,11 +101,12 @@ class PastDeliveries extends React.Component<Props, State> {
                   return;
                 }
                 return (
-                  <Item key={deliveryProduct.delivery.id} onClick={() => { this.setState({ deliveryId: deliveryProduct.delivery.id, viewModal: true }) }}>
-                    <Item.Content >
+                  <Item className="open-modal-element" key={deliveryProduct.delivery.id} onClick={() => { this.setState({ deliveryId: deliveryProduct.delivery.id, viewModal: true }) }}>
+                    <Item.Content>
                       <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
                       <Item.Description><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Description>
                     </Item.Content>
+                    <Header style={{ margin: "auto", marginRight: 50 }} as="h3">Toimitettu</Header>
                   </Item>
                 )
               })
