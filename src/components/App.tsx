@@ -55,7 +55,7 @@ class App extends React.Component {
             <Route exact path="/deliveries" component={Deliveries} />
             <Route exact path="/createDelivery/:category" component={CreateDelivery} />
             <Route exact path="/editDelivery/:category/:deliveryId" component={EditDelivery} />
-            <Route exact path="/itemgroupsManagement" component={ItemGroupsManagementList} />
+            <Route exact path="/itemGroupsManagement" component={ItemGroupsManagementList} />
             <Route exact path="/createItemGroup" component={CreateItemGroup} />
             <Route exact path="/itemGroups/:itemGroupId/contractDocumentTemplate/:itemGroupDocumentTemplateId" component={EditItemGroupDocument} />
             <Route exact path="/createAndEditItemGroupPrices/:itemGroupId" component={ItemGroupPricesList} />

@@ -142,7 +142,7 @@ class ContractList extends React.Component<Props, State> {
           <Button as={Link} to={`contractManagement`} inverted color="red">
             Sopimusten hallinta
           </Button>
-          <Button as={Link} to={`itemgroupsManagement`} inverted color="red">
+          <Button as={Link} to={`itemGroupsManagement`} inverted color="red">
             Marjalajien hallinta
           </Button>
         </Segment>

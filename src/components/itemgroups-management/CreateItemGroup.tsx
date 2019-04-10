@@ -179,7 +179,7 @@ class CreateItemGroup extends React.Component<Props, State> {
   public render() {
     if (this.state.redirect) {
       return (
-        <Redirect to="itemgroupsManagement" />
+        <Redirect to="itemGroupsManagement" />
       );
     }
 

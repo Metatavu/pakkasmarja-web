@@ -161,7 +161,7 @@ class EditContractDocument extends React.Component<Props, State> {
 
     if (this.state.redirect) {
       return (
-        <Redirect to="/itemgroupsManagement" />
+        <Redirect to="/itemGroupsManagement" />
       );
     }
 
@@ -209,7 +209,7 @@ class EditContractDocument extends React.Component<Props, State> {
         </div>
         <Divider />
         <Button.Group floated="right">
-          <Button inverted color="red" as={Link} to={"/itemgroupsManagement"}>Takaisin</Button>
+          <Button inverted color="red" as={Link} to={"/itemGroupsManagement"}>Takaisin</Button>
           <Button.Or text="" />
           <Button color="red" loading={this.state.buttonLoading} onClick={this.handleDocumentSubmit}>Tallenna muutokset</Button>
         </Button.Group>

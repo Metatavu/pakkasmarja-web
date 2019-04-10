@@ -193,7 +193,7 @@ class ItemGroupPricesList extends React.Component<Props, State> {
           </Table.Body>
         </Table>
         <Button.Group floated="right" className="contract-button-group" >
-          <Button as={Link} to="/itemgroupsManagement" inverted color="red">Takaisin</Button>
+          <Button as={Link} to="/itemGroupsManagement" inverted color="red">Takaisin</Button>
           <Button.Or text="" />
           <Button onClick={() => this.setState({ edit: false, createModal: true })} color="red">Uusi hinta</Button>
         </Button.Group>
