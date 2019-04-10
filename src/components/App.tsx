@@ -19,6 +19,10 @@ import Deliveries from "./deliveries/DeliveriesScreen";
 import CreateWeekDeliveryPrediction from "./deliveries/CreateWeekDeliveryPrediction";
 import CreateDelivery from "./deliveries/CreateDelivery";
 import EditDelivery from "./deliveries/EditDelivery";
+import ItemGroupsManagementList from "./itemgroups-management/ItemGroupsManagementList";
+import EditItemGroupDocument from "./itemgroups-management/EditItemGroupDocument";
+import ItemGroupPricesList from "./itemgroups-management/ItemGroupPricesList";
+import CreateItemGroup from "./itemgroups-management/CreateItemGroup";
 
 /**
  * App component
@@ -51,6 +55,10 @@ class App extends React.Component {
             <Route exact path="/deliveries" component={Deliveries} />
             <Route exact path="/createDelivery/:category" component={CreateDelivery} />
             <Route exact path="/editDelivery/:category/:deliveryId" component={EditDelivery} />
+            <Route exact path="/itemGroupsManagement" component={ItemGroupsManagementList} />
+            <Route exact path="/createItemGroup" component={CreateItemGroup} />
+            <Route exact path="/itemGroups/:itemGroupId/contractDocumentTemplate/:itemGroupDocumentTemplateId" component={EditItemGroupDocument} />
+            <Route exact path="/createAndEditItemGroupPrices/:itemGroupId" component={ItemGroupPricesList} />
             <Route exact path="/createWeekDeliveryPrediction/:category" component={CreateWeekDeliveryPrediction} />
           </div>
         </BrowserRouter>

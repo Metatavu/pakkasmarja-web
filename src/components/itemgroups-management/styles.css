@@ -1,0 +1,10 @@
+.plink {
+  color: #3366BB; }
+
+.plink:hover {
+  color: red;
+  cursor: pointer; }
+
+.modal-button-group {
+  margin-top: 1% !important;
+  margin-bottom: 2% !important; }
