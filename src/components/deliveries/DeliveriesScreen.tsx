@@ -50,7 +50,7 @@ class DeliveriesScreen extends React.Component<Props, State> {
       deliveries: []
     };
   }
-
+  
   /**
    * Component did mount life-sycle event
    */
@@ -117,7 +117,7 @@ class DeliveriesScreen extends React.Component<Props, State> {
       <BasicLayout>
         <Menu fluid widths={4} attached='top' inverted color="red">
           <Menu.Item name='Ehdotukset' active={activeItem === 'proposals'} onClick={() => this.handleMenuItemClick("proposals")} />
-          <Menu.Item color="black" name='Viikkoennusteet' active={activeItem === 'Viikkoennusteet'} onClick={() => this.handleMenuItemClick("Viikkoennusteet")} />
+          <Menu.Item color="black" name='Viikkoennusteet' active={activeItem === 'weekDeliveryPredictions'} onClick={() => this.handleMenuItemClick("weekDeliveryPredictions")} />
           <Menu.Item color="black" name='Tulevat toimitukset' active={activeItem === 'incomingDeliveries'} onClick={() => this.handleMenuItemClick("incomingDeliveries")} />
           <Menu.Item color="black" name='Tehdyt toimitukset' active={activeItem === 'pastDeliveries'} onClick={() => this.handleMenuItemClick("pastDeliveries")} />
         </Menu>
@@ -125,7 +125,7 @@ class DeliveriesScreen extends React.Component<Props, State> {
           this.state.activeItem === "proposals" && <ProposalsView />
         }
         {
-          this.state.activeItem === "Viikkoennusteet" && <WeekDeliveryPredictions />
+          this.state.activeItem === "weekDeliveryPredictions" && <WeekDeliveryPredictions />
         }
         {
           this.state.activeItem === "incomingDeliveries" && <IncomingDeliveries />

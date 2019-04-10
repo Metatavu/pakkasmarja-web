@@ -3,3 +3,14 @@
 
 .contract-price-text {
   margin-top: 10px; }
+
+.open-modal-element:hover {
+  cursor: pointer; }
+  .open-modal-element:hover h3.ui.header {
+    color: red !important; }
+  .open-modal-element:hover .header {
+    color: red !important; }
+  .open-modal-element:hover .description {
+    color: red !important; }
+  .open-modal-element:hover .meta {
+    color: red !important; }

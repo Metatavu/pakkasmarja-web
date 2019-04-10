@@ -189,7 +189,7 @@ class IncomingDeliveries extends React.Component<Props, State> {
                   return;
                 }
                 return (
-                  <Item key={deliveryProduct.delivery.id}>
+                  <Item className="open-modal-element" key={deliveryProduct.delivery.id}>
                     <Item.Content onClick={() => { this.setState({ deliveryId: deliveryProduct.delivery.id, viewModal: true }) }}>
                       <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
                       <Item.Meta><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Meta>
@@ -216,7 +216,7 @@ class IncomingDeliveries extends React.Component<Props, State> {
                   return;
                 }
                 return (
-                  <Item key={deliveryProduct.delivery.id}>
+                  <Item className="open-modal-element" key={deliveryProduct.delivery.id}>
                     <Item.Content onClick={() => { this.setState({ deliveryId: deliveryProduct.delivery.id, viewModal: true }) }}>
                       <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
                       <Item.Meta><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Meta>

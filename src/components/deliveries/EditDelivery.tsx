@@ -6,13 +6,14 @@ import Api, { Product, DeliveryPlace, ItemGroupCategory, Delivery, DeliveryNote 
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
-import { Header, Dropdown, Form, Input, Button } from "semantic-ui-react";
+import { Header, Dropdown, Form, Input, Button, Divider } from "semantic-ui-react";
 import BasicLayout from "../generic/BasicLayout";
 import DeliveryNoteModal from "./DeliveryNoteModal";
 import { Redirect } from "react-router";
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import fi from 'date-fns/esm/locale/fi';
+import { Link } from "react-router-dom";
 
 /**
  * Interface for component props
@@ -260,7 +261,7 @@ class EditDelivery extends React.Component<Props, State> {
     return (
       <BasicLayout>
         <Header as="h2">
-          Editoi toimitusta
+          Muokkaa toimitusta
         </Header>
         <Form>
           <Form.Field>
@@ -292,7 +293,19 @@ class EditDelivery extends React.Component<Props, State> {
             {this.renderDropDown(deliveryPlaceOptions, "selectedPlaceId")}
           </Form.Field>
           <Button color="red" inverted onClick={() => this.setState({ modalOpen: true })}>Lisää huomio {`(${this.state.deliveryNotes.length})`}</Button>
-          <Button floated="right" color="red" style={{ marginTop: "10px" }} onClick={this.handleDeliverySubmit} type='submit'>Editoi</Button>
+          <Divider />
+          <Button.Group floated="right" >
+            <Button
+              as={Link}
+              to={{
+                pathname: '/deliveries',
+                state: { activeItem: 'incomingDeliveries' }
+              }}
+              inverted
+              color="red">Takaisin</Button>
+            <Button.Or text="" />
+            <Button color="red" onClick={this.handleDeliverySubmit} type='submit'>Muokkaa toimitusta</Button>
+          </Button.Group>
         </Form>
         <DeliveryNoteModal
           modalOpen={this.state.modalOpen}

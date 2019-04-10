@@ -23,7 +23,7 @@ interface Props {
  */
 interface State {
   open?: boolean;
-  redirect : boolean
+  redirect: boolean
 }
 
 class NewsComponent extends React.Component<Props, State> {
@@ -45,8 +45,8 @@ class NewsComponent extends React.Component<Props, State> {
     }
 
     const newsServices = await Api.getNewsArticlesService(this.props.keycloak.token);
-    newsServices.deleteNewsArticle(this.props.data.id).then(()=>{
-      this.setState({open:false,redirect : true});
+    newsServices.deleteNewsArticle(this.props.data.id).then(() => {
+      this.setState({ open: false, redirect: true });
     });
   }
 
@@ -55,15 +55,15 @@ class NewsComponent extends React.Component<Props, State> {
       return <Redirect to="/news" push={true} />;
     }
     return (
-      <Item>
+      <Item className="open-modal-element">
         <Item.Content as={Link} to={`watchNews/${this.props.data.id}`}>
-        {
-          this.props.data.title.length < 70 ?
-          <Item.Header>{this.props.data.title}</Item.Header> 
-          :
-          <Item.Header style={{wordWrap: "break-word", maxWidth:"100%"}}>{this.props.data.title.replace(/(.{70})..+/, "$1...")}</Item.Header>
-        }
-          <Item.Description><Moment format="DD.MM.YYYY HH:mm">{this.props.data.createdAt&&this.props.data.createdAt.toString()}</Moment></Item.Description>
+          {
+            this.props.data.title.length < 70 ?
+              <Item.Header>{this.props.data.title}</Item.Header>
+              :
+              <Item.Header style={{ wordWrap: "break-word", maxWidth: "100%" }}>{this.props.data.title.replace(/(.{70})..+/, "$1...")}</Item.Header>
+          }
+          <Item.Description><Moment format="DD.MM.YYYY HH:mm">{this.props.data.createdAt && this.props.data.createdAt.toString()}</Moment></Item.Description>
         </Item.Content>
         <Button.Group floated="right" style={{ maxHeight: "37px" }}>
           <Button as={Link} to={`editNews/${this.props.data.id}`} style={{ display: "flex", alignItems: "center" }} color="red">Edit</Button>
