@@ -16,7 +16,7 @@ import EditContract from "./contract-management/EditContract";
 import EditContractDocument from "./contract-management/EditContractDocument";
 import WatchContract from "./contract-management/WatchContract";
 import Deliveries from "./deliveries/DeliveriesScreen";
-import WeekDeliveryPredictionView from "./deliveries/WeekDeliveryPredictionView";
+import CreateWeekDeliveryPrediction from "./deliveries/CreateWeekDeliveryPrediction";
 import CreateDelivery from "./deliveries/CreateDelivery";
 import EditDelivery from "./deliveries/EditDelivery";
 
@@ -51,7 +51,7 @@ class App extends React.Component {
             <Route exact path="/deliveries" component={Deliveries} />
             <Route exact path="/createDelivery/:category" component={CreateDelivery} />
             <Route exact path="/editDelivery/:category/:deliveryId" component={EditDelivery} />
-            <Route exact path="/weekDeliveryPredictions/:weekDeliveryPredictionId" component={WeekDeliveryPredictionView} />
+            <Route exact path="/createWeekDeliveryPrediction/:category" component={CreateWeekDeliveryPrediction} />
           </div>
         </BrowserRouter>
       </MqttConnector>

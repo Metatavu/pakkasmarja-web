@@ -1,12 +1,14 @@
 import * as React from "react";
 import * as actions from "../../actions/";
-import { StoreState, DeliveriesState, DeliveryProduct, WeekDeliveryPredictionTableData } from "src/types";
+import { StoreState, WeekDeliveryPredictionTableData } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
-import { Segment, Item, Header, Divider } from "semantic-ui-react";
+import { Segment, Item, Header, Divider, Button } from "semantic-ui-react";
 import Api, { WeekDeliveryPrediction, ItemGroup } from "pakkasmarja-client";
 import { Link } from "react-router-dom";
+import WeekDeliveryPredictionViewModal from "./WeekDeliveryPredictionViewModal";
+import * as _ from "lodash";
 
 
 /**
@@ -15,7 +17,6 @@ import { Link } from "react-router-dom";
 interface Props {
   authenticated: boolean;
   keycloak?: Keycloak.KeycloakInstance;
-  deliveries?: DeliveriesState;
 }
 
 /**
@@ -23,9 +24,10 @@ interface Props {
  */
 interface State {
   keycloak?: Keycloak.KeycloakInstance;
-  freshWeekDeliveryPredictions: DeliveryProduct[];
-  frozenWeekDeliveryPredictions: DeliveryProduct[];
-  weekDeliveryPredictionTableData: WeekDeliveryPredictionTableData[];
+  freshWeekDeliveryPredictions: WeekDeliveryPredictionTableData[];
+  frozenWeekDeliveryPredictions: WeekDeliveryPredictionTableData[];
+  predictionDataForModal?: WeekDeliveryPredictionTableData;
+  modal: boolean;
 }
 
 /**
@@ -41,9 +43,9 @@ class WeekDeliveryPredictions extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
+      modal: false,
       freshWeekDeliveryPredictions: [],
-      frozenWeekDeliveryPredictions: [],
-      weekDeliveryPredictionTableData: []
+      frozenWeekDeliveryPredictions: []
     };
   }
 
@@ -54,23 +56,27 @@ class WeekDeliveryPredictions extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
-    const userId = this.props.keycloak.subject;
 
+    const userId = this.props.keycloak.subject;
     const weekDeliveryPredictionsService = Api.getWeekDeliveryPredictionsService(this.props.keycloak.token);
     const itemGroupsService = await Api.getItemGroupsService(this.props.keycloak.token);
 
     const weekDeliveryPredictions: WeekDeliveryPrediction[] = await weekDeliveryPredictionsService.listWeekDeliveryPredictions(undefined, undefined, userId, undefined, undefined, 0, 100);
     const itemGroups: ItemGroup[] = await itemGroupsService.listItemGroups();
-
+    const weekDeliveryPredictionState: WeekDeliveryPredictionTableData[] = [];
     weekDeliveryPredictions.forEach((weekDeliveryPrediction) => {
-      const weekDeliveryPredictionState: WeekDeliveryPredictionTableData[] = this.state.weekDeliveryPredictionTableData;
       const itemGroup = itemGroups.find(itemGroup => itemGroup.id === weekDeliveryPrediction.itemGroupId);
       weekDeliveryPredictionState.push({
         weekDeliveryPrediction: weekDeliveryPrediction,
         itemGroup: itemGroup ? itemGroup : {}
       });
-      this.setState({ weekDeliveryPredictionTableData: weekDeliveryPredictionState });
     });
+    let freshWeekDeliveryPredictions: WeekDeliveryPredictionTableData[] = weekDeliveryPredictionState.filter((prediction) => prediction.itemGroup.category === "FRESH");
+    freshWeekDeliveryPredictions = _.reverse(_.sortBy(freshWeekDeliveryPredictions, ['weekDeliveryPrediction.weekNumber']));
+    let frozenWeekDeliveryPredictions: WeekDeliveryPredictionTableData[] = weekDeliveryPredictionState.filter((prediction) => prediction.itemGroup.category === "FROZEN");
+    frozenWeekDeliveryPredictions = _.reverse(_.sortBy(frozenWeekDeliveryPredictions, ['weekDeliveryPrediction.weekNumber']));
+
+    this.setState({ freshWeekDeliveryPredictions, frozenWeekDeliveryPredictions });
   }
 
   /**
@@ -80,13 +86,12 @@ class WeekDeliveryPredictions extends React.Component<Props, State> {
    */
   private renderListItem = (predictionTableData: WeekDeliveryPredictionTableData) => {
     return (
-      <Item 
-        key={predictionTableData.weekDeliveryPrediction.id} 
-        as={Link} to={`weekDeliveryPredictions/${predictionTableData.weekDeliveryPrediction.id}`}>
+      <Item className="open-modal-element" key={predictionTableData.weekDeliveryPrediction.id} onClick={() => this.setState({ modal: true, predictionDataForModal: predictionTableData })}>
         <Item.Content>
-          <Item.Header>{`${predictionTableData.itemGroup.displayName} ${predictionTableData.weekDeliveryPrediction.amount} KG`}</Item.Header>
-          <Item.Description>Lorem ipsum</Item.Description>
+          <Item.Header >{`${predictionTableData.itemGroup.displayName} ${predictionTableData.weekDeliveryPrediction.amount} KG`}</Item.Header>
+          <Item.Description >Viikko {predictionTableData.weekDeliveryPrediction.weekNumber}</Item.Description>
         </Item.Content>
+        <Header style={{ margin: "auto", marginRight: 50 }} as="h3">Avaa</Header>
       </Item>
     );
   }
@@ -97,17 +102,39 @@ class WeekDeliveryPredictions extends React.Component<Props, State> {
   public render() {
     return (
       <React.Fragment>
-        <Segment >
-          <Header as='h2'>Tuoretuotteet</Header>
+        <Button style={{ marginTop: 20 }} color="red" attached="top" as={Link} to="createWeekDeliveryPrediction/FRESH">
+          Uusi tuore viikkoennuste
+        </Button>
+        <Segment attached>
+          <Header as='h2'>Tuore viikkoennusteet</Header>
           <Divider />
           <Item.Group divided>
             {
-              this.state.weekDeliveryPredictionTableData.map((predictionTableData: WeekDeliveryPredictionTableData) => {
+              this.state.freshWeekDeliveryPredictions.map((predictionTableData: WeekDeliveryPredictionTableData) => {
                 return this.renderListItem(predictionTableData)
               })
             }
           </Item.Group>
         </Segment>
+        <Button style={{ marginTop: 20 }} color="red" attached="top" as={Link} to="createWeekDeliveryPrediction/FROZEN">
+          Uusi pakaste viikkoennuste
+        </Button>
+        <Segment attached>
+          <Header as='h2'>Pakaste viikkoennusteet</Header>
+          <Divider />
+          <Item.Group divided>
+            {
+              this.state.frozenWeekDeliveryPredictions.map((predictionTableData: WeekDeliveryPredictionTableData) => {
+                return this.renderListItem(predictionTableData)
+              })
+            }
+          </Item.Group>
+        </Segment>
+        <WeekDeliveryPredictionViewModal
+          modalOpen={this.state.modal}
+          closeModal={() => this.setState({ modal: false })}
+          data={this.state.predictionDataForModal}
+        />
       </React.Fragment>
     );
   }

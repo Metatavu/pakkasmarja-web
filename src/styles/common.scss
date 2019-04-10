@@ -5,3 +5,20 @@
 .contract-price-text {
   margin-top: 10px;
 }
+
+.open-modal-element:hover{
+  cursor: pointer;
+  h3.ui.header{
+    color: red !important;
+  }
+  .header{
+    color: red !important;
+  }
+  .description{
+    color: red !important;
+  }
+  .meta{
+    color: red !important;
+  }
+  
+}

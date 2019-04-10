@@ -76,7 +76,7 @@ class ProposalsView extends React.Component<Props, State> {
     return (
       <React.Fragment>
         <Segment >
-          <Header as='h2'>Fresh proposals</Header>
+          <Header as='h2'>Tuore ehdotukset</Header>
           <Divider />
           <Item.Group divided>
             {
@@ -90,7 +90,7 @@ class ProposalsView extends React.Component<Props, State> {
                       <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
                       <Item.Description><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Description>
                     </Item.Content>
-                    <Button style={{ display: "flex", alignItems: "center" }} color="red" floated="right" onClick={() => this.setState({ deliveryId: deliveryProduct.delivery.id, proposalAcceptModal: true })}>Tarkasta</Button>
+                    <Button style={{ maxHeight: "37px", marginBottom: "1%" }} color="red" floated="right" onClick={() => this.setState({ deliveryId: deliveryProduct.delivery.id, proposalAcceptModal: true })}>Tarkasta</Button>
                   </Item>
                 )
               })
@@ -98,7 +98,7 @@ class ProposalsView extends React.Component<Props, State> {
           </Item.Group>
         </Segment>
         <Segment >
-          <Header as='h2'>Frozen proposals</Header>
+          <Header as='h2'>Pakaste ehdotukset</Header>
           <Divider />
           <Item.Group divided>
             {
@@ -116,7 +116,7 @@ class ProposalsView extends React.Component<Props, State> {
                         </Moment>
                       </Item.Description>
                     </Item.Content>
-                    <Button style={{ maxHeight: "37px", margin: "auto" }} floated="right" color="red" onClick={() => this.setState({ deliveryId: deliveryProduct.delivery.id, proposalAcceptModal: true })}>Tarkasta</Button>
+                    <Button style={{ maxHeight: "37px", marginBottom: "1%" }} floated="right" color="red" onClick={() => this.setState({ deliveryId: deliveryProduct.delivery.id, proposalAcceptModal: true })}>Tarkasta</Button>
                   </Item>
                 )
               })
