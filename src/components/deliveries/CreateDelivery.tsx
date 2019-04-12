@@ -80,8 +80,7 @@ class CreateDelivery extends React.Component<Props, State> {
     const deliveryPlacesService = await Api.getDeliveryPlacesService(this.props.keycloak.token);
     const deliveryPlaces = await deliveryPlacesService.listDeliveryPlaces();
     const products: Product[] = await productsService.listProducts(undefined, category, undefined, undefined, 100);
-    console.log(category);
-    console.log(products);
+
     this.setState({
       products,
       deliveryPlaces,

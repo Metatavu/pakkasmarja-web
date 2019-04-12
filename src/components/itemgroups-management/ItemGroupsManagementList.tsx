@@ -75,7 +75,7 @@ class ItemGroupsManagementList extends React.Component<Props, State> {
 
     const itemGroupsService = await Api.getItemGroupsService(this.props.keycloak.token);
     const itemGroups = await itemGroupsService.listItemGroups();
-    console.log(itemGroups);
+    
     const itemGroupsAndItemGroupDocumentTemplates = await Promise.all(itemGroups.map((itemGroup): Promise<ItemGroupTableData | null> => {
       return this.loadItemGroupAndItemGroupTemplate(itemGroup);
     }));
