@@ -12,6 +12,7 @@ import ContractItem from "./ContractItem";
 import ContractProposalModal from "./ContractProposalModal";
 import strings from "../../localization/strings";
 import { Link } from "react-router-dom";
+import ApplicationRoles from "src/utils/application-roles";
 
 /**
  * Interface for component props
@@ -133,19 +134,44 @@ class ContractList extends React.Component<Props, State> {
   }
 
   /**
+   * Render management buttons
+   */
+  private renderManagementButtons = () => {
+    if (!this.props.keycloak || !this.props.keycloak.token) {
+      return;
+    }
+
+    if (!this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTRACTS) && !this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_ITEM_GROUPS)) {
+      return <React.Fragment/>
+    }
+
+    return (
+      <Segment>
+        {
+          this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTRACTS) && 
+            <Button as={Link} to={`contractManagement`} inverted color="red">
+              Sopimusten hallinta
+            </Button>
+        }
+        {
+          this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_ITEM_GROUPS) &&
+            <Button as={Link} to={`itemGroupsManagement`} inverted color="red">
+              Marjalajien hallinta
+            </Button>
+        }
+      </Segment>
+    );
+  }
+
+  /**
    * Render method
    */
   public render() {
     return (
       <BasicLayout>
-        <Segment>
-          <Button as={Link} to={`contractManagement`} inverted color="red">
-            Sopimusten hallinta
-          </Button>
-          <Button as={Link} to={`itemGroupsManagement`} inverted color="red">
-            Marjalajien hallinta
-          </Button>
-        </Segment>
+        {
+          this.renderManagementButtons()
+        }
         <Segment>
           <Header>
             {strings.frozenContracts}

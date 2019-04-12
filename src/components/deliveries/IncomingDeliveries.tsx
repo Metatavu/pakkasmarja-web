@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 import Moment from "react-moment";
 import ViewModal from "./ViewModal";
 import Api, { Delivery, ItemGroupCategory } from "pakkasmarja-client";
-
+import ApplicationRoles from "../../utils/application-roles";
 
 /**
  * Interface for component props
@@ -65,6 +65,7 @@ class IncomingDeliveries extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token || !this.props.deliveries) {
       return;
     }
+
     const filterCondition = ["PROPOSAL", "PLANNED", "DELIVERY"];
     const frozenDeliveryData: DeliveryProduct[] = this.props.deliveries.frozenDeliveryData;
     const frozenDeliveries: DeliveryProduct[] = frozenDeliveryData.filter(deliveryData => filterCondition.includes(deliveryData.delivery.status));
@@ -176,10 +177,12 @@ class IncomingDeliveries extends React.Component<Props, State> {
   public render() {
     return (
       <React.Fragment>
-        {/** TODO: Permission check for this link */}
-        <Button style={{ marginTop: 20 }} as={Link} to="manageIncomingDeliveries">
-          Hallitse saapuvia toimituksia
-        </Button>
+        {
+          this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_DELIVERIES) && 
+          <Button style={{ marginTop: 20 }} as={Link} to="manageIncomingDeliveries">
+            Hallitse saapuvia toimituksia
+          </Button>
+        }
 
         <Button style={{ marginTop: 20 }} color="red" attached="top" as={Link} to="createDelivery/FRESH">
           Uusi tuore toimitus
