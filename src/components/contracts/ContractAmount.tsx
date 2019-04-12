@@ -67,7 +67,7 @@ export default class ContractAmount extends React.Component<Props, State> {
     }
 
     const category = this.props.itemGroup.category;
-    const quantityValue = this.props.proposedAmount;
+    const quantityValue = this.props.proposedAmount || this.props.contractAmount;
 
     return (
       <div className="contract-section">
