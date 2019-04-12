@@ -176,6 +176,11 @@ class IncomingDeliveries extends React.Component<Props, State> {
   public render() {
     return (
       <React.Fragment>
+        {/** TODO: Permission check for this link */}
+        <Button style={{ marginTop: 20 }} as={Link} to="manageIncomingDeliveries">
+          Hallitse saapuvia toimituksia
+        </Button>
+
         <Button style={{ marginTop: 20 }} color="red" attached="top" as={Link} to="createDelivery/FRESH">
           Uusi tuore toimitus
         </Button>

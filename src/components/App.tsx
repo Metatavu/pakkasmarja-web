@@ -23,6 +23,8 @@ import ItemGroupsManagementList from "./itemgroups-management/ItemGroupsManageme
 import EditItemGroupDocument from "./itemgroups-management/EditItemGroupDocument";
 import ItemGroupPricesList from "./itemgroups-management/ItemGroupPricesList";
 import CreateItemGroup from "./itemgroups-management/CreateItemGroup";
+import ManageIncomingDeliveries from "./deliveries/ManageIncomingDeliveries";
+import ManageDelivery from "./deliveries/ManageDelivery";
 
 /**
  * App component
@@ -60,6 +62,8 @@ class App extends React.Component {
             <Route exact path="/itemGroups/:itemGroupId/contractDocumentTemplate/:itemGroupDocumentTemplateId" component={EditItemGroupDocument} />
             <Route exact path="/createAndEditItemGroupPrices/:itemGroupId" component={ItemGroupPricesList} />
             <Route exact path="/createWeekDeliveryPrediction/:category" component={CreateWeekDeliveryPrediction} />
+            <Route exact path="/manageIncomingDeliveries" component={ManageIncomingDeliveries} />
+            <Route exact path="/manageIncomingDeliveries/:deliveryId" component={ManageDelivery} />
           </div>
         </BrowserRouter>
       </MqttConnector>
