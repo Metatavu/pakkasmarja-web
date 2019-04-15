@@ -110,7 +110,7 @@ class ImageGallery extends React.Component<Props, State> {
  * 
  * @param state store state
  */
-export function mapStateToProps(state: StoreState) {
+function mapStateToProps(state: StoreState) {
   return {
     authenticated: state.authenticated,
     keycloak: state.keycloak
@@ -122,7 +122,7 @@ export function mapStateToProps(state: StoreState) {
  * 
  * @param dispatch dispatch method
  */
-export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
+function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
   return {
   };
 }

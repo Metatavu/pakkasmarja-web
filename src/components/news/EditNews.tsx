@@ -70,15 +70,16 @@ class CreateNews extends React.Component<Props, State> {
 
   /**
    * Handle form submit
+   * 
+   * @param event event
    */
-  private handleSubmit = async (e: React.SyntheticEvent) => {
+  private handleSubmit = async (event: React.SyntheticEvent) => {
 
-    e.preventDefault();
+    event.preventDefault();
 
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
-    console.log(this.state.imageUrl);
    
     const newsArticle: NewsArticle = { title: this.state.title, contents: this.state.contents, imageUrl: this.state.imageUrl };
     const newsService = await Api.getNewsArticlesService(this.props.keycloak.token);
@@ -108,7 +109,10 @@ class CreateNews extends React.Component<Props, State> {
     });
   }
 
-  render() {
+  /**
+   * Render method
+   */
+  public render() {
     if (this.state.redirect) {
       return <Redirect to="/news" push={true} />;
     }
