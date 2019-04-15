@@ -156,7 +156,7 @@ class ContractTerms extends React.Component<Props, State> {
 
     const contractsService = Api.getContractsService(this.props.keycloak.token);
     const contractSignRequest = await contractsService.createContractDocumentSignRequest({ redirectUrl: "" }, this.state.contract.id || "", this.state.type, this.state.ssn, this.state.selectedSignServiceId);
-
+    
     if (contractSignRequest && contractSignRequest.redirectUrl) {
       const content = "Allekirjoitus jatkuu avatussa välilehdessä. Kun olet valmis voit sulkea tämän ilmoituksen.";
       this.setState({ modalOpen: true, modalText: content });
