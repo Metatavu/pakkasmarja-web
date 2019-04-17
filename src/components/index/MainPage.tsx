@@ -31,6 +31,9 @@ import ManageIncomingDeliveries from "../deliveries/ManageIncomingDeliveries";
 import ManageDelivery from "../deliveries/ManageDelivery";
 import DeliveriesScreen from "../deliveries/DeliveriesScreen";
 import WelcomePage from "./WelcomePage";
+import ProductsList from "../products-management/ProductsList";
+import CreateProduct from "../products-management/CreateProduct";
+import EditProduct from "../products-management/EditProduct";
 
 /**
  * Interface for component props
@@ -90,6 +93,9 @@ class MainPage extends React.Component<Props, {}> {
         <Route exact path="/createWeekDeliveryPrediction/:category" component={CreateWeekDeliveryPrediction} />
         <Route exact path="/manageIncomingDeliveries" component={ManageIncomingDeliveries} />
         <Route exact path="/manageIncomingDeliveries/:deliveryId" component={ManageDelivery} />
+        <Route exact path="/productsManagement" component={ProductsList} />
+        <Route exact path="/createProduct" component={CreateProduct} />
+        <Route exact path="/editProduct/:productId" component={EditProduct} />
       </div>
     );
   }
