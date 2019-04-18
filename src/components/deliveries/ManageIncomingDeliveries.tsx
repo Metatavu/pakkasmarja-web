@@ -9,6 +9,7 @@ import Moment from "react-moment";
 import ViewModal from "./ViewModal";
 import BasicLayout from "../generic/BasicLayout";
 import { Link } from "react-router-dom";
+import Api, { Delivery, Product } from "pakkasmarja-client";
 
 
 /**
@@ -54,23 +55,36 @@ class ManageIncomingDeliveries extends React.Component<Props, State> {
   /**
    * Component did mount life-sycle event
    */
-  public componentDidMount() {
-    this.loadData();
-  }
-
-  /**
-   * Load data
-   */
-  private loadData = () => {
-    if (!this.props.keycloak || !this.props.keycloak.token || !this.props.deliveries) {
+  public async componentDidMount() {
+    if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
-    const filterCondition = ["DELIVERY"];
-    const frozenDeliveryData: DeliveryProduct[] = this.props.deliveries.frozenDeliveryData;
-    const frozenDeliveries: DeliveryProduct[] = frozenDeliveryData.filter(deliveryData => filterCondition.includes(deliveryData.delivery.status));
-    const freshDeliveryData: DeliveryProduct[] = this.props.deliveries.freshDeliveryData;
-    const freshDeliveries: DeliveryProduct[] = freshDeliveryData.filter(deliveryData => filterCondition.includes(deliveryData.delivery.status));
-    this.setState({ frozenDeliveries, freshDeliveries });
+
+    const deliveriesService = await Api.getDeliveriesService(this.props.keycloak.token);
+    const productsService = await Api.getProductsService(this.props.keycloak.token);
+
+    const freshDeliveries: Delivery[] = await deliveriesService.listDeliveries(undefined, "DELIVERY", "FRESH", undefined, undefined, undefined, undefined, undefined, 0, 200);
+    const frozenDeliveries: Delivery[] = await deliveriesService.listDeliveries(undefined, "DELIVERY", "FROZEN", undefined, undefined, undefined, undefined, undefined, 0, 200);
+    const products: Product[] = await productsService.listProducts(undefined, undefined, undefined, undefined, 100);
+
+    const freshDeliveriesAndProducts: DeliveryProduct[] = freshDeliveries.map((delivery) => {
+      return {
+        delivery: delivery,
+        product: products.find(product => product.id === delivery.productId)
+      };
+    });
+
+    const frozenDeliveriesAndProducts: DeliveryProduct[] = frozenDeliveries.map((delivery) => {
+      return {
+        delivery: delivery,
+        product: products.find(product => product.id === delivery.productId)
+      };
+    });
+
+    this.setState({ 
+      freshDeliveries: freshDeliveriesAndProducts,
+      frozenDeliveries: frozenDeliveriesAndProducts
+     });
   }
 
   /**

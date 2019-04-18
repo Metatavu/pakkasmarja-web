@@ -39,7 +39,8 @@ interface State {
   category: string;
   redirect: boolean;
   deliveryNotes: DeliveryNote[];
-  deliveryId?: string
+  deliveryId?: string;
+  userId: string;
 }
 
 /**
@@ -62,7 +63,8 @@ class ManageDelivery extends React.Component<Props, State> {
       modalOpen: false,
       category: "",
       deliveryNotes: [],
-      amount: 0
+      amount: 0,
+      userId: ""
     };
     registerLocale('fi', fi);
   }
@@ -86,6 +88,7 @@ class ManageDelivery extends React.Component<Props, State> {
     this.setState({
       products,
       deliveryPlaces,
+      userId: delivery.userId,
       deliveryId,
       amount: delivery.amount,
       selectedProductId: delivery.productId,
@@ -145,7 +148,7 @@ class ManageDelivery extends React.Component<Props, State> {
     const delivery: Delivery = {
       id: "",
       productId: this.state.selectedProductId,
-      userId: this.props.keycloak.subject || "",
+      userId: this.state.userId || "",
       time: this.state.date,
       status: "DONE",
       amount: this.state.amount,

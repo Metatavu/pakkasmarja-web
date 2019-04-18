@@ -255,11 +255,13 @@ class EditContract extends React.Component<Props, State> {
     this.setState({ buttonLoading: true });
 
     const contractUpdate: Contract = {
+      areaDetails: this.state.contract ? this.state.contract.areaDetails : [],
       itemGroupId: this.state.itemGroup.id,
       sapId: this.state.sapId,
       status: this.state.status,
       quantityComment: this.state.quantityComment,
       contractQuantity: this.state.quantity,
+      proposedQuantity: this.state.contract ? this.state.contract.proposedQuantity : 0,
       deliveryPlaceId: this.state.deliveryPlaceId,
       deliveryPlaceComment: this.state.deliveryPlaceComment,
       remarks: this.state.sapComment,
