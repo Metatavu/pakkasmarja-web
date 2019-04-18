@@ -9,6 +9,7 @@ import BasicLayout from "../generic/BasicLayout";
 import { Checkbox, Input, Button, Dropdown, Container, Header, Divider, Form, Modal } from "semantic-ui-react";
 import { PDFService } from "src/api/pdf.service";
 import "./styles.scss";
+import { Link } from "react-router-dom";
 
 /**
  * Interface for component props
@@ -230,7 +231,7 @@ class ContractTerms extends React.Component<Props, State> {
             <Button.Or text="" />
             <Button onClick={this.downloadContractPdfClicked} inverted color="red">Lataa sopimus PDF - muodossa.</Button>
             <Button.Or text="" />
-            <Button  color="black">TAKAISIN</Button>
+            <Button as={Link} to={`/contracts/${this.state.contract ? this.state.contract.id : ""}`} color="black">TAKAISIN</Button>
           </Button.Group>
         </Container>
         <Modal size="small" open={this.state.modalOpen} onClose={() => this.setState({ modalOpen: false })} closeIcon>
