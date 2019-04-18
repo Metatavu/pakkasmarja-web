@@ -142,21 +142,27 @@ class ContractList extends React.Component<Props, State> {
     }
 
     if (!this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTRACTS) && !this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_ITEM_GROUPS)) {
-      return <React.Fragment/>
+      return <React.Fragment />
     }
 
     return (
       <Segment>
         {
-          this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTRACTS) && 
-            <Button as={Link} to={`contractManagement`} inverted color="red">
-              Sopimusten hallinta
+          this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTRACTS) &&
+          <Button as={Link} to={`contractManagement`} inverted color="red">
+            Sopimusten hallinta
             </Button>
         }
         {
           this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_ITEM_GROUPS) &&
-            <Button as={Link} to={`itemGroupsManagement`} inverted color="red">
-              Marjalajien hallinta
+          <Button as={Link} to={`itemGroupsManagement`} inverted color="red">
+            Marjalajien hallinta
+            </Button>
+        }
+        {
+          this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_PRODUCTS) &&
+          <Button as={Link} to={`productsManagement`} inverted color="red">
+            Tuotteiden hallinta
             </Button>
         }
       </Segment>

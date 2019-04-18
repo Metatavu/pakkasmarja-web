@@ -8,7 +8,7 @@ import "../../styles/common.scss";
 import Api from "pakkasmarja-client";
 import { NewsArticle } from "pakkasmarja-client";
 import NewsComponent from "./NewsComponent";
-import { Button, Segment, Item } from "semantic-ui-react";
+import { Button, Segment, Item, Dimmer, Loader } from "semantic-ui-react";
 import { Link } from "react-router-dom";
 
 /**
@@ -24,6 +24,7 @@ interface Props {
  */
 interface State {
   newsArticles: NewsArticle[];
+  loading: boolean;
 }
 
 class NewsList extends React.Component<Props, State> {
@@ -31,24 +32,41 @@ class NewsList extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      newsArticles: []
+      newsArticles: [],
+      loading: false
     };
   }
 
   /**
    * Component did mount life-sycle event
    */
-  async componentDidMount() {
+  public async componentDidMount() {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
+
+    this.setState({ loading: true });
     const newArticleService = await Api.getNewsArticlesService(this.props.keycloak.token);
-    newArticleService.listNewsArticles().then((newsArticles) => {
-      this.setState({ newsArticles: newsArticles })
-    });
+    const newsArticles = await newArticleService.listNewsArticles();
+    this.setState({ newsArticles, loading: false });
   }
 
-  render() {
+  /**
+   * Render
+   */
+  public render() {
+    if (this.state.loading) {
+      return (
+        <BasicLayout>
+          <Dimmer active inverted>
+            <Loader inverted>
+              Ladataan uutisia
+            </Loader>
+          </Dimmer>
+        </BasicLayout>
+      );
+    }
+    
     return (
       <BasicLayout>
         <Link to="/createNews">

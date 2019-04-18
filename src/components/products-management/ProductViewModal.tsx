@@ -1,11 +1,12 @@
 import * as React from "react";
 import * as Keycloak from 'keycloak-js';
 import * as actions from "../../actions/";
-import { StoreState, DeliveryProduct } from "src/types";
+import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import { Modal, Header, Button, Divider } from "semantic-ui-react";
+import { Modal, Header, Button, Divider, Dimmer, Loader } from "semantic-ui-react";
 import Api, { Product } from "pakkasmarja-client";
+import BasicLayout from "../generic/BasicLayout";
 
 /**
  * Interface for component props
@@ -14,7 +15,8 @@ interface Props {
   modalOpen: boolean,
   closeModal: () => void,
   keycloak?: Keycloak.KeycloakInstance;
-  deliveryId: string
+  productId: string;
+
 };
 
 /**
@@ -22,14 +24,15 @@ interface Props {
  */
 interface State {
   modalOpen: boolean;
-  deliveryProduct?: DeliveryProduct;
   redirect: boolean;
+  product?: Product;
+  productLoading: boolean;
 };
 
 /**
- * View delivery modal component class
+ * Product view delivery modal component class
  */
-class ViewModal extends React.Component<Props, State> {
+class ProductViewModal extends React.Component<Props, State> {
 
   /**
    * Constructor
@@ -40,7 +43,8 @@ class ViewModal extends React.Component<Props, State> {
     super(props);
     this.state = {
       modalOpen: false,
-      redirect: false
+      redirect: false,
+      productLoading: false
     };
   }
 
@@ -52,18 +56,10 @@ class ViewModal extends React.Component<Props, State> {
       return;
     }
     
-    const deliveriesService = await Api.getDeliveriesService(this.props.keycloak.token);
+    this.setState({ productLoading: true });
     const productsService = await Api.getProductsService(this.props.keycloak.token);
-    const products: Product[] = await productsService.listProducts(undefined, undefined, undefined, undefined, 100);
-
-    const deliveryId: string = await this.props.deliveryId;
-    deliveriesService.findDelivery(deliveryId).then((delivery) => {
-      const deliveryProduct: DeliveryProduct = {
-        delivery: delivery,
-        product: products.find(product => product.id === delivery.productId)
-      }
-      this.setState({ deliveryProduct });
-    });
+    const product: Product = await productsService.findProduct(this.props.productId);
+    this.setState({ product, productLoading: false });
   }
 
   /**
@@ -77,9 +73,22 @@ class ViewModal extends React.Component<Props, State> {
    * Render method
    */
   public render() {
-    if (!this.state.deliveryProduct || !this.state.deliveryProduct.product) {
+    if (!this.state.product) {
       return <React.Fragment></React.Fragment>;
     }
+
+    if (this.state.productLoading) {
+      return (
+        <BasicLayout>
+          <Dimmer active inverted>
+            <Loader inverted>
+              Ladataan tuotetta
+          </Loader>
+          </Dimmer>
+        </BasicLayout>
+      );
+    }
+
     return (
       <Modal size="small" open={this.props.modalOpen} onClose={this.closeModal} closeIcon>
         <Modal.Content>
@@ -87,11 +96,10 @@ class ViewModal extends React.Component<Props, State> {
             Toimitus
           </Header>
           <Divider />
-          <Header as="h3">Tuotteen nimi </Header><span>{this.state.deliveryProduct.product.name}</span>
-          <Header as="h3">Tuotteen yksikkönimi </Header><span>{this.state.deliveryProduct.product.unitName}</span>
-          <Header as="h3">Tuotteen yksikkömäärä </Header><span>{this.state.deliveryProduct.product.units}</span>
-          <Header as="h3">Tuotteen yksikkökoko </Header><span>{this.state.deliveryProduct.product.unitSize}</span>
-          <Header as="h3">Toimitus määrä </Header><span>{this.state.deliveryProduct.delivery.amount}</span>
+          <Header as="h3">Tuotteen nimi </Header><span>{this.state.product.name}</span>
+          <Header as="h3">Tuotteen yksikkönimi </Header><span>{this.state.product.unitName}</span>
+          <Header as="h3">Tuotteen yksikkömäärä </Header><span>{this.state.product.units}</span>
+          <Header as="h3">Tuotteen yksikkökoko </Header><span>{this.state.product.unitSize}</span>
           <Divider style={{ paddingBottom: 0, marginBottom: 0 }} />
           <Button floated="right" onClick={this.closeModal} style={{ marginBottom: 20, marginTop: 20 }} color="black">Sulje</Button>
         </Modal.Content>
@@ -108,8 +116,7 @@ class ViewModal extends React.Component<Props, State> {
 export function mapStateToProps(state: StoreState) {
   return {
     authenticated: state.authenticated,
-    keycloak: state.keycloak,
-    deliveries: state.deliveries
+    keycloak: state.keycloak
   }
 }
 
@@ -123,4 +130,4 @@ export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(ViewModal);
+export default connect(mapStateToProps, mapDispatchToProps)(ProductViewModal);

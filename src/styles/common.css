@@ -5,7 +5,8 @@
   margin-top: 10px; }
 
 .open-modal-element:hover {
-  cursor: pointer; }
+  cursor: pointer;
+  color: red !important; }
   .open-modal-element:hover h3.ui.header {
     color: red !important; }
   .open-modal-element:hover .header {
