@@ -66,11 +66,11 @@ class NewsComponent extends React.Component<Props, State> {
           <Item.Description><Moment format="DD.MM.YYYY HH:mm">{this.props.data.createdAt && this.props.data.createdAt.toString()}</Moment></Item.Description>
         </Item.Content>
         <Button.Group floated="right" style={{ maxHeight: "37px" }}>
-          <Button as={Link} to={`editNews/${this.props.data.id}`} style={{ display: "flex", alignItems: "center" }} color="red">Edit</Button>
+          <Button as={Link} to={`editNews/${this.props.data.id}`} style={{ display: "flex", alignItems: "center" }} color="red">Muokkaa</Button>
           <Button.Or text="" />
-          <Button onClick={() => this.setState({ open: true })} color="black">Delete</Button>
+          <Button onClick={() => this.setState({ open: true })} color="black">Poista</Button>
         </Button.Group>
-        <Confirm open={this.state.open} size={"mini"} content={"You sure you want to delete news: " + this.props.data.title} onCancel={() => this.setState({ open: false })} onConfirm={this.handleDelete} />
+        <Confirm open={this.state.open} size={"small"} content={"Haluatko varmasti poistaa uutisen: " + this.props.data.title} onCancel={() => this.setState({ open: false })} onConfirm={this.handleDelete} />
       </Item>
     );
   }

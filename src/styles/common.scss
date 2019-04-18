@@ -8,6 +8,7 @@
 
 .open-modal-element:hover{
   cursor: pointer;
+  color: red !important;
   h3.ui.header{
     color: red !important;
   }
@@ -20,5 +21,4 @@
   .meta{
     color: red !important;
   }
-  
 }
