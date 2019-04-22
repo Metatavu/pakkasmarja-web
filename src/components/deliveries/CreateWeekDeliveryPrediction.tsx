@@ -190,7 +190,7 @@ class CreateWeekDeliveryPrediction extends React.Component<Props, State> {
 
     const lastWeekNumber: number = moment().subtract(1, "weeks").week();
     const weekDeliveryPredictionService = await Api.getWeekDeliveryPredictionsService(this.props.keycloak.token);
-    const filteredByWeekNumber = await weekDeliveryPredictionService.listWeekDeliveryPredictions(undefined, undefined, undefined, lastWeekNumber);
+    const filteredByWeekNumber = await weekDeliveryPredictionService.listWeekDeliveryPredictions(undefined, undefined, this.props.keycloak.subject, lastWeekNumber);
 
     filteredByWeekNumber.forEach((weekDeliveryPrediction) => {
       const amount: number = weekDeliveryPrediction.amount;

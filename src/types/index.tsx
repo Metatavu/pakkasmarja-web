@@ -74,10 +74,12 @@ export interface Options {
  * Interface for FilterContracts
  */
 export interface FilterContracts {
-    itemGroupId?: string;
-    status?: Contract.StatusEnum;
-    year?: number;
-    listAll?: string;
+  itemGroupId?: string;
+  status?: Contract.StatusEnum;
+  year?: number;
+  listAll?: string;
+  firstResult?: number;
+  maxResults?: number;
 }
 
 /**

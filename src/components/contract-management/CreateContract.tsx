@@ -11,7 +11,7 @@ import Api, { Contact, ItemGroup, Contract, DeliveryPlace } from "pakkasmarja-cl
 import { Form, Button, Dropdown, Input, TextArea } from "semantic-ui-react";
 import * as moment from "moment";
 import { Redirect } from "react-router";
-import Select from 'react-select';
+import Select from "react-select/lib/Async";
 import { Link } from "react-router-dom";
 
 /**
@@ -74,6 +74,43 @@ class CreateContract extends React.Component<Props, State> {
       buttonLoading: false
     };
   }
+  
+  /**
+   * Get options as promise
+   * 
+   * @param inputValue input value
+   * @return options promise
+   */
+  private promiseOptions = async (inputValue: string) => {
+    return new Promise(resolve => {
+      resolve(this.getOptions(inputValue));
+    });
+  };
+
+  /**
+   * Get options
+   * 
+   * @param value value
+   * @return options
+   */
+  private getOptions = async (value: string) => {
+    if (!this.props.keycloak || !this.props.keycloak.token) {
+      return;
+    }
+    
+    const contactsService = Api.getContactsService(this.props.keycloak.token);
+    const contacts = await contactsService.listContacts(value);
+    this.setState({ contacts: contacts });
+
+    const options = this.state.contacts.map((contact: Contact) => {
+      return {
+        label: contact.companyName || `${contact.firstName} ${contact.lastName}`,
+        value: contact.id
+      };
+    });
+
+    return options;
+  }
 
   /**
    * Component did mount life-sycle event
@@ -131,23 +168,16 @@ class CreateContract extends React.Component<Props, State> {
    * Render autocomplete field
    */
   private renderAutoCompleteField = () => {
-    const options = this.state.contacts.map((contact: Contact) => {
-      return {
-        label: contact.companyName || `${contact.firstName} ${contact.lastName}`,
-        value: contact.id
-      };
-    });
-
     return (
       <Select
         value={this.state.selectedOption}
+        loadOptions={this.promiseOptions}
         onChange={(selectedOption) => {
           if (Array.isArray(selectedOption)) {
             return;
           }
           this.setState({ selectedOption: selectedOption })
         }}
-        options={options}
       />
     );
   }
