@@ -120,6 +120,8 @@ class ContractView extends React.Component<Props, State> {
       contact: contact,
       deliveryPlaces: deliveryPlaces
     });
+
+    this.checkIfCompanyApprovalNeeded();
   }
 
   /**
