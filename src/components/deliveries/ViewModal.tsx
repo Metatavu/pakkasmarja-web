@@ -51,7 +51,7 @@ class ViewModal extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
-    
+
     const deliveriesService = await Api.getDeliveriesService(this.props.keycloak.token);
     const productsService = await Api.getProductsService(this.props.keycloak.token);
     const products: Product[] = await productsService.listProducts(undefined, undefined, undefined, undefined, 100);
@@ -83,7 +83,7 @@ class ViewModal extends React.Component<Props, State> {
     return (
       <Modal size="small" open={this.props.modalOpen} onClose={this.closeModal} closeIcon>
         <Modal.Content>
-          <Header as="h3">
+          <Header as="h1">
             Toimitus
           </Header>
           <Divider />

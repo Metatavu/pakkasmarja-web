@@ -92,7 +92,6 @@ class ProposalAcceptModal extends React.Component<Props, State> {
       status: "PLANNED",
       amount: this.state.deliveryProduct.delivery.amount,
       price: this.state.deliveryProduct.delivery.price,
-      quality: this.state.deliveryProduct.delivery.quality,
       deliveryPlaceId: this.state.deliveryProduct.delivery.deliveryPlaceId
     }
 

@@ -122,7 +122,6 @@ class IncomingDeliveries extends React.Component<Props, State> {
       status: "DELIVERY",
       amount: delivery.amount,
       price: "0",
-      quality: "NORMAL",
       deliveryPlaceId: delivery.deliveryPlaceId
     }
 

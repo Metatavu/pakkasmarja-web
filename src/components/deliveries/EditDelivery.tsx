@@ -164,7 +164,6 @@ class EditDelivery extends React.Component<Props, State> {
       status: "PLANNED",
       amount: this.state.amount,
       price: "0",
-      quality: "NORMAL",
       deliveryPlaceId: this.state.selectedPlaceId
     }
 

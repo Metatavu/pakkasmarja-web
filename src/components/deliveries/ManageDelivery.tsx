@@ -150,7 +150,6 @@ class ManageDelivery extends React.Component<Props, State> {
       status: "DONE",
       amount: this.state.amount,
       price: "0",
-      quality: "NORMAL",
       deliveryPlaceId: this.state.selectedPlaceId
     }
 

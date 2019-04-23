@@ -8,7 +8,6 @@ import "../../styles/common.scss";
 import Api, { Product } from "pakkasmarja-client";
 import { Button, Confirm, Table, Header, List, Dimmer, Loader, Modal } from "semantic-ui-react";
 import { Link } from "react-router-dom";
-import ProductViewModal from "./ProductViewModal";
 
 /**
  * Interface for component props
@@ -24,8 +23,6 @@ interface Props {
 interface State {
   products: Product[];
   open: boolean;
-  productViewModal: boolean;
-  modalProductId: string;
   productsLoading: boolean;
   productId: string;
   errorModal: boolean;
@@ -41,8 +38,6 @@ class ProductsList extends React.Component<Props, State> {
     this.state = {
       products: [],
       open: false,
-      productViewModal: false,
-      modalProductId: "",
       productsLoading: false,
       productId: "",
       errorModal: false
@@ -73,7 +68,7 @@ class ProductsList extends React.Component<Props, State> {
 
     const productsService = await Api.getProductsService(this.props.keycloak.token);
     const data = await productsService.deleteProduct(this.state.productId);
-    if (data.name == 'SequelizeForeignKeyConstraintError') {
+    if (data.original && data.original.errno) {
       this.setState({ open: false, errorModal: true });
     } else {
       this.setState({ open: false })
@@ -109,7 +104,7 @@ class ProductsList extends React.Component<Props, State> {
         </BasicLayout>
       );
     }
-    
+
     return (
       <BasicLayout>
         <Header floated='left' className="contracts-header">
@@ -118,8 +113,17 @@ class ProductsList extends React.Component<Props, State> {
         <Table celled fixed unstackable>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell width={13}>
-                Tuotteen nimi
+              <Table.HeaderCell width={4}>
+                Nimi
+              </Table.HeaderCell>
+              <Table.HeaderCell width={3}>
+                Yksikkönimi
+              </Table.HeaderCell>
+              <Table.HeaderCell width={3}>
+                Yksikkömäärä
+              </Table.HeaderCell>
+              <Table.HeaderCell width={3}>
+                Yksikkökoko
               </Table.HeaderCell>
               <Table.HeaderCell width={3}>
                 <Button as={Link} to="/createProduct" color="red" style={{ width: "100%" }}>
@@ -133,18 +137,40 @@ class ProductsList extends React.Component<Props, State> {
               this.state.products.map((product: Product) => {
                 return (
                   <Table.Row key={product.id}>
-                    <Table.Cell className="open-modal-element" onClick={() => { this.setState({ productViewModal: true, modalProductId: product.id || "" }) }}>
+                    <Table.Cell>
                       {product.name}
                     </Table.Cell>
-                    <Table.Cell >
+                    <Table.Cell>
+                      {product.unitName}
+                    </Table.Cell>
+                    <Table.Cell>
+                      {product.units}
+                    </Table.Cell>
+                    <Table.Cell>
+                      {product.unitSize}
+                    </Table.Cell>
+                    <Table.Cell>
                       <List>
                         <List.Item>
-                          <Button.Group floated="right" style={{ maxHeight: "37px" }}>
-                            <Button as={Link} to={`editProduct/${product.id}`} style={{ display: "flex", alignItems: "center" }} color="red">Muokkaa</Button>
-                            <Button.Or text="" />
-                            <Button onClick={() => this.setState({ open: true, productId: product.id || "" })} color="black">Poista</Button>
-                          </Button.Group>
+                          <List.Content
+                            as={Link}
+                            to={`editProduct/${product.id}`}
+                          >
+                            <p className="plink">
+                              Muokkaa tuotetta
+                                    </p>
+                          </List.Content>
                           <Confirm open={this.state.open} size={"small"} content={"Haluatko varmasti poistaa tuotteen: " + product.name} onCancel={() => this.setState({ open: false })} onConfirm={this.handleDelete} />
+                        </List.Item>
+                        <List.Item>
+                          <List.Content as={Link} to={`/productPrices/${product.id}`}>
+                            <p className="plink">Muokkaa tuotteen hintoja</p>
+                          </List.Content>
+                        </List.Item>
+                        <List.Item>
+                          <List.Content>
+                            <p onClick={() => this.setState({ open: true, productId: product.id || "" })} className="plink">Poista tuote</p>
+                          </List.Content>
                         </List.Item>
                       </List>
                     </Table.Cell>
@@ -155,13 +181,8 @@ class ProductsList extends React.Component<Props, State> {
           </Table.Body>
         </Table>
         <Modal size="small" open={this.state.errorModal} onClose={() => this.setState({ errorModal: false })} closeIcon>
-          <Modal.Content>Virhe! Tuote käytössä, ei voida poistaa!</Modal.Content>
+          <Modal.Content>Virhe! Tuotetta referoidaan, ei voida poistaa!</Modal.Content>
         </Modal>
-        <ProductViewModal
-          modalOpen={this.state.productViewModal}
-          closeModal={() => this.setState({ productViewModal: false })}
-          productId={this.state.modalProductId}
-        />
       </BasicLayout>
     );
   }
