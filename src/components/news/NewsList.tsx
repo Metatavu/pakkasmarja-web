@@ -10,6 +10,8 @@ import { NewsArticle } from "pakkasmarja-client";
 import NewsComponent from "./NewsComponent";
 import { Button, Segment, Item, Dimmer, Loader } from "semantic-ui-react";
 import { Link } from "react-router-dom";
+import ApplicationRoles from "src/utils/application-roles";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -48,7 +50,20 @@ class NewsList extends React.Component<Props, State> {
     this.setState({ loading: true });
     const newArticleService = await Api.getNewsArticlesService(this.props.keycloak.token);
     const newsArticles = await newArticleService.listNewsArticles();
-    this.setState({ newsArticles, loading: false });
+    const sortedNewsArticles = newsArticles.sort((a, b) => {
+      return this.getTime(b.createdAt) - this.getTime(a.createdAt)
+    });
+
+    this.setState({ newsArticles: sortedNewsArticles, loading: false });
+  }
+
+  /**
+   * Get time
+   * 
+   * @param date date
+   */
+  private getTime(date?: Date) {
+    return date ? new Date(date).getTime() : 0;
   }
 
   /**
@@ -60,7 +75,7 @@ class NewsList extends React.Component<Props, State> {
         <BasicLayout>
           <Dimmer active inverted>
             <Loader inverted>
-              Ladataan uutisia
+              {strings.loading}
             </Loader>
           </Dimmer>
         </BasicLayout>
@@ -69,9 +84,11 @@ class NewsList extends React.Component<Props, State> {
     
     return (
       <BasicLayout>
-        <Link to="/createNews">
-          <Button attached="top" color="red">Create news</Button>
-        </Link>
+        {this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.MANAGE_NEWS_ARTICLES) && 
+          <Link to="/createNews">
+            <Button attached="top" color="red">{strings.createNewArticle}</Button>
+          </Link>
+        }
         <Segment attached>
           <Item.Group divided>
             {

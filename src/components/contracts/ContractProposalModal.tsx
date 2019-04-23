@@ -3,6 +3,7 @@ import { Modal, Header, Form, Dropdown, Input, TextArea, Button } from "semantic
 import { ItemGroup } from "pakkasmarja-client";
 import "../../styles/common.scss";
 import "./styles.scss";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -67,15 +68,15 @@ export default class ContractProposalModal extends React.Component<Props, State>
       <Modal size="small" open={this.props.modalOpen} onClose={this.closeModal} closeIcon>
         <Modal.Content>
           <Header as="h3">
-            Ehdota sopimusta jostain muusta marjasta
+            {strings.suggestAnotherContract}
           </Header>
           <Form>
             <Form.Field>
-              <p>Marja:</p>
+              <p>{strings.berry}:</p>
               <Dropdown
                 fluid
                 selection
-                placeholder="Valitse marja"
+                placeholder={strings.berry}
                 value={this.props.selectedBerry}
                 options={itemGroupOptions}
                 onChange={(event, data) => {
@@ -85,27 +86,27 @@ export default class ContractProposalModal extends React.Component<Props, State>
               />
             </Form.Field>
             <Form.Field>
-              <p>Määrä:</p>
+              <p>{strings.amount}:</p>
               <Input
                 value={this.props.quantity}
                 onChange={(event: any) => this.props.onQuantityChange(event.target.value)}
               />
             </Form.Field>
             <Form.Field>
-              <p>Kommentti:</p>
+              <p>{strings.comment}:</p>
               <TextArea
                 value={this.props.quantityComment}
                 onChange={(event: any) => {
                   this.props.onQuantityCommentChange(event.target.value)
                 }}
-                placeholder="Kommentti"
+                placeholder={strings.comment}
               />
             </Form.Field>
           </Form>
           <Button.Group floated="right" className="contract-button-group" >
-            <Button onClick={this.closeModal} inverted color="red">Sulje</Button>
+            <Button onClick={this.closeModal} inverted color="red">{strings.close}</Button>
             <Button.Or text="" />
-            <Button onClick={this.props.sendContractProposalClicked} color="black">Lähetä</Button>
+            <Button onClick={this.props.sendContractProposalClicked} color="black">{strings.send}</Button>
           </Button.Group>
         </Modal.Content>
       </Modal>

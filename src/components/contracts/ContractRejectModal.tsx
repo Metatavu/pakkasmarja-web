@@ -6,6 +6,7 @@ import { StoreState } from "../../types";
 import { Button, Modal, Form, TextArea } from 'semantic-ui-react'
 import { Contract } from "pakkasmarja-client";
 import Api from "pakkasmarja-client";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -73,7 +74,7 @@ class ContractRejectModal extends React.Component<Props, State> {
   public render() {
     return (
       <Modal size="small" open={this.props.modalOpen} onClose={()=>this.closeModal} closeIcon>
-        <Modal.Header>Haluatko varmasti hylätä sopimuksen? Kirjoita perustelut alle.</Modal.Header>
+        <Modal.Header>{strings.confirmRejectText}</Modal.Header>
         <Modal.Content >
           <Form>
             <TextArea
@@ -85,9 +86,9 @@ class ContractRejectModal extends React.Component<Props, State> {
         </Modal.Content>
         <Modal.Actions>
           <Button.Group floated="right" className="contract-button-group" >
-            <Button onClick={this.rejectContract} inverted color="red">Hylkää sopimus</Button>
+            <Button onClick={this.rejectContract} inverted color="red">{strings.decline}</Button>
             <Button.Or text="" />
-            <Button onClick={this.closeModal} color="black">Peruuta</Button>
+            <Button onClick={this.closeModal} color="black">{strings.cancel}</Button>
           </Button.Group>
         </Modal.Actions>
       </Modal>

@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { ContractTableData } from "src/types";
 import { Contract } from "pakkasmarja-client";
 import ContractAmountTable from "./ContractAmountTable";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component State
@@ -47,11 +48,11 @@ export default class ContractItem extends React.Component<Props, State> {
       case "APPROVED":
         return this.renderContractAmountTable();
       case "DRAFT":
-        return this.renderDescription("Tarkasta ehdotus");
+        return this.renderDescription(strings.checkDraft);
       case "ON_HOLD":
-        return this.renderDescription("Pakkasmarjan tarkistettavana");
+        return this.renderDescription(strings.onHold);
       case "REJECTED":
-        return this.renderDescription("Hylätty");
+        return this.renderDescription(strings.rejected);
       default:
         return <Item.Description></Item.Description>;
     }
@@ -90,9 +91,9 @@ export default class ContractItem extends React.Component<Props, State> {
     let infoText = "";
 
     if (status === "REJECTED") {
-      infoText = "Olet hylännyt tämän sopimuksen. Jos näin ei kuuluisi olla, ota yhteyttä pakkasmarjaan.";
+      infoText = strings.infoRejected;
     } else if (status === "ON_HOLD") {
-      infoText = "Sopimus on pakkasmarjalla tarkistettavana.";
+      infoText = strings.infoOnHold;
     }
 
     return infoText;

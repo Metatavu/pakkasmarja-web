@@ -7,6 +7,7 @@ import "../../styles/common.scss";
 import { Segment, Item, Header, Divider } from "semantic-ui-react";
 import Moment from "react-moment";
 import ViewModal from "./ViewModal";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -70,7 +71,7 @@ class PastDeliveries extends React.Component<Props, State> {
     return (
       <React.Fragment>
         <Segment >
-          <Header as='h2'>Tehdyt tuore toimitukset</Header>
+          <Header as='h2'>{strings.pastFreshDeliveries}</Header>
           <Divider />
           <Item.Group divided>
             {
@@ -84,7 +85,7 @@ class PastDeliveries extends React.Component<Props, State> {
                       <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
                       <Item.Description><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Description>
                     </Item.Content>
-                    <Header style={{ margin: "auto", marginRight: 50 }} as="h3">Toimitettu</Header>
+                    <Header style={{ margin: "auto", marginRight: 50 }} as="h3">{strings.deliveried}</Header>
                   </Item>
                 )
               })
@@ -92,7 +93,7 @@ class PastDeliveries extends React.Component<Props, State> {
           </Item.Group>
         </Segment>
         <Segment >
-          <Header as='h2'>Tehdyt pakaste toimitukset</Header>
+          <Header as='h2'>{strings.pastFrozenDeliveries}</Header>
           <Divider />
           <Item.Group divided>
             {
@@ -106,7 +107,7 @@ class PastDeliveries extends React.Component<Props, State> {
                       <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
                       <Item.Description><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Description>
                     </Item.Content>
-                    <Header style={{ margin: "auto", marginRight: 50 }} as="h3">Toimitettu</Header>
+                    <Header style={{ margin: "auto", marginRight: 50 }} as="h3">{strings.deliveried}</Header>
                   </Item>
                 )
               })

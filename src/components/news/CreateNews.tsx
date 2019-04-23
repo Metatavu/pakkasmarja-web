@@ -14,6 +14,7 @@ import { Redirect } from "react-router";
 import ImageGallery from "../generic/ImageGallery";
 import UploadNewsImageModal from "./UploadNewsImageModal";
 import { FileService } from "src/api/file.service";
+import strings from "src/localization/strings";
 
 /**
  * Interface to component props
@@ -98,13 +99,17 @@ class CreateNews extends React.Component<Props, State> {
       <BasicLayout>
         <Form>
           <Form.Field required>
-            <label>Otsikko:</label>
+            <label>{strings.title}:</label>
             <input name="title" value={this.state.title} onChange={(e) => this.setState({ title: e.currentTarget.value })} />
           </Form.Field>
           <Form.Field>
-            <label>Kuva</label>
-            <Button color="red" style={{ marginTop: "10px" }} onClick={() => this.setState({ galleryOpen: true })}>Avaa galleria</Button>
-            <Button color="red" style={{ marginTop: "10px" }} onClick={() => this.setState({ uploadModalOpen: true })}>Lataa kuva</Button>
+            <label>{strings.image}</label>
+            <Button color="red" style={{ marginTop: "10px" }} onClick={() => this.setState({ galleryOpen: true })}>
+              {strings.openGallery}
+            </Button>
+            <Button color="red" style={{ marginTop: "10px" }} onClick={() => this.setState({ uploadModalOpen: true })}>
+              {strings.uploadImage}
+            </Button>
           </Form.Field>
           <Form.Field>
             {
@@ -115,13 +120,13 @@ class CreateNews extends React.Component<Props, State> {
                     style={{color: "red", cursor: "pointer"}} 
                     onClick={() => this.setState({ imageBase64: undefined })}
                   >
-                    Poista kuva
+                    {strings.deleteImage}
                   </p>
                 </div>
             }
           </Form.Field>
           <Form.Field required>
-            <label>Sisältö:</label>
+            <label>{strings.content}:</label>
             <CKEditor
               editor={ClassicEditor}
               data={this.state.contents}
@@ -131,7 +136,9 @@ class CreateNews extends React.Component<Props, State> {
               }}
             />
           </Form.Field>
-          <Button floated="right" color="red" style={{ marginTop: "10px" }} onClick={this.handleSubmit} type='submit'>Tallenna</Button>
+          <Button floated="right" color="red" style={{ marginTop: "10px" }} onClick={this.handleSubmit} type='submit'>
+            {strings.save}
+          </Button>
         </Form>
         <ImageGallery 
           modalOpen={this.state.galleryOpen}

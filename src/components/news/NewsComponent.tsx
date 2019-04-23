@@ -9,6 +9,8 @@ import "../../styles/common.scss";
 import { Button, Item, Confirm } from "semantic-ui-react";
 import { Link, Redirect } from "react-router-dom";
 import Moment from 'react-moment';
+import ApplicationRoles from "src/utils/application-roles";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component State
@@ -65,12 +67,16 @@ class NewsComponent extends React.Component<Props, State> {
           }
           <Item.Description><Moment format="DD.MM.YYYY HH:mm">{this.props.data.createdAt && this.props.data.createdAt.toString()}</Moment></Item.Description>
         </Item.Content>
-        <Button.Group floated="right" style={{ maxHeight: "37px" }}>
-          <Button as={Link} to={`editNews/${this.props.data.id}`} style={{ display: "flex", alignItems: "center" }} color="red">Muokkaa</Button>
-          <Button.Or text="" />
-          <Button onClick={() => this.setState({ open: true })} color="black">Poista</Button>
-        </Button.Group>
-        <Confirm open={this.state.open} size={"small"} content={"Haluatko varmasti poistaa uutisen: " + this.props.data.title} onCancel={() => this.setState({ open: false })} onConfirm={this.handleDelete} />
+
+        {this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.MANAGE_NEWS_ARTICLES) &&
+          <Button.Group floated="right" style={{ maxHeight: "37px" }}>
+            <Button as={Link} to={`editNews/${this.props.data.id}`} style={{ display: "flex", alignItems: "center" }} color="red">{strings.edit}</Button>
+            <Button.Or text="" />
+            <Button onClick={() => this.setState({ open: true })} color="black">{strings.delete}</Button>
+          </Button.Group>
+        }
+        
+        <Confirm open={this.state.open} size={"small"} content={strings.confirmDeleteNews + this.props.data.title} onCancel={() => this.setState({ open: false })} onConfirm={this.handleDelete} />
       </Item>
     );
   }

@@ -4,6 +4,7 @@ import 'semantic-ui-css/semantic.min.css';
 
 import { Container } from "semantic-ui-react";
 import MenuContainer from "./MenuContainer";
+import strings from "src/localization/strings";
 
 class BasicLayout extends React.Component {
 
@@ -17,7 +18,7 @@ class BasicLayout extends React.Component {
   render() {
     return (
       <div>
-        <MenuContainer siteName="Pakkasmarja Management" />
+        <MenuContainer siteName={strings.siteHeader} />
         <Container style={{ marginTop: "7em", paddingBottom: "7em" }}>
           {this.props.children}
         </Container>

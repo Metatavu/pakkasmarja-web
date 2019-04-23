@@ -2,6 +2,7 @@ import * as React from "react";
 import "../../styles/common.scss";
 import { Header } from "semantic-ui-react";
 import { ItemGroup } from "pakkasmarja-client";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component State
@@ -52,13 +53,13 @@ export default class ContractHeader extends React.Component<Props, State> {
         {
           category === "FROZEN" &&
             <p>
-              {`Pakkasmarja Oy:n ja viljelijän sopimus pakastukseen toimitettavista marjoista ja niiden hinnoista satokaudella ${new Date().getFullYear()}.`}
+              {strings.formatString(strings.contractFrozenHeader, new Date().getFullYear())}
             </p>
         }
         {
           category !== "FROZEN" &&
             <p>
-              {"Pakkasmarja Oy:n ja viljelijän sopimus tuoremarjakauppaan toimitettavista marjoista."}
+              {strings.contractFreshHeader}
             </p>
         }
       </div>

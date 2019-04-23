@@ -12,6 +12,7 @@ import { Form, Button, Dropdown, Input, TextArea, Header, Divider, Dimmer, Loade
 import * as moment from "moment";
 import { Redirect } from "react-router";
 import { Link } from "react-router-dom";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -284,7 +285,7 @@ class EditContract extends React.Component<Props, State> {
         <BasicLayout>
           <Dimmer active inverted>
             <Loader inverted>
-              Ladataan sopimusta
+              {strings.loading}
             </Loader>
           </Dimmer>
         </BasicLayout>
@@ -310,23 +311,23 @@ class EditContract extends React.Component<Props, State> {
     const statusOptions = [{
       key: "REJECTED",
       value: "REJECTED",
-      text: "Hylätty"
+      text: strings.rejected
     }, {
       key: "APPROVED",
       value: "APPROVED",
-      text: "Hyväksytty"
+      text: strings.approved
     }, {
       key: "ON_HOLD",
       value: "ON_HOLD",
-      text: "Odottaa"
+      text: strings.onHold
     }, {
       key: "DRAFT",
       value: "DRAFT",
-      text: "Vedos"
+      text: strings.draft
     }, {
       key: "TERMINATED",
       value: "TERMINATED",
-      text: "Päättynyt"
+      text: strings.terminated
     }];
 
     const deliveryPlaceOptions = this.state.deliveryPlaces.map((deliveryPlace) => {
@@ -342,45 +343,45 @@ class EditContract extends React.Component<Props, State> {
         <Form>
           <Form.Field>
             <Header>
-              {`${this.state.contact.companyName || "Kontaktia ei löytynyt"} - ${this.state.itemGroup.name || "Tuoteryhmää ei löytynyt"}`}
+              {`${this.state.contact.companyName || strings.contactNotFound} - ${this.state.itemGroup.name || strings.itemGroupNotFound}`}
             </Header>
           </Form.Field>
           <Form.Field>
-            <label>SAP id</label>
-            {this.renderTextInput(this.state.sapId, (value: string) => { this.setState({ sapId: value }) }, "SAP id", false)}
+            <label>{strings.sapId}</label>
+            {this.renderTextInput(this.state.sapId, (value: string) => { this.setState({ sapId: value }) }, strings.sapId, false)}
           </Form.Field>
           <Form.Field>
-            <label>Tila</label>
-            {this.renderDropDown(statusOptions, this.state.status, (value: Contract.StatusEnum) => { this.setState({ status: value }) }, "Valitse tila")}
+            <label>{strings.status}</label>
+            {this.renderDropDown(statusOptions, this.state.status, (value: Contract.StatusEnum) => { this.setState({ status: value }) }, strings.status)}
           </Form.Field>
           <Form.Field>
             <Divider />
-            <label>Sopimusmäärä</label>
+            <label>{strings.contractAmount}</label>
             {this.renderTextInput(this.state.quantity, (value: string) => { this.setState({ quantity: parseInt(value) }) }, "0", false)}
           </Form.Field>
           <Form.Field>
-            <p>Viljelijän ehdottama määrä: <strong>{this.state.contract && this.state.contract.proposedQuantity || "0"}</strong></p>
-            <label>Määrän kommentti</label>
-            {this.renderTextArea(this.state.quantityComment, (value: string) => { this.setState({ quantityComment: value }) }, "Määrän kommentti")}
+            <p>{strings.amountProposed} <strong>{this.state.contract && this.state.contract.proposedQuantity || "0"}</strong></p>
+            <label>{strings.quantityComment}</label>
+            {this.renderTextArea(this.state.quantityComment, (value: string) => { this.setState({ quantityComment: value }) }, strings.quantityComment)}
           </Form.Field>
           <Form.Field>
             <Divider />
-            <p>Viljelijän ehdottama toimituspaikka: <strong>{this.state.proposedDeliveryPlace.name || "-"}</strong></p>
-            <label>Toimituspaikka</label>
-            {this.renderDropDown(deliveryPlaceOptions, this.state.deliveryPlaceId, (value: string) => { this.setState({ deliveryPlaceId: value }) }, "Valitse toimituspaikka")}
+            <p>{strings.deliveryPalceProposed} <strong>{this.state.proposedDeliveryPlace.name || "-"}</strong></p>
+            <label>{strings.deliveryPlace}</label>
+            {this.renderDropDown(deliveryPlaceOptions, this.state.deliveryPlaceId, (value: string) => { this.setState({ deliveryPlaceId: value }) }, strings.deliveryPlace)}
           </Form.Field>
           <Form.Field>
-            <label>Toimituspaikan kommentti</label>
-            {this.renderTextArea(this.state.deliveryPlaceComment, (value: string) => { this.setState({ deliveryPlaceComment: value }) }, "Toimituspaikan kommentti")}
+            <label>{strings.deliveryPlaceComment}</label>
+            {this.renderTextArea(this.state.deliveryPlaceComment, (value: string) => { this.setState({ deliveryPlaceComment: value }) }, strings.deliveryPlaceComment)}
           </Form.Field>
           <Form.Field>
-            <label>Huomautuskenttä (SAP)</label>
+            <label>{strings.remarkFieldSap}</label>
             {this.renderTextArea(this.state.sapComment, (value: string) => { this.setState({ sapComment: value }) }, "")}
           </Form.Field>
           <Button.Group floated="right">
-            <Button inverted color="red" as={Link} to={"/contractManagement"}>Takaisin</Button>
+            <Button inverted color="red" as={Link} to={"/contractManagement"}>{strings.back}</Button>
             <Button.Or text="" />
-            <Button floated="right" color="red" loading={this.state.buttonLoading} onClick={this.handleFormEdit}>Tallenna muutokset</Button>
+            <Button floated="right" color="red" loading={this.state.buttonLoading} onClick={this.handleFormEdit}>{strings.save}</Button>
           </Button.Group>
         </Form>
       </BasicLayout>
