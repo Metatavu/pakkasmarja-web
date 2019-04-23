@@ -18,7 +18,7 @@ import EditProductPriceModal from "./EditProductPriceModal";
 interface Props {
   authenticated: boolean;
   keycloak?: Keycloak.KeycloakInstance;
-  match?: any;
+  match: any;
 }
 
 /**

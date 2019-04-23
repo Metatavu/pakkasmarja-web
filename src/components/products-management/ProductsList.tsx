@@ -6,7 +6,7 @@ import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
 import Api, { Product } from "pakkasmarja-client";
-import { Button, Confirm, Table, Header, List, Dimmer, Loader, Modal } from "semantic-ui-react";
+import { Button, Confirm, Table, Header, List, Dimmer, Loader } from "semantic-ui-react";
 import { Link } from "react-router-dom";
 
 /**
@@ -25,7 +25,7 @@ interface State {
   open: boolean;
   productsLoading: boolean;
   productId: string;
-  errorModal: boolean;
+  productName: string;
 }
 
 /**
@@ -40,7 +40,7 @@ class ProductsList extends React.Component<Props, State> {
       open: false,
       productsLoading: false,
       productId: "",
-      errorModal: false
+      productName: ""
     };
   }
 
@@ -67,13 +67,9 @@ class ProductsList extends React.Component<Props, State> {
     }
 
     const productsService = await Api.getProductsService(this.props.keycloak.token);
-    const data = await productsService.deleteProduct(this.state.productId);
-    if (data.original && data.original.errno) {
-      this.setState({ open: false, errorModal: true });
-    } else {
-      this.setState({ open: false })
-      await this.loadProducts();
-    }
+    await productsService.deleteProduct(this.state.productId);
+    await this.loadProducts();
+    this.setState({ open: false });
   }
 
   /**
@@ -160,7 +156,6 @@ class ProductsList extends React.Component<Props, State> {
                               Muokkaa tuotetta
                                     </p>
                           </List.Content>
-                          <Confirm open={this.state.open} size={"small"} content={"Haluatko varmasti poistaa tuotteen: " + product.name} onCancel={() => this.setState({ open: false })} onConfirm={this.handleDelete} />
                         </List.Item>
                         <List.Item>
                           <List.Content as={Link} to={`/productPrices/${product.id}`}>
@@ -169,7 +164,7 @@ class ProductsList extends React.Component<Props, State> {
                         </List.Item>
                         <List.Item>
                           <List.Content>
-                            <p onClick={() => this.setState({ open: true, productId: product.id || "" })} className="plink">Poista tuote</p>
+                            <p onClick={() => this.setState({ open: true, productId: product.id || "", productName: product.name })} className="plink">Poista tuote</p>
                           </List.Content>
                         </List.Item>
                       </List>
@@ -180,9 +175,7 @@ class ProductsList extends React.Component<Props, State> {
             }
           </Table.Body>
         </Table>
-        <Modal size="small" open={this.state.errorModal} onClose={() => this.setState({ errorModal: false })} closeIcon>
-          <Modal.Content>Virhe! Tuotetta referoidaan, ei voida poistaa!</Modal.Content>
-        </Modal>
+        <Confirm open={this.state.open} size={"small"} content={"Haluatko varmasti poistaa tuotteen: " + this.state.productName} onCancel={() => this.setState({ open: false })} onConfirm={this.handleDelete} />
       </BasicLayout>
     );
   }
