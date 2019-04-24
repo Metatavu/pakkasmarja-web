@@ -5,8 +5,8 @@ import { StoreState } from "../../types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
-import Api, { OperationReport } from "pakkasmarja-client";
-import { Table, Header, Dimmer, Loader, Grid, Button, Icon } from "semantic-ui-react";
+import Api, { OperationReport, OperationType } from "pakkasmarja-client";
+import { Table, Header, Dimmer, Loader, Grid, Button, Icon, Select, DropdownItemProps, DropdownProps } from "semantic-ui-react";
 import * as moment from "moment";
 import { Link } from "react-router-dom";
 
@@ -25,7 +25,8 @@ interface State {
   open: boolean,
   operationReports: OperationReport[],
   loading: boolean,
-  firstResult: number
+  firstResult: number,
+  startOperation?: OperationType
 }
 
 const MAX_RESULTS = 25;
@@ -96,12 +97,37 @@ class OperationsList extends React.Component<Props, State> {
         </BasicLayout>
       );
     }
-    
+
+    const typeOptions: DropdownItemProps[] = this.getOperationTypes().map((type) => {
+      return {
+        key: type,  
+        text: this.formatReportType(type),
+        value: type
+      }
+    });
+
     return (
       <BasicLayout>
-        <Header floated='left' className="contracts-header">
-          <p>Toimenpiteet</p>
-        </Header>
+        <Grid>
+          <Grid.Row>
+            <Grid.Column>
+              <Header floated='left' className="contracts-header">
+                <p>Toimenpiteet</p>
+              </Header>
+            </Grid.Column>
+          </Grid.Row>
+          <Grid.Row>
+            <Grid.Column floated="left" width="10">
+              Aloita toimenpide
+            </Grid.Column>
+            <Grid.Column floated="right" width="3">
+              <Select placeholder={ "Valitse" } options={ typeOptions } onChange={ this.onStartOperationChange }/>
+            </Grid.Column>
+            <Grid.Column floated="right" width="2">            
+              <Button fluid disabled={ !this.state.startOperation } onClick={() => this.onActionStartClick() }> Aloita </Button>
+            </Grid.Column>
+          </Grid.Row>
+        </Grid>
         <Table celled fixed unstackable>
           <Table.Header>
             <Table.Row>
@@ -168,7 +194,33 @@ class OperationsList extends React.Component<Props, State> {
    * @return formatted type
    */
   private formatOperationReportType(operationReport: OperationReport): string {
-    switch (operationReport.type) {
+    return this.formatReportType(operationReport.type!);
+  }
+
+  /**
+   * Returns available operation types
+   * 
+   * @return available operation types
+   */
+  private getOperationTypes(): OperationType[] {
+    return [
+      OperationType.ITEMGROUPDEFAULTDOCUMENTTEMPLATES,
+      OperationType.SAPCONTACTSYNC,
+      OperationType.SAPCONTRACTSAPIDSYNC,
+      OperationType.SAPCONTRACTSYNC,
+      OperationType.SAPDELIVERYPLACESYNC,
+      OperationType.SAPITEMGROUPSYNC
+    ];
+  }
+
+  /**
+   * Formats operation report type
+   * 
+   * @param operationReport operation report
+   * @return formatted type
+   */
+  private formatReportType(type: OperationType): string {
+    switch (type) {
       case "ITEM_GROUP_DEFAULT_DOCUMENT_TEMPLATES":
         return "Marjalajien oletus sopimusmallit";
       case "SAP_CONTACT_SYNC":
@@ -183,7 +235,7 @@ class OperationsList extends React.Component<Props, State> {
         return "SAP marjalajien synkronointi";
     }
     
-    return `Unknown type ${operationReport.type}`;
+    return `Unknown type ${type}`;
   }
 
   /**
@@ -244,6 +296,40 @@ class OperationsList extends React.Component<Props, State> {
       firstResult: this.state.firstResult + MAX_RESULTS
     });
   }
+
+  /**
+   * Change handler for operation select change
+   */
+  private onStartOperationChange = (event: React.SyntheticEvent<HTMLElement>, data: DropdownProps) => {
+    this.setState({
+      startOperation: data.value as OperationType
+    });
+  }
+
+  /**
+   * Start operation button click handler
+   */
+  private onActionStartClick = async () => {
+    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.startOperation) {
+      return;
+    }
+
+    const type = this.state.startOperation;
+
+    this.setState({ 
+      loading: true,
+      startOperation: undefined 
+    });
+
+    const operationsService = await Api.getOperationsService(this.props.keycloak.token);
+
+    await operationsService.createOperation({
+      type: type
+    });
+
+    await this.loadOperationReports();
+  }
+  
 }
 
 /**

@@ -5,7 +5,7 @@ import { StoreState } from "../../types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
-import Api, { OperationReportItem, OperationReport } from "pakkasmarja-client";
+import Api, { OperationReportItem, OperationReport, OperationType } from "pakkasmarja-client";
 import { Table, Header, Dimmer, Loader, Button } from "semantic-ui-react";
 import { Link } from "react-router-dom";
 
@@ -139,7 +139,17 @@ class OperationReportComponent extends React.Component<Props, State> {
    * @return formatted type
    */
   private formatOperationReportType(operationReport: OperationReport): string {
-    switch (operationReport.type) {
+    return this.formatReportType(operationReport.type!);
+  }
+
+  /**
+   * Formats operation report type
+   * 
+   * @param operationReport operation report
+   * @return formatted type
+   */
+  private formatReportType(type: OperationType): string {
+    switch (type) {
       case "ITEM_GROUP_DEFAULT_DOCUMENT_TEMPLATES":
         return "Marjalajien oletus sopimusmallit";
       case "SAP_CONTACT_SYNC":
@@ -154,7 +164,7 @@ class OperationReportComponent extends React.Component<Props, State> {
         return "SAP marjalajien synkronointi";
     }
     
-    return `Unknown type ${operationReport.type}`;
+    return `Unknown type ${type}`;
   }
 
   /**
