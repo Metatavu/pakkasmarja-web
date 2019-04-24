@@ -8,6 +8,7 @@
   "deliveries": "Toimitukset",
   "contracts": "Contracts",
   "contract": "Contract",
+  "operations": "Operations",
   "frozenContracts": "Frozen contracts",
   "freshContracts": "Fresh contracts",
   "contractQuantity": "Sopimusmäärä",
