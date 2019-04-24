@@ -6,7 +6,7 @@ import { SignAuthenticationService, Contract } from "pakkasmarja-client";
 import { connect } from "react-redux";
 import Api from "pakkasmarja-client";
 import BasicLayout from "../generic/BasicLayout";
-import { Checkbox, Input, Button, Dropdown, Container, Header, Divider, Form, Modal } from "semantic-ui-react";
+import { Checkbox, Input, Button, Dropdown, Container, Header, Divider, Form, Modal, Dimmer, Loader } from "semantic-ui-react";
 import { PDFService } from "src/api/pdf.service";
 import "./styles.scss";
 import { Link } from "react-router-dom";
@@ -23,18 +23,19 @@ interface Props {
  * Interface for component state
  */
 interface State {
-  authServices?: SignAuthenticationService[];
-  contract?: Contract;
-  styles?: any;
-  acceptedTerms: boolean;
-  viableToSign: boolean;
-  selectedSignServiceId: string;
-  ssn: string;
-  signAuthenticationUrl: string;
-  modalOpen: boolean;
-  type: string;
-  modalText: string;
-  pdfType: string;
+  authServices?: SignAuthenticationService[],
+  contract?: Contract,
+  styles?: any,
+  acceptedTerms: boolean,
+  viableToSign: boolean,
+  selectedSignServiceId: string,
+  ssn: string,
+  signAuthenticationUrl: string,
+  modalOpen: boolean,
+  type: string,
+  modalText: string,
+  pdfType: string,
+  waitingSignService: boolean
 };
 
 /**
@@ -58,7 +59,8 @@ class ContractTerms extends React.Component<Props, State> {
       modalOpen: false,
       type: "2019",
       modalText: "",
-      pdfType: "2019"
+      pdfType: "2019",
+      waitingSignService: false
     };
   }
 
@@ -155,15 +157,19 @@ class ContractTerms extends React.Component<Props, State> {
       return;
     }
 
+    this.setState({
+      waitingSignService: true
+    });
+
+    const baseUrl = `${location.protocol}//${location.hostname}${location.port ? ':' + location.port : ''}`;
+    const redirectUrl = `${baseUrl}/contracts/${this.state.contract.id}`;
     const contractsService = Api.getContractsService(this.props.keycloak.token);
-    const contractSignRequest = await contractsService.createContractDocumentSignRequest({ redirectUrl: "" }, this.state.contract.id || "", this.state.type, this.state.ssn, this.state.selectedSignServiceId);
+    const contractSignRequest = await contractsService.createContractDocumentSignRequest({ redirectUrl: "" }, this.state.contract.id || "", this.state.type, this.state.ssn, this.state.selectedSignServiceId, redirectUrl);
     if (contractSignRequest && contractSignRequest.redirectUrl) {
-      const content = "Allekirjoitus jatkuu avatussa välilehdessä. Kun olet valmis voit sulkea tämän ilmoituksen.";
-      this.setState({ modalOpen: true, modalText: content });
-      window.open(contractSignRequest.redirectUrl, "_blank");
+      window.location.href = contractSignRequest.redirectUrl;
     } else {
       const content = "Jotain meni pieleen. Varmista, että olet valinnut tunnistautumispalvelun ja henkilötunnus on oikeassa muodossa.";
-      this.setState({ modalText: content, modalOpen: true });
+      this.setState({ modalText: content, modalOpen: true, waitingSignService: false });
       return;
     }
   }
@@ -179,6 +185,16 @@ class ContractTerms extends React.Component<Props, State> {
         text: authService.name
       }
     });
+
+    if (this.state.waitingSignService) {
+      return (
+        <BasicLayout>
+          <Dimmer active inverted>
+            <Loader inverted> Ladataan... </Loader>
+          </Dimmer>
+        </BasicLayout>
+      );
+    }
 
     return (
       <BasicLayout>
