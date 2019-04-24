@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as actions from "../../actions/";
 import BasicLayout from "../generic/BasicLayout";
-import { StoreState } from "../../types";
+import { StoreState, HttpErrorResponse } from "../../types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
@@ -9,6 +9,7 @@ import Api, { OperationReport, OperationType } from "pakkasmarja-client";
 import { Table, Header, Dimmer, Loader, Grid, Button, Icon, Select, DropdownItemProps, DropdownProps } from "semantic-ui-react";
 import * as moment from "moment";
 import { Link } from "react-router-dom";
+import ErrorMessage from "../generic/ErrorMessage";
 
 /**
  * Interface for component props
@@ -54,7 +55,7 @@ class OperationsList extends React.Component<Props, State> {
       return;
     }
 
-    await this.loadOperationReports();
+    await this.loadData();
   }
 
   /**
@@ -62,20 +63,21 @@ class OperationsList extends React.Component<Props, State> {
    */
   public async componentDidUpdate(prevProps: Props, prevState: State) {
     if (prevState.firstResult !== this.state.firstResult) {
-      await this.loadOperationReports();
+      await this.loadData();
     }
   }
 
   /**
    * Load Operations
    */
-  private loadOperationReports = async () => {
+  private loadData = async () => {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
 
     this.setState({ loading: true });    
     const operationReportsService = await Api.getOperationReportsService(this.props.keycloak.token);
+    
     this.setState({
       operationReports: await operationReportsService.listOperationReports(undefined, undefined, undefined, this.state.firstResult, MAX_RESULTS),
       loading: false
@@ -98,6 +100,10 @@ class OperationsList extends React.Component<Props, State> {
       );
     }
 
+    if (this.isHttpErrorResponse(this.state.operationReports)) {
+      return this.renderErrorMessage(this.state.operationReports);
+    }
+
     const typeOptions: DropdownItemProps[] = this.getOperationTypes().map((type) => {
       return {
         key: type,  
@@ -117,13 +123,13 @@ class OperationsList extends React.Component<Props, State> {
             </Grid.Column>
           </Grid.Row>
           <Grid.Row>
-            <Grid.Column floated="left" width="10">
+            <Grid.Column floated="left" width="8">
               Aloita toimenpide
             </Grid.Column>
-            <Grid.Column floated="right" width="3">
-              <Select placeholder={ "Valitse" } options={ typeOptions } onChange={ this.onStartOperationChange }/>
+            <Grid.Column floated="right" width="5">
+              <Select style={{ width: "100%" }} placeholder={ "Valitse" } options={ typeOptions } onChange={ this.onStartOperationChange }/>
             </Grid.Column>
-            <Grid.Column floated="right" width="2">            
+            <Grid.Column floated="right" width="3">            
               <Button fluid disabled={ !this.state.startOperation } onClick={() => this.onActionStartClick() }> Aloita </Button>
             </Grid.Column>
           </Grid.Row>
@@ -187,6 +193,32 @@ class OperationsList extends React.Component<Props, State> {
     );
   }
 
+  /**
+   * Check if object is http error response
+   */
+  private isHttpErrorResponse(object: OperationReport[] | HttpErrorResponse): object is HttpErrorResponse {
+    return 'code' in object;
+  }
+
+  /**
+   * Render error message
+   * 
+   * @param response http response
+   */
+  private renderErrorMessage = (response: HttpErrorResponse) => {
+    let errorMessage = "Jokin meni pieleen. Yritä hetken kuluttua uudelleen.";
+    if (response.code == 403) {
+      errorMessage = "Sinulla ei ole oikeuksia tähän näkymään. Jos näin ei pitäisi olla, ole yhteydessä Pakkasmarjaan.";
+    }
+
+    return (
+      <BasicLayout>
+        <ErrorMessage errorMessage={errorMessage} />
+      </BasicLayout>
+    );
+
+  }
+  
   /**
    * Formats operation report type
    * 
@@ -327,7 +359,7 @@ class OperationsList extends React.Component<Props, State> {
       type: type
     });
 
-    await this.loadOperationReports();
+    await this.loadData();
   }
   
 }
