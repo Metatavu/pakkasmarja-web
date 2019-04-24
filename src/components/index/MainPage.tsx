@@ -35,6 +35,7 @@ import ProductsList from "../products-management/ProductsList";
 import CreateProduct from "../products-management/CreateProduct";
 import EditProduct from "../products-management/EditProduct";
 import OperationsList from "../operations-management/OperationsList";
+import OperationReport from "../operations-management/OperationReport";
 
 /**
  * Interface for component props
@@ -98,6 +99,7 @@ class MainPage extends React.Component<Props, {}> {
         <Route exact path="/createProduct" component={CreateProduct} />
         <Route exact path="/editProduct/:productId" component={EditProduct} />
         <Route exact path="/operationsManagement" component={OperationsList} />
+        <Route exact path="/operationsReports/:operationReportId" component={OperationReport} />
       </div>
     );
   }

@@ -1,13 +1,14 @@
 import * as React from "react";
 import * as actions from "../../actions/";
 import BasicLayout from "../generic/BasicLayout";
-import { StoreState } from "src/types";
+import { StoreState } from "../../types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
 import Api, { OperationReport } from "pakkasmarja-client";
 import { Table, Header, Dimmer, Loader, Grid, Button, Icon } from "semantic-ui-react";
 import * as moment from "moment";
+import { Link } from "react-router-dom";
 
 /**
  * Interface for component props
@@ -22,7 +23,7 @@ interface Props {
  */
 interface State {
   open: boolean,
-  openrationReports: OperationReport[],
+  operationReports: OperationReport[],
   loading: boolean,
   firstResult: number
 }
@@ -37,7 +38,7 @@ class OperationsList extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      openrationReports: [],
+      operationReports: [],
       open: false,
       loading: true,
       firstResult: 0
@@ -47,7 +48,7 @@ class OperationsList extends React.Component<Props, State> {
   /**
    * Component did mount life-sycle event
    */
-  public async componentDidMount() {
+  public async componentDidMount() {    
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
@@ -75,7 +76,7 @@ class OperationsList extends React.Component<Props, State> {
     this.setState({ loading: true });    
     const operationReportsService = await Api.getOperationReportsService(this.props.keycloak.token);
     this.setState({
-      openrationReports: await operationReportsService.listOperationReports(undefined, undefined, undefined, this.state.firstResult, MAX_RESULTS),
+      operationReports: await operationReportsService.listOperationReports(undefined, undefined, undefined, this.state.firstResult, MAX_RESULTS),
       loading: false
     });
   }
@@ -104,20 +105,22 @@ class OperationsList extends React.Component<Props, State> {
         <Table celled fixed unstackable>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell width={6}>
+              <Table.HeaderCell width={5}>
                 Tyyppi
               </Table.HeaderCell>
-              <Table.HeaderCell width={6}>
+              <Table.HeaderCell width={5}>
                 Tila
               </Table.HeaderCell>
               <Table.HeaderCell width={4}>
                 Aloitettu
               </Table.HeaderCell>
+              <Table.HeaderCell width={2}>
+              </Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
             {
-              this.state.openrationReports.map((operationReport: OperationReport) => {
+              this.state.operationReports.map((operationReport: OperationReport) => {
                 return (
                   <Table.Row key={operationReport.id}>
                     <Table.Cell>
@@ -128,6 +131,9 @@ class OperationsList extends React.Component<Props, State> {
                     </Table.Cell>
                     <Table.Cell>
                       { this.formatOperationStarted(operationReport) }
+                    </Table.Cell>
+                    <Table.Cell style={{ textAlign: "center" }}>
+                      <Button as={Link} to={`operationsReports/${operationReport.id}`}> Näytä </Button>
                     </Table.Cell>
                   </Table.Row>
                 );
