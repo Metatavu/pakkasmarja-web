@@ -12,6 +12,7 @@ import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import * as actions from "../../actions/";
+import ApplicationRoles from "src/utils/application-roles";
 
 export interface Props {
   siteName: string,
@@ -55,6 +56,11 @@ class MenuContainer extends React.Component<Props, object> {
           <Menu.Item as="div">
             <Link to="/contracts">{strings.contracts}</Link>
           </Menu.Item>
+          { this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_OPERATIONS) &&
+          <Menu.Item as="div">
+            <Link to="/operationsManagement">{strings.operations}</Link>
+          </Menu.Item>
+          }
           { this.props.authenticated &&
             <Menu.Menu position="right">
               <Dropdown item simple text={strings.menuBarUserItemText}>
