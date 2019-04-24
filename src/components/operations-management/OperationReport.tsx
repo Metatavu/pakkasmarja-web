@@ -5,7 +5,7 @@ import { StoreState } from "../../types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
-import Api, { OperationReportItem } from "pakkasmarja-client";
+import Api, { OperationReportItem, OperationReport } from "pakkasmarja-client";
 import { Table, Header, Dimmer, Loader, Button } from "semantic-ui-react";
 import { Link } from "react-router-dom";
 
@@ -23,6 +23,7 @@ interface Props {
  */
 interface State {
   open: boolean,
+  operationReport: OperationReport | null,
   operationReportItems: OperationReportItem[],
   loading: boolean,
   operationReportId: string
@@ -31,7 +32,7 @@ interface State {
 /**
  * Class component for Operations list
  */
-class OperationReport extends React.Component<Props, State> {
+class OperationReportComponent extends React.Component<Props, State> {
 
   constructor(props: Props) {
     super(props);
@@ -39,7 +40,8 @@ class OperationReport extends React.Component<Props, State> {
       operationReportItems: [],
       open: false,
       loading: true,
-      operationReportId: ""
+      operationReportId: "",
+      operationReport: null
     };
   }
 
@@ -55,13 +57,13 @@ class OperationReport extends React.Component<Props, State> {
       operationReportId: this.props.match.params.operationReportId
     });
 
-    await this.loadOperationReportItems();
+    await this.load();
   }
 
   /**
    * Load Operations
    */
-  private loadOperationReportItems = async () => {
+  private load = async () => {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
@@ -70,6 +72,7 @@ class OperationReport extends React.Component<Props, State> {
     const operationReportsService = await Api.getOperationReportsService(this.props.keycloak.token);
 
     this.setState({
+      operationReport: await operationReportsService.findOperationReport(this.state.operationReportId),
       operationReportItems: await operationReportsService.listOperationReportItems(this.state.operationReportId),
       loading: false
     });
@@ -79,7 +82,7 @@ class OperationReport extends React.Component<Props, State> {
    * Render method
    */
   public render() {
-    if (this.state.loading) {
+    if (this.state.loading || !this.state.operationReport) {
       return (
         <BasicLayout>
           <Dimmer active inverted>
@@ -94,7 +97,7 @@ class OperationReport extends React.Component<Props, State> {
     return (
       <BasicLayout>
         <Header floated='left' className="contracts-header">
-          <p>Toimenpiteet</p>
+          <p>Toimenpiteet { this.formatOperationReportType(this.state.operationReport) }</p>
         </Header>
         <Button as={Link} to={`/operationsManagement`} style={ {float: "right"} }> Takaisin </Button>
         <Table celled fixed unstackable>
@@ -127,6 +130,31 @@ class OperationReport extends React.Component<Props, State> {
         </Table>
       </BasicLayout>
     );
+  }
+
+  /**
+   * Formats operation report type
+   * 
+   * @param operationReport operation report
+   * @return formatted type
+   */
+  private formatOperationReportType(operationReport: OperationReport): string {
+    switch (operationReport.type) {
+      case "ITEM_GROUP_DEFAULT_DOCUMENT_TEMPLATES":
+        return "Marjalajien oletus sopimusmallit";
+      case "SAP_CONTACT_SYNC":
+        return "SAP Yhteystietojen synkronointi";
+      case "SAP_CONTRACT_SAPID_SYNC":
+        return "Synkronoi sopimusten SAP -tunnisteet";
+      case "SAP_CONTRACT_SYNC":
+        return "SAP sopimusten synkronointi";
+      case "SAP_DELIVERY_PLACE_SYNC":
+        return "SAP toimituspaikkojen synkronointi";
+      case "SAP_ITEM_GROUP_SYNC":
+        return "SAP marjalajien synkronointi";
+    }
+    
+    return `Unknown type ${operationReport.type}`;
   }
 
   /**
@@ -172,4 +200,4 @@ export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(OperationReport);
+export default connect(mapStateToProps, mapDispatchToProps)(OperationReportComponent);
