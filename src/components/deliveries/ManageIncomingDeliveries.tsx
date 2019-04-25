@@ -26,12 +26,12 @@ interface Props {
  * Interface for component state
  */
 interface State {
-  keycloak?: Keycloak.KeycloakInstance;
-  frozenDeliveries?: DeliveryProduct[];
-  freshDeliveries?: DeliveryProduct[];
-  viewModal: boolean;
-  deliveryId?: string;
-  redirect: boolean;
+  keycloak?: Keycloak.KeycloakInstance,
+  frozenDeliveries?: DeliveryProduct[],
+  freshDeliveries?: DeliveryProduct[],
+  viewModal: boolean,
+  deliveryId?: string,
+  redirect: boolean
 }
 
 /**
@@ -66,7 +66,7 @@ class ManageIncomingDeliveries extends React.Component<Props, State> {
     const freshDeliveries: Delivery[] = await deliveriesService.listDeliveries(undefined, "DELIVERY", "FRESH", undefined, undefined, undefined, undefined, undefined, 0, 200);
     const frozenDeliveries: Delivery[] = await deliveriesService.listDeliveries(undefined, "DELIVERY", "FROZEN", undefined, undefined, undefined, undefined, undefined, 0, 200);
     const products: Product[] = await productsService.listProducts(undefined, undefined, undefined, undefined, 100);
-
+    
     const freshDeliveriesAndProducts: DeliveryProduct[] = freshDeliveries.map((delivery) => {
       return {
         delivery: delivery,
@@ -81,10 +81,10 @@ class ManageIncomingDeliveries extends React.Component<Props, State> {
       };
     });
 
-    this.setState({ 
+    this.setState({
       freshDeliveries: freshDeliveriesAndProducts,
       frozenDeliveries: frozenDeliveriesAndProducts
-     });
+    });
   }
 
   /**

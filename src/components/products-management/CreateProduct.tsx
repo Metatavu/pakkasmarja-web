@@ -29,7 +29,8 @@ interface State {
   itemGroups: ItemGroup[],
   unitName: string,
   unitSize: number,
-  name: string
+  name: string,
+  sapItemCode: string
 }
 
 /**
@@ -51,7 +52,8 @@ class CreateProduct extends React.Component<Props, State> {
       itemGroups: [],
       unitName: "",
       unitSize: 0,
-      name: ""
+      name: "",
+      sapItemCode: ""
     };
   }
 
@@ -121,7 +123,8 @@ class CreateProduct extends React.Component<Props, State> {
       name: this.state.name,
       units: this.state.units,
       unitName: this.state.unitName,
-      unitSize: this.state.unitSize
+      unitSize: this.state.unitSize,
+      sapItemCode: this.state.sapItemCode
     }
 
     await productService.createProduct(product);
@@ -198,6 +201,16 @@ class CreateProduct extends React.Component<Props, State> {
               }}
             />
           </Form.Field>
+          <Form.Field>
+            <label>SAP koodi</label>
+            <Input
+              type="text"
+              value={this.state.sapItemCode}
+              onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
+                this.handleInputChange("sapItemCode", event.currentTarget.value)
+              }}
+            />
+          </Form.Field>
           <Divider />
           <Button.Group floated="right" >
             <Button
@@ -206,11 +219,20 @@ class CreateProduct extends React.Component<Props, State> {
               inverted
               color="red">Takaisin</Button>
             <Button.Or text="" />
-            <Button color="red" onClick={this.handleProductSubmit} type='submit'>Luo uusi tuote</Button>
+            <Button color="red" disabled={ !this.isValid() } onClick={this.handleProductSubmit} type='submit'>Luo uusi tuote</Button>
           </Button.Group>
         </Form>
       </BasicLayout>
     );
+  }
+
+  /**
+   * Returns whether form is valid or not
+   * 
+   * @return whether form is valid or not
+   */
+  private isValid = () => {
+    return !!(this.state.selectedItemGroupId && this.state.name && this.state.units && this.state.unitSize && this.state.unitName && this.state.sapItemCode);
   }
 }
 

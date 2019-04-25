@@ -1,12 +1,12 @@
 import * as React from "react";
 import * as actions from "../../actions/";
 import * as _ from "lodash";
-import { StoreState, DeliveriesState, DeliveryProduct, Options, DeliveryDataValue } from "../../types";
-import Api, { Product, DeliveryPlace, ItemGroupCategory, Delivery, DeliveryNote } from "pakkasmarja-client";
+import { StoreState, DeliveriesState, Options, DeliveryDataValue } from "../../types";
+import Api, { Product, DeliveryPlace, ItemGroupCategory, Delivery, DeliveryNote, DeliveryQuality } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
-import { Header, Dropdown, Form, Input, Button } from "semantic-ui-react";
+import { Header, Dropdown, Form, Input, Button, Dimmer, Loader } from "semantic-ui-react";
 import BasicLayout from "../generic/BasicLayout";
 import { Redirect } from "react-router";
 import DatePicker, { registerLocale } from "react-datepicker";
@@ -18,29 +18,30 @@ import { Link } from "react-router-dom";
  * Interface for component props
  */
 interface Props {
-  authenticated: boolean;
-  keycloak?: Keycloak.KeycloakInstance;
-  deliveries?: DeliveriesState;
-  match?: any;
-  deliveriesLoaded?: (deliveries: DeliveriesState) => void;
+  authenticated: boolean,
+  keycloak?: Keycloak.KeycloakInstance,
+  match?: any
 }
 
 /**
  * Interface for component state
  */
 interface State {
-  products: Product[];
-  deliveryPlaces: DeliveryPlace[];
-  selectedProductId?: string;
-  selectedPlaceId?: string;
-  amount: number;
-  date: Date;
-  modalOpen: boolean;
-  category: string;
-  redirect: boolean;
-  deliveryNotes: DeliveryNote[];
-  deliveryId?: string;
-  userId: string;
+  loading: boolean,
+  products: Product[],
+  deliveryPlaces: DeliveryPlace[],
+  deliveryQualities: DeliveryQuality[],
+  selectedProductId?: string,
+  selectedPlaceId?: string,
+  selectedQualityId?: string,
+  amount: number,
+  date: Date,
+  modalOpen: boolean,
+  category: string,
+  redirect: boolean,
+  deliveryNotes: DeliveryNote[],
+  deliveryId?: string,
+  userId: string
 }
 
 /**
@@ -56,6 +57,7 @@ class ManageDelivery extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
+      loading: false,
       redirect: false,
       products: [],
       deliveryPlaces: [],
@@ -64,7 +66,8 @@ class ManageDelivery extends React.Component<Props, State> {
       category: "",
       deliveryNotes: [],
       amount: 0,
-      userId: ""
+      userId: "",
+      deliveryQualities: []
     };
     registerLocale('fi', fi);
   }
@@ -73,17 +76,38 @@ class ManageDelivery extends React.Component<Props, State> {
    * Component did mount life-cycle event
    */
   public componentDidMount = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token || !this.props.deliveries) {
+    if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
+
+    this.setState({
+      loading: true
+    });
 
     const deliveryId: ItemGroupCategory = this.props.match.params.deliveryId;
     const productsService = await Api.getProductsService(this.props.keycloak.token);
     const deliveryPlacesService = await Api.getDeliveryPlacesService(this.props.keycloak.token);
     const deliveriesService = await Api.getDeliveriesService(this.props.keycloak.token);
+    const deliveryQualitiesService = await Api.getDeliveryQualitiesService(this.props.keycloak.token);
+    const itemGroupsService = await Api.getItemGroupsService(this.props.keycloak.token);
+
     const delivery = await deliveriesService.findDelivery(deliveryId);
     const deliveryPlaces = await deliveryPlacesService.listDeliveryPlaces();
     const products: Product[] = await productsService.listProducts(undefined, undefined, undefined, undefined, 100);
+    const deliveryProduct = products.find((product) => {
+      return product.id == delivery.productId;
+    });
+
+    if (!deliveryProduct) {
+      throw new Error("Could not find delivery product");
+    }
+    
+    const itemGroup = await itemGroupsService.findItemGroup(deliveryProduct.itemGroupId);
+    if (!itemGroup) {
+      throw new Error("Could not find item group");
+    }
+
+    const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(itemGroup.category);
 
     this.setState({
       products,
@@ -93,7 +117,10 @@ class ManageDelivery extends React.Component<Props, State> {
       amount: delivery.amount,
       selectedProductId: delivery.productId,
       selectedPlaceId: delivery.deliveryPlaceId,
-      date: delivery.time
+      selectedQualityId: delivery.qualityId,
+      date: delivery.time,
+      deliveryQualities: deliveryQualities,
+      loading: false
     });
   }
 
@@ -126,6 +153,7 @@ class ManageDelivery extends React.Component<Props, State> {
       <Dropdown
         selection
         fluid
+        placeholder={"Valitse"}
         value={value}
         options={options}
         onChange={(event, data) => {
@@ -153,53 +181,15 @@ class ManageDelivery extends React.Component<Props, State> {
       status: "DONE",
       amount: this.state.amount,
       price: "0",
-      deliveryPlaceId: this.state.selectedPlaceId
+      deliveryPlaceId: this.state.selectedPlaceId,
+      qualityId: this.state.selectedQualityId
     }
 
-    const updatedDelivery = await deliveryService.updateDelivery(delivery, this.state.deliveryId);
-    const updatedDeliveries = this.getUpdatedDeliveryData(updatedDelivery);
-    this.props.deliveriesLoaded && this.props.deliveriesLoaded(updatedDeliveries);
+    await deliveryService.updateDelivery(delivery, this.state.deliveryId);
 
     this.setState({ redirect: true });
   }
-
-  /**
-   * Get updated delivery data 
-   * 
-   * @param delivery delivery
-   */
-  private getUpdatedDeliveryData = (delivery: Delivery): DeliveriesState => {
-    if (!this.props.deliveries) {
-      return { frozenDeliveryData: [], freshDeliveryData: [] };
-    }
-
-    const deliveries = { ... this.props.deliveries };
-    const freshDeliveries = deliveries.freshDeliveryData.map((deliveryData: DeliveryProduct) => {
-      if (deliveryData.delivery.id === delivery.id) {
-        return {
-          delivery: delivery,
-          product: this.state.products.find(product => product.id === delivery.productId)
-        }
-      }
-      return deliveryData;
-    });
-    const frozenDeliveries = deliveries.frozenDeliveryData.map((deliveryData: DeliveryProduct) => {
-      if (deliveryData.delivery.id === delivery.id) {
-        return {
-          delivery: delivery,
-          product: this.state.products.find(product => product.id === delivery.productId)
-        }
-      }
-      return deliveryData;
-    });
-
-    const deliveriesState: DeliveriesState = {
-      freshDeliveryData: freshDeliveries || [],
-      frozenDeliveryData: frozenDeliveries || []
-    }
-    return deliveriesState;
-  }
-
+  
   /**
    * Render method
    */
@@ -209,6 +199,16 @@ class ManageDelivery extends React.Component<Props, State> {
         pathname: '/deliveries',
         state: { activeItem: 'incomingDeliveries' }
       }} />;
+    }
+    
+    if (this.state.loading) {
+      return (
+        <BasicLayout>
+          <Dimmer active inverted>
+            <Loader inverted> Lataa... </Loader>
+          </Dimmer>
+        </BasicLayout>
+      );
     }
 
     const productOptions: Options[] = this.state.products.map((product) => {
@@ -227,6 +227,14 @@ class ManageDelivery extends React.Component<Props, State> {
       };
     }) || [];
 
+    const deliveryQualityOptions = this.state.deliveryQualities.map((deliveryQuality) => {
+      return {
+        key: deliveryQuality.id,
+        text: deliveryQuality.name,
+        value: deliveryQuality.id
+      };
+    });
+
     return (
       <BasicLayout>
         <Header as="h2">
@@ -236,6 +244,10 @@ class ManageDelivery extends React.Component<Props, State> {
           <Form.Field>
             <label>Tuote</label>
             {this.renderDropDown(productOptions, "selectedProductId")}
+          </Form.Field>
+          <Form.Field>
+            <label>Quality</label>
+            {this.renderDropDown(deliveryQualityOptions, "selectedQualityId")}
           </Form.Field>
           <Form.Field>
             <label>Määrä</label>
@@ -270,12 +282,21 @@ class ManageDelivery extends React.Component<Props, State> {
               inverted
               color="red">Takaisin</Button>
             <Button.Or text="" />
-            <Button color="red" onClick={this.handleDeliverySubmit} type='submit'>Hyväksy toimitus</Button>
+            <Button disabled={ !this.isValid() } color="red" onClick={this.handleDeliverySubmit} type='submit'>Hyväksy toimitus</Button>
           </Button.Group>
         </Form>
       </BasicLayout>
     );
   }
+
+  /**
+   * Returns whether form is valid or not
+   * 
+   * @return whether form is valid or not
+   */
+  private isValid = () => {
+    return !!(this.state.selectedPlaceId && this.state.selectedProductId && this.state.selectedQualityId);
+  } 
 }
 
 /**
