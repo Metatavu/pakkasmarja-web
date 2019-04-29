@@ -52,6 +52,21 @@ class MenuContainer extends React.Component<Props, object> {
             <Link to="/operationsManagement">{strings.operations}</Link>
           </Menu.Item>
           }
+          { this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTRACTS) &&
+            <Menu.Item as="div">
+              <Link to="/contractManagement">{strings.contractManagement}</Link>
+            </Menu.Item>
+          }
+          { this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_ITEM_GROUPS) &&
+            <Menu.Item as="div">
+              <Link to="/itemGroupsManagement">{strings.itemGroupsManagement}</Link>
+            </Menu.Item>
+          }
+          { this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_PRODUCTS) &&
+            <Menu.Item as="div">
+              <Link to="/productsManagement">{strings.productsManagement}</Link>
+            </Menu.Item>
+          }
           { this.props.authenticated &&
             <Menu.Menu position="right">
               <Dropdown item simple text={strings.menuBarUserItemText}>

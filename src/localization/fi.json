@@ -173,5 +173,6 @@
   "confirmDeleteNews": "Haluatko varmasti poistaa uutisen: ",
   "delete": "Poista",
   "edit": "Muokkaa",
-  "createNewArticle": "Luo uusi artikkeli"
+  "createNewArticle": "Luo uusi artikkeli",
+  "operations": "Operaatiot"
 }
