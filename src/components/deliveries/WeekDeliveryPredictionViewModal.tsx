@@ -6,6 +6,7 @@ import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import { Modal, Header, Button, Divider } from "semantic-ui-react";
 import { WeekDeliveryPredictionDays } from "pakkasmarja-client";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -101,9 +102,11 @@ class WeekDeliveryPredictionViewModal extends React.Component<Props, State> {
         <Modal size="small" open={this.props.modalOpen} onClose={this.closeModal} closeIcon>
           <Modal.Content>
             <Header as="h3">
-              Virhe: viikkoennuste tietoja ei löytynyt.
+              {strings.weekDeliveryNotFound}
             </Header>
-            <Button floated="right" onClick={this.closeModal} style={{ marginBottom: 20, marginTop: 20 }} color="black">Sulje</Button>
+            <Button floated="right" onClick={this.closeModal} style={{ marginBottom: 20, marginTop: 20 }} color="black">
+              {strings.close}
+            </Button>
           </Modal.Content>
         </Modal>
       );
@@ -116,11 +119,13 @@ class WeekDeliveryPredictionViewModal extends React.Component<Props, State> {
             {`${this.props.data.itemGroup.displayName} ${this.props.data.weekDeliveryPrediction.amount} KG - viikko ${this.props.data.weekDeliveryPrediction.weekNumber}`}
           </Header>
           <Divider />
-          <p><b>Tuote</b> - {this.props.data.itemGroup.name}</p>
-          <p><b>Määrä</b> - {this.props.data.weekDeliveryPrediction.amount}</p>
-          <p><b>Toimituspäivät</b> - {this.getDeliveryDays()}</p>
+          <p><b>{strings.product}</b> - {this.props.data.itemGroup.name}</p>
+          <p><b>{strings.amount}</b> - {this.props.data.weekDeliveryPrediction.amount}</p>
+          <p><b>{strings.deliveryDays}</b> - {this.getDeliveryDays()}</p>
           <Divider style={{ paddingBottom: 0, marginBottom: 0 }} />
-          <Button floated="right" onClick={this.closeModal} style={{ marginBottom: 10, marginTop: 10 }} color="black">Sulje</Button>
+          <Button floated="right" onClick={this.closeModal} style={{ marginBottom: 10, marginTop: 10 }} color="black">
+            {strings.close}
+          </Button>
         </Modal.Content>
       </Modal>
     );

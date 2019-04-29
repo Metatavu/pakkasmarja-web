@@ -3,6 +3,7 @@ import "../../styles/common.scss";
 import "./styles.scss";
 import { Grid, Header, Button, Input, Divider } from "semantic-ui-react";
 import { ItemGroup, AreaDetail } from "pakkasmarja-client";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component State
@@ -74,18 +75,18 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
     return (
       <Grid.Row columns={this.props.itemGroup && !this.props.itemGroup.minimumProfitEstimation ? "4" : "3"}>
         <Grid.Column>
-          <p>Lohko/Lohkot</p>
+          <p>{strings.blocks}</p>
         </Grid.Column>
         <Grid.Column>
-          <p>Pinta-ala (ha)</p>
+          <p>{strings.area}</p>
         </Grid.Column>
         <Grid.Column>
-          <p>Lajike/Lajikkeet</p>
+          <p>{strings.species}</p>
         </Grid.Column>
         {
           this.props.itemGroup && !this.props.itemGroup.minimumProfitEstimation &&
           <Grid.Column>
-            <p>Tuottoarvio (kg / ha)</p>
+            <p>{strings.profitEstimationPerHectare}</p>
           </Grid.Column>
         }
       </Grid.Row>
@@ -116,13 +117,13 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
     return (
       <Grid.Row key={index} columns={!minimumEstimation ? "4" : "3"}>
         <Grid.Column>
-          {this.renderInputField(index, "name", !this.props.isActiveContract, name || "", style)}
+          {this.renderInputField(index, strings.name, !this.props.isActiveContract, name || "", style)}
         </Grid.Column>
         <Grid.Column>
-          {this.renderInputField(index, "size", !this.props.isActiveContract, size && size.toString() || "", style)}
+          {this.renderInputField(index, strings.size, !this.props.isActiveContract, size && size.toString() || "", style)}
         </Grid.Column>
         <Grid.Column>
-          {this.renderInputField(index, "species", !this.props.isActiveContract, species || "", style)}
+          {this.renderInputField(index, strings.species, !this.props.isActiveContract, species || "", style)}
         </Grid.Column>
         {
           !minimumEstimation &&
@@ -203,17 +204,17 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
       return (
         <div>
           <p>
-            {`Lohkoja yhteensä ${blocks} kpl. Pinta-alaa yhteensä ${totalHectares} ha.`}
+            {strings.formatString(strings.totalAmountOfBlocks, blocks, totalHectares)}
           </p>
           <p>
-            {`Minimisopimusmäärä on ${totalProfit} kg, perustuen hehtaarikohtaiseen toimitusmääräminimiin 500 kg / ha. Lisätietoja sopimuksen kohdasta Sopimuksen mukaiset toimitusmäärät, takuuhinnat ja bonus satokaudella ${(new Date()).getFullYear()}`}
+            {strings.formatString(strings.minimumContractAmountText, totalProfit, (new Date()).getFullYear())}
           </p>
         </div>
       );
     } else {
       return (
         <p>
-          {`Lohkoja yhteensä ${blocks} kpl. Pinta-alaa yhteensä ${totalHectares} ha. Tuotantoarvio yhteensä ${totalProfit} kg`}
+          {strings.formatString(strings.areaDetailsTotal, blocks, totalHectares, totalProfit)}
         </p>
       );
     }
@@ -231,7 +232,7 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
       <div className="contract-section">
         <Divider horizontal>
           <Header as='h2'>
-            Tuotannossa olevat hehtaarit
+            {strings.hectaresInProduction}
          </Header>
         </Divider>
         <Grid >
@@ -249,7 +250,7 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
         {
           !this.props.isActiveContract &&
             <Button className="contract-full-width-button"color="red" onClick={this.createEmptyAreaDetail}>
-              Lisää rivi
+              {strings.addRow}
           </Button>
         }
         {

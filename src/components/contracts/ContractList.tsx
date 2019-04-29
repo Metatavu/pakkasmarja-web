@@ -10,9 +10,9 @@ import { ItemGroup } from "pakkasmarja-client";
 import { Segment, Item, Header, Button } from "semantic-ui-react";
 import ContractItem from "./ContractItem";
 import ContractProposalModal from "./ContractProposalModal";
-import strings from "../../localization/strings";
 import { Link } from "react-router-dom";
 import ApplicationRoles from "src/utils/application-roles";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -150,20 +150,20 @@ class ContractList extends React.Component<Props, State> {
         {
           this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTRACTS) &&
           <Button as={Link} to={`contractManagement`} inverted color="red">
-            Sopimusten hallinta
-            </Button>
+            {strings.contractManagement}
+          </Button>
         }
         {
           this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_ITEM_GROUPS) &&
           <Button as={Link} to={`itemGroupsManagement`} inverted color="red">
-            Marjalajien hallinta
-            </Button>
+            {strings.itemGroupsManagement}
+          </Button>
         }
         {
           this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_PRODUCTS) &&
           <Button as={Link} to={`productsManagement`} inverted color="red">
-            Tuotteiden hallinta
-            </Button>
+            {strings.productsManagement}
+          </Button>
         }
       </Segment>
     );
@@ -191,7 +191,7 @@ class ContractList extends React.Component<Props, State> {
           </Item.Group>
         </Segment>
         <Button onClick={() => this.onProposeNewContractClick("FROZEN")} inverted color="red">
-          Ehdota uutta pakastesopimusta
+          {strings.suggestNewFrozenContract}
         </Button>
         <Segment>
           <Header>
@@ -206,7 +206,7 @@ class ContractList extends React.Component<Props, State> {
           </Item.Group>
         </Segment>
         <Button onClick={() => this.onProposeNewContractClick("FRESH")} inverted color="red">
-          Ehdota uutta tuoresopimusta
+          {strings.suggestNewFreshContract}
         </Button>
         <ContractProposalModal
           modalOpen={this.state.proposeContractModalOpen}

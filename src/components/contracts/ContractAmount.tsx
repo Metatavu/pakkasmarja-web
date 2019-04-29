@@ -2,6 +2,7 @@ import * as React from "react";
 import "../../styles/common.scss";
 import { Input, Header, Form, Checkbox, TextArea, Modal, Grid, Divider } from "semantic-ui-react";
 import { Contract, ItemGroup } from "pakkasmarja-client";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component State
@@ -73,20 +74,20 @@ export default class ContractAmount extends React.Component<Props, State> {
       <div className="contract-section">
         <Divider horizontal>
           <Header as='h2'>
-            Määrä
+            {strings.amount}
          </Header>
         </Divider>
         {
           category == "FRESH" &&
           <p>
-            Tuoremarjasopimuksessa sopimusmäärä on aiesopimus, johon molemmat osapuolet sitoutuvat, ellei kyseessä poikkeustilanne.
+            {strings.amountInfoTextFresh}
           </p>
         }
         <Form>
           <Form.Field>
-            <label>Määrä</label>
+            <label>{strings.amount}</label>
             <Input
-              placeholder="Määrä"
+              placeholder={strings.amount}
               value={quantityValue}
               onChange={(event: any) => this.props.onUserInputChange("proposedQuantity", event.target.value)}
               disabled={this.state.isActiveContract}
@@ -96,7 +97,7 @@ export default class ContractAmount extends React.Component<Props, State> {
             {`Pakkasmarjan ehdotus: ${this.props.contract.contractQuantity} kg`}
           </p>
           <p onClick={() => this.setState({ showPastContracts: true })}>
-            Näytä edellisten vuosien sopimusmäärät ja toimitusmäärät
+            {strings.showPastYearAmounts}
           </p>
           <Form.Field>
             <Checkbox
@@ -104,7 +105,7 @@ export default class ContractAmount extends React.Component<Props, State> {
               onChange={(event: any) => {
                 !this.state.isActiveContract && this.props.onUserInputChange("deliverAllChecked", !this.props.deliverAllChecked)
               }}
-              label={"Haluaisin toimittaa kaiken tilallani viljeltävän sadon tästä marjasta Pakkasmarjalle pakastettavaksi ja tuorekauppaan (lisätietoja sopimuksen kohdasta 100 % toimittajuus)."}
+              label={strings.wantToDeliverAll}
             />
           </Form.Field>
           <Form.Field>
@@ -113,23 +114,23 @@ export default class ContractAmount extends React.Component<Props, State> {
               onChange={(event: any) => {
                 !this.state.isActiveContract && this.props.onUserInputChange("quantityComment", event.target.value)
               }}
-              placeholder="Kommentti"
+              placeholder={strings.comment}
             />
           </Form.Field>
         </Form>
         <Modal open={this.state.showPastContracts} onClose={() => this.setState({ showPastContracts: false })} closeIcon>
-          <Modal.Header>Edellisten vuosien sopimusmäärät ja toimitusmäärät</Modal.Header>
+          <Modal.Header>{strings.pastYearAmounts}</Modal.Header>
           <Modal.Content>
             <Grid>
               <Grid.Row columns="3">
                 <Grid.Column>
-                  Vuosi
+                  {strings.year}
                 </Grid.Column>
                 <Grid.Column>
-                  Sovittu määrä (kg)
+                  {strings.contractAmount}
                 </Grid.Column>
                 <Grid.Column>
-                  Toteutunut määrä (kg)
+                  {strings.deliveriedAmount}
                 </Grid.Column>
               </Grid.Row>
               {

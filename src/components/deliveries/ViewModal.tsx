@@ -6,6 +6,7 @@ import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import { Modal, Header, Button, Divider } from "semantic-ui-react";
 import Api, { Product } from "pakkasmarja-client";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -84,16 +85,18 @@ class ViewModal extends React.Component<Props, State> {
       <Modal size="small" open={this.props.modalOpen} onClose={this.closeModal} closeIcon>
         <Modal.Content>
           <Header as="h1">
-            Toimitus
+            {strings.delivery}
           </Header>
           <Divider />
-          <Header as="h3">Tuotteen nimi </Header><span>{this.state.deliveryProduct.product.name}</span>
-          <Header as="h3">Tuotteen yksikkönimi </Header><span>{this.state.deliveryProduct.product.unitName}</span>
-          <Header as="h3">Tuotteen yksikkömäärä </Header><span>{this.state.deliveryProduct.product.units}</span>
-          <Header as="h3">Tuotteen yksikkökoko </Header><span>{this.state.deliveryProduct.product.unitSize}</span>
-          <Header as="h3">Toimitus määrä </Header><span>{this.state.deliveryProduct.delivery.amount}</span>
+          <Header as="h3">{strings.productName} </Header><span>{this.state.deliveryProduct.product.name}</span>
+          <Header as="h3">{strings.productUnitName} </Header><span>{this.state.deliveryProduct.product.unitName}</span>
+          <Header as="h3">{strings.productUnits} </Header><span>{this.state.deliveryProduct.product.units}</span>
+          <Header as="h3">{strings.productUnitSize} </Header><span>{this.state.deliveryProduct.product.unitSize}</span>
+          <Header as="h3">{strings.amount} </Header><span>{this.state.deliveryProduct.delivery.amount}</span>
           <Divider style={{ paddingBottom: 0, marginBottom: 0 }} />
-          <Button floated="right" onClick={this.closeModal} style={{ marginBottom: 20, marginTop: 20 }} color="black">Sulje</Button>
+          <Button floated="right" onClick={this.closeModal} style={{ marginBottom: 20, marginTop: 20 }} color="black">
+            {strings.close}
+          </Button>
         </Modal.Content>
       </Modal>
     );

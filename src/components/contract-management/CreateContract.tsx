@@ -13,6 +13,7 @@ import * as moment from "moment";
 import { Redirect } from "react-router";
 import Select from "react-select/lib/Async";
 import { Link } from "react-router-dom";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -316,23 +317,23 @@ class CreateContract extends React.Component<Props, State> {
     const statusOptions = [{
       key: "REJECTED",
       value: "REJECTED",
-      text: "Hylätty"
+      text: strings.rejected
     }, {
       key: "APPROVED",
       value: "APPROVED",
-      text: "Hyväksytty"
+      text: strings.approved
     }, {
       key: "ON_HOLD",
       value: "ON_HOLD",
-      text: "Odottaa"
+      text: strings.onHold
     }, {
       key: "DRAFT",
       value: "DRAFT",
-      text: "Vedos"
+      text: strings.draft
     }, {
       key: "TERMINATED",
       value: "TERMINATED",
-      text: "Päättynyt"
+      text: strings.terminated
     }];
 
     const deliveryPlaceOptions: Options[] = this.state.deliveryPlaces.map((deliveryPlace) => {
@@ -347,45 +348,45 @@ class CreateContract extends React.Component<Props, State> {
       <BasicLayout>
         <Form>
           <Form.Field>
-            <label>Sopimus</label>
+            <label>{strings.contract}</label>
             {this.renderAutoCompleteField()}
           </Form.Field>
           <Form.Field>
-            <label>Marjalaji</label>
+            <label>{strings.itemGroup}</label>
             {this.renderDropDown(itemGroupOptions, this.state.itemGroupId, this.handleItemGroupChange, "Valitse marjalaji")}
           </Form.Field>
           <Form.Field>
-            <label>SAP id</label>
+            <label>{strings.sapId}</label>
             {this.renderTextInput(this.state.sapId, (value: string) => { this.setState({ sapId: value }) }, "SAP id", false)}
           </Form.Field>
           <Form.Field>
-            <label>Tila</label>
+            <label>{strings.status}</label>
             {this.renderDropDown(statusOptions, this.state.status, (value: Contract.StatusEnum) => { this.setState({ status: value }) }, "Valitse tila")}
           </Form.Field>
           <Form.Field>
-            <label>Määrän kommentti</label>
+            <label>{strings.quantityComment}</label>
             {this.renderTextArea(this.state.quantityComment, (value: string) => { this.setState({ quantityComment: value }) }, "Määrän kommentti")}
           </Form.Field>
           <Form.Field>
-            <label>Määrä</label>
+            <label>{strings.quantity}</label>
             {this.renderTextInput(this.state.quantity, (value: string) => { this.setState({ quantity: parseInt(value) || 0 }) }, "0", false)}
           </Form.Field>
           <Form.Field>
-            <label>Toimituspaikka</label>
+            <label>{strings.deliveryPlace}</label>
             {this.renderDropDown(deliveryPlaceOptions, this.state.deliveryPlaceId, (value: string) => { this.setState({ deliveryPlaceId: value }) }, "Valitse toimituspaikka")}
           </Form.Field>
           <Form.Field>
-            <label>Toimituspaikan kommentti</label>
+            <label>{strings.deliveryPlaceComment}</label>
             {this.renderTextArea(this.state.deliveryPlaceComment, (value: string) => { this.setState({ deliveryPlaceComment: value }) }, "Toimituspaikan kommentti")}
           </Form.Field>
           <Form.Field>
-            <label>Huomautuskenttä (SAP)</label>
+            <label>{strings.remarkFieldSap}</label>
             {this.renderTextArea(this.state.sapComment, (value: string) => { this.setState({ sapComment: value }) }, "")}
           </Form.Field>
           <Button.Group floated="right">
-            <Button inverted color="red" as={Link} to={"/contractManagement"}>Takaisin</Button>
+            <Button inverted color="red" as={Link} to={"/contractManagement"}>{strings.back}</Button>
             <Button.Or text="" />
-            <Button floated="right" color="red" loading={this.state.buttonLoading} onClick={this.handleFormSubmit}>Tallenna sopimus</Button>
+            <Button floated="right" color="red" loading={this.state.buttonLoading} onClick={this.handleFormSubmit}>{strings.save}</Button>
           </Button.Group>
         </Form>
       </BasicLayout>

@@ -2,6 +2,7 @@ import * as React from "react";
 import "../../styles/common.scss";
 import { Grid, Header, Divider } from "semantic-ui-react";
 import { Contact } from "pakkasmarja-client";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component State
@@ -50,17 +51,17 @@ export default class ContractParties extends React.Component<Props, State> {
       <div className="contract-section">
         <Divider horizontal>
           <Header as='h2'>
-            Osapuolet
+            {strings.parties}
          </Header>
         </Divider>
 
         <Grid>
           <Grid.Row columns="2">
             <Grid.Column>
-              Viljelijä
+              {strings.farmer}
             </Grid.Column>
             <Grid.Column>
-              Yhtiö
+              {strings.company}
             </Grid.Column>
           </Grid.Row>
           <Grid.Row columns="2">

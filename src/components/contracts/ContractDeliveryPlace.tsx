@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Contract, DeliveryPlace } from "pakkasmarja-client";
 import { TextArea, Header, Dropdown, Divider, Container, Form } from "semantic-ui-react";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -80,7 +81,7 @@ export default class ContractDeliveryPlace extends React.Component<Props, State>
     return (
       <Dropdown
         fluid
-        placeholder="Valitse toimituspaikka"
+        placeholder={strings.deliveryPlace}
         value={this.props.selectedPlaceId}
         options={deliveryPalceOptions}
         onChange={(event, data) => {
@@ -107,7 +108,7 @@ export default class ContractDeliveryPlace extends React.Component<Props, State>
       <Container>
         <Divider horizontal>
           <Header as='h2'>
-            Toimituspaikka
+            {strings.deliveryPlace}
          </Header>
         </Divider>
         <Form>
@@ -118,7 +119,7 @@ export default class ContractDeliveryPlace extends React.Component<Props, State>
               {`Pakkasmarjan ehdotus: ${this.state.proposedDeliveryPlace}`}
             </p>
           }
-          <p>Kommentti</p>
+          <p>{strings.comment}</p>
 
           <TextArea
             value={this.props.deliveryPlaceComment}

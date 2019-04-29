@@ -7,6 +7,7 @@ import "../../styles/common.scss";
 import { Segment, Item, Header, Divider, Button } from "semantic-ui-react";
 import Moment from "react-moment";
 import ProposalAcceptModal from "./ProposalAcceptModal";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -76,7 +77,7 @@ class ProposalsView extends React.Component<Props, State> {
     return (
       <React.Fragment>
         <Segment >
-          <Header as='h2'>Tuore ehdotukset</Header>
+          <Header as='h2'>{strings.freshProposals}</Header>
           <Divider />
           <Item.Group divided>
             {
@@ -90,7 +91,9 @@ class ProposalsView extends React.Component<Props, State> {
                       <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
                       <Item.Description><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Description>
                     </Item.Content>
-                    <Button style={{ maxHeight: "37px", marginBottom: "1%" }} color="red" floated="right" onClick={() => this.setState({ deliveryId: deliveryProduct.delivery.id, proposalAcceptModal: true })}>Tarkasta</Button>
+                    <Button style={{ maxHeight: "37px", marginBottom: "1%" }} color="red" floated="right" onClick={() => this.setState({ deliveryId: deliveryProduct.delivery.id, proposalAcceptModal: true })}>
+                      {strings.check}
+                    </Button>
                   </Item>
                 )
               })
@@ -98,7 +101,7 @@ class ProposalsView extends React.Component<Props, State> {
           </Item.Group>
         </Segment>
         <Segment >
-          <Header as='h2'>Pakaste ehdotukset</Header>
+          <Header as='h2'>{strings.frozenProposals}</Header>
           <Divider />
           <Item.Group divided>
             {
@@ -116,7 +119,9 @@ class ProposalsView extends React.Component<Props, State> {
                         </Moment>
                       </Item.Description>
                     </Item.Content>
-                    <Button style={{ maxHeight: "37px", marginBottom: "1%" }} floated="right" color="red" onClick={() => this.setState({ deliveryId: deliveryProduct.delivery.id, proposalAcceptModal: true })}>Tarkasta</Button>
+                    <Button style={{ maxHeight: "37px", marginBottom: "1%" }} floated="right" color="red" onClick={() => this.setState({ deliveryId: deliveryProduct.delivery.id, proposalAcceptModal: true })}>
+                      {strings.check}
+                    </Button>
                   </Item>
                 )
               })

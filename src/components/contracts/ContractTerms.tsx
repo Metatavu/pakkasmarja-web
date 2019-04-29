@@ -10,6 +10,7 @@ import { Checkbox, Input, Button, Dropdown, Container, Header, Divider, Form, Mo
 import { PDFService } from "src/api/pdf.service";
 import "./styles.scss";
 import { Link } from "react-router-dom";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -103,7 +104,7 @@ class ContractTerms extends React.Component<Props, State> {
     }
 
     if (this.state.contract.status !== "APPROVED") {
-      const content = "Allekirjoita sopimus ennen latausta.";
+      const content = strings.signContractFirst;
       this.setState({ modalOpen: true, modalText: content });
     }
 
@@ -140,19 +141,19 @@ class ContractTerms extends React.Component<Props, State> {
     }
 
     if (!this.state.acceptedTerms) {
-      const content = "Sinun tulee hyväksyä sopimusehdot ennen allekirjotusta.";
+      const content = strings.termsNotAccepted;
       this.setState({ modalText: content, modalOpen: true });
       return;
     }
 
     if (!this.state.viableToSign) {
-      const content = "Sinun tulee olla viljelijän puolesta edustuskelpoinen.";
+      const content = strings.notViableToSign;
       this.setState({ modalText: content, modalOpen: true });
       return;
     }
 
     if (!this.state.ssn) {
-      const content = "Sinun tulee antaa henkilötunnus.";
+      const content = "";
       this.setState({ modalText: content, modalOpen: true });
       return;
     }
@@ -166,10 +167,12 @@ class ContractTerms extends React.Component<Props, State> {
     const contractsService = Api.getContractsService(this.props.keycloak.token);
     const contractSignRequest = await contractsService.createContractDocumentSignRequest({ redirectUrl: "" }, this.state.contract.id || "", this.state.type, this.state.ssn, this.state.selectedSignServiceId, redirectUrl);
     if (contractSignRequest && contractSignRequest.redirectUrl) {
-      window.location.href = contractSignRequest.redirectUrl;
+      const content = strings.signingContinuesOnNewTab;
+      this.setState({ modalOpen: true, modalText: content });
+      window.open(contractSignRequest.redirectUrl, "_blank");
     } else {
-      const content = "Jotain meni pieleen. Varmista, että olet valinnut tunnistautumispalvelun ja henkilötunnus on oikeassa muodossa.";
-      this.setState({ modalText: content, modalOpen: true, waitingSignService: false });
+      const content = strings.signingWentWrong;
+      this.setState({ modalText: content, modalOpen: true });
       return;
     }
   }
@@ -205,27 +208,29 @@ class ContractTerms extends React.Component<Props, State> {
               </Header>
           </Divider>
           <Form>
-            <Header as='h3'>{`Satokautta ${this.state.contract ? this.state.contract.year : ""} koskeva sopimus`}</Header>
+            <Header as='h3'>
+              {strings.formatString(strings.contractHarvestSeason, this.state.contract ? this.state.contract.year : "")}
+            </Header>
             <Form.Field>
             <Checkbox
               checked={this.state.acceptedTerms}
               onChange={() => this.setState({ acceptedTerms: !this.state.acceptedTerms })}
-              label={"Olen lukenut ja hyväksyn sopimusehdot"}
+              label={strings.termsAccepted}
             />
             </Form.Field>
             <Form.Field>
             <Checkbox
               checked={this.state.viableToSign}
               onChange={() => this.setState({ viableToSign: !this.state.viableToSign })}
-              label={"Olen viljelijän puolesta edustuskelpoinen"}
+              label={strings.viableToSign}
             />
             </Form.Field>
             <Form.Field>
-            <p>Tunnistautumispalvelu:</p>
+            <p>{strings.signingService}:</p>
             <Dropdown
               fluid
               selection
-              placeholder="Valitse toimituspaikka"
+              placeholder={strings.signingService}
               value={this.state.selectedSignServiceId}
               options={signServiceOptions}
               onChange={(event, data) => {
@@ -235,7 +240,7 @@ class ContractTerms extends React.Component<Props, State> {
             />
             </Form.Field>
             <Form.Field>
-            <p>Henkilötunnus:</p>
+            <p>{strings.ssn}:</p>
             <Input
               value={this.state.ssn}
               onChange={(event: any) => this.setState({ ssn: event.target.value })}
@@ -243,11 +248,11 @@ class ContractTerms extends React.Component<Props, State> {
             </Form.Field>
           </Form>
           <Button.Group floated="right" className="contract-button-group" >
-            <Button onClick={this.signContractClicked} color="red">ALLEKIRJOITA</Button>
+            <Button onClick={this.signContractClicked} color="red">{strings.sign.toUpperCase()}</Button>
             <Button.Or text="" />
-            <Button onClick={this.downloadContractPdfClicked} inverted color="red">Lataa sopimus PDF - muodossa.</Button>
+            <Button onClick={this.downloadContractPdfClicked} inverted color="red">{strings.downloadContractAsPDF}</Button>
             <Button.Or text="" />
-            <Button as={Link} to={`/contracts/${this.state.contract ? this.state.contract.id : ""}`} color="black">TAKAISIN</Button>
+            <Button as={Link} to={`/contracts/${this.state.contract ? this.state.contract.id : ""}`} color="black">{strings.back.toUpperCase()}</Button>
           </Button.Group>
         </Container>
         <Modal size="small" open={this.state.modalOpen} onClose={() => this.setState({ modalOpen: false })} closeIcon>

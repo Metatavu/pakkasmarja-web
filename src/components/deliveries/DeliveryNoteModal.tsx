@@ -8,6 +8,7 @@ import { Header, Modal, TextArea, Form, Divider, Button } from "semantic-ui-reac
 import Dropzone from 'react-dropzone'
 import { FileService, FileResponse } from "src/api/file.service";
 import { DeliveryNote } from "pakkasmarja-client";
+import strings from "src/localization/strings";
 
 
 /**
@@ -105,10 +106,10 @@ class DeliveryNoteModal extends React.Component<Props, State> {
       <Modal size="small" open={this.props.modalOpen} onClose={this.closeModal} closeIcon>
         <Modal.Content>
           <Header as="h3">
-            Lisää huomio
+            {strings.addNote}
           </Header>
           <Header as="h5">
-            Huomio
+            {strings.note}
           </Header>
           <Form>
             <Form.Field>
@@ -120,13 +121,13 @@ class DeliveryNoteModal extends React.Component<Props, State> {
               />
             </Form.Field>
             <Header as="h5">
-              Kuva
-          </Header>
+              {strings.image}
+            </Header>
             <Form.Field>
               <Dropzone multiple activeStyle={{border: "2px solid #62f442"}} style={{width: "100%", cursor:"pointer"}} onDrop={this.onFileDropped}>
                 <p style={{paddingTop: "25px", paddingBottom: "10px"}} >
                   {
-                    this.state.imgLabel || "Lisää kuva pudottamalla tai klikkaamalla"
+                    this.state.imgLabel || strings.addImage
                   }
                 </p>
               </Dropzone>
@@ -134,9 +135,9 @@ class DeliveryNoteModal extends React.Component<Props, State> {
           </Form>
           <Divider style={{ paddingBottom: 0, marginBottom: 0 }} />
           <Button.Group floated="right" className="contract-button-group" >
-            <Button onClick={this.closeModal} color="black">Sulje</Button>
+            <Button onClick={this.closeModal} color="black">{strings.close}</Button>
             <Button.Or text="" />
-            <Button onClick={this.addDeliveryNote} color="red">Lisää</Button>
+            <Button onClick={this.addDeliveryNote} color="red">{strings.save}</Button>
           </Button.Group>
         </Modal.Content>
       </Modal >

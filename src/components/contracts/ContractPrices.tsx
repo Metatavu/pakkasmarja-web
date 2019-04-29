@@ -2,6 +2,7 @@ import * as React from "react";
 import "../../styles/common.scss";
 import { Grid, Header, List, Divider } from "semantic-ui-react";
 import {  ItemGroup, ItemGroupPrice } from "pakkasmarja-client";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component State
@@ -43,7 +44,7 @@ export default class ContractPrices extends React.Component<Props, State> {
   private renderPricesText = (itemGroupDisplayName: string) => {
     return (
       <p>
-        {`Ostettavien marjojen (${itemGroupDisplayName}) takuuhinnat satokaudella ${new Date().getFullYear()}`}
+        {strings.formatString(strings.pricesText, itemGroupDisplayName, new Date().getFullYear().toString()) }
       </p>
     );
   }
@@ -59,28 +60,28 @@ export default class ContractPrices extends React.Component<Props, State> {
       case "309100/Luomu mansikk":
         return (
           <p className="contract-price-text">
-            Takuuhinnan lisäksi yhtiö maksaa viljelijälle bonusta sopimuksen täyttöasteen mukaisesti.
-            Lisätietoja sopimuksen kohdasta Sopimuksen mukaiset toimitusmäärät, takuuhinnat ja bonus satokaudella 2018. Sopimusmäärän ylittävältä osalta mahdollinen lisämäärä, mahdollinen bonus ja maksuehto neuvotellaan aina erikseen.
-            Kaikki hinnat ovat vähimmäishintoja ja ALV 0%. Toimitusehto on vapaasti yhtiön osoittaman pakastevaraston laiturilla (viljelijä maksaa rahdin). Yhtiöllä on oikeus markkinatilanteen vaatiessa korottaa hintoja haluamallaan tavalla.
-            Takuuhinnan maksuehto on viljely- ja ostosopimuksen mukainen. Bonukset tarkistetaan satokauden jälkeen, yhtiö tekee niistä ostolaskut bonukseen oikeutetuille viljelijöille ja ne pyritään maksamaan satovuoden joulukuussa. Bonusta ei makseta, jos sopimus on tehty 31.5. jälkeen.
+            {strings.strawberry1}
+            {strings.strawberry2}
+            {strings.strawberry3}
+            {strings.strawberry4}
           </p>
         );
       case "304400/Mustaherukka":
       case "309300/Luomu mustahe":
         return (
           <p className="contract-price-text">
-            Tarkistathan sopimusehdoista kohdasta Sopimuksen mukainen toimitusmäärä ja takuuhinta satokaudella muut hintaan vaikuttavat tekijät.
-            Sopimusmäärän ylittävältä osalta mahdollinen lisämäärä, hinta ja maksuehto neuvotellaan aina erikseen.
-            Kaikki hinnat ovat vähimmäishintoja ja ALV 0%. Toimitusehto on vapaasti yhtiön osoittaman pakastevaraston laiturilla (viljelijä maksaa rahdin). Yhtiöllä on oikeus markkinatilanteen vaatiessa korottaa hintoja haluamallaan tavalla.
-            Takuuhinnan maksuehto on viljely- ja ostosopimuksen mukainen.
+            {strings.blackcurrant1}
+            {strings.blackcurrant2}
+            {strings.blackcurrant3}
+            {strings.blackcurrant4}
           </p>
         );
       default:
         return (
           <p className="contract-price-text">
-            Sopimusmäärän ylittävältä osalta mahdollinen lisämäärä, hinta ja maksuehto neuvotellaan aina erikseen.
-            Kaikki hinnat ovat vähimmäishintoja ja ALV 0%. Toimitusehto on vapaasti yhtiön osoittaman pakastevaraston laiturilla (viljelijä maksaa rahdin). Yhtiöllä on oikeus markkinatilanteen vaatiessa korottaa hintoja haluamallaan tavalla.
-            Takuuhinnan maksuehto on viljely- ja ostosopimuksen mukainen.
+            {strings.default1}
+            {strings.default2}
+            {strings.default3}
           </p>
         );
     }
@@ -150,19 +151,19 @@ export default class ContractPrices extends React.Component<Props, State> {
         <div className="contract-section">
           <List bulleted>
             <List.Item>
-              Vähimmäislaatuvaatimukset täyttävästä tuoremarjasta yhtiö maksaa päivän hinnan.
+              {strings.contractDetailsListItem1}
             </List.Item>
             <List.Item>
-              Yhtiö voi huomioida max. 0,20 eur Alv 0%/ kg -suuruisella bonuksella BONUS-laatuiset marjat.
+              {strings.contractDetailsListItem2}
             </List.Item>
             <List.Item>
-              Tunneli-/ kasvihuonetuotannosta ostettavalle marjalle pyritään maksamaan korkeampi päivän hinta.
+              {strings.contractDetailsListItem3}
             </List.Item>
             <List.Item>
-              Jos marjaerä ei täytä yhtiön vähimmäislaatuvaatimuksia neuvotellaan erän hinnasta aina erikseen viljelijän kanssa.
+              {strings.contractDetailsListItem4}
             </List.Item>
             <List.Item>
-              Yhtiö voi myös maksaa kyseisellä viikolla toimittaneille viljelijöille lisäbonuksen hyvin onnistuneen sopimusyhteistyön johdosta.
+              {strings.contractDetailsListItem5}
             </List.Item>
           </List>
         </div>
@@ -173,13 +174,13 @@ export default class ContractPrices extends React.Component<Props, State> {
       <div className="contract-section">
         <Divider horizontal>
           <Header as='h2'>
-            Takuuhinnat
+            {strings.guaranteedPrices}
          </Header>
         </Divider>
         { this.renderPricesText(itemGroupDisplayName) }
         <p onClick={() => this.setState({ displayPastPrices: !this.state.displayPastPrices })}>
           {
-            this.state.displayPastPrices ? "Piilota edellisvuosien hinnat" : "Näytä myös edellisvuosien hinnat"
+            this.state.displayPastPrices ? strings.hidePastPrices : strings.showPastPrices
           }
         </p>
         <Grid>

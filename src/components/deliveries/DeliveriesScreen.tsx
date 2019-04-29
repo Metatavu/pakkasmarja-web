@@ -13,6 +13,7 @@ import { Delivery } from "pakkasmarja-client"
 import ProposalsView from "./ProposalsView";
 import WeekDeliveryPredictions from "./WeekDeliveryPredictions";
 import IncomingDeliveries from "./IncomingDeliveries";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -116,10 +117,10 @@ class DeliveriesScreen extends React.Component<Props, State> {
     return (
       <BasicLayout>
         <Menu fluid widths={4} attached='top' inverted color="red">
-          <Menu.Item name='Ehdotukset' active={activeItem === 'proposals'} onClick={() => this.handleMenuItemClick("proposals")} />
-          <Menu.Item color="black" name='Viikkoennusteet' active={activeItem === 'weekDeliveryPredictions'} onClick={() => this.handleMenuItemClick("weekDeliveryPredictions")} />
-          <Menu.Item color="black" name='Tulevat toimitukset' active={activeItem === 'incomingDeliveries'} onClick={() => this.handleMenuItemClick("incomingDeliveries")} />
-          <Menu.Item color="black" name='Tehdyt toimitukset' active={activeItem === 'pastDeliveries'} onClick={() => this.handleMenuItemClick("pastDeliveries")} />
+          <Menu.Item name={strings.suggestions} active={activeItem === 'proposals'} onClick={() => this.handleMenuItemClick("proposals")} />
+          <Menu.Item color="black" name={strings.weekDeliveryPredictions} active={activeItem === 'weekDeliveryPredictions'} onClick={() => this.handleMenuItemClick("weekDeliveryPredictions")} />
+          <Menu.Item color="black" name={strings.incomingDeliveries} active={activeItem === 'incomingDeliveries'} onClick={() => this.handleMenuItemClick("incomingDeliveries")} />
+          <Menu.Item color="black" name={strings.pastDeliveries} active={activeItem === 'pastDeliveries'} onClick={() => this.handleMenuItemClick("pastDeliveries")} />
         </Menu>
         {
           this.state.activeItem === "proposals" && <ProposalsView />
