@@ -3,10 +3,9 @@ import { Link } from "react-router-dom";
 import strings from "../../localization/strings";
 import { KeycloakInstance } from "keycloak-js";
 import {
-  Container,
-  Image,
   Menu,
-  Dropdown
+  Dropdown,
+  Container
 } from "semantic-ui-react"
 import { StoreState } from "src/types";
 import { Dispatch } from "redux";
@@ -15,8 +14,6 @@ import * as actions from "../../actions/";
 import ApplicationRoles from "src/utils/application-roles";
 
 export interface Props {
-  siteName: string,
-  siteLogo?: string,
   authenticated: boolean,
   keycloak?: KeycloakInstance,
   onLogout?: () => void
@@ -39,14 +36,8 @@ class MenuContainer extends React.Component<Props, object> {
 
   render() {
     return (
-      <Menu fixed="top" style={{backgroundColor: "#E51D2A", color: "#fff"}} inverted>
-        <Container>
-          <Menu.Item as="div" header>
-            <Link to="/">
-              <Image inline size="mini" src={this.props.siteLogo} style={{ marginRight: "1.5em" }} />
-              <span>{this.props.siteName}</span>
-            </Link>
-          </Menu.Item>
+      <Container>
+        <Menu style={{backgroundColor: "#E51D2A", color: "#fff"}} inverted secondary>
           <Menu.Item as="div">
             <Link to="/news">{strings.news}</Link>
           </Menu.Item>
@@ -71,8 +62,8 @@ class MenuContainer extends React.Component<Props, object> {
               </Dropdown>
             </Menu.Menu>
           }
-        </Container>
-      </Menu>
+        </Menu>
+      </Container>
     );
   }
 }

@@ -8,8 +8,7 @@ import "../../styles/common.scss";
 import Api from "pakkasmarja-client";
 import { NewsArticle } from "pakkasmarja-client";
 import NewsComponent from "./NewsComponent";
-import { Button, Segment, Item, Dimmer, Loader } from "semantic-ui-react";
-import { Link } from "react-router-dom";
+import { Item, Dimmer, Loader } from "semantic-ui-react";
 
 /**
  * Interface for component props
@@ -25,6 +24,7 @@ interface Props {
 interface State {
   newsArticles: NewsArticle[];
   loading: boolean;
+  redirectTo?: string
 }
 
 class NewsList extends React.Component<Props, State> {
@@ -57,7 +57,7 @@ class NewsList extends React.Component<Props, State> {
   public render() {
     if (this.state.loading) {
       return (
-        <BasicLayout>
+        <BasicLayout pageTitle="Uutiset">
           <Dimmer active inverted>
             <Loader inverted>
               Ladataan uutisia
@@ -68,19 +68,19 @@ class NewsList extends React.Component<Props, State> {
     }
     
     return (
-      <BasicLayout>
-        <Link to="/createNews">
-          <Button attached="top" color="red">Create news</Button>
-        </Link>
-        <Segment attached>
-          <Item.Group divided>
-            {
-              this.state.newsArticles.map((news) => {
-                return <NewsComponent key={news.id} data={news} />;
-              })
-            }
-          </Item.Group>
-        </Segment>
+      <BasicLayout
+        redirectTo={this.state.redirectTo}
+        onTopBarButtonClick={() => this.setState({redirectTo: "/createNews"})}
+        topBarButtonText="+ Uusi"
+        pageTitle="Uutiset">
+
+        <Item.Group divided>
+          {
+            this.state.newsArticles.map((news) => {
+              return <NewsComponent key={news.id} data={news} />;
+            })
+          }
+        </Item.Group>
       </BasicLayout>
     );
   }

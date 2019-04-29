@@ -8,7 +8,7 @@ class TableBasicLayout extends React.Component {
   render() {
     return (
       <div>
-        <MenuContainer siteName="Pakkasmarja Management" />
+        <MenuContainer />
         <div className="tablecontainer">
           {this.props.children}
         </div>
