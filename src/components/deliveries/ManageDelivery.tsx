@@ -13,6 +13,7 @@ import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import fi from 'date-fns/esm/locale/fi';
 import { Link } from "react-router-dom";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -238,21 +239,22 @@ class ManageDelivery extends React.Component<Props, State> {
     return (
       <BasicLayout>
         <Header as="h2">
-          Hyväksy toimitus
+          {strings.approveDelivery}
         </Header>
         <Form>
           <Form.Field>
-            <label>Tuote</label>
+            <label>{strings.product}</label>
             {this.renderDropDown(productOptions, "selectedProductId")}
           </Form.Field>
           <Form.Field>
-            <label>Quality</label>
+            <label>Laatu</label>
             {this.renderDropDown(deliveryQualityOptions, "selectedQualityId")}
           </Form.Field>
           <Form.Field>
             <label>Määrä</label>
+            <label>{strings.amount}</label>
             <Input
-              placeholder="Määrä"
+              placeholder={strings.amount}
               value={this.state.amount}
               onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
                 this.handleInputChange("amount", event.currentTarget.value)
@@ -260,7 +262,7 @@ class ManageDelivery extends React.Component<Props, State> {
             />
           </Form.Field>
           <Form.Field>
-            <label>Toimituspäivä</label>
+            <label>{strings.deliveyDate}</label>
             <DatePicker
               onChange={(date: Date) => {
                 this.handleInputChange("date", date)
@@ -270,7 +272,7 @@ class ManageDelivery extends React.Component<Props, State> {
             />
           </Form.Field>
           <Form.Field style={{ marginTop: 20 }}>
-            <label>Toimituspaikka</label>
+            <label>{strings.deliveryPlace}</label>
             {this.renderDropDown(deliveryPlaceOptions, "selectedPlaceId")}
           </Form.Field>
           <Button.Group floated="right" >
@@ -280,7 +282,7 @@ class ManageDelivery extends React.Component<Props, State> {
                 pathname: '/manageIncomingDeliveries'
               }}
               inverted
-              color="red">Takaisin</Button>
+              color="red">{strings.back}</Button>
             <Button.Or text="" />
             <Button disabled={ !this.isValid() } color="red" onClick={this.handleDeliverySubmit} type='submit'>Hyväksy toimitus</Button>
           </Button.Group>

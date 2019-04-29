@@ -10,6 +10,7 @@ import ViewModal from "./ViewModal";
 import BasicLayout from "../generic/BasicLayout";
 import { Link } from "react-router-dom";
 import Api, { Delivery, Product } from "pakkasmarja-client";
+import strings from "src/localization/strings";
 
 
 /**
@@ -94,7 +95,7 @@ class ManageIncomingDeliveries extends React.Component<Props, State> {
     return (
       <BasicLayout>
         <Segment attached>
-          <Header as='h2'>Tuoretuotteet</Header>
+          <Header as='h2'>{strings.freshProducts}</Header>
           <Divider />
           <Item.Group divided>
             {
@@ -108,7 +109,7 @@ class ManageIncomingDeliveries extends React.Component<Props, State> {
                       <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
                       <Item.Meta><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Meta>
                     </Item.Content>
-                    <Header style={{ margin: "auto", marginRight: 50 }} as={Link} to={`manageIncomingDeliveries/${deliveryProduct.delivery.id}`}>Avaa</Header>
+                    <Header style={{ margin: "auto", marginRight: 50 }} as={Link} to={`manageIncomingDeliveries/${deliveryProduct.delivery.id}`}>{strings.open}</Header>
                   </Item>
                 )
               })
@@ -116,7 +117,7 @@ class ManageIncomingDeliveries extends React.Component<Props, State> {
           </Item.Group>
         </Segment>
         <Segment attached>
-          <Header as='h2'>Pakastetuotteet</Header>
+          <Header as='h2'>{strings.frozenProducts}</Header>
           <Divider />
           <Item.Group divided>
             {
@@ -130,7 +131,7 @@ class ManageIncomingDeliveries extends React.Component<Props, State> {
                       <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
                       <Item.Meta><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Meta>
                     </Item.Content>
-                    <Header style={{ margin: "auto", marginRight: 50 }} as={Link} to={`manageIncomingDeliveries/${deliveryProduct.delivery.id}`}>Avaa</Header>
+                    <Header style={{ margin: "auto", marginRight: 50 }} as={Link} to={`manageIncomingDeliveries/${deliveryProduct.delivery.id}`}>{strings.open}</Header>
                   </Item>
                 )
               })

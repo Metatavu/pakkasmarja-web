@@ -16,6 +16,7 @@ import * as moment from 'moment';
 import TableBasicLayout from "../contract-management/TableBasicLayout";
 import BasicLayout from "../generic/BasicLayout";
 import { PDFService } from "src/api/pdf.service";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -313,15 +314,15 @@ class ContractManagementList extends React.Component<Props, State> {
   private getStatusText = (statusEnum: Contract.StatusEnum) => {
     switch (statusEnum) {
       case "APPROVED":
-        return "Hyväksytty";
+        return strings.approved;
       case "DRAFT":
-        return "Vedos";
+        return strings.draft;
       case "ON_HOLD":
-        return "Odottaa";
+        return strings.onHold;
       case "REJECTED":
-        return "Hylätty";
+        return strings.rejected;
       case "TERMINATED":
-        return "Päättynyt";
+        return strings.terminated;
     }
   }
 
@@ -465,7 +466,7 @@ class ContractManagementList extends React.Component<Props, State> {
         <BasicLayout>
           <Dimmer active inverted>
             <Loader inverted>
-              Ladataan sopimuksia
+              {strings.loading}
             </Loader>
           </Dimmer>
         </BasicLayout>
@@ -514,7 +515,7 @@ class ContractManagementList extends React.Component<Props, State> {
     return (
       <TableBasicLayout>
         <Header floated='left' className="contracts-header">
-          <p>Sopimukset</p>
+          <p>{strings.contracts}</p>
         </Header>
         <Form style={{ width: "100%", clear: "both" }}>
           <Form.Group widths='equal'>
@@ -528,7 +529,7 @@ class ContractManagementList extends React.Component<Props, State> {
               {this.renderDropDown(statusOptions, this.state.filters.status || "", this.handleStatusChange, "Tila")}
             </Form.Field>
             <Form.Field>
-              <Button onClick={this.getXlsx} color="grey">Lataa XLSX- tiedostona</Button>
+              <Button onClick={this.getXlsx} color="grey">{strings.downloadXLSX}</Button>
             </Form.Field>
           </Form.Group>
         </Form>
@@ -536,31 +537,31 @@ class ContractManagementList extends React.Component<Props, State> {
           <Table.Header>
             <Table.Row>
               <Table.HeaderCell width={1}>
-                Toimittajan nimi
+                {strings.supplierName}
               </Table.HeaderCell>
               <Table.HeaderCell width={1}>
-                Tila
+                {strings.status}
               </Table.HeaderCell>
               <Table.HeaderCell width={1}>
-                Marjalaji
+                {strings.itemGroup}
               </Table.HeaderCell>
               <Table.HeaderCell width={1}>
-                Sopimusmäärä
+                {strings.contractAmount}
               </Table.HeaderCell>
               <Table.HeaderCell width={1}>
-                Toimitettu määrä
+                {strings.deliveriedAmount}
               </Table.HeaderCell>
               <Table.HeaderCell width={1}>
-                Toimituspaikka
+                {strings.deliveryPlace}
               </Table.HeaderCell>
               <Table.HeaderCell width={2}>
-                Huomautuskenttä
+                {strings.remarkField}
               </Table.HeaderCell>
               <Table.HeaderCell width={2}>
-                Päivämäärät
+                {strings.dates}
               </Table.HeaderCell>
               <Table.HeaderCell width={2}>
-                <Button as={Link} to="createContract" color="red" style={{ width: "100%" }}>Uusi sopimus</Button>
+                <Button as={Link} to="createContract" color="red" style={{ width: "100%" }}>{strings.newContract}</Button>
               </Table.HeaderCell>
             </Table.Row>
           </Table.Header>
@@ -654,22 +655,22 @@ class ContractManagementList extends React.Component<Props, State> {
                       <List>
                         <List.Item>
                           <List.Content as={Link} to={`/watchContract/${contractData.contract.id}`}>
-                            <p className="plink">Katso sopimusta</p>
+                            <p className="plink">{strings.viewContract}</p>
                           </List.Content>
                         </List.Item>
                         <List.Item>
                           <List.Content as={Link} to={`/editContract/${contractData.contract.id}`}>
-                            <p className="plink">Muokkaa sopimusta</p>
+                            <p className="plink">{strings.editContract}</p>
                           </List.Content>
                         </List.Item>
                         <List.Item>
                           <List.Content as={Link} to={`/editContractDocument/${contractData.contract.id}`}>
-                            <p className="plink">Muokkaa sopimusmallia</p>
+                            <p className="plink">{strings.editContractTemplate}</p>
                           </List.Content>
                         </List.Item>
                         <List.Item>
                           <List.Content>
-                            <p className="plink" onClick={() => this.getPdf(contractData)}>Sopimusmalli PDF</p>
+                            <p className="plink" onClick={() => this.getPdf(contractData)}>{strings.contractTemplatePDF}</p>
                           </List.Content>
                         </List.Item>
                       </List>

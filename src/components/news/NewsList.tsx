@@ -9,6 +9,7 @@ import Api from "pakkasmarja-client";
 import { NewsArticle } from "pakkasmarja-client";
 import NewsComponent from "./NewsComponent";
 import { Item, Dimmer, Loader } from "semantic-ui-react";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -48,7 +49,20 @@ class NewsList extends React.Component<Props, State> {
     this.setState({ loading: true });
     const newArticleService = await Api.getNewsArticlesService(this.props.keycloak.token);
     const newsArticles = await newArticleService.listNewsArticles();
-    this.setState({ newsArticles, loading: false });
+    const sortedNewsArticles = newsArticles.sort((a, b) => {
+      return this.getTime(b.createdAt) - this.getTime(a.createdAt)
+    });
+
+    this.setState({ newsArticles: sortedNewsArticles, loading: false });
+  }
+
+  /**
+   * Get time
+   * 
+   * @param date date
+   */
+  private getTime(date?: Date) {
+    return date ? new Date(date).getTime() : 0;
   }
 
   /**
@@ -60,7 +74,7 @@ class NewsList extends React.Component<Props, State> {
         <BasicLayout pageTitle="Uutiset">
           <Dimmer active inverted>
             <Loader inverted>
-              Ladataan uutisia
+              {strings.loading}
             </Loader>
           </Dimmer>
         </BasicLayout>

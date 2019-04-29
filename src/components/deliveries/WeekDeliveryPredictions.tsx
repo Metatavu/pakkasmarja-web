@@ -9,6 +9,7 @@ import Api, { WeekDeliveryPrediction, ItemGroup } from "pakkasmarja-client";
 import { Link } from "react-router-dom";
 import WeekDeliveryPredictionViewModal from "./WeekDeliveryPredictionViewModal";
 import * as _ from "lodash";
+import strings from "src/localization/strings";
 
 
 /**
@@ -89,9 +90,9 @@ class WeekDeliveryPredictions extends React.Component<Props, State> {
       <Item className="open-modal-element" key={predictionTableData.weekDeliveryPrediction.id} onClick={() => this.setState({ modal: true, predictionDataForModal: predictionTableData })}>
         <Item.Content>
           <Item.Header >{`${predictionTableData.itemGroup.displayName} ${predictionTableData.weekDeliveryPrediction.amount} KG`}</Item.Header>
-          <Item.Description >Viikko {predictionTableData.weekDeliveryPrediction.weekNumber}</Item.Description>
+          <Item.Description >{strings.week} {predictionTableData.weekDeliveryPrediction.weekNumber}</Item.Description>
         </Item.Content>
-        <Header style={{ margin: "auto", marginRight: 50 }} as="h3">Avaa</Header>
+        <Header style={{ margin: "auto", marginRight: 50 }} as="h3">{strings.open}</Header>
       </Item>
     );
   }
@@ -103,10 +104,10 @@ class WeekDeliveryPredictions extends React.Component<Props, State> {
     return (
       <React.Fragment>
         <Button style={{ marginTop: 20 }} color="red" attached="top" as={Link} to="createWeekDeliveryPrediction/FRESH">
-          Uusi tuore viikkoennuste
+          {strings.newFreshWeekDeliveryPrediction}
         </Button>
         <Segment attached>
-          <Header as='h2'>Tuore viikkoennusteet</Header>
+          <Header as='h2'>{strings.freshWeekDeliveryPredictions}</Header>
           <Divider />
           <Item.Group divided>
             {
@@ -117,10 +118,10 @@ class WeekDeliveryPredictions extends React.Component<Props, State> {
           </Item.Group>
         </Segment>
         <Button style={{ marginTop: 20 }} color="red" attached="top" as={Link} to="createWeekDeliveryPrediction/FROZEN">
-          Uusi pakaste viikkoennuste
+          {strings.newFrozenWeekDeliveryPrediction}
         </Button>
         <Segment attached>
-          <Header as='h2'>Pakaste viikkoennusteet</Header>
+          <Header as='h2'>{strings.frozenWeekDeliveryPredictions}</Header>
           <Divider />
           <Item.Group divided>
             {

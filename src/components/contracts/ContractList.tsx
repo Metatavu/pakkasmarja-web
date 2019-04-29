@@ -7,12 +7,10 @@ import { connect } from "react-redux";
 import "../../styles/common.scss";
 import Api from "pakkasmarja-client";
 import { ItemGroup } from "pakkasmarja-client";
-import { Segment, Item, Header, Button } from "semantic-ui-react";
+import { Item, Header, Button } from "semantic-ui-react";
 import ContractItem from "./ContractItem";
 import ContractProposalModal from "./ContractProposalModal";
-import strings from "../../localization/strings";
-import { Link } from "react-router-dom";
-import ApplicationRoles from "src/utils/application-roles";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -134,79 +132,36 @@ class ContractList extends React.Component<Props, State> {
   }
 
   /**
-   * Render management buttons
-   */
-  private renderManagementButtons = () => {
-    if (!this.props.keycloak || !this.props.keycloak.token) {
-      return;
-    }
-
-    if (!this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTRACTS) && !this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_ITEM_GROUPS)) {
-      return <React.Fragment />
-    }
-
-    return (
-      <Segment>
-        {
-          this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTRACTS) &&
-          <Button as={Link} to={`contractManagement`} inverted color="red">
-            Sopimusten hallinta
-            </Button>
-        }
-        {
-          this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_ITEM_GROUPS) &&
-          <Button as={Link} to={`itemGroupsManagement`} inverted color="red">
-            Marjalajien hallinta
-            </Button>
-        }
-        {
-          this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_PRODUCTS) &&
-          <Button as={Link} to={`productsManagement`} inverted color="red">
-            Tuotteiden hallinta
-            </Button>
-        }
-      </Segment>
-    );
-  }
-
-  /**
    * Render method
    */
   public render() {
     return (
-      <BasicLayout>
-        {
-          this.renderManagementButtons()
-        }
-        <Segment>
-          <Header>
-            {strings.frozenContracts}
-          </Header>
-          <Item.Group divided>
-            {
-              this.state.frozenContracts.map((frozenContract) => {
-                return <ContractItem key={frozenContract.contract.id} contractData={frozenContract} />;
-              })
-            }
-          </Item.Group>
-        </Segment>
+      <BasicLayout pageTitle="Sopimukset">
+        <Header>
+          {strings.frozenContracts}
+        </Header>
+        <Item.Group divided>
+          {
+            this.state.frozenContracts.map((frozenContract) => {
+              return <ContractItem key={frozenContract.contract.id} contractData={frozenContract} />;
+            })
+          }
+        </Item.Group>
         <Button onClick={() => this.onProposeNewContractClick("FROZEN")} inverted color="red">
-          Ehdota uutta pakastesopimusta
+          {strings.suggestNewFrozenContract}
         </Button>
-        <Segment>
-          <Header>
-            {strings.freshContracts}
-          </Header>
-          <Item.Group divided>
-            {
-              this.state.freshContracts.map((freshContract) => {
-                return <ContractItem key={freshContract.contract.id} contractData={freshContract} />;
-              })
-            }
-          </Item.Group>
-        </Segment>
+        <Header>
+          {strings.freshContracts}
+        </Header>
+        <Item.Group divided>
+          {
+            this.state.freshContracts.map((freshContract) => {
+              return <ContractItem key={freshContract.contract.id} contractData={freshContract} />;
+            })
+          }
+        </Item.Group>
         <Button onClick={() => this.onProposeNewContractClick("FRESH")} inverted color="red">
-          Ehdota uutta tuoresopimusta
+          {strings.suggestNewFreshContract}
         </Button>
         <ContractProposalModal
           modalOpen={this.state.proposeContractModalOpen}

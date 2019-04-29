@@ -1,4 +1,5 @@
 import * as React from "react";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -18,11 +19,11 @@ class ErrorMessage extends React.Component<Props, {}> {
   public render() {
     return (
       <div>
-        <h1>Virhe!</h1>
+        <h1>{strings.error}</h1>
         {
           <p>
             {
-              this.props.errorMessage ? this.props.errorMessage : "Jokin meni pieleen..."
+              this.props.errorMessage ? this.props.errorMessage : strings.somethingWentWrong
             }
           </p>
         }

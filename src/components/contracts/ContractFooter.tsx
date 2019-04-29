@@ -2,6 +2,7 @@ import * as React from "react";
 import "../../styles/common.scss";
 import { Button, Divider } from "semantic-ui-react";
 import { Redirect } from "react-router-dom";
+import strings from "src/localization/strings";
 
 
 /**
@@ -52,9 +53,9 @@ export default class ContractFooter extends React.Component<Props, State> {
         {
           this.props.isActiveContract &&
           <Button.Group floated="right" >
-            <Button onClick={this.props.downloadContractPdf} color="red">Lataa sopimus PDF - muodossa.</Button>
+            <Button onClick={this.props.downloadContractPdf} color="red">{strings.downloadContractAsPDF}</Button>
             <Button.Or text="" />
-            <Button  onClick={() => this.setState({ redirect: true })}  color="black">Takaisin</Button>
+            <Button  onClick={() => this.setState({ redirect: true })}  color="black">{strings.back}</Button>
           </Button.Group>
         }
         {
@@ -62,9 +63,9 @@ export default class ContractFooter extends React.Component<Props, State> {
           <Button.Group floated="right" >
             <Button onClick={this.props.acceptContract} color="red">{this.props.approveButtonText}</Button>
             <Button.Or text="" />
-            <Button  onClick={this.props.declineContract} inverted color="red">En hyväksy</Button>
+            <Button  onClick={this.props.declineContract} inverted color="red">{strings.decline}</Button>
             <Button.Or text="" />
-            <Button onClick={() => this.setState({ redirect: true })}  color="black">Takaisin</Button>
+            <Button onClick={() => this.setState({ redirect: true })}  color="black">{strings.back}</Button>
           </Button.Group>
         }
       </React.Fragment>

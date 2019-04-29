@@ -13,6 +13,7 @@ import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import fi from 'date-fns/esm/locale/fi';
 import { Link } from "react-router-dom";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -246,13 +247,13 @@ class CreateDelivery extends React.Component<Props, State> {
         </Header>
         <Form>
           <Form.Field>
-            <label>Tuote</label>
-            {this.renderDropDown(productOptions, "Valitse tuote", "selectedProductId")}
+            <label>{strings.product}</label>
+            {this.renderDropDown(productOptions, strings.product, "selectedProductId")}
           </Form.Field>
           <Form.Field>
-            <label>Määrä</label>
+            <label>{strings.amount}</label>
             <Input
-              placeholder="Määrä"
+              placeholder={strings.amount}
               value={this.state.amount}
               onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
                 this.handleInputChange("amount", event.currentTarget.value)
@@ -260,7 +261,7 @@ class CreateDelivery extends React.Component<Props, State> {
             />
           </Form.Field>
           <Form.Field>
-            <label>Toimituspäivä</label>
+            <label>{strings.deliveyDate}</label>
             <DatePicker
               onChange={(date: Date) => {
                 this.handleInputChange("date", date)
@@ -270,10 +271,10 @@ class CreateDelivery extends React.Component<Props, State> {
             />
           </Form.Field>
           <Form.Field style={{ marginTop: 20 }}>
-            <label>Toimituspaikka</label>
-            {this.renderDropDown(deliveryPlaceOptions, "Valitse toimituspaikka", "selectedPlaceId")}
+            <label>{strings.deliveryPlace}</label>
+            {this.renderDropDown(deliveryPlaceOptions, strings.deliveryPlace, "selectedPlaceId")}
           </Form.Field>
-          <Button color="red" inverted onClick={() => this.setState({ modalOpen: true })}>Lisää huomio {`(${this.state.deliveryNotes.length})`}</Button>
+          <Button color="red" inverted onClick={() => this.setState({ modalOpen: true })}>{`${strings.addNote} (${this.state.deliveryNotes.length})`}</Button>
           <Divider />
           <Button.Group floated="right" >
             <Button
@@ -283,9 +284,11 @@ class CreateDelivery extends React.Component<Props, State> {
                 state: { activeItem: 'incomingDeliveries' }
               }}
               inverted
-              color="red">Takaisin</Button>
+              color="red">{strings.back}</Button>
             <Button.Or text="" />
-            <Button color="red" onClick={this.handleDeliverySubmit} type='submit'>Uusi {this.state.category === "FRESH" ? "tuore" : "pakaste"} toimitus</Button>
+            <Button color="red" onClick={this.handleDeliverySubmit} type='submit'>
+              {this.state.category === "FRESH" ? strings.newFreshDelivery : strings.newFrozenDelivery}
+            </Button>
           </Button.Group>
         </Form>
         <DeliveryNoteModal

@@ -6,6 +6,7 @@ import { connect } from "react-redux";
 import "../../styles/common.scss";
 import { Modal, Divider, Header, Image, Loader, Grid, Button } from "semantic-ui-react";
 import Api, { PublicFile } from "pakkasmarja-client";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -82,7 +83,7 @@ class ImageGallery extends React.Component<Props, State> {
       <Modal size="large" open={this.props.modalOpen} onClose={this.props.onCloseModal} closeIcon>
         <Modal.Content>
           <Header as="h3">
-            Galleria
+            {strings.gallery}
           </Header>
           <Divider />
           <Image.Group size="small">
@@ -106,13 +107,15 @@ class ImageGallery extends React.Component<Props, State> {
             }
           </Image.Group>
           <Button.Group floated="right" className="contract-button-group" >
-            <Button onClick={this.props.onCloseModal} color="black">Sulje</Button>
+            <Button onClick={this.props.onCloseModal} color="black">{strings.close}</Button>
             <Button.Or text="" />
             <Button 
               onClick={() => {
                 this.onImageSelected(this.state.selectedImage ? this.state.selectedImage.url : "")
               }}
-              color="red">Tallenna</Button>
+              color="red">
+              {strings.save}
+            </Button>
           </Button.Group>
         </Modal.Content>
       </Modal>

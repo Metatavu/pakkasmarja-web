@@ -8,6 +8,7 @@ import { Modal, Header, Button } from "semantic-ui-react";
 import { FileService, FileResponse } from "src/api/file.service";
 import Dropzone from "react-dropzone";
 import Api from "pakkasmarja-client";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -85,19 +86,19 @@ class ImageGallery extends React.Component<Props, State> {
       <Modal size="large" open={this.props.modalOpen} onClose={this.props.onCloseModal} closeIcon>
         <Modal.Content>
           <Header as="h3">
-            Lataa kuva
+            {strings.uploadImage}
           </Header>
           <Dropzone multiple activeStyle={{border: "2px solid #62f442"}} style={{width: "100%", cursor:"pointer"}} onDrop={this.onFileDropped}>
             <p style={{paddingTop: "25px", paddingBottom: "10px"}} >
               {
-                this.state.imgLabel || "Lisää kuva pudottamalla tai klikkaamalla"
+                this.state.imgLabel || strings.addImage
               }
             </p>
           </Dropzone>
           <Button.Group floated="right" className="contract-button-group" >
-            <Button onClick={this.props.onCloseModal} color="black">Sulje</Button>
+            <Button onClick={this.props.onCloseModal} color="black">{strings.close}</Button>
             <Button.Or text="" />
-            <Button onClick={() => this.props.onImageSelected(this.state.url)} color="red">Tallenna</Button>
+            <Button onClick={() => this.props.onImageSelected(this.state.url)} color="red">{strings.save}</Button>
           </Button.Group>
         </Modal.Content>
       </Modal>

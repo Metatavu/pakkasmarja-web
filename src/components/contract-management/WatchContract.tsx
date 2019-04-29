@@ -10,6 +10,7 @@ import ErrorMessage from "../generic/ErrorMessage";
 import Api, { Contact, ItemGroup, Contract, DeliveryPlace } from "pakkasmarja-client";
 import { Button, Header, Divider, Grid, Container, Dimmer, Loader } from "semantic-ui-react";
 import { Redirect } from "react-router";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -133,7 +134,7 @@ class WatchContract extends React.Component<Props, State> {
         <BasicLayout>
           <Dimmer active inverted>
             <Loader inverted>
-              Ladataan sopimusta
+              {strings.loading}
             </Loader>
           </Dimmer>
         </BasicLayout>
@@ -160,7 +161,7 @@ class WatchContract extends React.Component<Props, State> {
       <BasicLayout>
         <Divider horizontal>
           <Header as='h2'>
-            {`${this.state.contact.companyName || "Kontaktia ei löytynyt"} - ${this.state.itemGroup.name || "Tuoteryhmää ei löytynyt"}`}
+            {`${this.state.contact.companyName || strings.contactNotFound} - ${this.state.itemGroup.name || strings.itemGroupNotFound}`}
           </Header>
         </Divider>
         {
@@ -169,7 +170,7 @@ class WatchContract extends React.Component<Props, State> {
             <Grid celled='internally'>
               <Grid.Row>
                 <Grid.Column width={4}>
-                  <p>Marjalaji:</p>
+                  <p>{strings.itemGroup}:</p>
                 </Grid.Column>
                 <Grid.Column width={12}>
                   <p>{this.state.itemGroup.displayName}</p>
@@ -177,7 +178,7 @@ class WatchContract extends React.Component<Props, State> {
               </Grid.Row>
               <Grid.Row>
                 <Grid.Column width={4}>
-                  <p>SapId:</p>
+                  <p>{strings.sapId}:</p>
                 </Grid.Column>
                 <Grid.Column width={12}>
                   <p>{this.state.contract.sapId}</p>
@@ -185,7 +186,7 @@ class WatchContract extends React.Component<Props, State> {
               </Grid.Row>
               <Grid.Row>
                 <Grid.Column width={4}>
-                  <p>Tila:</p>
+                  <p>{strings.status}:</p>
                 </Grid.Column>
                 <Grid.Column width={12}>
                   <p>{this.state.contract.status}</p>
@@ -193,7 +194,7 @@ class WatchContract extends React.Component<Props, State> {
               </Grid.Row>
               <Grid.Row>
                 <Grid.Column width={4}>
-                  <p>Määrä:</p>
+                  <p>{strings.quantity}:</p>
                 </Grid.Column>
                 <Grid.Column width={12}>
                   <p>{this.state.contract.contractQuantity}</p>
@@ -201,7 +202,7 @@ class WatchContract extends React.Component<Props, State> {
               </Grid.Row>
               <Grid.Row>
                 <Grid.Column width={4}>
-                  <p>Määrän kommentti:</p>
+                  <p>{strings.quantityComment}:</p>
                 </Grid.Column>
                 <Grid.Column width={12}>
                   <p>{this.state.contract.quantityComment}</p>
@@ -209,7 +210,7 @@ class WatchContract extends React.Component<Props, State> {
               </Grid.Row>
               <Grid.Row>
                 <Grid.Column width={4}>
-                  <p>Toimituspaikka:</p>
+                  <p>{strings.deliveryPlace}:</p>
                 </Grid.Column>
                 <Grid.Column width={12}>
                   <p>{this.state.deliveryPlace.name}</p>
@@ -217,7 +218,7 @@ class WatchContract extends React.Component<Props, State> {
               </Grid.Row>
               <Grid.Row>
                 <Grid.Column width={4}>
-                  <p>Toimituspaikan kommentti:</p>
+                  <p>{strings.deliveryPlaceComment}:</p>
                 </Grid.Column>
                 <Grid.Column width={12}>
                   <p>{this.state.contract.deliveryPlaceComment}</p>
@@ -225,7 +226,7 @@ class WatchContract extends React.Component<Props, State> {
               </Grid.Row>
               <Grid.Row>
                 <Grid.Column width={4}>
-                  <p>Huomautuskenttä (SAP):</p>
+                  <p>{strings.remarkFieldSap}:</p>
                 </Grid.Column>
                 <Grid.Column width={12}>
                   <p>{this.state.contract.remarks}</p>
@@ -234,7 +235,7 @@ class WatchContract extends React.Component<Props, State> {
             </Grid>
           </Container>
         }
-        <Button floated="right" color="red" onClick={() => this.setState({ redirect: true })}>Takaisin</Button>
+        <Button floated="right" color="red" onClick={() => this.setState({ redirect: true })}>{strings.back}</Button>
       </BasicLayout>
     );
   }

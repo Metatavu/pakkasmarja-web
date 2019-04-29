@@ -13,6 +13,7 @@ import { Redirect } from "react-router";
 import CKEditor from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import { Link } from "react-router-dom";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -203,7 +204,7 @@ class EditContractDocument extends React.Component<Props, State> {
         <BasicLayout>
           <Dimmer active inverted>
             <Loader inverted>
-              Ladataan sopimusmallia
+              {strings.loading}
             </Loader>
           </Dimmer>
         </BasicLayout>
@@ -233,8 +234,8 @@ class EditContractDocument extends React.Component<Props, State> {
             {`Muokkaat sopimuksen ${this.state.contact.companyName || "Kontaktia ei löytynyt"} sopimusmallia ${this.state.contractDocumentTemplate && this.state.contractDocumentTemplate.type || "dokumentin tyyppiä ei löytynyt"}`}
           </Header>
         </Divider>
-        <p>Huomaathan, että mallin tallentaminen luo sopimukselle erillisen mallin ja eriyttää mallin marjaryhmän pohjamallista</p>
-        <Header as="h4">Ylätunniste</Header>
+        <p>{strings.contractDocumentInfoText}</p>
+        <Header as="h4">{strings.header}</Header>
         <div>
           <CKEditor
             editor={ClassicEditor}
@@ -246,7 +247,7 @@ class EditContractDocument extends React.Component<Props, State> {
           />
         </div>
         <Divider />
-        <Header as="h4">Sisältö</Header>
+        <Header as="h4">{strings.content}</Header>
         <div>
           <CKEditor
             editor={ClassicEditor}
@@ -258,7 +259,7 @@ class EditContractDocument extends React.Component<Props, State> {
           />
         </div>
         <Divider />
-        <Header as="h4">Alatunniste</Header>
+        <Header as="h4">{strings.footer}</Header>
         <div>
           <CKEditor
             editor={ClassicEditor}
@@ -271,9 +272,9 @@ class EditContractDocument extends React.Component<Props, State> {
         </div>
         <Divider />
         <Button.Group floated="right">
-          <Button inverted color="red" as={Link} to={"/contractManagement"}>Takaisin</Button>
+          <Button inverted color="red" as={Link} to={"/contractManagement"}>{strings.back}</Button>
           <Button.Or text="" />
-          <Button color="red" loading={this.state.buttonLoading} onClick={this.handleDocumentSubmit}>Tallenna muutokset</Button>
+          <Button color="red" loading={this.state.buttonLoading} onClick={this.handleDocumentSubmit}>{strings.save}</Button>
         </Button.Group>
       </BasicLayout>
     );

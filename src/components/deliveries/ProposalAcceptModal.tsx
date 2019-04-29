@@ -6,6 +6,7 @@ import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import { Modal, Header, Button, Divider } from "semantic-ui-react";
 import Api, { Product, Delivery } from "pakkasmarja-client";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -152,19 +153,19 @@ class ProposalAcceptModal extends React.Component<Props, State> {
       <Modal size="small" open={this.props.modalOpen} onClose={this.closeModal} closeIcon>
         <Modal.Content>
           <Header as="h3">
-            Hyväksytkö toimitusehdotuksen?
+            {strings.acceptSuggestion}
           </Header>
           <Divider />
-          <Header as="h3">Tuotteen nimi </Header><span>{this.state.deliveryProduct.product.name}</span>
-          <Header as="h3">Tuotteen unitname </Header><span>{this.state.deliveryProduct.product.unitName}</span>
-          <Header as="h3">Tuotteen unitSize </Header><span>{this.state.deliveryProduct.product.unitSize}</span>
-          <Header as="h3">Tuotteen units </Header><span>{this.state.deliveryProduct.product.units}</span>
-          <Header as="h3">Toimitus määrä </Header><span>{this.state.deliveryProduct.delivery.amount}</span>
+          <Header as="h3">{strings.productName} </Header><span>{this.state.deliveryProduct.product.name}</span>
+          <Header as="h3">{strings.productUnitName} </Header><span>{this.state.deliveryProduct.product.unitName}</span>
+          <Header as="h3">{strings.productUnitSize} </Header><span>{this.state.deliveryProduct.product.unitSize}</span>
+          <Header as="h3">{strings.productUnits} </Header><span>{this.state.deliveryProduct.product.units}</span>
+          <Header as="h3">{strings.amount} </Header><span>{this.state.deliveryProduct.delivery.amount}</span>
           <Divider style={{ paddingBottom: 0, marginBottom: 0 }} />
           <Button.Group floated="right" className="contract-button-group" >
-            <Button onClick={this.closeModal} color="black">Sulje</Button>
+            <Button onClick={this.closeModal} color="black">{strings.close}</Button>
             <Button.Or text="" />
-            <Button onClick={this.handleProposalAccept} color="red">Hyväksy</Button>
+            <Button onClick={this.handleProposalAccept} color="red">{strings.accept}</Button>
           </Button.Group>
         </Modal.Content>
       </Modal>

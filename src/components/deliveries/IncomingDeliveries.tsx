@@ -10,6 +10,7 @@ import Moment from "react-moment";
 import ViewModal from "./ViewModal";
 import Api, { Delivery, ItemGroupCategory } from "pakkasmarja-client";
 import ApplicationRoles from "../../utils/application-roles";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -179,15 +180,15 @@ class IncomingDeliveries extends React.Component<Props, State> {
         {
           this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_DELIVERIES) && 
           <Button style={{ marginTop: 20 }} as={Link} to="manageIncomingDeliveries">
-            Hallitse saapuvia toimituksia
+            {strings.manageIncomingDeliveries}
           </Button>
         }
 
         <Button style={{ marginTop: 20 }} color="red" attached="top" as={Link} to="createDelivery/FRESH">
-          Uusi tuore toimitus
+          {strings.newFreshDelivery}
         </Button>
         <Segment attached>
-          <Header as='h2'>Tuoretuotteet</Header>
+          <Header as='h2'>{strings.products}</Header>
           <Divider />
           <Item.Group divided>
             {
@@ -211,10 +212,10 @@ class IncomingDeliveries extends React.Component<Props, State> {
           </Item.Group>
         </Segment>
         <Button style={{ marginTop: 20 }} color="red" attached="top" as={Link} to="createDelivery/FROZEN">
-          Uusi pakaste toimitus
+          {strings.newFrozenDelivery}
         </Button>
         <Segment attached>
-          <Header as='h2'>Pakastetuotteet</Header>
+          <Header as='h2'>{strings.products}</Header>
           <Divider />
           <Item.Group divided>
             {

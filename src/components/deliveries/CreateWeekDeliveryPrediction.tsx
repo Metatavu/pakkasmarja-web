@@ -11,6 +11,7 @@ import { Redirect } from "react-router";
 import "react-datepicker/dist/react-datepicker.css";
 import { Link } from "react-router-dom";
 import * as moment from "moment";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component props
@@ -242,7 +243,7 @@ class CreateWeekDeliveryPrediction extends React.Component<Props, State> {
         <BasicLayout>
           <Dimmer active inverted>
             <Loader inverted>
-              Ladataan sopimuksia
+              {strings.loading}
             </Loader>
           </Dimmer>
         </BasicLayout>
@@ -260,30 +261,30 @@ class CreateWeekDeliveryPrediction extends React.Component<Props, State> {
     return (
       <BasicLayout>
         <Header as="h2">
-          Uusi {this.state.category === "FRESH" ? "tuore" : "pakaste"} viikkoennuste
+          {this.state.category === "FRESH" ? strings.newFreshWeekDeliveryPrediction : strings.newFrozenWeekDeliveryPrediction}
         </Header>
-        <p>Viimeviikon kaikki toimitukset: <b>{this.state.lastWeeksDeliveryPredictionTotalAmount} KG</b></p>
+        <p>{strings.formatString(strings.lastWeekDeliveries, this.state.lastWeeksDeliveryPredictionTotalAmount)}</p>
         <Form>
           <Form.Field>
-            <label>Tuote</label>
-            {this.renderDropDown(itemGroupOptions, "Valitse tuote", "selectedItemGroupId")}
+            <label>{strings.product}</label>
+            {this.renderDropDown(itemGroupOptions, strings.product, "selectedItemGroupId")}
           </Form.Field>
           <Form.Field>
-            <Header as="h4">Ennuste ensi viikolle (KG)</Header>
+            <Header as="h4">{strings.nextWeekPrediction}</Header>
             <Input
               type="number"
-              placeholder="Määrä"
+              placeholder={strings.amount}
               value={this.state.amount}
               onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
                 this.handleInputChange("amount", event.currentTarget.value)
               }}
             />
-            <p style={{ marginTop: "1%" }}>Keskimäärin: <b>{this.state.averageDailyAmount} KG/PV</b>
+            <p style={{ marginTop: "1%" }}>{strings.formatString(strings.dailyAverage, this.state.averageDailyAmount)}
               <br />
-              Muutos viime viikkon: <b>{this.state.percentageAmount} %</b>
+              {strings.formatString(strings.changeComparedToLastWeek, this.state.percentageAmount)}
             </p>
           </Form.Field>
-          <Header as="h4">Minä päivinä toimitat?</Header>
+          <Header as="h4">{strings.deliveryDay}</Header>
           {
             Object.keys(this.state.weekdays).map((day) => {
               const label = this.localizeDayName(day);
@@ -299,9 +300,11 @@ class CreateWeekDeliveryPrediction extends React.Component<Props, State> {
                 state: { activeItem: 'weekDeliveryPredictions' }
               }}
               inverted
-              color="red">Takaisin</Button>
+              color="red">{strings.back}</Button>
             <Button.Or text="" />
-            <Button onClick={this.handleDeliverySubmit} color="red">Uusi {this.state.category === "FRESH" ? "tuore" : "pakaste"} viikkoennuste</Button>
+            <Button onClick={this.handleDeliverySubmit} color="red">
+              {this.state.category === "FRESH" ? strings.newFreshWeekDeliveryPrediction : strings.newFrozenWeekDeliveryPrediction}
+            </Button>
           </Button.Group>
         </Form>
       </BasicLayout>
