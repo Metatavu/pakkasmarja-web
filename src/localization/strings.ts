@@ -3,6 +3,7 @@ import LocalizedStrings, {
 } from 'localized-strings';
 
 export interface IStrings extends LocalizedStringsMethods {
+  errorCommunicatingWithServer: string,
   menuBarUserItemText: string
   menuBarManageAccountText: string
   menuBarLogoutText: string
