@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Contract, DeliveryPlace } from "pakkasmarja-client";
-import { TextArea, Header, Dropdown, Divider, Container, Form } from "semantic-ui-react";
+import { TextArea, Header, Dropdown, Container, Form } from "semantic-ui-react";
 import strings from "src/localization/strings";
 
 /**
@@ -81,6 +81,7 @@ export default class ContractDeliveryPlace extends React.Component<Props, State>
     return (
       <Dropdown
         fluid
+        selection
         placeholder={strings.deliveryPlace}
         value={this.props.selectedPlaceId}
         options={deliveryPalceOptions}
@@ -106,11 +107,10 @@ export default class ContractDeliveryPlace extends React.Component<Props, State>
 
     return (
       <Container>
-        <Divider horizontal>
+        <div className="contract-blue-container">
           <Header as='h2'>
             {strings.deliveryPlace}
          </Header>
-        </Divider>
         <Form>
           {this.renderDropDown(deliveryPalceOptions)}
           {
@@ -128,6 +128,7 @@ export default class ContractDeliveryPlace extends React.Component<Props, State>
             }}
           />
         </Form>
+        </div>
       </Container>
     );
   }

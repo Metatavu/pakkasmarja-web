@@ -109,15 +109,14 @@ class EditContractDocument extends React.Component<Props, State> {
     }
 
     const documentTemplateService = await Api.getItemGroupsService(this.props.keycloak.token);
-    const documentTemplate: ItemGroupDocumentTemplate = await documentTemplateService.findItemGroupDocumentTemplate(this.state.itemGroupId, "");
-
-    if (documentTemplate[0]) {
+    const documentTemplate: ItemGroupDocumentTemplate = await documentTemplateService.findItemGroupDocumentTemplate(this.state.itemGroupId, this.state.itemGroupDocumentTemplateId);
+    if (documentTemplate) {
       this.setState({
-        type: documentTemplate[0].type ? documentTemplate[0].type : "",
-        content: documentTemplate[0].contents ? documentTemplate[0].contents : "",
-        headerContent: documentTemplate[0].header ? documentTemplate[0].header : "",
-        footerContent: documentTemplate[0].footer ? documentTemplate[0].footer : "",
-        documentTemplateId: documentTemplate[0].id ? documentTemplate[0].id : ""
+        type: documentTemplate.type ? documentTemplate.type : "",
+        content: documentTemplate.contents ? documentTemplate.contents : "",
+        headerContent: documentTemplate.header ? documentTemplate.header : "",
+        footerContent: documentTemplate.footer ? documentTemplate.footer : "",
+        documentTemplateId: documentTemplate.id ? documentTemplate.id : ""
       });
     }
   }

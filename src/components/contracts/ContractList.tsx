@@ -7,11 +7,9 @@ import { connect } from "react-redux";
 import "../../styles/common.scss";
 import Api from "pakkasmarja-client";
 import { ItemGroup } from "pakkasmarja-client";
-import { Segment, Item, Header, Button } from "semantic-ui-react";
+import { Header, Button } from "semantic-ui-react";
 import ContractItem from "./ContractItem";
 import ContractProposalModal from "./ContractProposalModal";
-import { Link } from "react-router-dom";
-import ApplicationRoles from "src/utils/application-roles";
 import strings from "src/localization/strings";
 
 /**
@@ -134,78 +132,35 @@ class ContractList extends React.Component<Props, State> {
   }
 
   /**
-   * Render management buttons
-   */
-  private renderManagementButtons = () => {
-    if (!this.props.keycloak || !this.props.keycloak.token) {
-      return;
-    }
-
-    if (!this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTRACTS) && !this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_ITEM_GROUPS)) {
-      return <React.Fragment />
-    }
-
-    return (
-      <Segment>
-        {
-          this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTRACTS) &&
-          <Button as={Link} to={`contractManagement`} inverted color="red">
-            {strings.contractManagement}
-          </Button>
-        }
-        {
-          this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_ITEM_GROUPS) &&
-          <Button as={Link} to={`itemGroupsManagement`} inverted color="red">
-            {strings.itemGroupsManagement}
-          </Button>
-        }
-        {
-          this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_PRODUCTS) &&
-          <Button as={Link} to={`productsManagement`} inverted color="red">
-            {strings.productsManagement}
-          </Button>
-        }
-      </Segment>
-    );
-  }
-
-  /**
    * Render method
    */
   public render() {
     return (
-      <BasicLayout>
-        {
-          this.renderManagementButtons()
-        }
-        <Segment>
-          <Header>
-            {strings.frozenContracts}
-          </Header>
-          <Item.Group divided>
-            {
-              this.state.frozenContracts.map((frozenContract) => {
-                return <ContractItem key={frozenContract.contract.id} contractData={frozenContract} />;
-              })
-            }
-          </Item.Group>
-        </Segment>
-        <Button onClick={() => this.onProposeNewContractClick("FROZEN")} inverted color="red">
+      <BasicLayout pageTitle="Sopimukset">
+        <Header as="h2">
+          {strings.frozenContracts}
+        </Header>
+        <div className="contract-blue-container">
+          {
+            this.state.frozenContracts.map((frozenContract) => {
+              return <ContractItem key={frozenContract.contract.id} contractData={frozenContract} />;
+            })
+          }
+        </div>
+        <Button onClick={() => this.onProposeNewContractClick("FROZEN")} style={{borderRadius: 0}} color="red">
           {strings.suggestNewFrozenContract}
         </Button>
-        <Segment>
-          <Header>
-            {strings.freshContracts}
-          </Header>
-          <Item.Group divided>
-            {
-              this.state.freshContracts.map((freshContract) => {
-                return <ContractItem key={freshContract.contract.id} contractData={freshContract} />;
-              })
-            }
-          </Item.Group>
-        </Segment>
-        <Button onClick={() => this.onProposeNewContractClick("FRESH")} inverted color="red">
+        <Header as="h2">
+          {strings.freshContracts}
+        </Header>
+        <div className="contract-blue-container">
+          {
+            this.state.freshContracts.map((freshContract) => {
+              return <ContractItem key={freshContract.contract.id} contractData={freshContract} />;
+            })
+          }
+        </div>
+        <Button onClick={() => this.onProposeNewContractClick("FRESH")} style={{borderRadius: 0}} color="red">
           {strings.suggestNewFreshContract}
         </Button>
         <ContractProposalModal

@@ -45,6 +45,7 @@ interface State {
   filters: FilterContracts;
   offset: number;
   limit: number;
+  contractsLength: number;
 }
 
 /**
@@ -78,7 +79,8 @@ class ContractManagementList extends React.Component<Props, State> {
         maxResults: 10
       },
       offset: 0,
-      limit: 10
+      limit: 10,
+      contractsLength: 0
     };
   }
 
@@ -101,6 +103,7 @@ class ContractManagementList extends React.Component<Props, State> {
 
     const contractsService = await Api.getContractsService(this.props.keycloak.token);
     const contracts: Contract[] | HttpErrorResponse = await contractsService.listContracts("application/json", true, undefined, this.state.filters.itemGroupId, this.state.filters.year, this.state.filters.status, this.state.offset, this.state.limit);
+    this.setState({ contractsLength: contracts.length });
 
     if (this.isHttpErrorResponse(contracts)) {
       this.renderErrorMessage(contracts);
@@ -130,12 +133,12 @@ class ContractManagementList extends React.Component<Props, State> {
 
     const itemGroup = this.state.itemGroups.find(itemGroup => itemGroup.id === contract.itemGroupId);
     const deliveryPlace = this.state.deliveryPlaces.find(deliveryPlace => deliveryPlace.id === contract.deliveryPlaceId);
-    let contact: Contact | undefined = this.state.contacts.find((stateContact) => stateContact.id === contract.contactId) 
-    
+    let contact: Contact | undefined = this.state.contacts.find((stateContact) => stateContact.id === contract.contactId)
+
     if (!contact) {
       const contactsService = await Api.getContactsService(this.props.keycloak.token);
       contact = await contactsService.findContact(contract.contactId || "");
-      
+
       const contactsState: Contact[] = this.state.contacts;
       contactsState.push(contact);
       this.setState({ contacts: contactsState });
@@ -435,16 +438,16 @@ class ContractManagementList extends React.Component<Props, State> {
    */
   private handlePageChange = (type: string) => {
     const offset = this.state.offset;
+    const contractsLength = this.state.contractsLength;
+    const maxLimit = this.state.filters.maxResults;
 
-    if (type == "NEXT") {
-       this.setState({ offset: offset + this.state.limit });
-       this.loadData();
-    } else if (type == "PREVIOUS") {
-      if (offset >= 0) {
-        this.setState({ offset: offset - this.state.limit });
-        this.loadData();
-      } 
-   }
+    if (type == "NEXT" && contractsLength == maxLimit) {
+      this.setState({ offset: offset + this.state.limit });
+      this.loadData();
+    } else if (type == "PREVIOUS" && offset > 0) {
+      this.setState({ offset: offset - this.state.limit });
+      this.loadData();
+    }
   }
 
   /**
@@ -683,18 +686,25 @@ class ContractManagementList extends React.Component<Props, State> {
         </Table>
         <Grid>
           <Grid.Row>
-            <Grid.Column floated="left" width="3">
-              <Button fluid onClick={() => this.handlePageChange("PREVIOUS")}>
-                <Icon name="arrow circle left" />
-                Edellinen sivu
+            {
+              this.state.offset > 0 &&
+              <Grid.Column floated="left" width="3">
+                <Button fluid onClick={() => this.handlePageChange("PREVIOUS")}>
+                  <Icon name="arrow circle left" />
+                  Edellinen sivu
               </Button>
-            </Grid.Column>
-            <Grid.Column floated="right" width="3">
-              <Button fluid onClick={() => this.handlePageChange("NEXT")}>
-                Seuraava sivu
+              </Grid.Column>
+            }
+            {
+              this.state.contractsLength == this.state.filters.maxResults &&
+              <Grid.Column floated="right" width="3">
+                <Button fluid onClick={() => this.handlePageChange("NEXT")}>
+                  Seuraava sivu
                 <Icon name="arrow circle right" />
-              </Button>
-            </Grid.Column>
+                </Button>
+              </Grid.Column>
+            }
+
           </Grid.Row>
         </Grid>
       </TableBasicLayout>
