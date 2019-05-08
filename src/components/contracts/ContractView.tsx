@@ -4,7 +4,7 @@ import { connect } from "react-redux";
 import { Dispatch } from "redux";
 import "../../styles/common.scss";
 import { ContractTableData, StoreState, ContractData, ContractDataKey } from "src/types";
-import { Contract, ItemGroup, Contact,ItemGroupPrice, DeliveryPlace, AreaDetail, SignAuthenticationService } from "pakkasmarja-client";
+import { Contract, ItemGroup, Contact, ItemGroupPrice, DeliveryPlace, AreaDetail, SignAuthenticationService } from "pakkasmarja-client";
 import Api from "pakkasmarja-client";
 import BasicLayout from "../generic/BasicLayout";
 import { Dimmer, Loader, Container } from "semantic-ui-react";
@@ -15,6 +15,7 @@ import ContractAmount from "./ContractAmount";
 import ContractAreaDetails from "./ContractAreaDetails";
 import ContractDeliveryPlace from "./ContractDeliveryPlace";
 import ContractFooter from "./ContractFooter";
+import ContractDocument from "./ContractDocument";
 import ContractRejectModal from "./ContractRejectModal";
 import { Redirect } from "react-router";
 import { PDFService } from "src/api/pdf.service";
@@ -230,7 +231,7 @@ class ContractView extends React.Component<Props, State> {
     contract.deliveryPlaceComment = contractData.deliveryPlaceComment;
     contract.proposedQuantity = contractData.proposedQuantity;
     contract.quantityComment = contractData.quantityComment;
-    
+
     if (contractData.areaDetailValues && contractData.areaDetailValues.length > 0) {
       const areaDetails: AreaDetail[] = [];
       contractData.areaDetailValues.forEach((areaDetailObject: any) => {
@@ -303,14 +304,14 @@ class ContractView extends React.Component<Props, State> {
    * Download contract as pdf
    */
   private downloadContractPdfClicked = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.contract|| !this.state.contract.id) {
+    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.contract || !this.state.contract.id) {
       return;
     }
-    
-    this.setState({loading: true, loadingText: "Loading pdf..."});
+
+    this.setState({ loading: true, loadingText: "Loading pdf..." });
     const pdfService = new PDFService(process.env.REACT_APP_API_URL || "", this.props.keycloak.token);
     const pdfData = await pdfService.getPdf(this.state.contract.id, this.state.pdfType);
-    this.setState({loading: false});
+    this.setState({ loading: false });
     this.downloadPdfBlob(pdfData);
   }
 
@@ -321,15 +322,15 @@ class ContractView extends React.Component<Props, State> {
    */
   private downloadPdfBlob = (pdfData: any) => {
     pdfData.blob().then((blob: any) => {
-      const pdfBlob = new Blob([blob], {type: "application/pdf"});
+      const pdfBlob = new Blob([blob], { type: "application/pdf" });
       const data = window.URL.createObjectURL(pdfBlob);
-        const link = document.createElement("a");
-        link.href = data;
-        link.download = `${new Date().toLocaleDateString()}.pdf`;
-        link.click();
-        setTimeout(function() {
-          window.URL.revokeObjectURL(data);
-        }, 100);
+      const link = document.createElement("a");
+      link.href = data;
+      link.download = `${new Date().toLocaleDateString()}.pdf`;
+      link.click();
+      setTimeout(function () {
+        window.URL.revokeObjectURL(data);
+      }, 100);
     });
   }
 
@@ -358,7 +359,7 @@ class ContractView extends React.Component<Props, State> {
     }
     return (
       <BasicLayout>
-        <Container text>
+        <Container>
           <ContractHeader
             itemGroup={this.state.itemGroup}
           />
@@ -395,6 +396,9 @@ class ContractView extends React.Component<Props, State> {
             deliveryPlaceComment={this.state.contractData.deliveryPlaceComment}
             isActiveContract={this.state.contract ? this.state.contract.status === "APPROVED" : false}
           />
+          <ContractDocument
+            contractId={this.state.contract && this.state.contract.id || ""}
+          />
           <ContractFooter
             isActiveContract={this.state.contract ? this.state.contract.status === "APPROVED" : false}
             downloadContractPdf={this.downloadContractPdfClicked}
@@ -402,13 +406,13 @@ class ContractView extends React.Component<Props, State> {
             declineContract={this.declineContractClicked}
             approveButtonText={this.state.companyApprovalRequired ? "Ehdota muutosta" : "Hyväksyn"}
           />
-          <ContractRejectModal 
+          <ContractRejectModal
             onUserInputChange={this.updateContractData}
             rejectComment={this.state.contractData.rejectComment}
             modalOpen={this.state.rejectModalOpen}
             closeModal={() => this.setState({ rejectModalOpen: false })}
             contract={this.state.contract}
-            contractRejected={() => this.setState({redirect:true})}
+            contractRejected={() => this.setState({ redirect: true })}
           />
         </Container>
       </BasicLayout>

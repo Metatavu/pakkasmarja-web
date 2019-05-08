@@ -1,7 +1,7 @@
 import * as React from "react";
 import "../../styles/common.scss";
 import "./styles.scss";
-import { Grid, Header, Button, Input, Divider } from "semantic-ui-react";
+import { Grid, Header, Button, Input } from "semantic-ui-react";
 import { ItemGroup, AreaDetail } from "pakkasmarja-client";
 import strings from "src/localization/strings";
 
@@ -115,7 +115,7 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
     }
 
     return (
-      <Grid.Row key={index} columns={!minimumEstimation ? "4" : "3"}>
+      <Grid.Row style={{paddingTop:0}} key={index} columns={!minimumEstimation ? "4" : "3"}>
         <Grid.Column>
           {this.renderInputField(index, strings.name, !this.props.isActiveContract, name || "", style)}
         </Grid.Column>
@@ -202,7 +202,7 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
 
     if (minimumProfit) {
       return (
-        <div>
+        <div style={{marginTop:10}}>
           <p>
             {strings.formatString(strings.totalAmountOfBlocks, blocks, totalHectares)}
           </p>
@@ -229,12 +229,10 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
     }
 
     return (
-      <div className="contract-section">
-        <Divider horizontal>
+      <div className="contract-white-container">
           <Header as='h2'>
             {strings.hectaresInProduction}
          </Header>
-        </Divider>
         <Grid >
           {
             this.renderAreaDetailHeaders()

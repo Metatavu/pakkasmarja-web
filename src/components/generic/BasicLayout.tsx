@@ -2,7 +2,7 @@ import * as React from "react";
 
 import 'semantic-ui-css/semantic.min.css';
 
-import { Container, Header, Image, Segment, Button } from "semantic-ui-react";
+import { Container, Header, Image, Button } from "semantic-ui-react";
 import MenuContainer from "./MenuContainer";
 import PakkasmarjaLogo from "../../gfx/pakkasmarja-logo.svg";
 import { Redirect } from "react-router-dom";
@@ -43,9 +43,9 @@ class BasicLayout extends React.Component<Props, any> {
           <MenuContainer />
         </div>
         <Container style={{ marginTop: "4em", paddingBottom: "7em" }}>
-          <Segment>
+          
             {this.props.children}
-          </Segment>
+          
         </Container>
       </div>
     );

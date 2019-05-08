@@ -1,8 +1,9 @@
 import * as React from "react";
 import "../../styles/common.scss";
-import { Grid, Header, List, Divider } from "semantic-ui-react";
-import {  ItemGroup, ItemGroupPrice } from "pakkasmarja-client";
+import { Grid, Header, List, Icon } from "semantic-ui-react";
+import { ItemGroup, ItemGroupPrice } from "pakkasmarja-client";
 import strings from "src/localization/strings";
+import * as _ from "lodash";
 
 /**
  * Interface for component State
@@ -44,7 +45,7 @@ export default class ContractPrices extends React.Component<Props, State> {
   private renderPricesText = (itemGroupDisplayName: string) => {
     return (
       <p>
-        {strings.formatString(strings.pricesText, itemGroupDisplayName, new Date().getFullYear().toString()) }
+        {strings.formatString(strings.pricesText, itemGroupDisplayName, new Date().getFullYear().toString())}
       </p>
     );
   }
@@ -59,30 +60,30 @@ export default class ContractPrices extends React.Component<Props, State> {
       case "304100/Mansikka":
       case "309100/Luomu mansikk":
         return (
-          <p className="contract-price-text">
-            {strings.strawberry1}
-            {strings.strawberry2}
-            {strings.strawberry3}
-            {strings.strawberry4}
-          </p>
+          <React.Fragment>
+            <p className="contract-price-text">{strings.strawberry1}</p>
+            <p>{strings.strawberry2}</p>
+            <p>{strings.strawberry3}</p>
+            <p>{strings.strawberry4}</p>
+          </React.Fragment>
         );
       case "304400/Mustaherukka":
       case "309300/Luomu mustahe":
         return (
-          <p className="contract-price-text">
-            {strings.blackcurrant1}
-            {strings.blackcurrant2}
-            {strings.blackcurrant3}
-            {strings.blackcurrant4}
-          </p>
+          <React.Fragment>
+            <p className="contract-price-text">{strings.blackcurrant1}</p>
+            <p>{strings.blackcurrant2}</p>
+            <p>{strings.blackcurrant3}</p>
+            <p>{strings.blackcurrant4}</p>
+          </React.Fragment>
         );
       default:
         return (
-          <p className="contract-price-text">
-            {strings.default1}
-            {strings.default2}
-            {strings.default3}
-          </p>
+          <React.Fragment>
+            <p className="contract-price-text">{strings.default1}</p>
+            <p>{strings.default2}</p>
+            <p>{strings.default3}</p>
+          </React.Fragment>
         );
     }
   }
@@ -95,7 +96,7 @@ export default class ContractPrices extends React.Component<Props, State> {
   private renderActivePriceRows = (prices: ItemGroupPrice[]) => {
     return prices.filter(price => price.year === new Date().getFullYear()).map((price) => {
       return (
-        this.renderPriceRow(price)
+        this.renderPriceRow(price, true)
       );
     })
   }
@@ -106,7 +107,9 @@ export default class ContractPrices extends React.Component<Props, State> {
    * @param prices prices 
    */
   private renderPastPriceRows = (prices: ItemGroupPrice[]) => {
-    return prices.filter(price => price.year < new Date().getFullYear()).map((price) => {
+    let filteredPrices = prices.filter(price => price.year < new Date().getFullYear());
+    filteredPrices = _.sortBy(filteredPrices, 'year').reverse();
+    return filteredPrices.map((price) => {
       return (
         this.renderPriceRow(price)
       );
@@ -118,20 +121,33 @@ export default class ContractPrices extends React.Component<Props, State> {
    * 
    * @param price price
    */
-  private renderPriceRow = (price: ItemGroupPrice) => {
-    return (
-      <Grid.Row columns="3" key={price.id}>
-        <Grid.Column>
-          { price.year }
-        </Grid.Column>
-        <Grid.Column>
-          { price.group }
-        </Grid.Column>
-        <Grid.Column>
-          { `${price.price} ${price.unit}` }
-        </Grid.Column>
-      </Grid.Row>
-    );
+  private renderPriceRow = (price: ItemGroupPrice, active?: boolean) => {
+    if (active) {
+      return (
+        <Grid.Row columns="2" key={price.id}>
+          <Grid.Column width="4">
+            <h3>{price.group}</h3>
+          </Grid.Column>
+          <Grid.Column width="12">
+            <h3>{`${price.price} ${price.unit}`}</h3>
+          </Grid.Column>
+        </Grid.Row>
+      );
+    } else {
+      return (
+        <Grid.Row className="grid-container" style={{paddingTop:0}} columns="3" key={price.id}>
+          <Grid.Column>
+            {price.year}
+          </Grid.Column>
+          <Grid.Column>
+            {price.group}
+          </Grid.Column>
+          <Grid.Column>
+            {`${price.price} ${price.unit}`}
+          </Grid.Column>
+        </Grid.Row>
+      );
+    }
   }
 
   /**
@@ -148,7 +164,7 @@ export default class ContractPrices extends React.Component<Props, State> {
 
     if (itemGroupCategory !== "FROZEN") {
       return (
-        <div className="contract-section">
+        <div className="contract-white-container">
           <List bulleted>
             <List.Item>
               {strings.contractDetailsListItem1}
@@ -171,23 +187,22 @@ export default class ContractPrices extends React.Component<Props, State> {
     }
 
     return (
-      <div className="contract-section">
-        <Divider horizontal>
-          <Header as='h2'>
-            {strings.guaranteedPrices}
-         </Header>
-        </Divider>
-        { this.renderPricesText(itemGroupDisplayName) }
-        <p onClick={() => this.setState({ displayPastPrices: !this.state.displayPastPrices })}>
-          {
-            this.state.displayPastPrices ? strings.hidePastPrices : strings.showPastPrices
-          }
-        </p>
+      <div className="contract-blue-container">
+        <Header as='h2'>
+          {strings.guaranteedPrices}
+        </Header>
+        {this.renderPricesText(itemGroupDisplayName)}
         <Grid>
-          { this.renderActivePriceRows(this.props.prices) } 
-          { this.state.displayPastPrices && this.renderPastPriceRows(this.props.prices) }
+          {this.renderActivePriceRows(this.props.prices)}
+          <p className="open-modal-element" style={{ color: "blue", paddingBottom: 10 }} onClick={() => this.setState({ displayPastPrices: !this.state.displayPastPrices })}>
+            <Icon color="red" name='info circle' />
+            {
+              this.state.displayPastPrices ? strings.hidePastPrices : strings.showPastPrices
+            }
+          </p>
+          {this.state.displayPastPrices && this.renderPastPriceRows(this.props.prices)}
         </Grid>
-        { this.renderItemDetails(itemGroupName) }
+        {this.renderItemDetails(itemGroupName)}
       </div>
     );
   }

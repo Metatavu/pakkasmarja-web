@@ -104,9 +104,9 @@ export default class ContractProposalModal extends React.Component<Props, State>
             </Form.Field>
           </Form>
           <Button.Group floated="right" className="contract-button-group" >
-            <Button onClick={this.closeModal} inverted color="red">{strings.close}</Button>
+            <Button onClick={this.props.sendContractProposalClicked} color="red">{strings.send}</Button>
             <Button.Or text="" />
-            <Button onClick={this.props.sendContractProposalClicked} color="black">{strings.send}</Button>
+            <Button onClick={this.closeModal} color="black">{strings.close}</Button>
           </Button.Group>
         </Modal.Content>
       </Modal>

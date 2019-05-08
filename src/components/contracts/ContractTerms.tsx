@@ -69,7 +69,7 @@ class ContractTerms extends React.Component<Props, State> {
    * Component did mount
    */
   public componentDidMount = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token ){
+    if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
 
@@ -77,7 +77,7 @@ class ContractTerms extends React.Component<Props, State> {
     const contract = await this.findContract(contractId);
     const signAuthenticationServicesService = await Api.getSignAuthenticationServicesService(this.props.keycloak.token);
     const signAuthenticationServices = await signAuthenticationServicesService.listSignAuthenticationServices();
-   
+
     this.setState({ authServices: signAuthenticationServices, contract: contract });
   }
 
@@ -103,11 +103,6 @@ class ContractTerms extends React.Component<Props, State> {
       return;
     }
 
-    if (this.state.contract.status !== "APPROVED") {
-      const content = strings.signContractFirst;
-      this.setState({ modalOpen: true, modalText: content });
-    }
-
     const pdfService = new PDFService(process.env.REACT_APP_API_URL || "", this.props.keycloak.token);
     const pdfData = await pdfService.getPdf(this.state.contract.id, this.state.pdfType);
     this.downloadPdfBlob(pdfData);
@@ -120,13 +115,13 @@ class ContractTerms extends React.Component<Props, State> {
    */
   private downloadPdfBlob = (pdfData: any) => {
     pdfData.blob().then((blob: any) => {
-      const pdfBlob = new Blob([blob], {type: "application/pdf"});
+      const pdfBlob = new Blob([blob], { type: "application/pdf" });
       const data = window.URL.createObjectURL(pdfBlob);
       const link = document.createElement("a");
       link.href = data;
       link.download = `${new Date().toLocaleDateString()}.pdf`;
       link.click();
-      setTimeout(function() {
+      setTimeout(function () {
         window.URL.revokeObjectURL(data);
       }, 100);
     });
@@ -153,7 +148,7 @@ class ContractTerms extends React.Component<Props, State> {
     }
 
     if (!this.state.ssn) {
-      const content = "";
+      const content = strings.missingInfo;
       this.setState({ modalText: content, modalOpen: true });
       return;
     }
@@ -204,55 +199,58 @@ class ContractTerms extends React.Component<Props, State> {
         <Container text>
           <Divider horizontal>
             <Header as='h2'>
-              Sopimus
-              </Header>
+              {strings.contract}
+            </Header>
           </Divider>
           <Form>
             <Header as='h3'>
               {strings.formatString(strings.contractHarvestSeason, this.state.contract ? this.state.contract.year : "")}
             </Header>
             <Form.Field>
-            <Checkbox
-              checked={this.state.acceptedTerms}
-              onChange={() => this.setState({ acceptedTerms: !this.state.acceptedTerms })}
-              label={strings.termsAccepted}
-            />
+              <Checkbox
+                checked={this.state.acceptedTerms}
+                onChange={() => this.setState({ acceptedTerms: !this.state.acceptedTerms })}
+                label={strings.termsAccepted}
+              />
             </Form.Field>
             <Form.Field>
-            <Checkbox
-              checked={this.state.viableToSign}
-              onChange={() => this.setState({ viableToSign: !this.state.viableToSign })}
-              label={strings.viableToSign}
-            />
+              <Checkbox
+                checked={this.state.viableToSign}
+                onChange={() => this.setState({ viableToSign: !this.state.viableToSign })}
+                label={strings.viableToSign}
+              />
             </Form.Field>
             <Form.Field>
-            <p>{strings.signingService}:</p>
-            <Dropdown
-              fluid
-              selection
-              placeholder={strings.signingService}
-              value={this.state.selectedSignServiceId}
-              options={signServiceOptions}
-              onChange={(event, data) => {
-                const value = data.value ? data.value.toString() : "";
-                this.setState({ selectedSignServiceId: value });
-              }}
-            />
+              <p>{strings.signingService}:</p>
+              {
+                this.state.authServices &&
+                <Dropdown
+                  fluid
+                  selection
+                  placeholder={strings.signingService}
+                  value={this.state.selectedSignServiceId}
+                  options={signServiceOptions}
+                  onChange={(event, data) => {
+                    const value = data.value ? data.value.toString() : "";
+                    this.setState({ selectedSignServiceId: value });
+                  }}
+                />
+              }
             </Form.Field>
             <Form.Field>
-            <p>{strings.ssn}:</p>
-            <Input
-              value={this.state.ssn}
-              onChange={(event: any) => this.setState({ ssn: event.target.value })}
-            />
+              <p>{strings.ssn}:</p>
+              <Input
+                value={this.state.ssn}
+                onChange={(event: any) => this.setState({ ssn: event.target.value })}
+              />
             </Form.Field>
           </Form>
           <Button.Group floated="right" className="contract-button-group" >
-            <Button onClick={this.signContractClicked} color="red">{strings.sign.toUpperCase()}</Button>
+            <Button onClick={this.signContractClicked} color="red">{strings.sign}</Button>
             <Button.Or text="" />
             <Button onClick={this.downloadContractPdfClicked} inverted color="red">{strings.downloadContractAsPDF}</Button>
             <Button.Or text="" />
-            <Button as={Link} to={`/contracts/${this.state.contract ? this.state.contract.id : ""}`} color="black">{strings.back.toUpperCase()}</Button>
+            <Button as={Link} to={`/contracts/${this.state.contract ? this.state.contract.id : ""}`} color="black">{strings.back}</Button>
           </Button.Group>
         </Container>
         <Modal size="small" open={this.state.modalOpen} onClose={() => this.setState({ modalOpen: false })} closeIcon>

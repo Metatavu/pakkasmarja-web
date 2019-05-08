@@ -1,6 +1,6 @@
 import * as React from "react";
 import "../../styles/common.scss";
-import { Grid, Header, Divider } from "semantic-ui-react";
+import { Grid, Header } from "semantic-ui-react";
 import { Contact } from "pakkasmarja-client";
 import strings from "src/localization/strings";
 
@@ -48,23 +48,20 @@ export default class ContractParties extends React.Component<Props, State> {
     const farmerLastName = this.props.contact.lastName;
 
     return (
-      <div className="contract-section">
-        <Divider horizontal>
+      <div className="contract-white-container">
           <Header as='h2'>
             {strings.parties}
          </Header>
-        </Divider>
-
         <Grid>
           <Grid.Row columns="2">
             <Grid.Column>
-              {strings.farmer}
+              <p className="font-bold">{strings.farmer}</p>
             </Grid.Column>
             <Grid.Column>
-              {strings.company}
+              <p className="font-bold">{strings.company}</p>
             </Grid.Column>
           </Grid.Row>
-          <Grid.Row columns="2">
+          <Grid.Row columns="2" style={{paddingTop:0}}>
             <Grid.Column>
               <p>
                 {farmerCompanyName ? farmerCompanyName : `${farmerFirstName} ${farmerLastName}`}

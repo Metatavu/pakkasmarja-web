@@ -1,6 +1,6 @@
 import * as React from "react";
 import "../../styles/common.scss";
-import { Button, Divider } from "semantic-ui-react";
+import { Button } from "semantic-ui-react";
 import { Redirect } from "react-router-dom";
 import strings from "src/localization/strings";
 
@@ -49,7 +49,6 @@ export default class ContractFooter extends React.Component<Props, State> {
     }
     return (
       <React.Fragment>
-        <Divider/>
         {
           this.props.isActiveContract &&
           <Button.Group floated="right" >

@@ -35,4 +35,23 @@ export class PDFService {
 
     return response; 
   }
+
+  /**
+   * Get html
+   * 
+   * @param contractId contractId
+   * @param type type
+   * @return html blob
+   */
+  public getHtml = async (contractId: string, type: string) => {
+    const url = `${this.basePath}/rest/v1/contracts/${contractId}/documents/${type}?format=HTML`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${this.token}`
+      }
+    });
+
+    return response; 
+  }
 }

@@ -7,7 +7,7 @@ import { connect } from "react-redux";
 import "../../styles/common.scss";
 import Api from "pakkasmarja-client";
 import { ItemGroup } from "pakkasmarja-client";
-import { Item, Header, Button } from "semantic-ui-react";
+import { Header, Button } from "semantic-ui-react";
 import ContractItem from "./ContractItem";
 import ContractProposalModal from "./ContractProposalModal";
 import strings from "src/localization/strings";
@@ -137,30 +137,30 @@ class ContractList extends React.Component<Props, State> {
   public render() {
     return (
       <BasicLayout pageTitle="Sopimukset">
-        <Header>
+        <Header as="h2">
           {strings.frozenContracts}
         </Header>
-        <Item.Group divided>
+        <div className="contract-blue-container">
           {
             this.state.frozenContracts.map((frozenContract) => {
               return <ContractItem key={frozenContract.contract.id} contractData={frozenContract} />;
             })
           }
-        </Item.Group>
-        <Button onClick={() => this.onProposeNewContractClick("FROZEN")} inverted color="red">
+        </div>
+        <Button onClick={() => this.onProposeNewContractClick("FROZEN")} style={{borderRadius: 0}} color="red">
           {strings.suggestNewFrozenContract}
         </Button>
-        <Header>
+        <Header as="h2">
           {strings.freshContracts}
         </Header>
-        <Item.Group divided>
+        <div className="contract-blue-container">
           {
             this.state.freshContracts.map((freshContract) => {
               return <ContractItem key={freshContract.contract.id} contractData={freshContract} />;
             })
           }
-        </Item.Group>
-        <Button onClick={() => this.onProposeNewContractClick("FRESH")} inverted color="red">
+        </div>
+        <Button onClick={() => this.onProposeNewContractClick("FRESH")} style={{borderRadius: 0}} color="red">
           {strings.suggestNewFreshContract}
         </Button>
         <ContractProposalModal

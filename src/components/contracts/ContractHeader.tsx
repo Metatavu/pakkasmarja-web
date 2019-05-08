@@ -39,7 +39,7 @@ export default class ContractHeader extends React.Component<Props, State> {
    * @param itemGroupName item group name
    */
   private renderHeader = (itemGroupName: string) => {
-    return <Header as="h1">{itemGroupName}</Header>
+    return <Header color="red" as="h1">{itemGroupName}</Header>
   }
 
   /**
@@ -49,16 +49,16 @@ export default class ContractHeader extends React.Component<Props, State> {
    */
   private renderContainer = (category: string) => {
     return (
-      <div>
+      <div className="contract-blue-container">
         {
           category === "FROZEN" &&
-            <p>
+            <p className="font-bold">
               {strings.formatString(strings.contractFrozenHeader, new Date().getFullYear())}
             </p>
         }
         {
           category !== "FROZEN" &&
-            <p>
+            <p className="font-bold">
               {strings.contractFreshHeader}
             </p>
         }
@@ -78,7 +78,7 @@ export default class ContractHeader extends React.Component<Props, State> {
     const itemGroupCategory = this.props.itemGroup.category || "";
 
     return (
-      <div className="contract-section">
+      <div>
         { this.renderHeader(itemGroupName) }
         { this.renderContainer(itemGroupCategory) }
       </div>
