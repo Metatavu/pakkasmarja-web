@@ -181,6 +181,8 @@ export interface IStrings extends LocalizedStringsMethods {
   delete: string
   edit: string
   createNewArticle: string
+  showContract: string
+  missingInfo: string
 }
 
 const strings: IStrings = new LocalizedStrings({

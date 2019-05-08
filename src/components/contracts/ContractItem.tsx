@@ -1,6 +1,6 @@
 import * as React from "react";
 import "../../styles/common.scss";
-import { Item, Modal } from "semantic-ui-react";
+import { Item, Modal, Icon, SemanticICONS, SemanticCOLORS, Divider } from "semantic-ui-react";
 import { Link } from "react-router-dom";
 import { ContractTableData } from "src/types";
 import { Contract } from "pakkasmarja-client";
@@ -48,11 +48,11 @@ export default class ContractItem extends React.Component<Props, State> {
       case "APPROVED":
         return this.renderContractAmountTable();
       case "DRAFT":
-        return this.renderDescription(strings.checkDraft);
+        return this.renderDescription(strings.checkDraft, "envelope", "red");
       case "ON_HOLD":
         return this.renderDescription(strings.onHold);
       case "REJECTED":
-        return this.renderDescription(strings.rejected);
+        return this.renderDescription(strings.rejected, "x", "black");
       default:
         return <Item.Description></Item.Description>;
     }
@@ -63,9 +63,12 @@ export default class ContractItem extends React.Component<Props, State> {
    */
   private renderContractAmountTable = () => {
     return (
-      <Item.Description>
-        <ContractAmountTable contractData={this.props.contractData} />
-      </Item.Description>
+      <React.Fragment>
+        <Item.Description>
+          <ContractAmountTable contractData={this.props.contractData} />
+        </Item.Description>
+        <Divider />
+      </React.Fragment>
     );
   }
 
@@ -74,11 +77,14 @@ export default class ContractItem extends React.Component<Props, State> {
    * 
    * @param text text
    */
-  private renderDescription = (text: string) => {
+  private renderDescription = (text: string, icon?: SemanticICONS, iconColor?: SemanticCOLORS) => {
     return (
-      <Item.Description>
-        {text}
-      </Item.Description>
+      <React.Fragment>
+        <Item.Description>
+          {icon && <Icon color={iconColor} name={icon} />} {text}
+        </Item.Description>
+        <Divider />
+      </React.Fragment>
     );
   }
 
@@ -107,21 +113,21 @@ export default class ContractItem extends React.Component<Props, State> {
     const contractStatus = this.props.contractData.contract.status;
     return (
       <React.Fragment>
-        <Item.Group>
-        <Item>
-          {
-            contractStatus === "ON_HOLD" || contractStatus === "REJECTED" ?
-              <Item.Content onClick={() => this.setState({ open: true })}>
-                <Item.Header>{itemGroupName}</Item.Header>
-                {this.renderItemDescription(contractStatus)}
-              </Item.Content>
-              :
-              <Item.Content as={Link} to={`contracts/${this.props.contractData.contract.id}`}>
-                <Item.Header>{itemGroupName}</Item.Header>
-                {this.renderItemDescription(contractStatus)}
-              </Item.Content>
-          }
-        </Item>
+        <Item.Group style={{margin:0}}>
+          <Item >
+            {
+              contractStatus === "ON_HOLD" || contractStatus === "REJECTED" ?
+                <Item.Content className="open-modal-element" onClick={() => this.setState({ open: true })}>
+                  <Item.Header>{itemGroupName}</Item.Header>
+                  {this.renderItemDescription(contractStatus)}
+                </Item.Content>
+                :
+                <Item.Content className="open-modal-element" as={Link} to={`contracts/${this.props.contractData.contract.id}`}>
+                  <Item.Header>{itemGroupName}</Item.Header>
+                  {this.renderItemDescription(contractStatus)}
+                </Item.Content>
+            }
+          </Item>
         </Item.Group>
         <Modal size="small" open={this.state.open} onClose={() => this.setState({ open: false })} closeIcon>
           <Modal.Content>{this.getModalContentText(contractStatus)}</Modal.Content>

@@ -8,8 +8,8 @@
   "deliveries": "Toimitukset",
   "contracts": "Sopimukset",
   "contract": "Sopimus",
-  "frozenContracts": "Pakaste sopimukset",
-  "freshContracts": "Tuore sopimukset",
+  "frozenContracts": "PAKASTEMARJAT",
+  "freshContracts": "TUOREMARJAT",
   "contractQuantity": "Sopimusmäärä",
   "deliveredQuantity": "Toimitettu määrä",
   "welcome": "Tervetuloa",
@@ -34,7 +34,7 @@
   "draft": "Vedos",
   "terminated": "Päättynyt",
   "sapId": "sapId",
-  "quantityComment": "Määräm kommentti",
+  "quantityComment": "Määrän kommentti",
   "quantity": "Määrä",
   "deliveryPlaceComment": "Toimituspaikan kommentti",
   "remarkFieldSap": "Huomautuskenttä (SAP)",
@@ -115,7 +115,7 @@
   "signingContinuesOnNewTab": "Allekirjoitus jatkuu avatussa välilehdessä. Kun olet valmis voit sulkea tämän ilmoituksen.",
   "signingWentWrong": "Jotain meni pieleen. Varmista, että olet valinnut tunnistautumispalvelun ja henkilötunnus on oikeassa muodossa.",
   "contractHarvestSeason": "Satokautta {0} koskeva sopimus",
-  "termsAccepted": "I have read the terms and I accept them",
+  "termsAccepted": "Olen lukenut ehdot ja hyväksyn ne",
   "viableToSign": "Olen viljelijän puolesta edustuskelpoinen",
   "signingService": "Tunnistautumispalvelu",
   "ssn": "Henkilötunnus",
@@ -174,5 +174,7 @@
   "delete": "Poista",
   "edit": "Muokkaa",
   "createNewArticle": "Luo uusi artikkeli",
-  "operations": "Operaatiot"
+  "operations": "Operaatiot",
+  "showContract" : "Näytä sopimus",
+  "missingInfo" : "Tarvittavia tietoja puuttuu"
 }

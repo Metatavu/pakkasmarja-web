@@ -64,7 +64,7 @@ class EditContractDocument extends React.Component<Props, State> {
       content: "",
       headerContent: "",
       footerContent: "",
-      type: "",
+      type: "2019",
       loading: false,
       buttonLoading: false
     };
@@ -102,7 +102,7 @@ class EditContractDocument extends React.Component<Props, State> {
   }
 
   /**
-   * Load contacts
+   * Load contact
    */
   private loadContact = async () => {
     if (!this.props.keycloak || !this.props.keycloak.token || !this.state.contract) {
@@ -115,7 +115,7 @@ class EditContractDocument extends React.Component<Props, State> {
   }
 
   /**
-   * Load item groups
+   * Load item group
    */
   private loadItemGroup = async () => {
     if (!this.props.keycloak || !this.props.keycloak.token || !this.state.contract) {
@@ -136,8 +136,8 @@ class EditContractDocument extends React.Component<Props, State> {
     }
 
     const contractsService = await Api.getContractsService(this.props.keycloak.token);
-    let documentTemplate: ContractDocumentTemplate = await contractsService.findContractDocumentTemplate(this.state.contract.id, "");
-    documentTemplate = documentTemplate[0];
+    const documentTemplates: ContractDocumentTemplate[] = await contractsService.listContractDocumentTemplates(this.state.contract.id);
+    const documentTemplate = documentTemplates[0];
     if (documentTemplate) {
       this.setState({
         contractDocumentTemplate: documentTemplate,
@@ -150,7 +150,6 @@ class EditContractDocument extends React.Component<Props, State> {
       let documentTemplate: ItemGroupDocumentTemplate = await documentTemplateService.findItemGroupDocumentTemplate(this.state.itemGroup.id, "") || {};
       documentTemplate = documentTemplate[0];
       this.setState({
-        type: documentTemplate.type ? documentTemplate.type : "",
         content: documentTemplate.contents ? documentTemplate.contents : "",
         headerContent: documentTemplate.header ? documentTemplate.header : "",
         footerContent: documentTemplate.footer ? documentTemplate.footer : "",

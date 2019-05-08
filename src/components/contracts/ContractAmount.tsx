@@ -1,6 +1,6 @@
 import * as React from "react";
 import "../../styles/common.scss";
-import { Input, Header, Form, Checkbox, TextArea, Modal, Grid, Divider } from "semantic-ui-react";
+import { Input, Header, Form, Checkbox, TextArea, Modal, Grid, Icon } from "semantic-ui-react";
 import { Contract, ItemGroup } from "pakkasmarja-client";
 import strings from "src/localization/strings";
 
@@ -71,12 +71,10 @@ export default class ContractAmount extends React.Component<Props, State> {
     const quantityValue = this.props.proposedAmount || this.props.contractAmount;
 
     return (
-      <div className="contract-section">
-        <Divider horizontal>
-          <Header as='h2'>
-            {strings.amount}
-         </Header>
-        </Divider>
+      <div className="contract-blue-container">
+        <Header as='h2'>
+          {strings.amount}
+        </Header>
         {
           category == "FRESH" &&
           <p>
@@ -94,9 +92,10 @@ export default class ContractAmount extends React.Component<Props, State> {
             />
           </Form.Field>
           <p>
-            {`Pakkasmarjan ehdotus: ${this.props.contract.contractQuantity} kg`}
+            Pakkasmarjan ehdotus: <strong>{this.props.contract.contractQuantity} kg</strong>
           </p>
-          <p onClick={() => this.setState({ showPastContracts: true })}>
+          <p className="open-modal-element" style={{ color: "blue", paddingBottom: 10 }} onClick={() => this.setState({ showPastContracts: true })}>
+            <Icon color="red" name='info circle' />
             {strings.showPastYearAmounts}
           </p>
           <Form.Field>

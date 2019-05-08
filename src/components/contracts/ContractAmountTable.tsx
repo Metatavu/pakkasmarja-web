@@ -41,24 +41,24 @@ export default class ContractAmountTable extends React.Component<Props, State> {
     const deliveredQuantity = this.props.contractData.contract.deliveredQuantity;
 
     return (
-      <Grid className="contract-amount-table">
-        <Grid.Row columns={2}>
-          <Grid.Column>
-            {strings.contractQuantity}
-          </Grid.Column>
-          <Grid.Column>
-            {strings.deliveredQuantity}
-          </Grid.Column>
-        </Grid.Row>
-        <Grid.Row columns={2}>
-          <Grid.Column>
-            {contractQuantity}
-          </Grid.Column>
-          <Grid.Column>
-            {deliveredQuantity}
-          </Grid.Column>
-        </Grid.Row>
-      </Grid>
+        <Grid className="contract-amount-table">
+          <Grid.Row columns={2}>
+            <Grid.Column>
+              {strings.contractQuantity}
+            </Grid.Column>
+            <Grid.Column>
+              {strings.deliveredQuantity}
+            </Grid.Column>
+          </Grid.Row>
+          <Grid.Row columns={2} style={{ paddingTop: 0 }}>
+            <Grid.Column>
+              {contractQuantity}
+            </Grid.Column>
+            <Grid.Column>
+              {deliveredQuantity}
+            </Grid.Column>
+          </Grid.Row>
+        </Grid>
     );
   }
 }
