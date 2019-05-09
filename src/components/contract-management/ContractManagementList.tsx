@@ -298,11 +298,15 @@ class ContractManagementList extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
+    
+    this.setState({ 
+      contractsLoading: true
+    });
 
     const query: FilterContracts = {
       listAll: "true",
-      firstResult: this.state.offset,
-      maxResults: this.state.limit
+      firstResult: 0,
+      maxResults: 999
     };
 
     if (this.state.filters.itemGroupId) {
@@ -317,23 +321,27 @@ class ContractManagementList extends React.Component<Props, State> {
       query.status = this.state.filters.status;
     }
 
-    fetch(`${process.env.REACT_APP_API_URL}/rest/v1/contracts?${this.parseQuery(query)}`, {
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/rest/v1/contracts?${this.parseQuery(query)}`, {
       headers: {
         "Authorization": `Bearer ${this.props.keycloak.token}`,
         "Accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
       },
       method: "GET"
-    })
-      .then(response => response.blob())
-      .then(blob => {
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = "contracts.xlsx";
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-      });
+    });
+
+    const blob = await response.blob();
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = "contracts.xlsx";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    this.setState({ 
+      contractsLoading: false
+    });
   }
 
   /**
@@ -386,6 +394,7 @@ class ContractManagementList extends React.Component<Props, State> {
     link.href = data;
     link.download = `${contract.id}-${downloadTitle}.pdf`;
     link.click();
+    link.remove();
     
     setTimeout(function () {
       window.URL.revokeObjectURL(data);
