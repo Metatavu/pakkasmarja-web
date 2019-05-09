@@ -1,6 +1,7 @@
 import * as React from "react";
 import * as actions from "../../actions/";
-import { StoreState, ContractManagementTableData, HttpErrorResponse, FilterContracts } from "src/types";
+import * as _ from "lodash";
+import { StoreState, HttpErrorResponse, FilterContracts } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
@@ -15,8 +16,8 @@ import { Link } from "react-router-dom";
 import * as moment from 'moment';
 import TableBasicLayout from "../contract-management/TableBasicLayout";
 import BasicLayout from "../generic/BasicLayout";
-import { PDFService } from "src/api/pdf.service";
 import strings from "src/localization/strings";
+import { PDFService } from "src/api/pdf.service";
 
 /**
  * Interface for component props
@@ -31,21 +32,21 @@ interface Props {
  */
 interface State {
   keycloak?: Keycloak.KeycloakInstance;
-  contractData: ContractManagementTableData[];
-  itemGroups: ItemGroup[];
-  contacts: Contact[];
-  deliveryPlaces: DeliveryPlace[];
-  contractsLoading: boolean;
-  proposeContractModalOpen: boolean;
-  selectedBerry: string;
-  proposedContractQuantity: string;
-  proposedContractQuantityComment: string;
-  proposeContractModalType: string;
-  errorMessage?: string;
-  filters: FilterContracts;
-  offset: number;
-  limit: number;
-  contractsLength: number;
+  contracts: Contract[],
+  itemGroups: { [key: string] : ItemGroup },
+  contacts: { [key: string] : Contact },
+  deliveryPlaces: { [key: string] : DeliveryPlace },
+  contractsLoading: boolean,
+  proposeContractModalOpen: boolean,
+  selectedBerry: string,
+  proposedContractQuantity: string,
+  proposedContractQuantityComment: string,
+  proposeContractModalType: string,
+  errorMessage?: string,
+  filters: FilterContracts,
+  offset: number,
+  limit: number,
+  contractsLength: number
 }
 
 /**
@@ -61,10 +62,10 @@ class ContractManagementList extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      contractData: [],
-      itemGroups: [],
-      contacts: [],
-      deliveryPlaces: [],
+      contracts: [],
+      itemGroups: {},
+      contacts: {},
+      deliveryPlaces: {},
       contractsLoading: false,
       proposeContractModalOpen: false,
       selectedBerry: "",
@@ -99,7 +100,11 @@ class ContractManagementList extends React.Component<Props, State> {
       return;
     }
 
-    this.setState({ contractsLoading: true, errorMessage: undefined, contractData: [] });
+    this.setState({ 
+      contractsLoading: true, 
+      errorMessage: undefined, 
+      contracts: [] 
+    });
 
     const contractsService = await Api.getContractsService(this.props.keycloak.token);
     const contracts: Contract[] | HttpErrorResponse = await contractsService.listContracts("application/json", true, undefined, this.state.filters.itemGroupId, this.state.filters.year, this.state.filters.status, this.state.offset, this.state.limit);
@@ -112,48 +117,12 @@ class ContractManagementList extends React.Component<Props, State> {
 
     await this.loadItemGroups();
     await this.loadDeliveryPlaces();
-
-    await Promise.all(contracts.map((contract): Promise<any> => {
-      return this.createContractManagementTableData(contract);
-    }));
-
-    this.setState({ contractsLoading: false });
-  }
-
-  /**
-   * Get contract management table data
-   * 
-   * @param contracts contracts
-   * @return table data
-   */
-  private createContractManagementTableData = async (contract: Contract) => {
-    if (!this.props.keycloak || !this.props.keycloak.token) {
-      return;
-    }
-
-    const itemGroup = this.state.itemGroups.find(itemGroup => itemGroup.id === contract.itemGroupId);
-    const deliveryPlace = this.state.deliveryPlaces.find(deliveryPlace => deliveryPlace.id === contract.deliveryPlaceId);
-    let contact: Contact | undefined = this.state.contacts.find((stateContact) => stateContact.id === contract.contactId)
-
-    if (!contact) {
-      const contactsService = await Api.getContactsService(this.props.keycloak.token);
-      contact = await contactsService.findContact(contract.contactId || "");
-
-      const contactsState: Contact[] = this.state.contacts;
-      contactsState.push(contact);
-      this.setState({ contacts: contactsState });
-    }
-
-    const contractsState: ContractManagementTableData[] = this.state.contractData;
-
-    contractsState.push({
-      contract: contract,
-      itemGroup: itemGroup,
-      contact: contact,
-      deliveryPlace: deliveryPlace
+    await this.loadContacts(contracts);
+    
+    this.setState({ 
+      contractsLoading: false, 
+      contracts: contracts
     });
-
-    this.setState({ contractData: contractsState });
   }
 
   /**
@@ -193,9 +162,10 @@ class ContractManagementList extends React.Component<Props, State> {
 
     const itemGroupsService = await Api.getItemGroupsService(this.props.keycloak.token);
     const itemGroups = await itemGroupsService.listItemGroups();
-    this.setState({ itemGroups: itemGroups });
-  }
 
+    this.setState({ itemGroups: _.keyBy(itemGroups, "id") });
+  }
+  
   /**
    * Load delivery places
    */
@@ -206,9 +176,39 @@ class ContractManagementList extends React.Component<Props, State> {
 
     const deliveryPlacesService = await Api.getDeliveryPlacesService(this.props.keycloak.token);
     const deliveryPlaces = await deliveryPlacesService.listDeliveryPlaces();
-    this.setState({ deliveryPlaces: deliveryPlaces });
+    this.setState({ deliveryPlaces: _.keyBy(deliveryPlaces, "id") });
   }
+  
+  /**
+   * Loads contacts for given contracts into the state
+   * 
+   * @param contracts
+   */
+  private loadContacts = async (contracts: Contract[]) => {
+    if (!this.props.keycloak || !this.props.keycloak.token) {
+      return;
+    }
 
+    const contactsService = await Api.getContactsService(this.props.keycloak.token);
+    const contacts = _.clone(this.state.contacts || {});
+
+    const contactIds = _.uniq(contracts.map((contract) => {
+      return contract.contactId!;
+    }));
+
+    for (let i = 0; i < contactIds.length; i++) {
+      const contactId = contactIds[i];
+
+      if (!contacts[contactId]) {
+        contacts[contactId] = await contactsService.findContact(contactId);
+      }
+    }
+
+    this.setState({
+      contacts: contacts
+    });
+  }
+  
   /**
    * Render drop down
    * 
@@ -236,45 +236,7 @@ class ContractManagementList extends React.Component<Props, State> {
       />
     );
   }
-
-  /**
-   * Get filtered contract data
-   * 
-   * @return filtered contract data
-   */
-  private getFilteredContractData = () => {
-    return this.state.contractData && this.state.contractData.filter((contractData) => {
-      if (!contractData.contract || !contractData.itemGroup) {
-        return false;
-      }
-
-      if (!this.state.filters.status && !this.state.filters.itemGroupId && !this.state.filters.year) {
-        return true;
-      }
-
-      const filterYear = this.state.filters.year;
-      const contractYear = contractData.contract.year;
-      const filterItemGroup = this.state.filters.itemGroupId;
-      const contractItemGroup = contractData.contract.itemGroupId;
-      const filterStatus = this.state.filters.status;
-      const contractStatus = contractData.contract.status;
-
-      if (filterYear && filterYear !== contractYear) {
-        return false;
-      }
-
-      if (filterItemGroup && filterItemGroup !== contractItemGroup) {
-        return false;
-      }
-
-      if (filterStatus && filterStatus !== contractStatus) {
-        return false;
-      }
-
-      return true;
-    });
-  }
-
+  
   /**
    * Handle item group change
    * 
@@ -377,29 +339,29 @@ class ContractManagementList extends React.Component<Props, State> {
   /**
    * Download contract as pdf
    */
-  private getPdf = async (contractData: ContractManagementTableData) => {
-    if (!this.props.keycloak || !this.props.keycloak.token || !contractData.contract.id || !contractData.itemGroup || !contractData.itemGroup.id) {
+  private getPdf = async (contract: Contract, itemGroup: ItemGroup) => {
+    if (!this.props.keycloak || !this.props.keycloak.token || !contract.id || !itemGroup || !itemGroup.id) {
       return;
     }
     const contractsService = await Api.getContractsService(this.props.keycloak.token);
 
-    let documentTemplate: ContractDocumentTemplate = await contractsService.findContractDocumentTemplate(contractData.contract.id, "");
+    let documentTemplate: ContractDocumentTemplate = await contractsService.findContractDocumentTemplate(contract.id, "");
     documentTemplate = documentTemplate[0];
     let type: string = "";
     if (documentTemplate) {
       type = documentTemplate.type;
     } else {
       const documentTemplateService = await Api.getItemGroupsService(this.props.keycloak.token);
-      let documentTemplate: ItemGroupDocumentTemplate = await documentTemplateService.findItemGroupDocumentTemplate(contractData.itemGroup.id, "") || {};
+      let documentTemplate: ItemGroupDocumentTemplate = await documentTemplateService.findItemGroupDocumentTemplate(itemGroup.id, "") || {};
       documentTemplate = documentTemplate[0];
       type = documentTemplate.type || "";
     }
 
     const pdfService = new PDFService(process.env.REACT_APP_API_URL || "", this.props.keycloak.token);
-    const pdfData: Response = await pdfService.getPdf(contractData.contract.id, type);
-    this.downloadPdfBlob(pdfData, type, contractData.contract);
+    const pdfData: Response = await pdfService.getPdf(contract.id, type);
+    this.downloadPdfBlob(pdfData, type, contract);
   }
-
+  
   /**
    * Download pdf to users computer
    * 
@@ -476,7 +438,7 @@ class ContractManagementList extends React.Component<Props, State> {
       );
     }
 
-    const itemGroupOptions = this.state.itemGroups.map((itemGroup) => {
+    const itemGroupOptions = Object.values(this.state.itemGroups).map((itemGroup) => {
       return {
         key: itemGroup.id,
         value: itemGroup.id,
@@ -540,6 +502,9 @@ class ContractManagementList extends React.Component<Props, State> {
           <Table.Header>
             <Table.Row>
               <Table.HeaderCell width={1}>
+                {strings.year}
+              </Table.HeaderCell>
+              <Table.HeaderCell width={1}>
                 {strings.supplierName}
               </Table.HeaderCell>
               <Table.HeaderCell width={1}>
@@ -570,29 +535,36 @@ class ContractManagementList extends React.Component<Props, State> {
           </Table.Header>
           <Table.Body>
             {
-              this.getFilteredContractData().map((contractData: ContractManagementTableData) => {
+              this.state.contracts.map((contract: Contract) => {
+                const contact = this.findContact(contract.contactId);
+                const itemGroup = this.findItemGroup(contract.itemGroupId);
+                const deliveryPlace = this.findDeliveryPlace(contract.deliveryPlaceId);
+
                 return (
-                  <Table.Row key={contractData.contract.id}>
+                  <Table.Row key={contract.id}> 
                     <Table.Cell>
-                      {contractData.contact ? contractData.contact.companyName : "-"}
+                      { contract.year }
                     </Table.Cell>
                     <Table.Cell>
-                      {this.getStatusText(contractData.contract.status)}
+                      { contact ? contact.companyName : "-" }
                     </Table.Cell>
                     <Table.Cell>
-                      {contractData.itemGroup ? contractData.itemGroup.displayName : ""}
+                      { this.getStatusText(contract.status) }
                     </Table.Cell>
                     <Table.Cell>
-                      {contractData.contract.contractQuantity}
+                      { itemGroup ? itemGroup.displayName : ""}
                     </Table.Cell>
                     <Table.Cell>
-                      {contractData.contract.deliveredQuantity}
+                      { contract.contractQuantity}
                     </Table.Cell>
                     <Table.Cell>
-                      {contractData.deliveryPlace ? contractData.deliveryPlace.name : ""}
+                      { contract.deliveredQuantity}
+                    </Table.Cell>
+                    <Table.Cell>
+                      { deliveryPlace ? deliveryPlace.name : ""}
                     </Table.Cell>
                     <Table.Cell  >
-                      <div className="handleOverflow">{contractData.contract.remarks}</div>
+                      <div className="handleOverflow">{ contract.remarks }</div>
                     </Table.Cell>
                     <Table.Cell>
                       <List>
@@ -600,10 +572,10 @@ class ContractManagementList extends React.Component<Props, State> {
                           <List.Content>
                             {"Viljelijän allekirjoituspäivä: "}
                             {
-                              contractData.contract.signDate !== null
+                              contract.signDate
                                 ?
                                 <Moment format="DD.MM.YYYY">
-                                  {contractData.contract.signDate}
+                                  { contract.signDate }
                                 </Moment>
                                 :
                                 "  -"
@@ -614,10 +586,10 @@ class ContractManagementList extends React.Component<Props, State> {
                           <List.Content>
                             {"Aloituspäivä: "}
                             {
-                              contractData.contract.startDate !== null
+                              contract.startDate
                                 ?
                                 <Moment format="DD.MM.YYYY">
-                                  {contractData.contract.startDate}
+                                  { contract.startDate }
                                 </Moment>
                                 :
                                 "  -"
@@ -628,10 +600,10 @@ class ContractManagementList extends React.Component<Props, State> {
                           <List.Content>
                             {"Loppupäivä: "}
                             {
-                              contractData.contract.endDate !== null
+                              contract.endDate
                                 ?
                                 <Moment format="DD.MM.YYYY">
-                                  {contractData.contract.endDate}
+                                  { contract.endDate }
                                 </Moment>
                                 :
                                 "  -"
@@ -642,10 +614,10 @@ class ContractManagementList extends React.Component<Props, State> {
                           <List.Content>
                             {"Pakkasmarjan hyväksyntäpäivä: "}
                             {
-                              contractData.contract.termDate !== null
+                              contract.termDate
                                 ?
                                 <Moment format="DD.MM.YYYY">
-                                  {contractData.contract.termDate}
+                                  { contract.termDate }
                                 </Moment>
                                 :
                                 " -"
@@ -657,25 +629,26 @@ class ContractManagementList extends React.Component<Props, State> {
                     <Table.Cell >
                       <List>
                         <List.Item>
-                          <List.Content as={Link} to={`/watchContract/${contractData.contract.id}`}>
+                          <List.Content as={Link} to={`/watchContract/${ contract.id }`}>
                             <p className="plink">{strings.viewContract}</p>
                           </List.Content>
                         </List.Item>
                         <List.Item>
-                          <List.Content as={Link} to={`/editContract/${contractData.contract.id}`}>
+                          <List.Content as={Link} to={`/editContract/${ contract.id }`}>
                             <p className="plink">{strings.editContract}</p>
                           </List.Content>
                         </List.Item>
                         <List.Item>
-                          <List.Content as={Link} to={`/editContractDocument/${contractData.contract.id}`}>
+                          <List.Content as={Link} to={`/editContractDocument/${ contract.id }`}>
                             <p className="plink">{strings.editContractTemplate}</p>
                           </List.Content>
                         </List.Item>
+                        { !itemGroup ? null :  
                         <List.Item>
                           <List.Content>
-                            <p className="plink" onClick={() => this.getPdf(contractData)}>{strings.contractTemplatePDF}</p>
+                            <p className="plink" onClick={() => this.getPdf(contract, itemGroup)}>{ strings.contractTemplatePDF }</p>
                           </List.Content>
-                        </List.Item>
+                        </List.Item> }
                       </List>
                     </Table.Cell>
                   </Table.Row>
@@ -710,6 +683,37 @@ class ContractManagementList extends React.Component<Props, State> {
       </TableBasicLayout>
     );
   }
+
+  /**
+   * Returns contact for an id
+   * 
+   * @param contactId id
+   * @returns contact or undefined if not found
+   */
+  private findContact = (contactId?: string) => {
+    return contactId ? this.state.contacts[contactId] : null;
+  }
+
+  /**
+   * Returns itemGroup for an id
+   * 
+   * @param itemGroupId id
+   * @returns itemGroup or undefined if not found
+   */
+  private findItemGroup = (itemGroupId?: string) => {
+    return itemGroupId ? this.state.itemGroups[itemGroupId] : null;
+  }
+
+  /**
+   * Returns deliveryPlace for an id
+   * 
+   * @param deliveryPlaceId id
+   * @returns deliveryPlace or undefined if not found
+   */
+  private findDeliveryPlace = (deliveryPlaceId?: string) => {
+    return deliveryPlaceId ? this.state.deliveryPlaces[deliveryPlaceId] : null;
+  }
+
 }
 
 /**

@@ -198,7 +198,7 @@ class EditContractDocument extends React.Component<Props, State> {
    * Render method
    */
   public render() {
-    if (this.state.loading) {
+    if (this.state.loading || !this.state.contract) {
       return (
         <BasicLayout>
           <Dimmer active inverted>
@@ -226,13 +226,19 @@ class EditContractDocument extends React.Component<Props, State> {
       );
     }
 
+    const header = `Muokkaat sopimuksen ${this.state.contact.companyName || "Kontaktia ei löytynyt"} sopimusmallia`;
+
     return (
       <BasicLayout>
         <Divider horizontal>
-          <Header as='h2'>
-            {`Muokkaat sopimuksen ${this.state.contact.companyName || "Kontaktia ei löytynyt"} sopimusmallia ${this.state.contractDocumentTemplate && this.state.contractDocumentTemplate.type || "dokumentin tyyppiä ei löytynyt"}`}
-          </Header>
+          <Header as='h2'>{ header }</Header>
         </Divider>
+
+        <Header as='h4'>Sopimuksen tiedot</Header>
+        <div><b>Vuosi: </b> { this.state.contract.year}</div>
+        <div><b>Tyyppi: </b> { this.state.contractDocumentTemplate && this.state.contractDocumentTemplate.type || "Ei tiedossa" }</div>
+        <br/>
+
         <p>{strings.contractDocumentInfoText}</p>
         <Header as="h4">{strings.header}</Header>
         <div>
