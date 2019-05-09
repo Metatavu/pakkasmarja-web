@@ -343,6 +343,11 @@ class ContractManagementList extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token || !contract.id || !itemGroup || !itemGroup.id) {
       return;
     }
+    
+    this.setState({ 
+      contractsLoading: true
+    });
+
     const contractsService = await Api.getContractsService(this.props.keycloak.token);
 
     let documentTemplate: ContractDocumentTemplate = await contractsService.findContractDocumentTemplate(contract.id, "");
@@ -360,6 +365,10 @@ class ContractManagementList extends React.Component<Props, State> {
     const pdfService = new PDFService(process.env.REACT_APP_API_URL || "", this.props.keycloak.token);
     const pdfData: Response = await pdfService.getPdf(contract.id, type);
     this.downloadPdfBlob(pdfData, type, contract);
+
+    this.setState({ 
+      contractsLoading: false
+    });
   }
   
   /**
@@ -367,19 +376,20 @@ class ContractManagementList extends React.Component<Props, State> {
    * 
    * @param pdfData pdf data
    */
-  private downloadPdfBlob = (pdfData: Response, downloadTitle: string, contract: Contract) => {
+  private downloadPdfBlob = async (pdfData: Response, downloadTitle: string, contract: Contract) => {
+    const blob = await pdfData.blob();  
+    const pdfBlob = new Blob([blob], { type: "application/pdf" });
+    const data = window.URL.createObjectURL(pdfBlob);
+    const link = document.createElement("a");
+    document.body.appendChild(link);
 
-    pdfData.blob().then((blob: Blob) => {
-      const pdfBlob = new Blob([blob], { type: "application/pdf" });
-      const data = window.URL.createObjectURL(pdfBlob);
-      const link = document.createElement("a");
-      link.href = data;
-      link.download = `${contract.id}-${downloadTitle}.pdf`;
-      link.click();
-      setTimeout(function () {
-        window.URL.revokeObjectURL(data);
-      }, 100);
-    });
+    link.href = data;
+    link.download = `${contract.id}-${downloadTitle}.pdf`;
+    link.click();
+    
+    setTimeout(function () {
+      window.URL.revokeObjectURL(data);
+    }, 100);
   }
 
   /**
