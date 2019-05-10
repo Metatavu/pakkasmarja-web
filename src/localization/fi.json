@@ -176,5 +176,10 @@
   "createNewArticle": "Luo uusi artikkeli",
   "operations": "Operaatiot",
   "showContract" : "Näytä sopimus",
-  "missingInfo" : "Tarvittavia tietoja puuttuu"
+  "missingInfo" : "Tarvittavia tietoja puuttuu",
+  "contractTerminated" : "Sopimus päättynyt",
+  "contractsOnDraft" : "Vedossa olevat sopimukset",
+  "contractsOnActive" : "Aktiiviset sopimukset",
+  "contractsOnTerminated" : "Aiemmat sopimukset",
+  "downloadPdf" : "Lataa pdf"
 }

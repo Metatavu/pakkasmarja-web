@@ -1,17 +1,21 @@
 import * as React from "react";
 import "../../styles/common.scss";
-import { Item, Modal, Icon, SemanticICONS, SemanticCOLORS, Divider } from "semantic-ui-react";
-import { Link } from "react-router-dom";
-import { ContractTableData } from "src/types";
+import { Modal, Icon, SemanticICONS, SemanticCOLORS, Table } from "semantic-ui-react";
+import { ContractTableData, StoreState } from "src/types";
 import { Contract } from "pakkasmarja-client";
-import ContractAmountTable from "./ContractAmountTable";
 import strings from "src/localization/strings";
+import { Redirect } from "react-router-dom";
+import { Dispatch } from "redux";
+import { connect } from "react-redux";
+import * as actions from "../../actions/";
+import { PDFService } from "src/api/pdf.service";
 
 /**
  * Interface for component State
  */
 interface Props {
   contractData: ContractTableData;
+  keycloak?: Keycloak.KeycloakInstance;
 }
 
 /**
@@ -19,12 +23,13 @@ interface Props {
  */
 interface State {
   open: boolean;
+  redirect: boolean;
 }
 
 /**
  * Class for contract item component
  */
-export default class ContractItem extends React.Component<Props, State> {
+class ContractItem extends React.Component<Props, State> {
 
   /**
    * Constructor
@@ -34,7 +39,8 @@ export default class ContractItem extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      open: false
+      open: false,
+      redirect: false
     };
   }
 
@@ -45,31 +51,17 @@ export default class ContractItem extends React.Component<Props, State> {
    */
   private renderItemDescription = (status: Contract.StatusEnum) => {
     switch (status) {
-      case "APPROVED":
-        return this.renderContractAmountTable();
       case "DRAFT":
         return this.renderDescription(strings.checkDraft, "envelope", "red");
       case "ON_HOLD":
-        return this.renderDescription(strings.onHold);
+        return this.renderDescription(strings.onHold, "wait");
       case "REJECTED":
-        return this.renderDescription(strings.rejected, "x", "black");
+        return this.renderDescription(strings.rejected, "x");
+      case "TERMINATED":
+        return this.renderDescription(strings.contractTerminated, 'thumbs up', 'red');
       default:
-        return <Item.Description></Item.Description>;
+        return;
     }
-  }
-
-  /**
-   * Render contract amount table
-   */
-  private renderContractAmountTable = () => {
-    return (
-      <React.Fragment>
-        <Item.Description>
-          <ContractAmountTable contractData={this.props.contractData} />
-        </Item.Description>
-        <Divider />
-      </React.Fragment>
-    );
   }
 
   /**
@@ -80,10 +72,7 @@ export default class ContractItem extends React.Component<Props, State> {
   private renderDescription = (text: string, icon?: SemanticICONS, iconColor?: SemanticCOLORS) => {
     return (
       <React.Fragment>
-        <Item.Description>
-          {icon && <Icon color={iconColor} name={icon} />} {text}
-        </Item.Description>
-        <Divider />
+        {icon && <Icon color={iconColor} name={icon} />} {text}
       </React.Fragment>
     );
   }
@@ -106,29 +95,105 @@ export default class ContractItem extends React.Component<Props, State> {
   }
 
   /**
+   * Download pdf
+   */
+  private downloadPdf = async () => {
+    if (!this.props.keycloak || !this.props.keycloak.token) {
+      return;
+    }
+
+    const contractId = this.props.contractData.contract.id || "";
+    const type = new Date().getFullYear().toString();
+    const pdfService = new PDFService(process.env.REACT_APP_API_URL || "", this.props.keycloak.token);
+    const pdfData: Response = await pdfService.getPdf(contractId, type);
+    this.downloadPdfBlob(pdfData, "sopimus", contractId);
+
+  }
+
+  /**
+   * Download pdf to users computer
+   * 
+   * @param pdfData pdf data
+   */
+  private downloadPdfBlob = (pdfData: Response, downloadTitle: string, contractId: string) => {
+
+    pdfData.blob().then((blob: Blob) => {
+      const pdfBlob = new Blob([blob], { type: "application/pdf" });
+      const data = window.URL.createObjectURL(pdfBlob);
+      const link = document.createElement("a");
+      link.href = data;
+      link.download = `${downloadTitle} - ${contractId}.pdf`;
+      link.click();
+      setTimeout(function () {
+        window.URL.revokeObjectURL(data);
+      }, 100);
+    });
+  }
+
+  /**
    * Render method
    */
   public render() {
+
+    if (this.state.redirect) {
+      return (
+        <Redirect to={`contracts/${this.props.contractData.contract.id}`} />
+      );
+    }
+
     const itemGroupName = this.props.contractData.itemGroup ? this.props.contractData.itemGroup.displayName : "-";
     const contractStatus = this.props.contractData.contract.status;
+    const contractQuantity = this.props.contractData.contract.contractQuantity;
+    const deliveredQuantity = this.props.contractData.contract.deliveredQuantity;
     return (
       <React.Fragment>
-        <Item.Group style={{margin:0}}>
-          <Item >
-            {
-              contractStatus === "ON_HOLD" || contractStatus === "REJECTED" ?
-                <Item.Content className="open-modal-element" onClick={() => this.setState({ open: true })}>
-                  <Item.Header>{itemGroupName}</Item.Header>
-                  {this.renderItemDescription(contractStatus)}
-                </Item.Content>
-                :
-                <Item.Content className="open-modal-element" as={Link} to={`contracts/${this.props.contractData.contract.id}`}>
-                  <Item.Header>{itemGroupName}</Item.Header>
-                  {this.renderItemDescription(contractStatus)}
-                </Item.Content>
-            }
-          </Item>
-        </Item.Group>
+        {
+          contractStatus === "ON_HOLD" || contractStatus === "REJECTED" || contractStatus === "DRAFT" ?
+            <Table.Row className="open-modal-element" onClick={contractStatus === "DRAFT" ? () => this.setState({ redirect: true }) : () => this.setState({ open: true })}>
+              <Table.Cell>
+                {itemGroupName}
+              </Table.Cell>
+              <Table.Cell>
+                {this.renderItemDescription(contractStatus)}
+              </Table.Cell>
+              <Table.Cell textAlign="center">
+                {contractStatus === "DRAFT" && <Icon size="large" name="arrow right" />}
+              </Table.Cell>
+            </Table.Row>
+            : null
+        }
+        {
+          contractStatus === "APPROVED" &&
+          <Table.Row className="contract-row">
+            <Table.Cell className="contract-cell" onClick={() => this.setState({ redirect: true })}>
+              {itemGroupName}
+            </Table.Cell>
+            <Table.Cell className="contract-cell" onClick={() => this.setState({ redirect: true })}>
+              {deliveredQuantity}
+            </Table.Cell>
+            <Table.Cell className="contract-cell" onClick={() => this.setState({ redirect: true })}>
+              {contractQuantity}
+            </Table.Cell>
+            <Table.Cell className="pdf-icon" onClick={this.downloadPdf} textAlign="center">
+              <Icon size="large" name="file pdf outline" />
+            </Table.Cell>
+          </Table.Row>
+        }
+        {
+          contractStatus === "TERMINATED" ?
+            <Table.Row >
+              <Table.Cell >
+                {itemGroupName}
+              </Table.Cell>
+              <Table.Cell>
+                {this.renderItemDescription(contractStatus)}
+              </Table.Cell>
+              <Table.Cell className="pdf-icon" textAlign="center">
+                <Icon onClick={this.downloadPdf} size="large" name="file pdf outline" />
+              </Table.Cell>
+            </Table.Row>
+            : null
+        }
         <Modal size="small" open={this.state.open} onClose={() => this.setState({ open: false })} closeIcon>
           <Modal.Content>{this.getModalContentText(contractStatus)}</Modal.Content>
         </Modal>
@@ -136,3 +201,26 @@ export default class ContractItem extends React.Component<Props, State> {
     );
   }
 }
+
+/**
+ * Redux mapper for mapping store state to component props
+ * 
+ * @param state store state
+ */
+export function mapStateToProps(state: StoreState) {
+  return {
+    keycloak: state.keycloak
+  }
+}
+
+/**
+ * Redux mapper for mapping component dispatches 
+ * 
+ * @param dispatch dispatch method
+ */
+export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
+  return {
+  };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(ContractItem);

@@ -183,6 +183,11 @@ export interface IStrings extends LocalizedStringsMethods {
   createNewArticle: string
   showContract: string
   missingInfo: string
+  contractTerminated: string
+  contractsOnDraft: string
+  contractsOnActive: string
+  contractsOnTerminated: string
+  downloadPdf : string
 }
 
 const strings: IStrings = new LocalizedStrings({
