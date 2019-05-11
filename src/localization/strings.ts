@@ -82,6 +82,7 @@ export interface IStrings extends LocalizedStringsMethods {
   contractManagement: string
   itemGroupsManagement: string
   productsManagement: string
+  chatManagement: string,
   suggestNewFrozenContract: string
   suggestNewFreshContract: string
   parties: string
@@ -188,6 +189,7 @@ export interface IStrings extends LocalizedStringsMethods {
   noSelectedImage: string,
   groupPermissionNONE: string,
   groupPermissionTRAVERSE: string,
+  groupPermissionACCESS: string,
   groupPermissionMANAGE: string
 }
 

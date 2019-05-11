@@ -6,12 +6,12 @@ import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
-import Api, { ChatGroupPermissionScope, UserGroup, ChatGroup } from "pakkasmarja-client";
+import Api, { ChatGroupPermissionScope, UserGroup, ChatGroup, ChatThread } from "pakkasmarja-client";
 import { Header, Dimmer, Loader, Select, DropdownItemProps, Button, DropdownProps, Form, Input, InputOnChangeData, Image } from "semantic-ui-react";
 import ImageGallery from "../generic/ImageGallery";
 import UploadNewsImageModal from "../news/UploadNewsImageModal";
-import strings from "src/localization/strings";
-import { FileService } from "src/api/file.service";
+import strings from "../../localization/strings";
+import { FileService } from "../../api/file.service";
 import { Link } from "react-router-dom";
 
 /**
@@ -33,6 +33,7 @@ interface State {
   saving: boolean,
   chatGroupId: number,
   chatGroup?: ChatGroup,
+  chatThread?: ChatThread,
   title: string,
   imageUrl?: string,
   imageBase64?: string,
@@ -41,9 +42,9 @@ interface State {
 }
 
 /**
- * Component for question group edit
+ * Component for chat group edit
  */
-class EditQuestionGroup extends React.Component<Props, State> {
+class EditChatGroup extends React.Component<Props, State> {
 
   constructor(props: Props) {
     super(props);
@@ -84,8 +85,9 @@ class EditQuestionGroup extends React.Component<Props, State> {
       loading: true,
       chatGroupId: chatGroupId
     });
-    
+
     const userGroupsService = await Api.getUserGroupsService(this.props.keycloak.token);
+    const chatThreadsService = await Api.getChatThreadsService(this.props.keycloak.token);
     const chatGroupsService = await Api.getChatGroupsService(this.props.keycloak.token);
 
     const chatGroup = await chatGroupsService.findChatGroup(chatGroupId);
@@ -93,7 +95,18 @@ class EditQuestionGroup extends React.Component<Props, State> {
       throw new Error("Could not find chat group");
     }
 
+    const chatThreads = await chatThreadsService.listChatThreads(chatGroup.id);
+    console.log("chatThreads", chatThreads);
+
+    if (chatThreads.length > 1) {
+      throw new Error("Editor does not support multiple threads");
+    } else if (!chatThreads.length) {
+      throw new Error("Could not find a thread");
+    }
+
+
     const chatGroupPermissions = await chatGroupsService.listChatGroupGroupPermissions(chatGroupId);
+
     const permissions = _.keyBy(chatGroupPermissions, "userGroupId");
     const permissionKeys = Object.keys(permissions);
     const permissionScopes = {};
@@ -101,15 +114,14 @@ class EditQuestionGroup extends React.Component<Props, State> {
     for (let i = 0; i < permissionKeys.length; i++) {
       permissionScopes[permissionKeys[i]] = permissions[permissionKeys[i]].scope || null;
     }
-
-    const userGroups = await userGroupsService.listUserGroups();
     
     this.setState({
-      userGroups: userGroups,
+      userGroups: await userGroupsService.listUserGroups(),
       loading: false,
       permissionScopes: permissionScopes,
       imageUrl: chatGroup.imageUrl,
-      title: chatGroup.title
+      title: chatGroup.title,
+      chatThread: chatThreads[0]
     });
 
     this.updateImageBase64(chatGroup.imageUrl);
@@ -204,9 +216,9 @@ class EditQuestionGroup extends React.Component<Props, State> {
       value: "NONE",
       text: strings.groupPermissionNONE
     }, {
-      key: ChatGroupPermissionScope.TRAVERSE,
-      value: ChatGroupPermissionScope.TRAVERSE,
-      text: strings.groupPermissionTRAVERSE
+      key: ChatGroupPermissionScope.ACCESS,
+      value: ChatGroupPermissionScope.ACCESS,
+      text: strings.groupPermissionACCESS
     }, {
       key: ChatGroupPermissionScope.MANAGE,
       value: ChatGroupPermissionScope.MANAGE,
@@ -303,7 +315,7 @@ class EditQuestionGroup extends React.Component<Props, State> {
    * Event handler for save button click
    */
   private onSaveClick = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.chatGroupId || !this.state.title) {
+    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.chatGroupId || !this.state.chatThread || !this.state.chatThread.id || !this.state.title) {
       return;
     }
 
@@ -313,7 +325,8 @@ class EditQuestionGroup extends React.Component<Props, State> {
       saving: true
     });
 
-    const chatGroupsService = await Api.getChatGroupsService(this.props.keycloak.token);
+    const chatGroupsService = await Api.getChatGroupsService(this.props.keycloak.token);    
+    const chatThreadsService = await Api.getChatThreadsService(this.props.keycloak.token);
 
     const chatGroupPermissions = _.keyBy(await chatGroupsService.listChatGroupGroupPermissions(chatGroupId), "userGroupId");
 
@@ -340,8 +353,13 @@ class EditQuestionGroup extends React.Component<Props, State> {
       }
     }
 
+    const chatThreadId = this.state.chatThread.id;
+
     const chatGroup = await chatGroupsService.findChatGroup(this.state.chatGroupId);
+    const chatThread = await chatThreadsService.findChatThread(chatThreadId);
+
     await chatGroupsService.updateChatGroup({ ... chatGroup, title: this.state.title, imageUrl: this.state.imageUrl }, this.state.chatGroupId);
+    await chatThreadsService.updateChatThread({ ... chatThread, title: this.state.title, imageUrl: this.state.imageUrl }, chatThreadId );
 
     this.setState({ 
       saving: false
@@ -371,4 +389,4 @@ export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(EditQuestionGroup);
+export default connect(mapStateToProps, mapDispatchToProps)(EditChatGroup);
