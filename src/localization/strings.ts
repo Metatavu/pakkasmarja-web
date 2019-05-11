@@ -182,7 +182,13 @@ export interface IStrings extends LocalizedStringsMethods {
   edit: string
   createNewArticle: string
   showContract: string
-  missingInfo: string
+  missingInfo: string,
+  questionGroupManagement: string,
+  groupPermissions: string,
+  noSelectedImage: string,
+  groupPermissionNONE: string,
+  groupPermissionTRAVERSE: string,
+  groupPermissionMANAGE: string
 }
 
 const strings: IStrings = new LocalizedStrings({

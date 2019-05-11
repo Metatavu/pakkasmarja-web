@@ -176,5 +176,11 @@
   "createNewArticle": "Luo uusi artikkeli",
   "operations": "Operaatiot",
   "showContract" : "Näytä sopimus",
-  "missingInfo" : "Tarvittavia tietoja puuttuu"
+  "missingInfo" : "Tarvittavia tietoja puuttuu",
+  "questionGroupManagement": "Chat ryhmän hallinta",
+  "groupPermissions": "Ryhmäoikeudet",
+  "noSelectedImage": "Ei valittua kuvaa",
+  "groupPermissionNONE": "Ei oikeutta",
+  "groupPermissionTRAVERSE": "Pääsyoikeus",
+  "groupPermissionMANAGE": "Hallinnointioikeus"
 }
