@@ -184,5 +184,11 @@
   "groupPermissionNONE": "Ei oikeutta",
   "groupPermissionTRAVERSE": "Pääsyoikeus",
   "groupPermissionACCESS": "Pääsyoikeus",
-  "groupPermissionMANAGE": "Hallinnointioikeus"
+  "groupPermissionMANAGE": "Hallinnointioikeus",
+  "chatGroups": "Keskusteluryhmät",
+  "questionGroups": "Kysymysryhmät",
+  "newQuestionGroup": "+ Uusi kysymysryhmä",
+  "newChatGroup": "+ Uusi keskusteluryhmä",
+  "newQuestionGroupTitle": "Uusi kysymysryhmä",
+  "newChatGroupTitle": "Uusi keskusteluryhmä"
 }

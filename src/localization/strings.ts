@@ -190,7 +190,13 @@ export interface IStrings extends LocalizedStringsMethods {
   groupPermissionNONE: string,
   groupPermissionTRAVERSE: string,
   groupPermissionACCESS: string,
-  groupPermissionMANAGE: string
+  groupPermissionMANAGE: string,
+  chatGroups: string,
+  questionGroups: string,
+  newQuestionGroup: string,
+  newChatGroup: string,
+  newQuestionGroupTitle: string,
+  newChatGroupTitle: string
 }
 
 const strings: IStrings = new LocalizedStrings({
