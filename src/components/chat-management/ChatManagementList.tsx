@@ -6,8 +6,8 @@ import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
 import Api, { ChatGroup } from "pakkasmarja-client";
-import { Header, Dimmer, Loader, Grid, Tab, TabPaneProps, TabProps } from "semantic-ui-react";
-import { Link, Redirect } from "react-router-dom";
+import { Header, Dimmer, Loader, Grid, Tab, TabPaneProps, TabProps, Confirm, Button } from "semantic-ui-react";
+import { Redirect } from "react-router-dom";
 import strings from "src/localization/strings";
 
 type TabType = "CHAT" | "QUESTION";
@@ -41,7 +41,9 @@ interface State {
   queryChatGroups: ChatGroup[],
   loading: boolean,
   activeTab: Tab,
-  redirectTo?: string
+  redirectTo?: string,
+  deleteChatGroupConfirmOpen: boolean,
+  deleteQuestionGroupConfirmOpen: boolean
 }
 
 /**
@@ -55,7 +57,9 @@ class ChatManagementList extends React.Component<Props, State> {
       chatChatGroups: [],
       queryChatGroups: [],
       loading: false,
-      activeTab: TABS[0]
+      activeTab: TABS[0],
+      deleteChatGroupConfirmOpen: false,
+      deleteQuestionGroupConfirmOpen: false
     };
   }
 
@@ -152,11 +156,13 @@ class ChatManagementList extends React.Component<Props, State> {
         this.state.chatChatGroups.map((chatChatGroup) => {
           return (
             <Grid.Row key={ chatChatGroup.id }>
-              <Grid.Column width={ 14 }>
+              <Grid.Column width={ 12 }>
                 { chatChatGroup.title }
               </Grid.Column>
-              <Grid.Column width={ 2 } style={{ textAlign: "right" }}>
-                <Link to={`/editChatGroup/${chatChatGroup.id}`}>{ strings.edit }</Link>
+              <Grid.Column width={ 4 } style={{ textAlign: "right" }}>
+                <Confirm onConfirm={ () => this.deleteChatGroup(chatChatGroup) } open={ this.state.deleteChatGroupConfirmOpen } size={"mini"} content={"Haluatko varmasti poistaa ryhmän?"} onCancel={ () => { this.setState({ deleteChatGroupConfirmOpen: false }); }} />
+                <Button onClick={ () => this.setState({ redirectTo: `/editChatGroup/${chatChatGroup.id}` }) }> { strings.edit } </Button>
+                <Button onClick={ () => this.setState({ deleteChatGroupConfirmOpen: true }) } negative>{ strings.delete }</Button>
               </Grid.Column>
             </Grid.Row>
           );
@@ -176,11 +182,13 @@ class ChatManagementList extends React.Component<Props, State> {
         this.state.queryChatGroups.map((queryChatGroup) => {;
           return (
             <Grid.Row key={ queryChatGroup.id }>
-              <Grid.Column width={ 14 }>
+              <Grid.Column width={ 12 }>
                 { queryChatGroup.title }
               </Grid.Column>
-              <Grid.Column width={ 2 } style={{ textAlign: "right" }}>
-                <Link to={`/editQuestionGroup/${queryChatGroup.id}`}>{ strings.edit }</Link>
+              <Grid.Column width={ 4 } style={{ textAlign: "right" }}>
+              <Confirm onConfirm={ () => this.deleteQuestionGroup(queryChatGroup) } open={ this.state.deleteQuestionGroupConfirmOpen } size={"mini"} content={"Haluatko varmasti poistaa ryhmän?"} onCancel={ () => { this.setState({ deleteQuestionGroupConfirmOpen: false }); }} />
+                <Button onClick={ () => this.setState({ redirectTo: `/editQuestionGroup/${queryChatGroup.id}` }) }> { strings.edit } </Button>
+                <Button onClick={ () => this.setState({ deleteQuestionGroupConfirmOpen: true }) } negative>{ strings.delete }</Button>
               </Grid.Column>
             </Grid.Row>
           );
@@ -248,6 +256,72 @@ class ChatManagementList extends React.Component<Props, State> {
     }
 
     return "";
+  }
+
+  /**
+   * Deletes a chat group
+   */
+  private deleteQuestionGroup = async (chatGroup: ChatGroup) => {
+    if (!this.props.keycloak || !this.props.keycloak.token) {
+      return;
+    }
+
+    this.setState({ 
+      deleteQuestionGroupConfirmOpen: false,
+      loading: true
+    });
+
+    const chatGroupsService = await Api.getChatGroupsService(this.props.keycloak.token);
+    const chatThreadsService = await Api.getChatThreadsService(this.props.keycloak.token);
+
+    const chatThreads = await chatThreadsService.listChatThreads(chatGroup.id!);
+    for (let i = 0; i < chatThreads.length; i++) {
+      await chatThreadsService.deleteChatThread(chatThreads[i].id!);
+    }
+
+    await chatGroupsService.deleteChatGroup(chatGroup.id!);
+
+    const chatGroups = this.state.chatChatGroups.filter((chatChatGroup) => {
+      return chatChatGroup.id !== chatGroup.id;
+    });
+
+    this.setState({
+      chatChatGroups: chatGroups,
+      loading: false
+    });
+  }
+
+  /**
+   * Deletes a chat group
+   */
+  private deleteChatGroup = async (chatGroup: ChatGroup) => {
+    if (!this.props.keycloak || !this.props.keycloak.token) {
+      return;
+    }
+
+    this.setState({ 
+      deleteChatGroupConfirmOpen: false,
+      loading: true
+    });
+
+    const chatGroupsService = await Api.getChatGroupsService(this.props.keycloak.token);
+    const chatThreadsService = await Api.getChatThreadsService(this.props.keycloak.token);
+
+    const chatThreads = await chatThreadsService.listChatThreads(chatGroup.id!);
+    for (let i = 0; i < chatThreads.length; i++) {
+      await chatThreadsService.deleteChatThread(chatThreads[i].id!);
+    }
+
+    await chatGroupsService.deleteChatGroup(chatGroup.id!);
+
+    const chatGroups = this.state.chatChatGroups.filter((chatChatGroup) => {
+      return chatChatGroup.id !== chatGroup.id;
+    });
+
+    this.setState({
+      chatChatGroups: chatGroups,
+      loading: false
+    });
   }
 
   /**

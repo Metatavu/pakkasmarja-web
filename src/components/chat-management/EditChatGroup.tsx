@@ -96,7 +96,6 @@ class EditChatGroup extends React.Component<Props, State> {
     }
 
     const chatThreads = await chatThreadsService.listChatThreads(chatGroup.id);
-    console.log("chatThreads", chatThreads);
 
     if (chatThreads.length > 1) {
       throw new Error("Editor does not support multiple threads");
@@ -104,9 +103,9 @@ class EditChatGroup extends React.Component<Props, State> {
       throw new Error("Could not find a thread");
     }
 
+    const chatThread = chatThreads[0];
 
     const chatGroupPermissions = await chatGroupsService.listChatGroupGroupPermissions(chatGroupId);
-
     const permissions = _.keyBy(chatGroupPermissions, "userGroupId");
     const permissionKeys = Object.keys(permissions);
     const permissionScopes = {};
@@ -114,17 +113,19 @@ class EditChatGroup extends React.Component<Props, State> {
     for (let i = 0; i < permissionKeys.length; i++) {
       permissionScopes[permissionKeys[i]] = permissions[permissionKeys[i]].scope || null;
     }
+
+    const imageUrl = chatGroup.imageUrl || chatThread.imageUrl;
     
     this.setState({
       userGroups: await userGroupsService.listUserGroups(),
       loading: false,
       permissionScopes: permissionScopes,
-      imageUrl: chatGroup.imageUrl,
+      imageUrl: imageUrl,
       title: chatGroup.title,
-      chatThread: chatThreads[0]
+      chatThread: chatThread
     });
 
-    this.updateImageBase64(chatGroup.imageUrl);
+    this.updateImageBase64(imageUrl);
   }
 
   /**
