@@ -278,6 +278,7 @@ class CreateContract extends React.Component<Props, State> {
       deliveryPlaceComment: this.state.deliveryPlaceComment,
       remarks: this.state.sapComment,
       deliverAll: false,
+      proposedDeliverAll: false, //TODO: use this?
       year: moment().year()
     };
 

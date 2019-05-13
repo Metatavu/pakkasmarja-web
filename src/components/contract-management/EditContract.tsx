@@ -268,6 +268,7 @@ class EditContract extends React.Component<Props, State> {
       remarks: this.state.sapComment,
       deliverAll: false,
       year: moment().year(),
+      proposedDeliverAll: false, //TODO: stufff
       proposedDeliveryPlaceId: this.state.contract.proposedDeliveryPlaceId
     };
 

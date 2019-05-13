@@ -184,6 +184,7 @@ export interface IStrings extends LocalizedStringsMethods {
   createNewArticle: string
   showContract: string
   missingInfo: string
+  accessTokenExpired: string
 }
 
 const strings: IStrings = new LocalizedStrings({
