@@ -106,7 +106,7 @@ class ContractView extends React.Component<Props, State> {
       this.updateContractData("quantityComment", contract.quantityComment || "");
       this.updateContractData("deliveryPlaceComment", contract.deliveryPlaceComment || "");
       this.updateContractData("deliveryPlaceId", contract.deliveryPlaceId || "");
-      this.updateContractData("deliverAllChecked", contract.deliverAll);
+      this.updateContractData("deliverAllChecked", contract.proposedDeliverAll !== undefined ? contract.proposedDeliverAll : contract.deliverAll);
       this.updateContractData("rejectComment", contract.rejectComment || "");
       this.updateContractData("proposedQuantity", contract.proposedQuantity || contract.contractQuantity || "");
       this.updateContractData("areaDetailValues", contract.areaDetails || []);
@@ -226,7 +226,7 @@ class ContractView extends React.Component<Props, State> {
     const contractData = this.state.contractData;
     const contract = this.state.contract;
 
-    contract.deliverAll = contractData.deliverAllChecked;
+    contract.proposedDeliverAll = contractData.deliverAllChecked;
     contract.proposedDeliveryPlaceId = contractData.deliveryPlaceId;
     contract.deliveryPlaceComment = contractData.deliveryPlaceComment;
     contract.proposedQuantity = contractData.proposedQuantity;
@@ -247,13 +247,11 @@ class ContractView extends React.Component<Props, State> {
     }
 
     const contractsService = await Api.getContractsService(this.props.keycloak.token);
+    const updatedContract = await contractsService.updateContract(contract, contract.id || "");
 
-    if (this.state.companyApprovalRequired) {
-      contract.status = "ON_HOLD";
-      await contractsService.updateContract(contract, contract.id || "");
+    if (updatedContract.status !== "DRAFT") {
       this.setState({ redirect: true });
     } else {
-      await contractsService.updateContract(contract, contract.id || "");
       const signAuthenticationServicesService = await Api.getSignAuthenticationServicesService(this.props.keycloak.token);
       const signAuthenticationServices = await signAuthenticationServicesService.listSignAuthenticationServices();
       this.setState({ signAuthenticationServices: signAuthenticationServices, navigateToTerms: true });
@@ -292,8 +290,9 @@ class ContractView extends React.Component<Props, State> {
     const currentQuantity = this.state.contractData.proposedQuantity;
     const contractPlaceId = this.state.contract.deliveryPlaceId;
     const currentContractPlaceId = this.state.contractData.deliveryPlaceId;
-
-    if (contractQuantity != currentQuantity || contractPlaceId != currentContractPlaceId) {
+    const deliverAll = this.state.contract.deliverAll;
+    const proposedDeliverAll = this.state.contractData.deliverAllChecked;
+    if (contractQuantity != currentQuantity || contractPlaceId != currentContractPlaceId || deliverAll != proposedDeliverAll) {
       this.setState({ companyApprovalRequired: true });
     } else {
       this.setState({ companyApprovalRequired: false });

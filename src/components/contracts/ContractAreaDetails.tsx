@@ -117,13 +117,13 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
     return (
       <Grid.Row style={{paddingTop:0}} key={index} columns={!minimumEstimation ? "4" : "3"}>
         <Grid.Column>
-          {this.renderInputField(index, strings.name, !this.props.isActiveContract, name || "", style)}
+          {this.renderInputField(index, "name", !this.props.isActiveContract, name || "", style)}
         </Grid.Column>
         <Grid.Column>
-          {this.renderInputField(index, strings.size, !this.props.isActiveContract, size && size.toString() || "", style)}
+          {this.renderInputField(index, "size", !this.props.isActiveContract, size && size.toString() || "", style)}
         </Grid.Column>
         <Grid.Column>
-          {this.renderInputField(index, strings.species, !this.props.isActiveContract, species || "", style)}
+          {this.renderInputField(index, "species", !this.props.isActiveContract, species || "", style)}
         </Grid.Column>
         {
           !minimumEstimation &&
@@ -148,10 +148,10 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
   private renderInputField = (index: number, key: string, editable: boolean, value: string, style: any) => {
     return (
       <Input
-        key={index}
         style={style}
         value={value}
-        onChange={(e: any) => editable && this.handleInputChange(index, key, e.target.value)}
+        disabled={!editable}
+        onChange={(e: any) => this.handleInputChange(index, key, e.target.value)}
       />
     );
   }
@@ -165,7 +165,6 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
    */
   private handleInputChange = (index: number, key: string, value: string | number) => {
     const areaDetails: any = this.props.areaDetailValues;
-
     if (areaDetails.length <= 0) {
       const areaDetail: any = {};
       areaDetail[key] = value;
