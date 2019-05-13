@@ -83,6 +83,7 @@ export interface IStrings extends LocalizedStringsMethods {
   contractManagement: string
   itemGroupsManagement: string
   productsManagement: string
+  chatManagement: string,
   suggestNewFrozenContract: string
   suggestNewFreshContract: string
   parties: string
@@ -185,6 +186,19 @@ export interface IStrings extends LocalizedStringsMethods {
   showContract: string
   missingInfo: string
   accessTokenExpired: string
+  questionGroupManagement: string,
+  groupPermissions: string,
+  noSelectedImage: string,
+  groupPermissionNONE: string,
+  groupPermissionTRAVERSE: string,
+  groupPermissionACCESS: string,
+  groupPermissionMANAGE: string,
+  chatGroups: string,
+  questionGroups: string,
+  newQuestionGroup: string,
+  newChatGroup: string,
+  newQuestionGroupTitle: string,
+  newChatGroupTitle: string
 }
 
 const strings: IStrings = new LocalizedStrings({
