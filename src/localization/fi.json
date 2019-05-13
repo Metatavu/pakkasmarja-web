@@ -77,6 +77,7 @@
   "contractManagement": "Sopimusten hallinta",
   "itemGroupsManagement": "Marjalajien hallinta",
   "productsManagement": "Tuotteiden hallinta",
+  "chatManagement": "Keskustelujen hallinta",
   "suggestNewFrozenContract": "Ehdota uutta pakastesopimusta",
   "suggestNewFreshContract": "Ehdota uutta tuoresopimusta",
   "parties": "Osapuolet",
@@ -176,5 +177,18 @@
   "createNewArticle": "Luo uusi artikkeli",
   "operations": "Operaatiot",
   "showContract" : "Näytä sopimus",
-  "missingInfo" : "Tarvittavia tietoja puuttuu"
+  "missingInfo" : "Tarvittavia tietoja puuttuu",
+  "questionGroupManagement": "Chat ryhmän hallinta",
+  "groupPermissions": "Ryhmäoikeudet",
+  "noSelectedImage": "Ei valittua kuvaa",
+  "groupPermissionNONE": "Ei oikeutta",
+  "groupPermissionTRAVERSE": "Pääsyoikeus",
+  "groupPermissionACCESS": "Pääsyoikeus",
+  "groupPermissionMANAGE": "Hallinnointioikeus",
+  "chatGroups": "Keskusteluryhmät",
+  "questionGroups": "Kysymysryhmät",
+  "newQuestionGroup": "+ Uusi kysymysryhmä",
+  "newChatGroup": "+ Uusi keskusteluryhmä",
+  "newQuestionGroupTitle": "Uusi kysymysryhmä",
+  "newChatGroupTitle": "Uusi keskusteluryhmä"
 }
