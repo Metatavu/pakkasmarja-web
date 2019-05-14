@@ -257,7 +257,7 @@ class EditContract extends React.Component<Props, State> {
 
     const contractUpdate: Contract = {
       areaDetails: this.state.contract ? this.state.contract.areaDetails : [],
-      itemGroupId: this.state.itemGroup.id,
+      itemGroupId: this.state.itemGroup.id!,
       sapId: this.state.sapId,
       status: this.state.status,
       quantityComment: this.state.quantityComment,
@@ -268,6 +268,7 @@ class EditContract extends React.Component<Props, State> {
       remarks: this.state.sapComment,
       deliverAll: false,
       year: moment().year(),
+      proposedDeliverAll: false, //TODO: stufff
       proposedDeliveryPlaceId: this.state.contract.proposedDeliveryPlaceId
     };
 

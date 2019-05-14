@@ -13,8 +13,8 @@ export interface IStrings extends LocalizedStringsMethods {
   contracts: string
   contract: string
   operations: string
-  frozenContracts: string
-  freshContracts: string
+  frozen: string
+  fresh: string
   contractQuantity: string
   deliveredQuantity: string
   welcome: string

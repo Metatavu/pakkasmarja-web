@@ -7,7 +7,7 @@ import { connect } from "react-redux";
 import "../../styles/common.scss";
 import Api from "pakkasmarja-client";
 import { ItemGroup } from "pakkasmarja-client";
-import { Header, Button } from "semantic-ui-react";
+import { Header, Button, Dimmer, Loader } from "semantic-ui-react";
 import ContractProposalModal from "./ContractProposalModal";
 import strings from "src/localization/strings";
 import * as _ from "lodash";
@@ -99,10 +99,10 @@ class ContractList extends React.Component<Props, State> {
 
     const frozenContractsActive: ContractTableData[] = _.filter(frozenTableData, ({ contract }) => contract.status === "APPROVED");
     const frozenContractsDraft: ContractTableData[] = _.filter(frozenTableData, ({ contract }) => contract.status === "DRAFT" || contract.status === "ON_HOLD" || contract.status === "REJECTED");
-    const frozenContractsPast: ContractTableData[] = _.filter(frozenTableData, ({ contract }) => contract.status === "TERMINATED");;
+    const frozenContractsPast: ContractTableData[] = _.filter(frozenTableData, ({ contract }) => contract.status === "TERMINATED");
     const freshContractsActive: ContractTableData[] = _.filter(freshTableData, ({ contract }) => contract.status === "APPROVED");
     const freshContractsDraft: ContractTableData[] = _.filter(freshTableData, ({ contract }) => contract.status === "DRAFT" || contract.status === "ON_HOLD" || contract.status === "REJECTED");
-    const freshContractsPast: ContractTableData[] = _.filter(freshTableData, ({ contract }) => contract.status === "TERMINATED");;
+    const freshContractsPast: ContractTableData[] = _.filter(freshTableData, ({ contract }) => contract.status === "TERMINATED");
 
     this.setState({
       frozenContractsActive,
@@ -149,10 +149,22 @@ class ContractList extends React.Component<Props, State> {
    * Render method
    */
   public render() {
+    if (this.state.contractsLoading) {
+      return (
+        <BasicLayout>
+          <Dimmer active inverted>
+            <Loader inverted>
+              {strings.loading}
+            </Loader>
+          </Dimmer>
+        </BasicLayout>
+      );
+    }
+
     return (
       <BasicLayout pageTitle="Sopimukset">
         <Header as="h2">
-          {strings.frozenContracts}
+          {strings.frozen}
         </Header>
         {
           this.state.frozenContractsDraft && this.state.frozenContractsDraft.length > 0 &&
@@ -179,7 +191,7 @@ class ContractList extends React.Component<Props, State> {
           {strings.suggestNewFrozenContract}
         </Button>
         <Header as="h2">
-          {strings.freshContracts}
+          {strings.fresh}
         </Header>
         {
           this.state.freshContractsDraft && this.state.freshContractsDraft.length > 0 &&

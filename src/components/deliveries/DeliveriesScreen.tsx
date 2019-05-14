@@ -51,7 +51,7 @@ class DeliveriesScreen extends React.Component<Props, State> {
       deliveries: []
     };
   }
-  
+
   /**
    * Component did mount life-sycle event
    */
@@ -79,7 +79,7 @@ class DeliveriesScreen extends React.Component<Props, State> {
     const freshDeliveries: Delivery[] = await deliveriesService.listDeliveries(userId, undefined, "FRESH", undefined, undefined, undefined, undefined, undefined, 0, 200);
     const frozenDeliveries: Delivery[] = await deliveriesService.listDeliveries(userId, undefined, "FROZEN", undefined, undefined, undefined, undefined, undefined, 0, 200);
     const products: Product[] = await productsService.listProducts(undefined, undefined, undefined, undefined, 100);
-    
+
     const freshDeliveriesAndProducts: DeliveryProduct[] = freshDeliveries.map((delivery) => {
       return {
         delivery: delivery,
@@ -115,7 +115,7 @@ class DeliveriesScreen extends React.Component<Props, State> {
   public render() {
     const { activeItem } = this.state
     return (
-      <BasicLayout>
+      <BasicLayout pageTitle="Toimitukset">
         <Menu fluid widths={4} attached='top' inverted color="red">
           <Menu.Item name={strings.suggestions} active={activeItem === 'proposals'} onClick={() => this.handleMenuItemClick("proposals")} />
           <Menu.Item color="black" name={strings.weekDeliveryPredictions} active={activeItem === 'weekDeliveryPredictions'} onClick={() => this.handleMenuItemClick("weekDeliveryPredictions")} />

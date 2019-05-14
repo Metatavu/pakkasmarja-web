@@ -10,6 +10,7 @@ import { NewsArticle } from "pakkasmarja-client";
 import NewsComponent from "./NewsComponent";
 import { Item, Dimmer, Loader } from "semantic-ui-react";
 import strings from "src/localization/strings";
+import ApplicationRoles from "src/utils/application-roles";
 
 /**
  * Interface for component props
@@ -25,7 +26,8 @@ interface Props {
 interface State {
   newsArticles: NewsArticle[];
   loading: boolean;
-  redirectTo?: string
+  redirectTo?: string;
+  manageNewsArticlesRole: boolean
 }
 
 class NewsList extends React.Component<Props, State> {
@@ -34,7 +36,8 @@ class NewsList extends React.Component<Props, State> {
     super(props);
     this.state = {
       newsArticles: [],
-      loading: false
+      loading: false,
+      manageNewsArticlesRole: false
     };
   }
 
@@ -46,7 +49,8 @@ class NewsList extends React.Component<Props, State> {
       return;
     }
 
-    this.setState({ loading: true });
+    const manageNewsArticlesRole = this.props.keycloak.hasRealmRole(ApplicationRoles.MANAGE_NEWS_ARTICLES);
+    this.setState({ loading: true, manageNewsArticlesRole });
     const newArticleService = await Api.getNewsArticlesService(this.props.keycloak.token);
     const newsArticles = await newArticleService.listNewsArticles();
     const sortedNewsArticles = newsArticles.sort((a, b) => {
@@ -80,22 +84,40 @@ class NewsList extends React.Component<Props, State> {
         </BasicLayout>
       );
     }
-    
-    return (
-      <BasicLayout
-        redirectTo={this.state.redirectTo}
-        onTopBarButtonClick={() => this.setState({redirectTo: "/createNews"})}
-        topBarButtonText="+ Uusi"
-        pageTitle="Uutiset">
 
-        <Item.Group divided>
-          {
-            this.state.newsArticles.map((news) => {
-              return <NewsComponent key={news.id} data={news} />;
-            })
-          }
-        </Item.Group>
-      </BasicLayout>
+    return (
+      <React.Fragment>
+        {
+          this.state.manageNewsArticlesRole ?
+            <BasicLayout
+              redirectTo={this.state.redirectTo}
+              onTopBarButtonClick={() => this.setState({ redirectTo: "/createNews" })}
+              topBarButtonText="+ Uusi"
+              pageTitle="Uutiset"
+            >
+              <Item.Group divided>
+                {
+                  this.state.newsArticles.map((news) => {
+                    return <NewsComponent key={news.id} data={news} />;
+                  })
+                }
+              </Item.Group>
+            </BasicLayout>
+            :
+            <BasicLayout
+              pageTitle="Uutiset"
+            >
+              <Item.Group divided>
+                {
+                  this.state.newsArticles.map((news) => {
+                    return <NewsComponent key={news.id} data={news} />;
+                  })
+                }
+              </Item.Group>
+            </BasicLayout>
+        }
+
+      </React.Fragment>
     );
   }
 }
