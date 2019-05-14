@@ -40,6 +40,8 @@ import ProductPricesList from "../products-management/ProductPricesList";
 import ChatManagementList from "../chat-management/ChatManagementList";
 import EditQuestionGroup from "../chat-management/EditQuestionGroup";
 import EditChatGroup from "../chat-management/EditChatGroup";
+import FreshDeliveryManagement from "../deliveries/FreshDeliveryManagement";
+import FrozenDeliveryManagement from "../deliveries/FrozenDeliveryManagement";
 
 /**
  * Interface for component props
@@ -108,6 +110,8 @@ class MainPage extends React.Component<Props, {}> {
         <Route exact path="/chatManagement" component={ChatManagementList}/>
         <Route exact path="/editQuestionGroup/:chatGroupId" component={EditQuestionGroup}/>
         <Route exact path="/editChatGroup/:chatGroupId" component={EditChatGroup}/>
+        <Route exact path="/manageFreshDeliveries" component={FreshDeliveryManagement}/>
+        <Route exact path="/manageFrozenDeliveries" component={FrozenDeliveryManagement}/>
       </div>
     );
   }
