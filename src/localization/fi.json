@@ -178,6 +178,7 @@
   "operations": "Operaatiot",
   "showContract" : "Näytä sopimus",
   "missingInfo" : "Tarvittavia tietoja puuttuu",
+  "accessTokenExpired": "Kirjautuminen on vanhentunut, yritä kirjautua uudelleen.",
   "questionGroupManagement": "Chat ryhmän hallinta",
   "groupPermissions": "Ryhmäoikeudet",
   "noSelectedImage": "Ei valittua kuvaa",

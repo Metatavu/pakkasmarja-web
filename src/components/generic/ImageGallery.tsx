@@ -7,6 +7,15 @@ import "../../styles/common.scss";
 import { Modal, Divider, Header, Image, Loader, Grid, Button } from "semantic-ui-react";
 import Api, { PublicFile } from "pakkasmarja-client";
 import strings from "src/localization/strings";
+import { FileService } from "src/api/file.service";
+
+/**
+ * Interface combining file and data
+ */
+interface FileWithData {
+  file: PublicFile,
+  data: string
+}
 
 /**
  * Interface for component props
@@ -23,7 +32,7 @@ interface Props {
  * Interface for component state
  */
 interface State {
-  images?: PublicFile[];
+  images?: FileWithData[];
   selectedImage?: PublicFile;
 }
 
@@ -53,7 +62,21 @@ class ImageGallery extends React.Component<Props, State> {
 
     const publicFileService = await Api.getPublicFilesService(this.props.keycloak.token);
     const files: PublicFile[] = await publicFileService.listPublicFiles(0, 100);
-    this.setState({ images: files });
+    const fileService = new FileService(process.env.REACT_APP_API_URL!, this.props.keycloak.token);
+    
+    const imageDataPromises = files.map((file) => {
+      return fileService.getFile(file.url);
+    })
+    const imageDatas = await Promise.all(imageDataPromises);
+    const imagesWithData: FileWithData[] = [];
+    files.forEach((file: PublicFile, index: number) => {
+      imagesWithData.push({
+        file: file,
+        data: `data:image/jpeg;base64,${imageDatas[index].data}`
+      });
+    })
+
+    this.setState({ images: imagesWithData });
   }
 
   /**
@@ -97,10 +120,10 @@ class ImageGallery extends React.Component<Props, State> {
               this.state.images && this.state.images.map((image) => {
                 return (
                   <Image
-                    onClick={() => this.onImageClick(image)}
-                    key={image.url}
-                    src={image.url} 
-                    disabled={this.state.selectedImage && this.state.selectedImage.id === image.id}
+                    onClick={() => this.onImageClick(image.file)}
+                    key={image.file.url}
+                    src={image.data} 
+                    disabled={this.state.selectedImage && this.state.selectedImage.id === image.file.id}
                   />
                 );
               })

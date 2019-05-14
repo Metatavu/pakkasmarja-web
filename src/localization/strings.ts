@@ -3,6 +3,7 @@ import LocalizedStrings, {
 } from 'localized-strings';
 
 export interface IStrings extends LocalizedStringsMethods {
+  errorCommunicatingWithServer: string,
   menuBarUserItemText: string
   menuBarManageAccountText: string
   menuBarLogoutText: string
@@ -183,7 +184,8 @@ export interface IStrings extends LocalizedStringsMethods {
   edit: string
   createNewArticle: string
   showContract: string
-  missingInfo: string,
+  missingInfo: string
+  accessTokenExpired: string
   questionGroupManagement: string,
   groupPermissions: string,
   noSelectedImage: string,

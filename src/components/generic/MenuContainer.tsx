@@ -29,9 +29,8 @@ class MenuContainer extends React.Component<Props, object> {
 
   onLogoutItemClick = () => {
     if (this.props.keycloak) {
-      this.props.keycloak.logout();
+      window.location.href = this.props.keycloak.createLogoutUrl();
     }
-    this.props.onLogout && this.props.onLogout();
   }
 
   render() {
