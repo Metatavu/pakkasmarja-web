@@ -8,7 +8,7 @@ import "../../styles/common.scss";
 import "./styles.scss";
 import ErrorMessage from "../generic/ErrorMessage";
 import Api, { Contact, ItemGroup, Contract, DeliveryPlace } from "pakkasmarja-client";
-import { Form, Button, Dropdown, Input, TextArea, Header, Divider, Dimmer, Loader } from "semantic-ui-react";
+import { Form, Button, Dropdown, Input, TextArea, Header, Dimmer, Loader } from "semantic-ui-react";
 import * as moment from "moment";
 import { Redirect } from "react-router";
 import { Link } from "react-router-dom";
@@ -356,7 +356,6 @@ class EditContract extends React.Component<Props, State> {
             {this.renderDropDown(statusOptions, this.state.status, (value: Contract.StatusEnum) => { this.setState({ status: value }) }, strings.status)}
           </Form.Field>
           <Form.Field>
-            <Divider />
             <label>{strings.contractAmount}</label>
             {this.renderTextInput(this.state.quantity, (value: string) => { this.setState({ quantity: parseInt(value) }) }, "0", false)}
           </Form.Field>
@@ -366,7 +365,6 @@ class EditContract extends React.Component<Props, State> {
             {this.renderTextArea(this.state.quantityComment, (value: string) => { this.setState({ quantityComment: value }) }, strings.quantityComment)}
           </Form.Field>
           <Form.Field>
-            <Divider />
             <p>{strings.deliveryPalceProposed} <strong>{this.state.proposedDeliveryPlace.name || "-"}</strong></p>
             <label>{strings.deliveryPlace}</label>
             {this.renderDropDown(deliveryPlaceOptions, this.state.deliveryPlaceId, (value: string) => { this.setState({ deliveryPlaceId: value }) }, strings.deliveryPlace)}
