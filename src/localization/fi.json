@@ -77,6 +77,7 @@
   "contractManagement": "Sopimusten hallinta",
   "itemGroupsManagement": "Marjalajien hallinta",
   "productsManagement": "Tuotteiden hallinta",
+  "chatManagement": "Keskustelujen hallinta",
   "suggestNewFrozenContract": "Ehdota uutta pakastesopimusta",
   "suggestNewFreshContract": "Ehdota uutta tuoresopimusta",
   "parties": "Osapuolet",
@@ -181,5 +182,19 @@
   "contractsOnDraft" : "Vedossa olevat sopimukset",
   "contractsOnActive" : "Aktiiviset sopimukset",
   "contractsOnTerminated" : "Aiemmat sopimukset",
-  "downloadPdf" : "Lataa pdf"
+  "downloadPdf" : "Lataa pdf",
+  "accessTokenExpired": "Kirjautuminen on vanhentunut, yritä kirjautua uudelleen.",
+  "questionGroupManagement": "Chat ryhmän hallinta",
+  "groupPermissions": "Ryhmäoikeudet",
+  "noSelectedImage": "Ei valittua kuvaa",
+  "groupPermissionNONE": "Ei oikeutta",
+  "groupPermissionTRAVERSE": "Pääsyoikeus",
+  "groupPermissionACCESS": "Pääsyoikeus",
+  "groupPermissionMANAGE": "Hallinnointioikeus",
+  "chatGroups": "Keskusteluryhmät",
+  "questionGroups": "Kysymysryhmät",
+  "newQuestionGroup": "+ Uusi kysymysryhmä",
+  "newChatGroup": "+ Uusi keskusteluryhmä",
+  "newQuestionGroupTitle": "Uusi kysymysryhmä",
+  "newChatGroupTitle": "Uusi keskusteluryhmä"
 }

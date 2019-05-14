@@ -3,6 +3,7 @@ import LocalizedStrings, {
 } from 'localized-strings';
 
 export interface IStrings extends LocalizedStringsMethods {
+  errorCommunicatingWithServer: string,
   menuBarUserItemText: string
   menuBarManageAccountText: string
   menuBarLogoutText: string
@@ -82,6 +83,7 @@ export interface IStrings extends LocalizedStringsMethods {
   contractManagement: string
   itemGroupsManagement: string
   productsManagement: string
+  chatManagement: string,
   suggestNewFrozenContract: string
   suggestNewFreshContract: string
   parties: string
@@ -188,6 +190,20 @@ export interface IStrings extends LocalizedStringsMethods {
   contractsOnActive: string
   contractsOnTerminated: string
   downloadPdf : string
+  accessTokenExpired: string
+  questionGroupManagement: string,
+  groupPermissions: string,
+  noSelectedImage: string,
+  groupPermissionNONE: string,
+  groupPermissionTRAVERSE: string,
+  groupPermissionACCESS: string,
+  groupPermissionMANAGE: string,
+  chatGroups: string,
+  questionGroups: string,
+  newQuestionGroup: string,
+  newChatGroup: string,
+  newQuestionGroupTitle: string,
+  newChatGroupTitle: string
 }
 
 const strings: IStrings = new LocalizedStrings({

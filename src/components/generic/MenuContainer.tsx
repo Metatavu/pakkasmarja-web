@@ -29,9 +29,8 @@ class MenuContainer extends React.Component<Props, object> {
 
   onLogoutItemClick = () => {
     if (this.props.keycloak) {
-      this.props.keycloak.logout();
+      window.location.href = this.props.keycloak.createLogoutUrl();
     }
-    this.props.onLogout && this.props.onLogout();
   }
 
   render() {
@@ -65,6 +64,11 @@ class MenuContainer extends React.Component<Props, object> {
           { this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_PRODUCTS) &&
             <Menu.Item as="div">
               <Link to="/productsManagement">{strings.productsManagement}</Link>
+            </Menu.Item>
+          }
+          { this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_CHAT_GROUPS) &&
+            <Menu.Item as="div">
+              <Link to="/chatManagement">{strings.chatManagement}</Link>
             </Menu.Item>
           }
           { this.props.authenticated &&
