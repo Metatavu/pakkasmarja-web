@@ -6,11 +6,14 @@ import * as actions from "../../actions/";
 import Api, { Contact, ChatMessage, ChatThread } from "pakkasmarja-client";
 import strings from "src/localization/strings";
 import * as moment from "moment";
-import { Segment, Comment, Icon, Button, Grid } from "semantic-ui-react";
+import { Segment, Comment, Icon, Button, Grid, Modal, Header } from "semantic-ui-react";
 import AVATAR_PLACEHOLDER from "../../gfx/avatar.png";
 import { FileService } from "src/api/file.service";
 import { mqttConnection } from "src/mqtt";
 import Textarea from 'react-textarea-autosize';
+import Lightbox from 'react-image-lightbox';
+import Dropzone from 'react-dropzone';
+import 'react-image-lightbox/style.css';
 
 /**
  * Component properties
@@ -34,6 +37,8 @@ interface State {
   loading: boolean
   open: boolean,
   pendingMessage: string
+  openImage?: string
+  addImageModalOpen: boolean
 };
 
 interface MessageItem {
@@ -68,7 +73,8 @@ class Chat extends React.Component<Props, State> {
       pendingMessage: "",
       userAvatar: AVATAR_PLACEHOLDER,
       loading: false,
-      open: true
+      open: true,
+      addImageModalOpen: false
     };
   }
 
@@ -115,14 +121,13 @@ class Chat extends React.Component<Props, State> {
     }
 
     const messages = this.state.messages.map((message: MessageItem) => {
-      console.log(message.image);
       return (
         <Comment key={message.id}>
         <Comment.Avatar src={message.avatar} />
           <Comment.Content>
             <Comment.Author>{message.userName}</Comment.Author>
             <Comment.Metadata>{moment(message.created).format("DD.MM.YYYY HH:mm:ss")}</Comment.Metadata>
-            <Comment.Text>{message.image ? <img style={{width: "100%"}} src={message.image} /> : message.text}</Comment.Text>
+            <Comment.Text>{message.image ? <img onClick={() => this.setState({openImage: message.image})} style={{width: "100%"}} src={message.image} /> : message.text}</Comment.Text>
           </Comment.Content>
         </Comment>
       );
@@ -151,6 +156,7 @@ class Chat extends React.Component<Props, State> {
           <Grid>
             <Grid.Column width={14}>
               <Textarea value={this.state.pendingMessage} onChange={this.handleMessageChange} style={{resize:"none", padding: "10px", borderRadius: "10px", maxWidth: "95%"}} draggable={false} placeholder="Kirjoita viesti..."></Textarea>
+              <a onClick={() => this.setState({addImageModalOpen: true})}>Lisää kuva</a>
             </Grid.Column>
             <Grid.Column width={2}>
               <Button onClick={() => this.uploadMessage()} floated="right" style={{color: "#fff", background: "rgb(229, 29, 42)"}} circular icon>
@@ -159,8 +165,58 @@ class Chat extends React.Component<Props, State> {
             </Grid.Column>
           </Grid>
         </Segment>
+        {this.state.openImage &&
+          <Lightbox
+            mainSrc={this.state.openImage}
+            onCloseRequest={() => this.setState({ openImage: undefined })}
+          />
+        }
+        <Modal
+          open={this.state.addImageModalOpen}
+          onClose={() => this.setState({addImageModalOpen: false})}
+          basic
+        >
+        <Header content="Lisää kuva" />
+        <Modal.Content>
+          <Dropzone activeStyle={{border: "2px solid #62f442"}} style={{border: "2px dashed #fff", width: "100%", cursor:"pointer", padding: "25px"}} onDrop={this.onFileDropped}>
+            <h3>Lisää kuva raahaamalla tai klikkaamalla tästä.</h3>
+          </Dropzone>
+        </Modal.Content>
+        <Modal.Actions>
+          <Button color="red" onClick={() => this.setState({addImageModalOpen: false})} inverted>
+            <Icon name="window close outline" /> Peruuta
+          </Button>
+        </Modal.Actions>
+      </Modal>
       </Segment.Group>
     );
+  }
+
+  /**
+   * Handles file upload
+   */
+  private onFileDropped = async (files: File[] | File) => {
+    const file = Array.isArray(files) ? files[0] : files;
+    if (!file || !this.props.keycloak || !this.props.keycloak.token) {
+      return;
+    }
+
+    this.setState({loading: true, addImageModalOpen: false});
+
+    const fileService = new FileService(process.env.REACT_APP_API_URL || "", this.props.keycloak.token);
+    const fileUploadResponse = await fileService.uploadFile(file);
+
+    const { user } = this.state;
+
+    await Api.getChatMessagesService(this.props.keycloak.token).createChatMessage({
+      image: fileUploadResponse.url,
+      threadId: this.props.threadId,
+      userId: user!.id
+    }, this.props.threadId);
+
+    this.setState({
+      loading: false
+    });
   }
 
   /**
@@ -339,7 +395,7 @@ class Chat extends React.Component<Props, State> {
    * Uploads message to the server
    * 
    */
-  private uploadMessage = () : Promise<ChatMessage> => {
+  private uploadMessage = async() : Promise<ChatMessage> => {
     const { threadId, keycloak } = this.props;
     if (!keycloak || !keycloak.token || !threadId) {
       return Promise.reject();
@@ -348,11 +404,18 @@ class Chat extends React.Component<Props, State> {
 
     this.setState({loading: true});
 
-    return Api.getChatMessagesService(keycloak.token).createChatMessage({
+    const message = await Api.getChatMessagesService(keycloak.token).createChatMessage({
       contents: this.state.pendingMessage,
       threadId: threadId,
       userId: user!.id
     }, threadId);
+
+    this.setState({
+      pendingMessage: "",
+      loading: false
+    });
+
+    return message;
   }
 }
 

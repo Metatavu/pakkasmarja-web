@@ -58,7 +58,6 @@ class ContractDocument extends React.Component<Props, State> {
     }
 
     const fileService = new PDFService(process.env.REACT_APP_API_URL || "", this.props.keycloak.token);
-    console.log(new Date().getFullYear().toString());
     fileService.getHtml(this.props.contractId, new Date().getFullYear().toString())
       .then((response) => {
         return response.text()

@@ -95,7 +95,7 @@ class ChatThreadList extends React.Component<Props, State> {
     const conversations = this.state.conversationListItems.map((conversationListItem) => {
       return (
         <Item key={conversationListItem.id} onClick={() => this.selectThread(conversationListItem.id)}>
-          <Item.Image circular size="mini" src={conversationListItem.avatar} />
+          <Item.Image avatar size="mini" src={conversationListItem.avatar} />
           <Item.Content>
             <Item.Header>{conversationListItem.title.length > 30 ? `${conversationListItem.title.substring(0, 30)}...` : conversationListItem.title}</Item.Header>
             <Item.Meta>{conversationListItem.subtitle}</Item.Meta>
