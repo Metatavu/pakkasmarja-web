@@ -15,6 +15,8 @@ import Lightbox from 'react-image-lightbox';
 import Dropzone from 'react-dropzone';
 import 'react-image-lightbox/style.css';
 
+const FAILSAFE_POLL_RATE = 5000;
+
 /**
  * Component properties
  */
@@ -38,8 +40,9 @@ interface State {
   open: boolean,
   pendingMessage: string
   openImage?: string
-  addImageModalOpen: boolean
-};
+  addImageModalOpen: boolean,
+  previousMessagesLoaded: boolean
+}
 
 interface MessageItem {
   id: number,
@@ -58,6 +61,7 @@ class Chat extends React.Component<Props, State> {
 
   private userLookup: Map<string, Contact>;
   private messagesEnd: any;
+  private messagePoller: any;
 
   /**
    * Constructor
@@ -74,7 +78,8 @@ class Chat extends React.Component<Props, State> {
       userAvatar: AVATAR_PLACEHOLDER,
       loading: false,
       open: true,
-      addImageModalOpen: false
+      addImageModalOpen: false,
+      previousMessagesLoaded: false
     };
   }
 
@@ -109,6 +114,12 @@ class Chat extends React.Component<Props, State> {
         loading: false
       })
     }
+
+    this.startPolling();
+  }
+
+  public componentWillUnmount = () => {
+    this.stopPolling();
   }
 
   /**
@@ -192,6 +203,34 @@ class Chat extends React.Component<Props, State> {
     );
   }
 
+  private startPolling = () => {
+    this.messagePoller = setInterval(() => {
+      this.checkMessages();
+    }, FAILSAFE_POLL_RATE);
+  }
+
+  private checkMessages = async() => {
+    const latestMessage = this.getLatestMessage();
+    const { threadId, keycloak } = this.props;
+    if (!keycloak || !keycloak.token || !threadId) {
+      return;
+    }
+    const chatMessages = await Api.getChatMessagesService(keycloak.token).listChatMessages(threadId, undefined, latestMessage.toDate());
+    const messages = await this.translateMessages(chatMessages);
+    this.setState((prevState: State) => {
+      return {
+        loading: false,
+        messages: prevState.messages.concat(messages.reverse())
+      }
+    });
+  }
+
+  private stopPolling = () => {
+    if (this.messagePoller) {
+      clearInterval(this.messagePoller);
+    }
+  }
+
   /**
    * Handles file upload
    */
@@ -232,7 +271,7 @@ class Chat extends React.Component<Props, State> {
    * Handles scrolling
    */
   private handleScroll = async (e: any) => {
-    if (this.state.loading) {
+    if (this.state.loading || this.state.previousMessagesLoaded) {
       return;
     }
 
@@ -251,6 +290,7 @@ class Chat extends React.Component<Props, State> {
       existingMessages.unshift(...reversedMessages);
       this.setState({
         messages: existingMessages,
+        previousMessagesLoaded: chatMessages.length === 0,
         loading: false
       });
     }
