@@ -12,6 +12,7 @@ import { Table } from 'semantic-ui-react';
 import BasicLayout from "../generic/BasicLayout";
 import { Link } from "react-router-dom";
 import CreateAndUpdateItemGroupPriceModal from "./CreateAndEditItemGroupPriceModal";
+import * as _ from "lodash";
 
 /**
  * Interface for component props
@@ -103,8 +104,10 @@ class ItemGroupPricesList extends React.Component<Props, State> {
     }
 
     const itemGroupsService = await Api.getItemGroupsService(this.props.keycloak.token);
-    const itemGroupPrices = await itemGroupsService.listItemGroupPrices(this.state.itemGroupId, undefined, undefined, undefined, 100);
-    await this.setState({ itemGroupPrices });
+    const itemGroupPrices : ItemGroupPrice[] = await itemGroupsService.listItemGroupPrices(this.state.itemGroupId, undefined, undefined, undefined, 100);
+    const sortedItemGroupPrices = _.sortBy(itemGroupPrices, 'year').reverse();
+    
+    await this.setState({ itemGroupPrices : sortedItemGroupPrices });
   }
 
   /**

@@ -188,7 +188,7 @@ class IncomingDeliveries extends React.Component<Props, State> {
           {strings.newFreshDelivery}
         </Button>
         <Segment attached>
-          <Header as='h2'>{strings.products}</Header>
+          <Header as='h2'>{strings.fresh}</Header>
           <Divider />
           <Item.Group divided>
             {
@@ -215,7 +215,7 @@ class IncomingDeliveries extends React.Component<Props, State> {
           {strings.newFrozenDelivery}
         </Button>
         <Segment attached>
-          <Header as='h2'>{strings.products}</Header>
+          <Header as='h2'>{strings.frozen}</Header>
           <Divider />
           <Item.Group divided>
             {

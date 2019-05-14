@@ -14,8 +14,8 @@ export interface IStrings extends LocalizedStringsMethods {
   contracts: string
   contract: string
   operations: string
-  frozenContracts: string
-  freshContracts: string
+  frozen: string
+  fresh: string
   contractQuantity: string
   deliveredQuantity: string
   welcome: string
@@ -185,6 +185,11 @@ export interface IStrings extends LocalizedStringsMethods {
   createNewArticle: string
   showContract: string
   missingInfo: string
+  contractTerminated: string
+  contractsOnDraft: string
+  contractsOnActive: string
+  contractsOnTerminated: string
+  downloadPdf : string
   accessTokenExpired: string
   questionGroupManagement: string,
   groupPermissions: string,

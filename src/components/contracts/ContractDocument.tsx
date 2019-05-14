@@ -101,7 +101,7 @@ class ContractDocument extends React.Component<Props, State> {
           <Header as='h2'>
             {strings.contract}
           </Header>
-          <Accordion panels={panel} />
+          <Accordion panels={panel}  fluid />
         </div>
       </React.Fragment>
     );

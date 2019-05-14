@@ -7,10 +7,11 @@ import { connect } from "react-redux";
 import "../../styles/common.scss";
 import Api from "pakkasmarja-client";
 import { ItemGroup } from "pakkasmarja-client";
-import { Header, Button } from "semantic-ui-react";
-import ContractItem from "./ContractItem";
+import { Header, Button, Dimmer, Loader } from "semantic-ui-react";
 import ContractProposalModal from "./ContractProposalModal";
 import strings from "src/localization/strings";
+import * as _ from "lodash";
+import ContractListContainer from "./ContractListContainer";
 
 /**
  * Interface for component props
@@ -25,8 +26,6 @@ interface Props {
  */
 interface State {
   keycloak?: Keycloak.KeycloakInstance;
-  frozenContracts: ContractTableData[];
-  freshContracts: ContractTableData[];
   itemGroups: ItemGroup[];
   contractsLoading: boolean;
   proposeContractModalOpen: boolean;
@@ -34,6 +33,12 @@ interface State {
   proposedContractQuantity: string;
   proposedContractQuantityComment: string;
   proposeContractModalType: string;
+  frozenContractsActive?: ContractTableData[]
+  frozenContractsDraft?: ContractTableData[]
+  frozenContractsPast?: ContractTableData[]
+  freshContractsActive?: ContractTableData[]
+  freshContractsDraft?: ContractTableData[]
+  freshContractsPast?: ContractTableData[]
 }
 
 /**
@@ -49,8 +54,6 @@ class ContractList extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      frozenContracts: [],
-      freshContracts: [],
       itemGroups: [],
       contractsLoading: false,
       proposeContractModalOpen: false,
@@ -72,33 +75,44 @@ class ContractList extends React.Component<Props, State> {
     this.setState({ contractsLoading: true });
 
     const contractsService = await Api.getContractsService(this.props.keycloak.token);
-    const frozenContracts = await contractsService.listContracts("application/json", false, "FROZEN");
-    const freshContracts = await contractsService.listContracts("application/json", false, "FRESH");
+    const frozenContracts = await contractsService.listContracts("application/json", false, "FROZEN", undefined, undefined, undefined, undefined, 1000);
+    const freshContracts = await contractsService.listContracts("application/json", false, "FRESH", undefined, undefined, undefined, undefined, 1000);
     await this.loadItemGroups();
+    const frozenTableData: ContractTableData[] = [];
+    const freshTableData: ContractTableData[] = [];
 
     frozenContracts.forEach((frozenContract) => {
-      const frozenContractsState: ContractTableData[] = this.state.frozenContracts;
       const itemGroup = this.state.itemGroups.find(itemGroup => itemGroup.id === frozenContract.itemGroupId);
-      frozenContractsState.push({
+      frozenTableData.push({
         contract: frozenContract,
         itemGroup: itemGroup
       });
-
-      this.setState({ frozenContracts: frozenContractsState });
     });
 
     freshContracts.forEach((freshContract) => {
-      const freshContractsState: ContractTableData[] = this.state.freshContracts;
       const itemGroup = this.state.itemGroups.find(itemGroup => itemGroup.id === freshContract.itemGroupId);
-      freshContractsState.push({
+      freshTableData.push({
         contract: freshContract,
         itemGroup: itemGroup
       });
-
-      this.setState({ freshContracts: freshContractsState });
     });
 
-    this.setState({ contractsLoading: false });
+    const frozenContractsActive: ContractTableData[] = _.filter(frozenTableData, ({ contract }) => contract.status === "APPROVED");
+    const frozenContractsDraft: ContractTableData[] = _.filter(frozenTableData, ({ contract }) => contract.status === "DRAFT" || contract.status === "ON_HOLD" || contract.status === "REJECTED");
+    const frozenContractsPast: ContractTableData[] = _.filter(frozenTableData, ({ contract }) => contract.status === "TERMINATED");
+    const freshContractsActive: ContractTableData[] = _.filter(freshTableData, ({ contract }) => contract.status === "APPROVED");
+    const freshContractsDraft: ContractTableData[] = _.filter(freshTableData, ({ contract }) => contract.status === "DRAFT" || contract.status === "ON_HOLD" || contract.status === "REJECTED");
+    const freshContractsPast: ContractTableData[] = _.filter(freshTableData, ({ contract }) => contract.status === "TERMINATED");
+
+    this.setState({
+      frozenContractsActive,
+      frozenContractsDraft,
+      frozenContractsPast,
+      freshContractsActive,
+      freshContractsDraft,
+      freshContractsPast,
+      contractsLoading: false
+    });
 
   }
 
@@ -135,32 +149,73 @@ class ContractList extends React.Component<Props, State> {
    * Render method
    */
   public render() {
+    if (this.state.contractsLoading) {
+      return (
+        <BasicLayout>
+          <Dimmer active inverted>
+            <Loader inverted>
+              {strings.loading}
+            </Loader>
+          </Dimmer>
+        </BasicLayout>
+      );
+    }
+
     return (
       <BasicLayout pageTitle="Sopimukset">
         <Header as="h2">
-          {strings.frozenContracts}
+          {strings.frozen}
         </Header>
-        <div className="contract-blue-container">
-          {
-            this.state.frozenContracts.map((frozenContract) => {
-              return <ContractItem key={frozenContract.contract.id} contractData={frozenContract} />;
-            })
-          }
-        </div>
-        <Button onClick={() => this.onProposeNewContractClick("FROZEN")} style={{borderRadius: 0}} color="red">
+        {
+          this.state.frozenContractsDraft && this.state.frozenContractsDraft.length > 0 &&
+          <ContractListContainer
+            header={strings.contractsOnDraft}
+            contractDatas={this.state.frozenContractsDraft}
+          />
+        }
+        {
+          this.state.frozenContractsActive && this.state.frozenContractsActive.length > 0 &&
+          <ContractListContainer
+            header={strings.contractsOnActive}
+            contractDatas={this.state.frozenContractsActive}
+            contractState={"active"} />
+        }
+        {
+          this.state.frozenContractsPast && this.state.frozenContractsPast.length > 0 &&
+          <ContractListContainer
+            header={strings.contractsOnTerminated}
+            contractDatas={this.state.frozenContractsPast}
+          />
+        }
+        <Button onClick={() => this.onProposeNewContractClick("FROZEN")} style={{ borderRadius: 0 }} color="red">
           {strings.suggestNewFrozenContract}
         </Button>
         <Header as="h2">
-          {strings.freshContracts}
+          {strings.fresh}
         </Header>
-        <div className="contract-blue-container">
-          {
-            this.state.freshContracts.map((freshContract) => {
-              return <ContractItem key={freshContract.contract.id} contractData={freshContract} />;
-            })
-          }
-        </div>
-        <Button onClick={() => this.onProposeNewContractClick("FRESH")} style={{borderRadius: 0}} color="red">
+        {
+          this.state.freshContractsDraft && this.state.freshContractsDraft.length > 0 &&
+          <ContractListContainer
+            header={strings.contractsOnDraft}
+            contractDatas={this.state.freshContractsDraft}
+          />
+        }
+        {
+          this.state.freshContractsActive && this.state.freshContractsActive.length > 0 &&
+          <ContractListContainer
+            header={strings.contractsOnActive}
+            contractDatas={this.state.freshContractsActive}
+            contractState={"active"}
+          />
+        }
+        {
+          this.state.freshContractsPast && this.state.freshContractsPast.length > 0 &&
+          <ContractListContainer
+            header={strings.contractsOnTerminated}
+            contractDatas={this.state.freshContractsPast}
+          />
+        }
+        <Button onClick={() => this.onProposeNewContractClick("FRESH")} style={{ borderRadius: 0 }} color="red">
           {strings.suggestNewFreshContract}
         </Button>
         <ContractProposalModal

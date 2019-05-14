@@ -21,6 +21,9 @@
   .meta{
     color: red !important;
   }
+  i {
+    color: red !important;
+  }
 }
 
 .contract-blue-container {
@@ -45,4 +48,21 @@
 
 .column {
   padding-left: 15px !important;
+}
+
+.contract-row:hover {
+  .contract-cell {
+    cursor: pointer;
+    color: red !important;
+  }
+}
+
+.pdf-icon {
+  color:red !important;
+
+  &:hover {
+    cursor: pointer;
+    color:white !important;
+  }
+
 }
