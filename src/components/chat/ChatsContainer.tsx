@@ -25,6 +25,9 @@ interface State {
   chatGroupId?: number
 }
 
+/**
+ * Interface representing chat window
+ */
 interface ChatWindow {
   open: boolean,
   threadId: number
@@ -96,11 +99,15 @@ class ChatsContainer extends React.Component<Props, State> {
     });
   }
 
+  /**
+   * Group selection handler
+   */
   private onSelectGroup = (chatGroupId: number) => {
     this.setState({
       chatGroupId: chatGroupId
     });
   }
+
   /**
    * Thread select handler
    */

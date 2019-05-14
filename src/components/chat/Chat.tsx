@@ -44,6 +44,9 @@ interface State {
   previousMessagesLoaded: boolean
 }
 
+/**
+ * Interface representing message item displayed in ui
+ */
 interface MessageItem {
   id: number,
   userName: string,
@@ -203,12 +206,18 @@ class Chat extends React.Component<Props, State> {
     );
   }
 
+  /**
+   * Starts failsafe message poller
+   */
   private startPolling = () => {
     this.messagePoller = setInterval(() => {
       this.checkMessages();
     }, FAILSAFE_POLL_RATE);
   }
 
+  /**
+   * Checks if there is new messages available
+   */
   private checkMessages = async() => {
     const latestMessage = this.getLatestMessage();
     const { threadId, keycloak } = this.props;
@@ -225,6 +234,9 @@ class Chat extends React.Component<Props, State> {
     });
   }
 
+  /**
+   * Stops failsafe message poller
+   */
   private stopPolling = () => {
     if (this.messagePoller) {
       clearInterval(this.messagePoller);
