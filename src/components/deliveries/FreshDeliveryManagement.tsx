@@ -49,6 +49,8 @@ interface State {
  */
 class FreshDeliveryManagement extends React.Component<Props, State> {
 
+  private pollInterval: any;
+
   /**
    * Constructor
    * 
@@ -91,6 +93,20 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       contacts: contacts,
       deliveryQualities: _.keyBy(deliveryQualities, "id")
     });
+
+    this.pollInterval = setInterval(() => {
+      return this.reloadDeliveries();
+    }, 10000);
+  }
+
+  /**
+   * Component will unmount life-sycle event
+   */
+  public componentWillUnmount = async () => {
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = undefined;
+    }
   }
 
   public async componentDidUpdate(prevProps: Props, prevState: State) {
@@ -151,12 +167,12 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
         } else {
           if (deliveries.length > 1) {
             const deliveryButtons = deliveries.map((delivery) => {
-              return <Button basic onClick={() => this.handleEditDelivery(delivery!)}> { delivery.amount } </Button>
+              return <Button basic onClick={() => this.handleEditDelivery(delivery!)}> { delivery.amount } ({ this.getDeliveryStatusText(delivery) }) </Button>
             });
 
             tableCells.push(
               <Table.Cell key={`${contact.id}-${product.id}`} style={{ paddingLeft: "5px", paddingRight: "5px" }} selectable onClick={() => {}}>
-                 <Popup style={{ textAlign: "center" }} wide trigger={<Button style={{ width: "100%" }} basic content='Valitse' />} on='click'>
+                 <Popup style={{ textAlign: "center", whiteSpace: "nowrap" }} wide trigger={<Button style={{ width: "100%" }} basic content='Valitse' />} on='click'>
                   { deliveryButtons }
                  </Popup>
               </Table.Cell>
@@ -257,6 +273,24 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     return null;
   }
 
+  /**
+   * Returns delivery status text
+   */
+  private getDeliveryStatusText = (delivery: Delivery) => {
+    switch (delivery.status) {
+      case "DELIVERY":
+        return "Toimituksessa";
+      case "DONE":
+        return "Hyväksytty";
+      case "PLANNED":
+        return "Suunnitelma";
+      case "PROPOSAL":
+        return "Ehdotus";
+      case "REJECTED":
+        return "Hylätty";
+    }
+  }
+
   private addProposal = async () => {
     const { keycloak } = this.props;
     const { proposalContact, proposalProduct, proposalAmount, selectedDeliveryPlaceId, selectedDate } = this.state;
@@ -323,22 +357,50 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     });
   }
 
+  /**
+   * Refreshes deliveries from the server. Method does not show operation to the user
+   */
+  private reloadDeliveries = async () => {
+    const { keycloak } = this.props;
+    if (keycloak && keycloak.token && !this.state.loading) {
+      const deliveries = await this.loadDeliveries(keycloak.token);
+      this.setState({ deliveries: deliveries });
+    }
+  }
+
+  /**
+   * Loads delieries from the server
+   * 
+   * @param token access token
+   */
+  private loadDeliveries = (token: string) => {
+    const { selectedDeliveryPlaceId, selectedDate } = this.state;
+
+    const timeBefore = moment(selectedDate).endOf("day").toDate();
+    const timeAfter = moment(selectedDate).startOf("day").toDate();
+
+    return Api.getDeliveriesService(token).listDeliveries(
+      undefined,
+      undefined,
+      "FRESH",
+      undefined,
+      undefined,
+      selectedDeliveryPlaceId,
+      timeBefore,
+      timeAfter,
+      0,
+      9999);
+  }
+
+  /**
+   * Updates table data and shows a loading screen 
+   */
   private updateTableData = async() => {
     const { keycloak } = this.props;
-    const { selectedDeliveryPlaceId, selectedDate } = this.state;
+    const { selectedDeliveryPlaceId } = this.state;
     if (selectedDeliveryPlaceId  && keycloak && keycloak.token) {
       this.setState({loading: true});
-      const timeBefore = moment(selectedDate).endOf("day").toDate();
-      const timeAfter = moment(selectedDate).startOf("day").toDate()
-      const deliveries = await Api.getDeliveriesService(keycloak.token).listDeliveries(
-        undefined,
-        undefined,
-        "FRESH",
-        undefined,
-        undefined,
-        selectedDeliveryPlaceId,
-        timeBefore,
-        timeAfter );
+      const deliveries = await this.loadDeliveries(keycloak.token);
 
       this.setState({loading: false, deliveries: deliveries});
     }
