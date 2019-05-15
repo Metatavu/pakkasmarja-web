@@ -72,7 +72,7 @@ class MenuContainer extends React.Component<Props, object> {
             </Menu.Item>
           }
           { this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_DELIVERIES) &&
-            <Menu.Menu position="right">
+            <Menu.Menu>
               <Dropdown item simple text="Vastaanotto">
                 <Dropdown.Menu>
                   <Dropdown.Item to="/manageFreshDeliveries" as={Link}>Tuoreet</Dropdown.Item>

@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as actions from "../../actions";
 import * as _ from "lodash";
-import { StoreState, DeliveriesState, Options, DeliveryDataValue } from "../../types";
+import { StoreState, DeliveriesState, Options, DeliveryDataValue, HttpErrorResponse } from "../../types";
 import Api, { Product, DeliveryPlace, Delivery, DeliveryNote, DeliveryQuality } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
@@ -10,7 +10,7 @@ import { Dropdown, Form, Input, Button, Modal, Segment } from "semantic-ui-react
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import fi from 'date-fns/esm/locale/fi';
-import strings from "src/localization/strings";
+import strings from "../../localization/strings";
 
 /**
  * Interface for component props
@@ -19,7 +19,8 @@ interface Props {
   authenticated: boolean,
   keycloak?: Keycloak.KeycloakInstance,
   delivery: Delivery
-  open: boolean
+  open: boolean,
+  onError?: (errorMsg: string) => void,
   onClose: () => void
   onUpdate: () => void
 }
@@ -118,6 +119,13 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       loading: false
     });
   }
+  
+  /**
+   * Check if object is http error response
+   */
+  private isHttpErrorResponse(object: any): object is HttpErrorResponse {
+    return 'code' in object;
+  }
 
   /**
    * Handle input change
@@ -167,21 +175,34 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       return;
     }
 
-    const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
-    const delivery: Delivery = {
-      id: "",
-      productId: this.state.selectedProductId,
-      userId: this.state.userId || "",
-      time: this.state.date,
-      status: "DONE",
-      amount: this.state.amount,
-      price: "0",
-      deliveryPlaceId: this.state.selectedPlaceId,
-      qualityId: this.state.selectedQualityId
-    }
+    try {
+      const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
+      const delivery: Delivery = {
+        id: "",
+        productId: this.state.selectedProductId,
+        userId: this.state.userId || "",
+        time: this.state.date,
+        status: "DONE",
+        amount: this.state.amount,
+        price: "0",
+        deliveryPlaceId: this.state.selectedPlaceId,
+        qualityId: this.state.selectedQualityId
+      }
+  
+      const response = await deliveryService.updateDelivery(delivery, this.state.deliveryId);
+      if (this.isHttpErrorResponse(response)) {
+        const errorResopnse: HttpErrorResponse = response;
+        this.props.onError && this.props.onError(errorResopnse.message);
+        return;
+      }
 
-    await deliveryService.updateDelivery(delivery, this.state.deliveryId);
-    this.props.onUpdate();
+      this.props.onUpdate();
+    } catch (e) {
+      this.props.onError && this.props.onError(strings.errorCommunicatingWithServer);
+      this.setState({
+        loading: false
+      })
+    }
   }
   
   /**

@@ -5,7 +5,7 @@ import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
 import Api, { DeliveryPlace, Product, Contact, Delivery } from "pakkasmarja-client";
-import { Dimmer, Loader, Dropdown, DropdownProps, Modal, Button, Input, Image} from "semantic-ui-react";
+import { Dimmer, Loader, Dropdown, DropdownProps, Modal, Button, Input, Image, Icon} from "semantic-ui-react";
 import { Table } from 'semantic-ui-react';
 import BasicLayout from "../generic/BasicLayout";
 import * as moment from "moment";
@@ -224,6 +224,10 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
   private renderDeliveryIcon(delivery: Delivery) {
     const icon = this.getDeliveryIcon(delivery);
     if (!icon) {
+      if (delivery.qualityId) {
+        return <Icon circle size="small" color={ "green" }/>
+      }
+
       return null;
     }
 

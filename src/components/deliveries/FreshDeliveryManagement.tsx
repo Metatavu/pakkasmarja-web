@@ -1,11 +1,12 @@
+import * as _ from "lodash";
 import * as React from "react";
 import * as actions from "../../actions/";
 import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
-import Api, { DeliveryPlace, Product, Contact, Delivery } from "pakkasmarja-client";
-import { Dimmer, Loader, Dropdown, DropdownProps, Modal, Button, Input, Image} from "semantic-ui-react";
+import Api, { DeliveryPlace, Product, Contact, Delivery, DeliveryQuality } from "pakkasmarja-client";
+import { Dimmer, Loader, Dropdown, DropdownProps, Modal, Button, Input, Image, Icon} from "semantic-ui-react";
 import { Table } from 'semantic-ui-react';
 import BasicLayout from "../generic/BasicLayout";
 import * as moment from "moment";
@@ -38,7 +39,9 @@ interface State {
   proposalProduct?: Product
   proposalContact?: Contact
   proposalAmount?: number
-  addingProposal: boolean
+  addingProposal: boolean,
+  deliveryQualities: { [key: string] : DeliveryQuality },
+  error?: string
 }
 
 /**
@@ -60,7 +63,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       contacts: [],
       deliveries: [],
       selectedDate: new Date(),
-      addingProposal: false
+      addingProposal: false,
+      deliveryQualities: {}
     };
     registerLocale('fi', fi);
   }
@@ -78,12 +82,14 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     const deliveryPlaces = await Api.getDeliveryPlacesService(keycloak.token).listDeliveryPlaces();
     const products = await Api.getProductsService(keycloak.token).listProducts(undefined, "FRESH");
     const contacts = await Api.getContactsService(keycloak.token).listContacts();
-
+    const deliveryQualities = await Api.getDeliveryQualitiesService(keycloak.token).listDeliveryQualities("FRESH");
+    
     this.setState({ 
       loading: false,
       deliveryPlaces: deliveryPlaces,
       products: products,
-      contacts: contacts
+      contacts: contacts,
+      deliveryQualities: _.keyBy(deliveryQualities, "id")
     });
   }
 
@@ -118,7 +124,6 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
         text: deliveryPlace.name
       }
     });
-
 
     const {contacts, products} = this.state;
 
@@ -162,7 +167,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     }
 
     return (
-      <TableBasicLayout pageTitle="Päiväennuste, tuoreet">
+      <TableBasicLayout error={ this.state.error } onErrorClose={ () => this.setState({ error: undefined }) } pageTitle="Päiväennuste, tuoreet">
         <Dropdown
           placeholder="Toimituspaikka"
           options={deliveryPlaceOptions}
@@ -195,6 +200,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
         }
         {this.state.selectedDelivery &&
           <ManageDeliveryModal
+            onError={ this.handleError }
             onUpdate={() => { this.setState({selectedDelivery: undefined}); this.updateTableData();} }
             onClose={() => this.setState({selectedDelivery: undefined})}
             open={true}
@@ -223,12 +229,16 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
    * @param delivery delivery
    */
   private renderDeliveryIcon(delivery: Delivery) {
-    const icon = this.getDeliveryIcon(delivery);
-    if (!icon) {
-      return null;
+    if (delivery.status == "DELIVERY") {
+      return  <Image src={ IncomingDeliveryIcon } style={{ float: "left", maxWidth: "32px", marginRight: "10px" }}/>
     }
 
-    return <Image src={ icon } style={{ float: "left", maxWidth: "32px", marginRight: "10px" }}/>
+    if (delivery.qualityId) {
+      const deliveryQuality = this.state.deliveryQualities[delivery.qualityId];
+      return <Icon size="small" style={{ color: deliveryQuality ? deliveryQuality.color : "#000" }} name="circle"/>
+    }
+
+    return null;
   }
 
   private addProposal = async () => {
@@ -259,24 +269,6 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     });
 
     this.updateTableData();
-  }
-
-  /**
-   * Returns delivery icon
-   * 
-   * @param delivery delivery
-   */
-  private getDeliveryIcon(delivery: Delivery) {
-    switch (delivery.status) {
-      case "DELIVERY":
-        return IncomingDeliveryIcon;
-      case "DONE":
-      case "PROPOSAL":
-      case "PLANNED":
-      case "REJECTED":
-    }
-
-    return null;
   }
 
   /**
@@ -340,6 +332,17 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   private handleEditDelivery = (delivery: Delivery) => {
     this.setState({
       selectedDelivery: delivery
+    });
+  }
+  
+  /**
+   * Handles error from components
+   * 
+   * @param msg error message
+   */
+  private handleError = (msg: string) => {
+    this.setState({
+      error: msg
     });
   }
 }
