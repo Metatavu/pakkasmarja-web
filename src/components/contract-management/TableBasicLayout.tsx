@@ -2,7 +2,7 @@ import * as React from "react";
 
 import 'semantic-ui-css/semantic.min.css';
 
-import { Container, Header, Image, Button } from "semantic-ui-react";
+import { Container, Header, Image, Button, Dimmer } from "semantic-ui-react";
 import MenuContainer from "../generic/MenuContainer";
 import PakkasmarjaLogo from "../../gfx/pakkasmarja-logo.svg";
 import { Redirect } from "react-router-dom";
@@ -12,6 +12,8 @@ interface Props {
   topBarButtonText?: string
   onTopBarButtonClick?: () => void
   redirectTo?: string
+  error?: string,
+  onErrorClose?: () => void
 }
 
 class TableBasicLayout extends React.Component<Props, any> {
@@ -23,10 +25,22 @@ class TableBasicLayout extends React.Component<Props, any> {
     window.scrollTo(0, 0);
   }
 
-  render() {
+  public render() {
     if (this.props.redirectTo) {
       return <Redirect to={this.props.redirectTo} />
     }
+
+    if (this.props.error) {
+      return (
+        <Dimmer active inverted>
+          <div style={{ textAlign: "center" }}>
+            <h3 style={{ color: "red" }}> Virhe! </h3>
+            <p style={{ color: "black" }}> {this.props.error} </p>
+            <Button basic onClick={ this.props.onErrorClose }> Sulje </Button>
+          </div>
+        </Dimmer>
+      );
+    } 
 
     return (
       <div>

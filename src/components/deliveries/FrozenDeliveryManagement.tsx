@@ -1,11 +1,12 @@
+import * as _ from "lodash";
 import * as React from "react";
-import * as actions from "../../actions";
+import * as actions from "../../actions/";
 import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
-import Api, { DeliveryPlace, Product, Contact, Delivery } from "pakkasmarja-client";
-import { Dimmer, Loader, Dropdown, DropdownProps, Modal, Button, Input} from "semantic-ui-react";
+import Api, { DeliveryPlace, Product, Contact, Delivery, DeliveryQuality } from "pakkasmarja-client";
+import { Dimmer, Loader, Dropdown, DropdownProps, Modal, Button, Input, Image, Icon, Popup } from "semantic-ui-react";
 import { Table } from 'semantic-ui-react';
 import BasicLayout from "../generic/BasicLayout";
 import * as moment from "moment";
@@ -13,6 +14,7 @@ import TableBasicLayout from "../contract-management/TableBasicLayout";
 import ManageDeliveryModal from "./ManageDeliveryModal";
 import DatePicker, { registerLocale } from "react-datepicker";
 import fi from 'date-fns/esm/locale/fi'
+import IncomingDeliveryIcon from "../../gfx/incoming-delivery-icon.png";
 
 /**
  * Interface for component props
@@ -37,13 +39,17 @@ interface State {
   proposalProduct?: Product
   proposalContact?: Contact
   proposalAmount?: number
-  addingProposal: boolean
+  addingProposal: boolean,
+  deliveryQualities: { [key: string] : DeliveryQuality },
+  error?: string
 }
 
 /**
  * Class for itemgroups list component
  */
 class FrozenDeliveryManagement extends React.Component<Props, State> {
+
+  private pollInterval: any;
 
   /**
    * Constructor
@@ -59,7 +65,8 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
       contacts: [],
       deliveries: [],
       selectedDate: new Date(),
-      addingProposal: false
+      addingProposal: false,
+      deliveryQualities: {}
     };
     registerLocale('fi', fi);
   }
@@ -77,13 +84,29 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
     const deliveryPlaces = await Api.getDeliveryPlacesService(keycloak.token).listDeliveryPlaces();
     const products = await Api.getProductsService(keycloak.token).listProducts(undefined, "FROZEN");
     const contacts = await Api.getContactsService(keycloak.token).listContacts();
-
+    const deliveryQualities = await Api.getDeliveryQualitiesService(keycloak.token).listDeliveryQualities("FROZEN");
+    
     this.setState({ 
       loading: false,
       deliveryPlaces: deliveryPlaces,
       products: products,
-      contacts: contacts
+      contacts: contacts,
+      deliveryQualities: _.keyBy(deliveryQualities, "id")
     });
+
+    this.pollInterval = setInterval(() => {
+      return this.reloadDeliveries();
+    }, 10000);
+  }
+
+  /**
+   * Component will unmount life-sycle event
+   */
+  public componentWillUnmount = async () => {
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = undefined;
+    }
   }
 
   public async componentDidUpdate(prevProps: Props, prevState: State) {
@@ -118,7 +141,6 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
       }
     });
 
-
     const {contacts, products} = this.state;
 
     const productHeaderCells = products.map((product) => {
@@ -134,8 +156,8 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
       tableCells.push(<Table.Cell>{contact.displayName}</Table.Cell>);
       for(let j = 0; j < products.length; j++) {
         let product = products[j];
-        let delivery = this.findDeliveryByContactAndProduct(contact, product);
-        if (!delivery) {
+        const deliveries = this.listContactDeliveries(contact, product);
+        if (!deliveries.length) {
           tableCells.push(
             <Table.Cell 
               key={`${contact.id}-${product.id}`}
@@ -143,23 +165,41 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
               onClick={() => this.handleCreateDelivery(contact, product)} />
           );
         } else {
-          let textStyle = this.getDeliveryTextStyle(delivery);
-          tableCells.push(
-            <Table.Cell 
-              key={`${contact.id}-${product.id}`}
-              style={{...textStyle}}
-              selectable
-              onClick={() => this.handleEditDelivery(delivery!)}>
-              {delivery.amount}
-            </Table.Cell>
-          );
+          if (deliveries.length > 1) {
+            const deliveryButtons = deliveries.map((delivery) => {
+              return <Button basic onClick={() => this.handleEditDelivery(delivery!)}> { delivery.amount } ({ this.getDeliveryStatusText(delivery) }) </Button>
+            });
+
+            tableCells.push(
+              <Table.Cell key={`${contact.id}-${product.id}`} style={{ paddingLeft: "5px", paddingRight: "5px" }} selectable onClick={() => {}}>
+                 <Popup style={{ textAlign: "center", whiteSpace: "nowrap" }} wide trigger={<Button style={{ width: "100%" }} basic content='Valitse' />} on='click'>
+                  { deliveryButtons }
+                 </Popup>
+              </Table.Cell>
+            );
+          } else {
+            const delivery = deliveries[0];
+
+            const textStyle = this.getDeliveryTextStyle(delivery);
+
+            tableCells.push(
+              <Table.Cell 
+                key={`${contact.id}-${product.id}`}
+                style={{...textStyle}}
+                selectable
+                onClick={() => this.handleEditDelivery(delivery!)}>
+                { this.renderDeliveryIcon(delivery) }
+                { delivery.amount }
+              </Table.Cell>
+            );
+          }
         }
       }
       tableRows.push(<Table.Row key={contact.id}>{tableCells}</Table.Row>)
     }
 
     return (
-      <TableBasicLayout pageTitle="Päiväennuste, pakasteet">
+      <TableBasicLayout error={ this.state.error } onErrorClose={ () => this.setState({ error: undefined }) } pageTitle="Päiväennuste, pakasteet">
         <Dropdown
           placeholder="Toimituspaikka"
           options={deliveryPlaceOptions}
@@ -192,6 +232,7 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
         }
         {this.state.selectedDelivery &&
           <ManageDeliveryModal
+            onError={ this.handleError }
             onUpdate={() => { this.setState({selectedDelivery: undefined}); this.updateTableData();} }
             onClose={() => this.setState({selectedDelivery: undefined})}
             open={true}
@@ -212,6 +253,42 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
         }
       </TableBasicLayout>
     );
+  }
+
+  /**
+   * Renders delivery icon
+   * 
+   * @param delivery delivery
+   */
+  private renderDeliveryIcon(delivery: Delivery) {
+    if (delivery.status == "DELIVERY") {
+      return  <Image src={ IncomingDeliveryIcon } style={{ float: "left", maxWidth: "32px", marginRight: "10px" }}/>
+    }
+
+    if (delivery.qualityId) {
+      const deliveryQuality = this.state.deliveryQualities[delivery.qualityId];
+      return <Icon size="small" style={{ color: deliveryQuality ? deliveryQuality.color : "#000" }} name="circle"/>
+    }
+
+    return null;
+  }
+
+  /**
+   * Returns delivery status text
+   */
+  private getDeliveryStatusText = (delivery: Delivery) => {
+    switch (delivery.status) {
+      case "DELIVERY":
+        return "Toimituksessa";
+      case "DONE":
+        return "Hyväksytty";
+      case "PLANNED":
+        return "Suunnitelma";
+      case "PROPOSAL":
+        return "Ehdotus";
+      case "REJECTED":
+        return "Hylätty";
+    }
   }
 
   private addProposal = async () => {
@@ -244,47 +321,86 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
     this.updateTableData();
   }
 
+  /**
+   * Returns style for delivery
+   * 
+   * @param delivery delivery
+   */
   private getDeliveryTextStyle(delivery: Delivery) {
     switch (delivery.status) {
       case "DELIVERY":
-        return {color: "#000"};
+        return { color: "#000", paddingLeft: "20px" };
       case "DONE":
-        return { color: "#4bb543" };
+        return { color: "#4bb543", paddingLeft: "20px" };
       case "PROPOSAL":
       case "PLANNED":
-        return { color: "#aaa" };
+        return { color: "#aaa", paddingLeft: "20px" };
       case "REJECTED":
-        return { color: "#ff0000" };
+        return { color: "#ff0000", paddingLeft: "20px" };
     }
   }
 
-  private findDeliveryByContactAndProduct = (contact: Contact, product: Product): Delivery | undefined => {
+  /**
+   * Lists contact deliveries by product
+   * 
+   * @param contact contact
+   * @param product product
+   */
+  private listContactDeliveries(contact: Contact, product: Product): Delivery[] {
     const { deliveries } = this.state;
-    return (deliveries || []).find((delivery) => delivery.productId == product.id && delivery.userId == contact.id);
+    return (deliveries || []).filter((delivery) => delivery.productId == product.id && delivery.userId == contact.id);
   }
-
+  
   private handleDeliveryPlaceChange = (event: React.SyntheticEvent<HTMLElement>, data: DropdownProps) => {
     this.setState({
       selectedDeliveryPlaceId: data.value as string
     });
   }
 
+  /**
+   * Refreshes deliveries from the server. Method does not show operation to the user
+   */
+  private reloadDeliveries = async () => {
+    const { keycloak } = this.props;
+    if (keycloak && keycloak.token && !this.state.loading) {
+      const deliveries = await this.loadDeliveries(keycloak.token);
+      this.setState({ deliveries: deliveries });
+    }
+  }
+
+  /**
+   * Loads delieries from the server
+   * 
+   * @param token access token
+   */
+  private loadDeliveries = (token: string) => {
+    const { selectedDeliveryPlaceId, selectedDate } = this.state;
+
+    const timeBefore = moment(selectedDate).endOf("day").toDate();
+    const timeAfter = moment(selectedDate).startOf("day").toDate();
+
+    return Api.getDeliveriesService(token).listDeliveries(
+      undefined,
+      undefined,
+      "FROZEN",
+      undefined,
+      undefined,
+      selectedDeliveryPlaceId,
+      timeBefore,
+      timeAfter,
+      0,
+      9999);
+  }
+
+  /**
+   * Updates table data and shows a loading screen 
+   */
   private updateTableData = async() => {
     const { keycloak } = this.props;
-    const { selectedDeliveryPlaceId, selectedDate } = this.state;
+    const { selectedDeliveryPlaceId } = this.state;
     if (selectedDeliveryPlaceId  && keycloak && keycloak.token) {
       this.setState({loading: true});
-      const timeBefore = moment(selectedDate).endOf("day").toDate();
-      const timeAfter = moment(selectedDate).startOf("day").toDate()
-      const deliveries = await Api.getDeliveriesService(keycloak.token).listDeliveries(
-        undefined,
-        undefined,
-        "FROZEN",
-        undefined,
-        undefined,
-        selectedDeliveryPlaceId,
-        timeBefore,
-        timeAfter );
+      const deliveries = await this.loadDeliveries(keycloak.token);
 
       this.setState({loading: false, deliveries: deliveries});
     }
@@ -300,6 +416,17 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
   private handleEditDelivery = (delivery: Delivery) => {
     this.setState({
       selectedDelivery: delivery
+    });
+  }
+  
+  /**
+   * Handles error from components
+   * 
+   * @param msg error message
+   */
+  private handleError = (msg: string) => {
+    this.setState({
+      error: msg
     });
   }
 }
