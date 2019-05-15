@@ -6,7 +6,7 @@ import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
 import Api, { DeliveryPlace, Product, Contact, Delivery, DeliveryQuality } from "pakkasmarja-client";
-import { Dimmer, Loader, Dropdown, DropdownProps, Modal, Button, Input, Image, Icon} from "semantic-ui-react";
+import { Dimmer, Loader, Dropdown, DropdownProps, Modal, Button, Input, Image, Icon, Popup, Grid, Select} from "semantic-ui-react";
 import { Table } from 'semantic-ui-react';
 import BasicLayout from "../generic/BasicLayout";
 import * as moment from "moment";
@@ -140,8 +140,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       tableCells.push(<Table.Cell>{contact.displayName}</Table.Cell>);
       for(let j = 0; j < products.length; j++) {
         let product = products[j];
-        let delivery = this.findDeliveryByContactAndProduct(contact, product);
-        if (!delivery) {
+        const deliveries = this.listContactDeliveries(contact, product);
+        if (!deliveries.length) {
           tableCells.push(
             <Table.Cell 
               key={`${contact.id}-${product.id}`}
@@ -149,18 +149,34 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
               onClick={() => this.handleCreateDelivery(contact, product)} />
           );
         } else {
-          const textStyle = this.getDeliveryTextStyle(delivery);
+          if (deliveries.length > 1) {
+            const deliveryButtons = deliveries.map((delivery) => {
+              return <Button basic onClick={() => this.handleEditDelivery(delivery!)}> { delivery.amount } </Button>
+            });
 
-          tableCells.push(
-            <Table.Cell 
-              key={`${contact.id}-${product.id}`}
-              style={{...textStyle}}
-              selectable
-              onClick={() => this.handleEditDelivery(delivery!)}>
-              { this.renderDeliveryIcon(delivery) }
-              { delivery.amount }
-            </Table.Cell>
-          );
+            tableCells.push(
+              <Table.Cell key={`${contact.id}-${product.id}`} style={{ paddingLeft: "5px", paddingRight: "5px" }} selectable onClick={() => {}}>
+                 <Popup style={{ textAlign: "center" }} wide trigger={<Button style={{ width: "100%" }} basic content='Valitse' />} on='click'>
+                  { deliveryButtons }
+                 </Popup>
+              </Table.Cell>
+            );
+          } else {
+            const delivery = deliveries[0];
+
+            const textStyle = this.getDeliveryTextStyle(delivery);
+
+            tableCells.push(
+              <Table.Cell 
+                key={`${contact.id}-${product.id}`}
+                style={{...textStyle}}
+                selectable
+                onClick={() => this.handleEditDelivery(delivery!)}>
+                { this.renderDeliveryIcon(delivery) }
+                { delivery.amount }
+              </Table.Cell>
+            );
+          }
         }
       }
       tableRows.push(<Table.Row key={contact.id}>{tableCells}</Table.Row>)
@@ -290,11 +306,17 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     }
   }
 
-  private findDeliveryByContactAndProduct = (contact: Contact, product: Product): Delivery | undefined => {
+  /**
+   * Lists contact deliveries by product
+   * 
+   * @param contact contact
+   * @param product product
+   */
+  private listContactDeliveries(contact: Contact, product: Product): Delivery[] {
     const { deliveries } = this.state;
-    return (deliveries || []).find((delivery) => delivery.productId == product.id && delivery.userId == contact.id);
+    return (deliveries || []).filter((delivery) => delivery.productId == product.id && delivery.userId == contact.id);
   }
-
+  
   private handleDeliveryPlaceChange = (event: React.SyntheticEvent<HTMLElement>, data: DropdownProps) => {
     this.setState({
       selectedDeliveryPlaceId: data.value as string
