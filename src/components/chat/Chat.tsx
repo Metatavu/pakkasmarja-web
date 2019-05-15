@@ -168,12 +168,16 @@ class Chat extends React.Component<Props, State> {
         </Segment>
         <Segment style={{ display: this.state.open ? "block" : "none"}}>
           <Grid>
-            <Grid.Column width={14}>
-              <Textarea value={this.state.pendingMessage} onChange={this.handleMessageChange} style={{resize:"none", padding: "10px", borderRadius: "10px", maxWidth: "95%"}} draggable={false} placeholder="Kirjoita viesti..."></Textarea>
-              <a onClick={() => this.setState({addImageModalOpen: true})}>Lisää kuva</a>
+            <Grid.Column className="chat-footer" width={12}>
+              <Textarea value={this.state.pendingMessage} onChange={this.handleMessageChange} style={{resize:"none", padding: "10px", borderRadius: "10px", width: "100%"}} draggable={false} placeholder="Kirjoita viesti..."></Textarea>
             </Grid.Column>
-            <Grid.Column width={2}>
-              <Button onClick={() => this.uploadMessage()} floated="right" style={{color: "#fff", background: "rgb(229, 29, 42)"}} circular icon>
+            <Grid.Column className="chat-footer" width={2}>
+              <Button title={strings.addImageShort} onClick={() => this.setState({addImageModalOpen: true})} style={{color: "#fff", background: "rgb(229, 29, 42)"}} circular icon>
+                <Icon name="upload" />
+              </Button>
+            </Grid.Column>
+            <Grid.Column className="chat-footer" width={2}>
+              <Button title={strings.send} onClick={() => this.uploadMessage()} style={{color: "#fff", background: "rgb(229, 29, 42)"}} circular icon>
                 <Icon name="paper plane" />
               </Button>
             </Grid.Column>

@@ -146,6 +146,7 @@ export interface IStrings extends LocalizedStringsMethods {
   suggestions: string
   image: string
   addImage: string
+  addImageShort: string
   note: string
   editDelivery: string
   manageIncomingDeliveries: string

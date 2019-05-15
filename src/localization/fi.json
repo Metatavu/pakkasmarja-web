@@ -140,6 +140,7 @@
   "suggestions": "Ehdotukset",
   "image": "Kuva",
   "addImage": "Lisää kuva pudottamalla tai klikkaamalla",
+  "addImageShort": "Lisää kuva",
   "note": "Huomio",
   "editDelivery": "Muokkaa toimitusta",
   "manageIncomingDeliveries": "Hallitse saapuvia toimituksia",

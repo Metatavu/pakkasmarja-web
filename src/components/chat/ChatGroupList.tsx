@@ -67,7 +67,7 @@ class ChatGroupList extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
-
+    
     this.setState({loading: true});
     try {
       const chatGroupsService = await Api.getChatGroupsService(this.props.keycloak.token);
@@ -93,9 +93,9 @@ class ChatGroupList extends React.Component<Props, State> {
     const conversations = this.state.conversationListItems.map((conversationListItem) => {
       return (
         <Item key={conversationListItem.id} onClick={() => this.selectGroup(conversationListItem.id)}>
-          <Item.Image avatar size="mini" src={conversationListItem.avatar} />
+          <Item.Image avatar style={{width:"45px"}} src={conversationListItem.avatar} />
           <Item.Content>
-            <Item.Header>{conversationListItem.title.length > 30 ? `${conversationListItem.title.substring(0, 30)}...` : conversationListItem.title}</Item.Header>
+            <p className="chat-header">{conversationListItem.title.length > 30 ? `${conversationListItem.title.substring(0, 30)}...` : conversationListItem.title}</p>
             <Item.Meta>{conversationListItem.subtitle}</Item.Meta>
             <Item.Extra>{moment(conversationListItem.date).format("DD.mm.YYYY HH:mm:ss")}</Item.Extra>
           </Item.Content>

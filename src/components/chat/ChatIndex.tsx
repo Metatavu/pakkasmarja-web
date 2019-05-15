@@ -4,7 +4,7 @@ import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
-import { Tab, Segment } from "semantic-ui-react";
+import { Tab } from "semantic-ui-react";
 import ChatThreadList from "./ChatThreadList";
 import ChatGroupList from "./ChatGroupList";
 
@@ -16,6 +16,7 @@ interface Props {
   keycloak?: Keycloak.KeycloakInstance;
   onChatThreadSelected: (chatThreadId: number) => void
   onChatGroupSelected: (chatGroup: number) => void
+  onResetChatGroupId: () => void;
   chatGroup?: number
 }
 
@@ -43,8 +44,9 @@ class ChatIndex extends React.Component<Props, State> {
    * Renders chat tab
    */
   private renderChatTab = (): JSX.Element => {
+    this.props.onResetChatGroupId();
     return (
-      <Tab.Pane>
+      <Tab.Pane attached='bottom'>
         <ChatThreadList onThreadSelected={this.props.onChatThreadSelected} type="CHAT" />
       </Tab.Pane>
     );
@@ -55,12 +57,12 @@ class ChatIndex extends React.Component<Props, State> {
    */
   private renderQuestionTab = (): JSX.Element => {
     return (
-      <Tab.Pane>
+      <Tab.Pane attached='bottom'>
         {this.props.chatGroup ? (
           <ChatThreadList groupId={this.props.chatGroup} onThreadSelected={this.props.onChatThreadSelected} type="QUESTION" />
         ) : (
-          <ChatGroupList onGroupSelected={(chatGroupId: number) => this.props.onChatGroupSelected(chatGroupId)} type="QUESTION" />
-        )}
+            <ChatGroupList onGroupSelected={(chatGroupId: number) => this.props.onChatGroupSelected(chatGroupId)} type="QUESTION" />
+          )}
       </Tab.Pane>
     );
   }
@@ -70,12 +72,12 @@ class ChatIndex extends React.Component<Props, State> {
    */
   public render() {
     return (
-      <Segment>
-        <Tab panes={[
+      <Tab
+        menu={{ color:"red", attached: 'top', fluid: true, secondary: true, pointing: true }}
+        panes={[
           { menuItem: "Ryhmäkeskustelu", render: this.renderChatTab },
           { menuItem: "Kysymykset", render: this.renderQuestionTab }
         ]} />
-      </Segment>
     );
   }
 }

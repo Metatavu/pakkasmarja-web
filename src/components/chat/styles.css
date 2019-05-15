@@ -1,0 +1,59 @@
+.chat-container .meta {
+  margin: 0px !important; }
+
+.chat-container .extra {
+  margin: 2px 0px 0px 0px !important; }
+
+.chat-container .chat-header {
+  font-weight: 600;
+  margin: 2px 0px 2px 0px !important; }
+
+.chat-container .ui.secondary.pointing.menu .item {
+  width: 50%;
+  justify-content: center; }
+
+.chat-container .ui.segments {
+  margin: 0; }
+
+.chat-container .image {
+  align-self: center; }
+
+.chat-container .content:hover {
+  cursor: pointer;
+  color: red; }
+  .chat-container .content:hover .meta {
+    color: red; }
+
+.chat-container .ui.secondary.menu {
+  background-color: white; }
+
+.chat-container .two.wide.column.chat-footer,
+.chat-container .twelve.wide.column.chat-footer {
+  padding: 5px 2.5px 5px 2.5px !important; }
+
+.chat-container .chat-back-button {
+  position: relative; }
+  .chat-container .chat-back-button:hover {
+    cursor: pointer; }
+    .chat-container .chat-back-button:hover::before {
+      background-color: #db1d2a;
+      box-shadow: 0px 0px 4px black; }
+  .chat-container .chat-back-button::before {
+    content: " ";
+    z-index: 999;
+    position: absolute;
+    background-color: #e51d2a;
+    width: 30px;
+    height: 30px;
+    bottom: -98px;
+    right: 20px;
+    border-radius: 25px;
+    box-shadow: 0px 0px 3px grey; }
+  .chat-container .chat-back-button::after {
+    font-family: FontAwesome;
+    font-size: 15px;
+    content: "\f060";
+    z-index: 1999;
+    position: absolute;
+    bottom: -92px;
+    right: 30px; }
