@@ -65,11 +65,32 @@ class ChatThreadList extends React.Component<Props, State> {
   /**
    * Component did mount life cycle method
    */
+  public componentDidUpdate = async (prevProps: Props) => {
+    if(prevProps.groupId != this.props.groupId || prevProps.type != this.props.type){
+      if (!this.props.keycloak || !this.props.keycloak.token) {
+        return;
+      }
+      this.loadData();
+    }
+  }
+
+  /**
+   * Component did mount life cycle method
+   */
   public componentDidMount = async() => {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
+    this.loadData();
+  }
 
+  /**
+   * Load data
+   */
+  private loadData = async () => {
+    if (!this.props.keycloak || !this.props.keycloak.token) {
+      return;
+    }
     this.setState({loading: true});
     try {
       const chatThreadsService = await Api.getChatThreadsService(this.props.keycloak.token);
@@ -95,11 +116,11 @@ class ChatThreadList extends React.Component<Props, State> {
     const conversations = this.state.conversationListItems.map((conversationListItem) => {
       return (
         <Item key={conversationListItem.id} onClick={() => this.selectThread(conversationListItem.id)}>
-          <Item.Image avatar size="mini" src={conversationListItem.avatar} />
+          <Item.Image avatar style={{width:"45px"}} src={conversationListItem.avatar} />
           <Item.Content>
-            <Item.Header>{conversationListItem.title.length > 30 ? `${conversationListItem.title.substring(0, 30)}...` : conversationListItem.title}</Item.Header>
+            <p className="chat-header">{conversationListItem.title.length > 30 ? `${conversationListItem.title.substring(0, 30)}...` : conversationListItem.title}</p>
             <Item.Meta>{conversationListItem.subtitle}</Item.Meta>
-            <Item.Extra>{moment(conversationListItem.date).format("DD.mm.YYYY HH:mm:ss")}</Item.Extra>
+            <Item.Extra>{moment(conversationListItem.date).format("DD.MM.YYYY HH:mm:ss")}</Item.Extra>
           </Item.Content>
         </Item>
       )

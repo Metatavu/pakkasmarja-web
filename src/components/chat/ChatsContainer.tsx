@@ -3,7 +3,7 @@ import * as actions from "../../actions";
 import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import "../../styles/common.scss";
+import "./styles.scss";
 import ChatIndex from "./ChatIndex";
 import Chat from "./Chat";
 import { Segment, Icon } from "semantic-ui-react";
@@ -52,31 +52,41 @@ class ChatsContainer extends React.Component<Props, State> {
   public render() {
     const chatWindows = this.state.chats.map((chatWindow, index) => {
       return (
-        <div key={chatWindow.threadId} style={{width: "300px", position: "fixed", bottom: "0", right: `${((index + 1) * 315)}px`}}>
+        <div key={chatWindow.threadId} style={{ width: "350px", position: "fixed", bottom: "0", right: `${((index + 1) * 365)}px` }}>
           <Chat onExit={() => this.closeChat(chatWindow.threadId)} threadId={chatWindow.threadId} />
         </div>
       );
     });
 
     return (
-      <div style={{position: "fixed", right: "10px", bottom: "0", width: "300px"}}>
+      <div className="chat-container" style={{ position: "fixed", right: "10px", bottom: "0", width: "350px" }}>
         <Segment.Group stacked>
-          <Segment style={{color: "#fff", background: "rgb(229, 29, 42)"}}>
-            <span onClick={this.toggleWindow}> 
-            Keskustelu
-            { this.state.open ? (
-              <Icon name="angle down" />
-            ) : (
-              <Icon name="angle up" />
-            ) }
+          <Segment style={{ color: "#fff", background: "rgb(229, 29, 42)" }}>
+            <span onClick={this.toggleWindow}>
+              Keskustelu
+            {this.state.open ? (
+                <Icon name="angle down" />
+              ) : (
+                  <Icon name="angle up" />
+                )}
             </span>
-            {this.state.chatGroupId && <Icon onClick={() => this.setState({chatGroupId: undefined})} name="long arrow alternate left" style={{float: "right"}} /> }
+            {
+              this.state.chatGroupId &&
+              <div className="chat-back-button" onClick={this.resetChatGroupId}></div>
+            }
           </Segment>
-          { this.state.open &&  <ChatIndex chatGroup={this.state.chatGroupId} onChatGroupSelected={this.onSelectGroup} onChatThreadSelected={this.onSelectThread}/> }
+          {this.state.open && <ChatIndex onResetChatGroupId={this.resetChatGroupId} chatGroup={this.state.chatGroupId} onChatGroupSelected={this.onSelectGroup} onChatThreadSelected={this.onSelectThread} />}
         </Segment.Group>
         {chatWindows}
       </div>
     )
+  }
+
+  /**
+   * Reset chat group id
+   */
+  private resetChatGroupId = () =>{
+    this.setState({ chatGroupId: undefined })
   }
 
   /**
