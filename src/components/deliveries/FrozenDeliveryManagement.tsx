@@ -5,7 +5,7 @@ import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
 import Api, { DeliveryPlace, Product, Contact, Delivery } from "pakkasmarja-client";
-import { Dimmer, Loader, Dropdown, DropdownProps, Modal, Button, Input} from "semantic-ui-react";
+import { Dimmer, Loader, Dropdown, DropdownProps, Modal, Button, Input, Image} from "semantic-ui-react";
 import { Table } from 'semantic-ui-react';
 import BasicLayout from "../generic/BasicLayout";
 import * as moment from "moment";
@@ -13,6 +13,7 @@ import TableBasicLayout from "../contract-management/TableBasicLayout";
 import ManageDeliveryModal from "./ManageDeliveryModal";
 import DatePicker, { registerLocale } from "react-datepicker";
 import fi from 'date-fns/esm/locale/fi'
+import IncomingDeliveryIcon from "../../gfx/incoming-delivery-icon.png";
 
 /**
  * Interface for component props
@@ -119,7 +120,7 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
     });
 
 
-    const {contacts, products} = this.state;
+    const { contacts, products } = this.state;
 
     const productHeaderCells = products.map((product) => {
       return (
@@ -143,14 +144,15 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
               onClick={() => this.handleCreateDelivery(contact, product)} />
           );
         } else {
-          let textStyle = this.getDeliveryTextStyle(delivery);
+          const textStyle = this.getDeliveryTextStyle(delivery);
           tableCells.push(
             <Table.Cell 
               key={`${contact.id}-${product.id}`}
               style={{...textStyle}}
               selectable
               onClick={() => this.handleEditDelivery(delivery!)}>
-              {delivery.amount}
+              { this.renderDeliveryIcon(delivery) }
+              { delivery.amount }
             </Table.Cell>
           );
         }
@@ -214,6 +216,20 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
     );
   }
 
+  /**
+   * Renders delivery icon
+   * 
+   * @param delivery delivery
+   */
+  private renderDeliveryIcon(delivery: Delivery) {
+    const icon = this.getDeliveryIcon(delivery);
+    if (!icon) {
+      return null;
+    }
+
+    return <Image src={ icon } style={{ float: "left", maxWidth: "32px", marginRight: "10px" }}/>
+  }
+
   private addProposal = async () => {
     const { keycloak } = this.props;
     const { proposalContact, proposalProduct, proposalAmount, selectedDeliveryPlaceId, selectedDate } = this.state;
@@ -244,17 +260,40 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
     this.updateTableData();
   }
 
+  /**
+   * Returns delivery icon
+   * 
+   * @param delivery delivery
+   */
+  private getDeliveryIcon(delivery: Delivery) {
+    switch (delivery.status) {
+      case "DELIVERY":
+        return IncomingDeliveryIcon;
+      case "DONE":
+      case "PROPOSAL":
+      case "PLANNED":
+      case "REJECTED":
+    }
+
+    return null;
+  }
+
+  /**
+   * Returns style for delivery
+   * 
+   * @param delivery delivery
+   */
   private getDeliveryTextStyle(delivery: Delivery) {
     switch (delivery.status) {
       case "DELIVERY":
-        return {color: "#000"};
+        return { color: "#000", paddingLeft: "20px" };
       case "DONE":
-        return { color: "#4bb543" };
+        return { color: "#4bb543", paddingLeft: "20px" };
       case "PROPOSAL":
       case "PLANNED":
-        return { color: "#aaa" };
+        return { color: "#aaa", paddingLeft: "20px" };
       case "REJECTED":
-        return { color: "#ff0000" };
+        return { color: "#ff0000", paddingLeft: "20px" };
     }
   }
 
