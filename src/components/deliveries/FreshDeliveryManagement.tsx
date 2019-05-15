@@ -6,7 +6,7 @@ import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
 import Api, { DeliveryPlace, Product, Contact, Delivery, DeliveryQuality } from "pakkasmarja-client";
-import { Dimmer, Loader, Dropdown, DropdownProps, Modal, Button, Input, Image, Icon, Popup, Grid, Select} from "semantic-ui-react";
+import { Dimmer, Loader, Dropdown, DropdownProps, Modal, Button, Input, Image, Icon, Popup } from "semantic-ui-react";
 import { Table } from 'semantic-ui-react';
 import BasicLayout from "../generic/BasicLayout";
 import * as moment from "moment";
