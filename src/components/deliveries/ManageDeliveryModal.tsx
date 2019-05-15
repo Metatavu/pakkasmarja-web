@@ -170,7 +170,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
   /**
    * Handles delivery submit
    */
-  private handleDeliverySubmit = async () => {
+  private handleDeliveryAccept = async () => {
     if (!this.props.keycloak || !this.props.keycloak.token || !this.state.selectedPlaceId || !this.state.selectedProductId || !this.state.date || !this.state.deliveryId) {
       return;
     }
@@ -204,6 +204,44 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       })
     }
   }
+
+  /**
+   * Handles delivery submit
+   */
+  private handleDeliverySave = async () => {
+    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.selectedPlaceId || !this.state.selectedProductId || !this.state.date || !this.state.deliveryId) {
+      return;
+    }
+
+    try {
+      const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
+      const delivery: Delivery = {
+        id: "",
+        productId: this.state.selectedProductId,
+        userId: this.state.userId || "",
+        time: this.state.date,
+        status: this.props.delivery.status,
+        amount: this.state.amount,
+        price: "0",
+        deliveryPlaceId: this.state.selectedPlaceId,
+        qualityId: this.state.selectedQualityId
+      }
+  
+      const response = await deliveryService.updateDelivery(delivery, this.state.deliveryId);
+      if (this.isHttpErrorResponse(response)) {
+        const errorResopnse: HttpErrorResponse = response;
+        this.props.onError && this.props.onError(errorResopnse.message);
+        return;
+      }
+
+      this.props.onUpdate();
+    } catch (e) {
+      this.props.onError && this.props.onError(strings.errorCommunicatingWithServer);
+      this.setState({
+        loading: false
+      })
+    }
+  }
   
   /**
    * Render method
@@ -212,7 +250,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     if (this.state.loading) {
       return (
         <Modal open={this.props.open}>
-          <Modal.Header>Muokkaa toimitusta</Modal.Header>
+          <Modal.Header>Toimituksen hyväksyntä</Modal.Header>
           <Modal.Content>
             <Segment loading />
           </Modal.Content>
@@ -236,14 +274,6 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       };
     }) || [];
 
-    const deliveryQualityOptions = this.state.deliveryQualities.map((deliveryQuality) => {
-      return {
-        key: deliveryQuality.id,
-        text: deliveryQuality.name,
-        value: deliveryQuality.id
-      };
-    });
-
     return (
       <Modal onClose={() => this.props.onClose()} open={this.props.open}>
         <Modal.Header>Muokkaa toimitusta</Modal.Header>
@@ -253,10 +283,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
               <label>{strings.product}</label>
               {this.renderDropDown(productOptions, "selectedProductId")}
             </Form.Field>
-            <Form.Field>
-              <label>Laatu</label>
-              {this.renderDropDown(deliveryQualityOptions, "selectedQualityId")}
-            </Form.Field>
+            { this.renderQualityField() }
             <Form.Field>
               <label>{strings.amount}</label>
               <Input
@@ -281,11 +308,56 @@ class ManageDeliveryModal extends React.Component<Props, State> {
               <label>{strings.deliveryPlace}</label>
               {this.renderDropDown(deliveryPlaceOptions, "selectedPlaceId")}
             </Form.Field>
-            <Button disabled={ !this.isValid() } color="red" onClick={this.handleDeliverySubmit} type='submit'>Hyväksy toimitus</Button>
+
+            { this.renderSubmitButton() }
+            
           </Form>
         </Modal.Content>
       </Modal>
     );
+  }
+
+  /**
+   * Renders quality field
+   */
+  private renderQualityField() {
+    if (this.props.delivery.status == "PROPOSAL") {
+      return null;
+    }
+
+    const deliveryQualityOptions = this.state.deliveryQualities.map((deliveryQuality) => {
+      return {
+        key: deliveryQuality.id,
+        text: deliveryQuality.name,
+        value: deliveryQuality.id
+      };
+    });
+
+    return (
+      <Form.Field>
+        <label>Laatu</label>
+        {this.renderDropDown(deliveryQualityOptions, "selectedQualityId")}
+      </Form.Field>
+    );
+  }
+
+  /**
+   * Renders submit button
+   */
+  private renderSubmitButton() {
+    if (this.props.delivery.status == "DONE") {
+      return <Button disabled color="grey" type='submit'>Toimitus on jo hyväksytty</Button>;
+    }
+
+    if (this.props.delivery.status == "REJECTED") {
+      return <Button disabled color="grey" type='submit'>Toimitus hylätty</Button>;
+    }
+
+    if (this.props.delivery.status == "PROPOSAL") {
+      return <Button disabled={ !this.isValid() } color="green" onClick={ this.handleDeliverySave }  type='submit'>Muokkaa ehdotusta</Button>;
+    }
+
+    return <Button disabled={ !this.isValid() } color="red" onClick={ this.handleDeliveryAccept } type='submit'>Hyväksy toimitus</Button>;
   }
 
   /**
@@ -294,7 +366,19 @@ class ManageDeliveryModal extends React.Component<Props, State> {
    * @return whether form is valid or not
    */
   private isValid = () => {
-    return !!(this.state.selectedPlaceId && this.state.selectedProductId && this.state.selectedQualityId);
+    if (!this.state.selectedPlaceId) {
+      return false;
+    }
+
+    if (!this.state.selectedProductId) {
+      return false;
+    }
+
+    if (this.props.delivery.status != "PROPOSAL" && !this.state.selectedQualityId) {
+      return false;
+    }
+
+    return true;
   } 
 }
 
