@@ -280,6 +280,9 @@ class ManageDeliveryModal extends React.Component<Props, State> {
         <Modal.Content>
           <Form>
             <Form.Field>
+              Tila: { this.getStatusText() }
+            </Form.Field>
+            <Form.Field>
               <label>{strings.product}</label>
               {this.renderDropDown(productOptions, "selectedProductId")}
             </Form.Field>
@@ -315,6 +318,24 @@ class ManageDeliveryModal extends React.Component<Props, State> {
         </Modal.Content>
       </Modal>
     );
+  }
+
+  /**
+   * Returns status text
+   */
+  private getStatusText = () => {
+    switch (this.props.delivery.status) {
+      case "DELIVERY":
+        return "Toimituksessa";
+      case "DONE":
+        return "Hyväksytty";
+      case "PLANNED":
+        return "Suunnitelma";
+      case "PROPOSAL":
+        return "Ehdotus";
+      case "REJECTED":
+        return "Hylätty";
+    }
   }
 
   /**
