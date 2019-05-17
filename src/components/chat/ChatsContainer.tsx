@@ -7,6 +7,7 @@ import "./styles.scss";
 import ChatIndex from "./ChatIndex";
 import Chat from "./Chat";
 import { Segment, Icon } from "semantic-ui-react";
+import { ChatThread } from "pakkasmarja-client";
 
 /**
  * Interface for component props
@@ -30,7 +31,8 @@ interface State {
  */
 interface ChatWindow {
   open: boolean,
-  threadId: number
+  threadId: number,
+  answerType: ChatThread.AnswerTypeEnum
 }
 
 /**
@@ -53,7 +55,7 @@ class ChatsContainer extends React.Component<Props, State> {
     const chatWindows = this.state.chats.map((chatWindow, index) => {
       return (
         <div key={chatWindow.threadId} style={{ width: "350px", position: "fixed", bottom: "0", right: `${((index + 1) * 365)}px` }}>
-          <Chat onExit={() => this.closeChat(chatWindow.threadId)} threadId={chatWindow.threadId} />
+          <Chat onExit={() => this.closeChat(chatWindow.threadId)} threadId={chatWindow.threadId} answerType={chatWindow.answerType} />
         </div>
       );
     });
@@ -121,7 +123,7 @@ class ChatsContainer extends React.Component<Props, State> {
   /**
    * Thread select handler
    */
-  private onSelectThread = (chatThreadId: number) => {
+  private onSelectThread = (chatThreadId: number, answerType : ChatThread.AnswerTypeEnum) => {
     const { chats } = this.state;
     let found = false;
     chats.forEach((chatWindow) => {
@@ -134,7 +136,8 @@ class ChatsContainer extends React.Component<Props, State> {
     if (!found) {
       chats.push({
         open: true,
-        threadId: chatThreadId
+        threadId: chatThreadId,
+        answerType
       });
     }
 

@@ -7,12 +7,16 @@ import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
 import Api, { ChatGroupPermissionScope, UserGroup, ChatGroup, ChatThread } from "pakkasmarja-client";
-import { Header, Dimmer, Loader, Select, DropdownItemProps, Button, DropdownProps, Form, Input, InputOnChangeData, Image } from "semantic-ui-react";
+import { Header, Dimmer, Loader, Select, DropdownItemProps, Button, DropdownProps, Form, Input, InputOnChangeData, Image, Dropdown, Checkbox } from "semantic-ui-react";
 import ImageGallery from "../generic/ImageGallery";
 import UploadNewsImageModal from "../news/UploadNewsImageModal";
 import strings from "../../localization/strings";
 import { FileService } from "../../api/file.service";
 import { Link } from "react-router-dom";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import CKEditor from '@ckeditor/ckeditor5-react';
+import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 
 /**
  * Interface for component props
@@ -28,7 +32,7 @@ interface Props {
  */
 interface State {
   userGroups: UserGroup[],
-  permissionScopes: { [key: string]: ChatGroupPermissionScope| null },
+  permissionScopes: { [key: string]: ChatGroupPermissionScope | null },
   loading: boolean,
   saving: boolean,
   chatGroupId: number,
@@ -37,8 +41,13 @@ interface State {
   title: string,
   imageUrl?: string,
   imageBase64?: string,
-  galleryOpen: boolean
-  uploadModalOpen: boolean
+  galleryOpen: boolean,
+  uploadModalOpen: boolean,
+  date?: Date,
+  answerType: ChatThread.AnswerTypeEnum,
+  pollAllowOther?: boolean,
+  pollAnswers: string[],
+  description?: string
 }
 
 /**
@@ -56,7 +65,9 @@ class EditChatGroup extends React.Component<Props, State> {
       chatGroupId: 0,
       title: "",
       uploadModalOpen: false,
-      galleryOpen: false
+      galleryOpen: false,
+      answerType: "TEXT",
+      pollAnswers: [""]
     };
   }
 
@@ -81,7 +92,7 @@ class EditChatGroup extends React.Component<Props, State> {
 
     const chatGroupId = this.props.match.params.chatGroupId;
 
-    this.setState({ 
+    this.setState({
       loading: true,
       chatGroupId: chatGroupId
     });
@@ -110,21 +121,26 @@ class EditChatGroup extends React.Component<Props, State> {
     const permissionKeys = Object.keys(permissions);
     const permissionScopes = {};
 
-    for (let i = 0; i < permissionKeys.length; i++) {
-      permissionScopes[permissionKeys[i]] = permissions[permissionKeys[i]].scope || null;
+    for (let i = 0; i < permissionKeys.length; i++) {
+      permissionScopes[permissionKeys[i]] = permissions[permissionKeys[i]].scope || null;
     }
 
     const imageUrl = chatGroup.imageUrl || chatThread.imageUrl;
-    
-    this.setState({
+
+    await this.setState({
       userGroups: await userGroupsService.listUserGroups(),
       loading: false,
       permissionScopes: permissionScopes,
       imageUrl: imageUrl,
       title: chatGroup.title,
-      chatThread: chatThread
+      chatThread: chatThread,
+      pollAllowOther: chatThread.pollAllowOther,
+      answerType: chatThread.answerType,
+      date: chatThread.expiresAt && new Date(chatThread.expiresAt),
+      description: chatThread.description,
+      pollAnswers: chatThread.pollPredefinedTexts || [""]
     });
-
+    this.handleAddNewInput();
     this.updateImageBase64(imageUrl);
   }
 
@@ -132,12 +148,12 @@ class EditChatGroup extends React.Component<Props, State> {
    * Render method
    */
   public render() {
-    if (this.state.loading || this.state.saving) {
+    if (this.state.loading || this.state.saving) {
       return (
         <BasicLayout>
           <Dimmer active inverted>
             <Loader inverted>
-              { this.state.saving ? "Tallentaa..." : "Ladataan..." }
+              {this.state.saving ? "Tallentaa..." : "Ladataan..."}
             </Loader>
           </Dimmer>
         </BasicLayout>
@@ -148,13 +164,11 @@ class EditChatGroup extends React.Component<Props, State> {
       <BasicLayout>
         <Form>
           <Form.Field>
-            <Header as="h2"> { strings.questionGroupManagement } </Header>
+            <Header as="h2"> {strings.questionGroupManagement} </Header>
           </Form.Field>
           <Form.Field>
-            <Header as="h3"> { strings.title } </Header>
-          </Form.Field>
-          <Form.Field>
-            <Input onChange={ this.onTitleChange } value={ this.state.title } />
+            <label> {strings.title} </label>
+            <Input onChange={this.onTitleChange} value={this.state.title} />
           </Form.Field>
           <Form.Field>
             <label>{strings.image}</label>
@@ -164,31 +178,67 @@ class EditChatGroup extends React.Component<Props, State> {
             <Button color="red" style={{ marginTop: "10px" }} onClick={() => this.setState({ uploadModalOpen: true })}>
               {strings.uploadImage}
             </Button>
-            <div style={{ marginTop: "10px" }}>{ this.renderImage() }</div>
+            <div style={{ marginTop: "10px" }}>{this.renderImage()}</div>
           </Form.Field>
           <Form.Field>
-            <Header as="h3"> { strings.groupPermissions } </Header>
+            <label> {strings.answerType} </label>
+            {this.renderDropDown()}
+          </Form.Field>
+          {
+            this.state.answerType === "POLL" &&
+            <React.Fragment>
+              <Form.Field>
+                <Header as="h5"> {strings.pollDescription} </Header>
+              </Form.Field>
+              <Form.Field>
+                <CKEditor
+                  editor={ClassicEditor}
+                  data={this.state.description}
+                  onChange={(e: any, editor: any) => {
+                    const description = editor.getData();
+                    this.setState({ description });
+                  }}
+                />
+              </Form.Field>
+              <Form.Field>
+                <Header as="h5"> {strings.pollChoices} </Header>
+              </Form.Field>
+              <Form.Field>
+                <p>{strings.insertPollChoicesBelow}</p>
+                {this.renderAnswerInput()}
+              </Form.Field>
+              <Form.Field>
+                {this.renderCheckBox()}
+              </Form.Field>
+              <Form.Field>
+                <label> {strings.expireDate} </label>
+                {this.renderDatePicker()}
+              </Form.Field>
+            </React.Fragment>
+          }
+          <Form.Field>
+            <Header as="h3"> {strings.groupPermissions} </Header>
           </Form.Field>
           <Form.Field>
-            { this.renderUserGroups() }
+            {this.renderUserGroups()}
           </Form.Field>
           <Form.Field>
             <Button.Group floated="right">
-              <Button inverted color="red" as={Link} to={"/chatManagement"}> { strings.back } </Button>
+              <Button inverted color="red" as={Link} to={"/chatManagement"}> {strings.back} </Button>
               <Button.Or text="" />
-              <Button color="red" onClick={ this.onSaveClick }> { strings.save } </Button>
+              <Button color="red" onClick={this.onSaveClick}> {strings.save} </Button>
             </Button.Group>
           </Form.Field>
         </Form>
-        <ImageGallery 
+        <ImageGallery
           modalOpen={this.state.galleryOpen}
           onCloseModal={() => this.setState({ galleryOpen: false })}
-          onImageSelected={(url: string) => this.onImageSelected(url) }
+          onImageSelected={(url: string) => this.onImageSelected(url)}
         />
-        <UploadNewsImageModal 
+        <UploadNewsImageModal
           modalOpen={this.state.uploadModalOpen}
           onCloseModal={() => this.setState({ uploadModalOpen: false })}
-          onImageSelected={(url: string) => this.onImageSelected(url) }
+          onImageSelected={(url: string) => this.onImageSelected(url)}
         />
       </BasicLayout>
     );
@@ -201,18 +251,46 @@ class EditChatGroup extends React.Component<Props, State> {
     if (this.state.imageBase64) {
       return (<div>
         <Image src={this.state.imageBase64} size="medium" />
-        <p style={{color: "red", cursor: "pointer"}} onClick={() => this.setState({ imageBase64: undefined, imageUrl: undefined })}>{strings.deleteImage}</p>
+        <p style={{ color: "red", cursor: "pointer" }} onClick={() => this.setState({ imageBase64: undefined, imageUrl: undefined })}>{strings.deleteImage}</p>
       </div>)
     }
 
-    return <div> { strings.noSelectedImage } </div>;
+    return <div> {strings.noSelectedImage} </div>;
+  }
+
+  /**
+  * Renders drop down
+  */
+  private renderDropDown = () => {
+
+    const options = [{
+      key: "TEXT",
+      value: "TEXT",
+      text: "Teksti (oletus)"
+    }, {
+      key: "POLL",
+      value: "POLL",
+      text: "Äänestys"
+    }]
+    return (
+      <Dropdown
+        fluid
+        selection
+        placeholder={this.state.answerType}
+        value={this.state.answerType}
+        options={options}
+        onChange={(event: React.SyntheticEvent<HTMLElement, Event>, data: DropdownProps) =>
+          this.setState({ answerType: data.value as ChatThread.AnswerTypeEnum })
+        }
+      />
+    );
   }
 
   /**
    * Renders user groups
    */
   private renderUserGroups = () => {
-    const roleOptions: DropdownItemProps[] = [{
+    const roleOptions: DropdownItemProps[] = [{
       key: undefined,
       value: "NONE",
       text: strings.groupPermissionNONE
@@ -228,18 +306,80 @@ class EditChatGroup extends React.Component<Props, State> {
 
     return (
       <div>
-      {
-        this.state.userGroups.map((userGroup, index) => {
-          return (
-            <div key={ userGroup.id } style={{ clear: "both", height: "40px" }}>
-              <div style={{ float: "left" }}>{ userGroup.name }</div>
-              <div style={{ float: "right" }}><Select value={ this.getUserGroupRoleValue(userGroup) } options={ roleOptions } onChange={ (event: React.SyntheticEvent<HTMLElement>, data: DropdownProps) => this.onChangeRole(userGroup.id!, data.value as string) } /></div>
-            </div>
-          );
-        })
-      }
+        {
+          this.state.userGroups.map((userGroup, index) => {
+            return (
+              <div key={userGroup.id} style={{ clear: "both", height: "40px" }}>
+                <div style={{ float: "left" }}>{userGroup.name}</div>
+                <div style={{ float: "right" }}><Select value={this.getUserGroupRoleValue(userGroup)} options={roleOptions} onChange={(event: React.SyntheticEvent<HTMLElement>, data: DropdownProps) => this.onChangeRole(userGroup.id!, data.value as string)} /></div>
+              </div>
+            );
+          })
+        }
       </div>
     );
+  }
+
+  /**
+   * Renders date picker
+   */
+  private renderDatePicker = () => {
+    return (
+      <DatePicker
+        onChange={(date: Date) => {
+          this.setState({ date });
+        }}
+        selected={this.state.date}
+      />
+    );
+  }
+
+  /**
+   * Renders checkbox
+   */
+  private renderCheckBox = () => {
+    return (
+      <Checkbox label='Salli muu vastaus' onChange={() => this.setState(prevState => ({ pollAllowOther: !prevState.pollAllowOther }))} checked={this.state.pollAllowOther} />
+    );
+  }
+
+  /**
+   * Renders answer input
+   */
+  private renderAnswerInput = () => {
+    return (
+      this.state.pollAnswers && this.state.pollAnswers.map((answer, index) => {
+        return (
+          <Form.Field key={index}>
+            <Input value={this.state.pollAnswers[index]} onChange={(e, data) => this.handlePollAnswerChange(e, data, index)} onBlur={this.handleAddNewInput} />
+          </Form.Field>
+        );
+      })
+    );
+  }
+
+  /**
+   * Handle on blur
+   */
+  private handlePollAnswerChange = (event: React.SyntheticEvent<HTMLInputElement>, data: InputOnChangeData, index: number) => {
+    const pollAnswers = [... this.state.pollAnswers];
+    pollAnswers[index] = data.value;
+    this.setState({ pollAnswers });
+  }
+
+  /**
+   * Handles adding a new input if needed
+   */
+  private handleAddNewInput = () => {
+    const pollAnswers = [... this.state.pollAnswers];
+    if (pollAnswers.length == 0) {
+      pollAnswers.push("");
+      this.setState({ pollAnswers: pollAnswers });
+    }
+    if (pollAnswers[pollAnswers.length - 1]) {
+      pollAnswers.push("");
+      this.setState({ pollAnswers: pollAnswers });
+    }
   }
 
   /**
@@ -249,7 +389,7 @@ class EditChatGroup extends React.Component<Props, State> {
    * @returns user group role 
    */
   private getUserGroupRoleValue(userGroup: UserGroup) {
-    return this.state.permissionScopes[userGroup.id!] || "NONE";
+    return this.state.permissionScopes[userGroup.id!] || "NONE";
   }
 
   /**
@@ -261,13 +401,13 @@ class EditChatGroup extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token || !process.env.REACT_APP_API_URL) {
       return;
     }
-    
+
     if (url) {
       const fileService = new FileService(process.env.REACT_APP_API_URL, this.props.keycloak.token);
       const imageData = await fileService.getFile(url);
 
       this.setState({
-        imageBase64: `data:image/jpeg;base64,${imageData.data}`, 
+        imageBase64: `data:image/jpeg;base64,${imageData.data}`,
       });
     } else {
       this.setState({
@@ -282,7 +422,7 @@ class EditChatGroup extends React.Component<Props, State> {
    * @param url url
    */
   private onImageSelected = async (url: string) => {
-    this.setState({ 
+    this.setState({
       imageUrl: url,
       uploadModalOpen: false,
       galleryOpen: false
@@ -316,17 +456,17 @@ class EditChatGroup extends React.Component<Props, State> {
    * Event handler for save button click
    */
   private onSaveClick = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.chatGroupId || !this.state.chatThread || !this.state.chatThread.id || !this.state.title) {
+    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.chatGroupId || !this.state.chatThread || !this.state.chatThread.id || !this.state.title) {
       return;
     }
 
     const chatGroupId = this.state.chatGroupId;
 
-    this.setState({ 
+    this.setState({
       saving: true
     });
 
-    const chatGroupsService = await Api.getChatGroupsService(this.props.keycloak.token);    
+    const chatGroupsService = await Api.getChatGroupsService(this.props.keycloak.token);
     const chatThreadsService = await Api.getChatThreadsService(this.props.keycloak.token);
 
     const chatGroupPermissions = _.keyBy(await chatGroupsService.listChatGroupGroupPermissions(chatGroupId), "userGroupId");
@@ -337,17 +477,17 @@ class EditChatGroup extends React.Component<Props, State> {
       const scope = this.state.permissionScopes[userGroupId];
       const existingPermission = chatGroupPermissions[userGroupId];
 
-      if (!existingPermission || !existingPermission.id) {
+      if (!existingPermission || !existingPermission.id) {
         if (scope) {
           await chatGroupsService.createChatGroupGroupPermissions({
             chatGroupId: chatGroupId,
             scope: scope,
             userGroupId: userGroupId
-          }, chatGroupId); 
+          }, chatGroupId);
         }
       } else {
         if (scope) {
-          await chatGroupsService.updateChatGroupGroupPermissions({ ... existingPermission, scope: scope}, chatGroupId, existingPermission.id);
+          await chatGroupsService.updateChatGroupGroupPermissions({ ...existingPermission, scope: scope }, chatGroupId, existingPermission.id);
         } else {
           await chatGroupsService.deleteChatGroupGroupPermission(chatGroupId, existingPermission.id);
         }
@@ -357,12 +497,23 @@ class EditChatGroup extends React.Component<Props, State> {
     const chatThreadId = this.state.chatThread.id;
 
     const chatGroup = await chatGroupsService.findChatGroup(this.state.chatGroupId);
-    const chatThread = await chatThreadsService.findChatThread(chatThreadId);
 
-    await chatGroupsService.updateChatGroup({ ... chatGroup, title: this.state.title, imageUrl: this.state.imageUrl }, this.state.chatGroupId);
-    await chatThreadsService.updateChatThread({ ... chatThread, title: this.state.title, imageUrl: this.state.imageUrl }, chatThreadId );
-
-    this.setState({ 
+    await chatGroupsService.updateChatGroup({ ...chatGroup, title: this.state.title, imageUrl: this.state.imageUrl }, this.state.chatGroupId);
+    const pollPredefinedTexts = this.state.pollAnswers.filter((answer) => answer);
+    const bodyload: ChatThread = {
+      id: this.state.chatThread.id,
+      groupId: this.state.chatThread.groupId,
+      title: this.state.title,
+      imageUrl: this.state.imageUrl,
+      pollAllowOther: this.state.answerType === "POLL" ? this.state.pollAllowOther : false,
+      expiresAt: this.state.answerType === "POLL" ? this.state.date : undefined,
+      answerType: this.state.answerType,
+      description: this.state.answerType === "POLL" ? this.state.description || "" : "",
+      pollPredefinedTexts: this.state.answerType === "POLL" ? pollPredefinedTexts : undefined
+    }
+    
+    await chatThreadsService.updateChatThread(bodyload, chatThreadId);
+    this.setState({
       saving: false
     });
   }

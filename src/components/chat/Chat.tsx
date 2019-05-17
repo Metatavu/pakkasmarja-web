@@ -6,7 +6,7 @@ import * as actions from "../../actions/";
 import Api, { Contact, ChatMessage, ChatThread } from "pakkasmarja-client";
 import strings from "src/localization/strings";
 import * as moment from "moment";
-import { Segment, Comment, Icon, Button, Grid, Modal, Header } from "semantic-ui-react";
+import { Segment, Comment, Icon, Button, Grid, Modal, Header, Radio, Divider, Loader } from "semantic-ui-react";
 import AVATAR_PLACEHOLDER from "../../gfx/avatar.png";
 import { FileService } from "src/api/file.service";
 import { mqttConnection } from "src/mqtt";
@@ -14,6 +14,7 @@ import Textarea from 'react-textarea-autosize';
 import Lightbox from 'react-image-lightbox';
 import Dropzone from 'react-dropzone';
 import 'react-image-lightbox/style.css';
+import * as _ from "lodash";
 
 const FAILSAFE_POLL_RATE = 5000;
 
@@ -23,9 +24,10 @@ const FAILSAFE_POLL_RATE = 5000;
 interface Props {
   authenticated: boolean;
   keycloak?: Keycloak.KeycloakInstance;
-  threadId: number
-  onError?: (errorMsg: string) => void
-  onExit?: () => void
+  threadId: number;
+  onError?: (errorMsg: string) => void;
+  onExit?: () => void;
+  answerType: ChatThread.AnswerTypeEnum;
 };
 
 /**
@@ -36,12 +38,15 @@ interface State {
   thread?: ChatThread,
   user?: Contact,
   userAvatar: string
-  loading: boolean
+  loading: boolean,
+  pollAnswerLoading: boolean,
   open: boolean,
   pendingMessage: string
+  pollAnswerMessage: string,
   openImage?: string
   addImageModalOpen: boolean,
-  previousMessagesLoaded: boolean
+  previousMessagesLoaded: boolean,
+  pollAnswers: string[]
 }
 
 /**
@@ -78,11 +83,14 @@ class Chat extends React.Component<Props, State> {
     this.state = {
       messages: [],
       pendingMessage: "",
+      pollAnswerMessage: "",
       userAvatar: AVATAR_PLACEHOLDER,
       loading: false,
+      pollAnswerLoading: false,
       open: true,
       addImageModalOpen: false,
-      previousMessagesLoaded: false
+      previousMessagesLoaded: false,
+      pollAnswers: []
     };
   }
 
@@ -94,30 +102,46 @@ class Chat extends React.Component<Props, State> {
     if (!keycloak || !keycloak.token || !threadId) {
       return;
     }
-
-    this.setState({loading: true});
+    this.setState({ loading: true });
     try {
       const chatMessages = await Api.getChatMessagesService(keycloak.token).listChatMessages(threadId, undefined, undefined, 0, 20);
       mqttConnection.subscribe("chatmessages", this.onMessage);
       const messages = await this.translateMessages(chatMessages);
       const user = await Api.getContactsService(keycloak.token).findContact(keycloak.subject || "");
       const userAvatar = user.avatarUrl && user.avatarUrl.indexOf("gravatar") > -1 ? user.avatarUrl : await this.loadImage(user.avatarUrl);
-      const thread = await Api.getChatThreadsService(keycloak.token).findChatThread(this.props.threadId);
+      const thread = await Api.getChatThreadsService(keycloak.token).findChatThread(threadId);
+
+      /*** Redo finding latest user message for poll answer when backend is done */
+      const usersMessages = messages.filter(message => { return message.userId === keycloak.subject && message });
+      const usersLatestMessage = _.sortBy(usersMessages, 'created').reverse()[0];
+      if (usersLatestMessage && thread.answerType === "POLL") {
+        if (thread.pollPredefinedTexts && thread.pollPredefinedTexts.indexOf(usersLatestMessage.text) > -1) {
+          this.setState({ pollAnswerMessage: usersLatestMessage.text });
+        }
+        else {
+          if (usersLatestMessage.text) {
+            this.setState({ pendingMessage: usersLatestMessage.text });
+          }
+        }
+      }
+      /********************* */
+
       this.setState({
         messages: messages.reverse(),
         user: user,
         thread: thread,
         userAvatar: userAvatar,
-        loading: false
+        loading: false,
+        pollAnswers: thread.pollPredefinedTexts || []
       });
-      this.scrollToBottom();
-    } catch(e) {
+      thread.answerType === "TEXT" && this.scrollToBottom();
+    } catch (e) {
+      console.log(e, "error");
       this.props.onError && this.props.onError(strings.errorCommunicatingWithServer);
       this.setState({
         loading: false
       })
     }
-
     this.startPolling();
   }
 
@@ -134,14 +158,40 @@ class Chat extends React.Component<Props, State> {
       return null;
     }
 
+    if (this.state.pollAnswerLoading && this.state.thread && this.state.thread.answerType === "POLL") {
+      return (
+        <Segment.Group stacked>
+          <Segment style={{ color: "#fff", background: "rgb(229, 29, 42)", display: "flex" }}>
+            <span style={{ cursor: "pointer", display: "flex", flex: "0.9" }} onClick={this.toggleWindow}>
+              {this.state.thread && this.state.thread.title ? this.state.thread.title : "Ladataan..."}
+              {this.state.open ? (
+                <Icon name="angle down" />
+              ) : (
+                  <Icon name="angle up" />
+                )}
+            </span>
+            <Icon style={{ cursor: "pointer", display: "flex", flex: "0.1", justifyContent: "center" }} onClick={() => this.props.onExit && this.props.onExit()} name="window close outline" />
+          </Segment>
+          <Segment style={{
+            display: this.state.open ? "block" : "none",
+            overflow: "auto",
+            minHeight: "300px",
+            maxHeight: "400px"
+          }}>
+            <Loader size="small" active indeterminate >{"Viesti lähetetty, voit muokata vastausta lähettämällä uuden vastauksen!"}</Loader>
+          </Segment>
+        </Segment.Group>
+      );
+    }
+
     const messages = this.state.messages.map((message: MessageItem) => {
       return (
         <Comment key={message.id}>
-        <Comment.Avatar src={message.avatar} />
+          <Comment.Avatar src={message.avatar} />
           <Comment.Content>
             <Comment.Author>{message.userName}</Comment.Author>
             <Comment.Metadata>{moment(message.created).format("DD.MM.YYYY HH:mm:ss")}</Comment.Metadata>
-            <Comment.Text>{message.image ? <img onClick={() => this.setState({openImage: message.image})} style={{width: "100%"}} src={message.image} /> : message.text}</Comment.Text>
+            <Comment.Text>{message.image ? <img onClick={() => this.setState({ openImage: message.image })} style={{ width: "100%" }} src={message.image} /> : message.text}</Comment.Text>
           </Comment.Content>
         </Comment>
       );
@@ -149,40 +199,100 @@ class Chat extends React.Component<Props, State> {
 
     return (
       <Segment.Group stacked>
-        <Segment style={{color: "#fff", background: "rgb(229, 29, 42)"}}>
-          <span style={{cursor: "pointer"}} onClick={this.toggleWindow}>
+        <Segment style={{ color: "#fff", background: "rgb(229, 29, 42)", display: "flex" }}>
+          <span style={{ cursor: "pointer", display: "flex", flex: "0.9" }} onClick={this.toggleWindow}>
             {this.state.thread && this.state.thread.title ? this.state.thread.title : "Ladataan..."}
-            { this.state.open ? (
+            {this.state.open ? (
               <Icon name="angle down" />
             ) : (
-              <Icon name="angle up" />
-            ) }
+                <Icon name="angle up" />
+              )}
           </span>
-          <Icon style={{cursor: "pointer", float: "right"}} onClick={() => this.props.onExit && this.props.onExit()} name="window close outline" />
+          <Icon style={{ cursor: "pointer", display: "flex", flex: "0.1", justifyContent: "center" }} onClick={() => this.props.onExit && this.props.onExit()} name="window close outline" />
         </Segment>
-        <Segment onScroll={this.handleScroll} style={{ display: this.state.open ? "block" : "none", overflow: "auto", minHeight: "300px", maxHeight: "400px"}} loading={this.state.loading}>
-          <Comment.Group>
-            {messages}
-          </Comment.Group>
-          <div style={{ float:"left", clear: "both" }} ref={(el) => { this.messagesEnd = el; }}></div>
-        </Segment>
-        <Segment style={{ display: this.state.open ? "block" : "none"}}>
-          <Grid>
-            <Grid.Column className="chat-footer" width={12}>
-              <Textarea value={this.state.pendingMessage} onChange={this.handleMessageChange} style={{resize:"none", padding: "10px", borderRadius: "10px", width: "100%"}} draggable={false} placeholder="Kirjoita viesti..."></Textarea>
-            </Grid.Column>
-            <Grid.Column className="chat-footer" width={2}>
-              <Button title={strings.addImageShort} onClick={() => this.setState({addImageModalOpen: true})} style={{color: "#fff", background: "rgb(229, 29, 42)"}} circular icon>
-                <Icon name="upload" />
-              </Button>
-            </Grid.Column>
-            <Grid.Column className="chat-footer" width={2}>
-              <Button title={strings.send} onClick={() => this.uploadMessage()} style={{color: "#fff", background: "rgb(229, 29, 42)"}} circular icon>
-                <Icon name="paper plane" />
-              </Button>
-            </Grid.Column>
-          </Grid>
-        </Segment>
+        {
+          this.state.thread && this.state.thread.answerType == "TEXT" &&
+          <Segment onScroll={this.handleScroll} style={{
+            display: this.state.open ? "block" : "none",
+            overflow: "auto",
+            minHeight: "300px",
+            maxHeight: "400px"
+          }} loading={this.state.loading}>
+            <Comment.Group>
+              {messages}
+            </Comment.Group>
+            <div style={{ float: "left", clear: "both" }} ref={(el) => { this.messagesEnd = el; }}></div>
+          </Segment>
+        }
+        {
+          this.state.thread && this.state.thread.answerType === "POLL" &&
+          <div style={{ display: this.state.open ? "block" : "none", padding: "8px 14px 20px 14px", background: "white" }}>
+            <Divider style={{ margin: "7px 0px" }} horizontal>
+              <Header as='h4'>
+                <Icon color="red" name='clipboard list' />
+                {"Kysely"}
+              </Header>
+            </Divider>
+            {
+              this.state.thread && this.state.thread.description &&
+              <div dangerouslySetInnerHTML={{ __html: this.state.thread.description }} />
+            }
+            <p style={{ paddingTop: "8px" }}><i>{strings.lastDayToAnswer}{this.state.thread && moment(this.state.thread.expiresAt).format("DD.MM.YYYY")}</i></p>
+            <Grid>
+              {
+                this.state.pollAnswers.map((answer) => {
+                  return (
+                    <Grid.Row key={answer} style={{ padding: "5px 0px 5px 0px" }} >
+                      <Grid.Column>
+                        <Segment style={this.state.pollAnswerMessage === answer ? { background: "rgb(229, 29, 42)", color: "white", padding: "9px" } : { padding: "9px" }}>
+                          <Radio
+                            name='radioGroup'
+                            value={answer}
+                            checked={this.state.pollAnswerMessage === answer}
+                            onChange={() => this.handleMessageChange(undefined, answer)}
+                          /> {answer}
+                        </Segment>
+                      </Grid.Column>
+                    </Grid.Row>
+                  );
+                })}
+              {
+                this.state.thread && this.state.thread.pollAllowOther &&
+                <Grid.Row style={{ padding: "5px 0px 5px 0px" }} >
+                  <Grid.Column>
+                    <Textarea value={this.state.pendingMessage} onChange={this.handleMessageChange} style={{ resize: "none", padding: "10px", borderRadius: "4px", width: "100%", boxShadow: "0 1px 2px 0 rgba(34,36,38,.15)", borderColor: "lightgrey" }} draggable={false} placeholder={this.state.thread && this.state.thread.answerType === "POLL" ? "Kirjoita muu vastaus..." : "Kirjoita viesti..."}></Textarea>
+                  </Grid.Column>
+                </Grid.Row>
+              }
+              <Grid.Row style={{ padding: "5px 0px 5px 0px" }} >
+                <Grid.Column>
+                  <Button title={strings.send} onClick={() => this.uploadMessage()} style={{ color: "#fff", background: "rgb(229, 29, 42)" }} fluid>
+                    {strings.sendAnswer}
+                  </Button>
+                </Grid.Column>
+              </Grid.Row>
+            </Grid>
+          </div>
+        }
+        {this.state.thread && this.state.thread.answerType == "TEXT" &&
+          <Segment style={{ display: this.state.open ? "block" : "none" }}>
+            <Grid columns="equal">
+              <Grid.Column className="chat-footer" width={12}>
+                <Textarea value={this.state.pendingMessage} onChange={(e) => this.handleMessageChange(e)} style={{ resize: "none", padding: "10px", borderRadius: "10px", width: "100%" }} draggable={false} placeholder="Kirjoita viesti..."></Textarea>
+              </Grid.Column>
+              <Grid.Column className="chat-footer" width={2}>
+                <Button title={strings.addImageShort} onClick={() => this.setState({ addImageModalOpen: true })} style={{ color: "#fff", background: "rgb(229, 29, 42)" }} circular icon>
+                  <Icon name="upload" />
+                </Button>
+              </Grid.Column>
+              <Grid.Column className="chat-footer" width={2}>
+                <Button title={strings.send} onClick={() => this.uploadMessage()} style={{ color: "#fff", background: "rgb(229, 29, 42)" }} circular icon>
+                  <Icon name="paper plane" />
+                </Button>
+              </Grid.Column>
+            </Grid>
+          </Segment>
+        }
         {this.state.openImage &&
           <Lightbox
             mainSrc={this.state.openImage}
@@ -191,21 +301,21 @@ class Chat extends React.Component<Props, State> {
         }
         <Modal
           open={this.state.addImageModalOpen}
-          onClose={() => this.setState({addImageModalOpen: false})}
+          onClose={() => this.setState({ addImageModalOpen: false })}
           basic
         >
-        <Header content="Lisää kuva" />
-        <Modal.Content>
-          <Dropzone activeStyle={{border: "2px solid #62f442"}} style={{border: "2px dashed #fff", width: "100%", cursor:"pointer", padding: "25px"}} onDrop={this.onFileDropped}>
-            <h3>Lisää kuva raahaamalla tai klikkaamalla tästä.</h3>
-          </Dropzone>
-        </Modal.Content>
-        <Modal.Actions>
-          <Button color="red" onClick={() => this.setState({addImageModalOpen: false})} inverted>
-            <Icon name="window close outline" /> Peruuta
-          </Button>
-        </Modal.Actions>
-      </Modal>
+          <Header content="Lisää kuva" />
+          <Modal.Content>
+            <Dropzone activeStyle={{ border: "2px solid #62f442" }} style={{ border: "2px dashed #fff", width: "100%", cursor: "pointer", padding: "25px" }} onDrop={this.onFileDropped}>
+              <h3>Lisää kuva raahaamalla tai klikkaamalla tästä.</h3>
+            </Dropzone>
+          </Modal.Content>
+          <Modal.Actions>
+            <Button color="red" onClick={() => this.setState({ addImageModalOpen: false })} inverted>
+              <Icon name="window close outline" /> Peruuta
+            </Button>
+          </Modal.Actions>
+        </Modal>
       </Segment.Group>
     );
   }
@@ -222,7 +332,7 @@ class Chat extends React.Component<Props, State> {
   /**
    * Checks if there is new messages available
    */
-  private checkMessages = async() => {
+  private checkMessages = async () => {
     const latestMessage = this.getLatestMessage();
     const { threadId, keycloak } = this.props;
     if (!keycloak || !keycloak.token || !threadId) {
@@ -250,13 +360,13 @@ class Chat extends React.Component<Props, State> {
   /**
    * Handles file upload
    */
-  private onFileDropped = async (files: File[] | File) => {
+  private onFileDropped = async (files: File[] | File) => {
     const file = Array.isArray(files) ? files[0] : files;
     if (!file || !this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
 
-    this.setState({loading: true, addImageModalOpen: false});
+    this.setState({ loading: true, addImageModalOpen: false });
 
     const fileService = new FileService(process.env.REACT_APP_API_URL || "", this.props.keycloak.token);
     const fileUploadResponse = await fileService.uploadFile(file);
@@ -277,23 +387,32 @@ class Chat extends React.Component<Props, State> {
   /**
    * Handles message content change
    */
-  private handleMessageChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    this.setState({
-      pendingMessage: event.target.value
-    });
+  private handleMessageChange = (event?: React.ChangeEvent<HTMLTextAreaElement>, pollAnswerMessage?: string) => {
+    if (pollAnswerMessage) {
+      this.setState({
+        pollAnswerMessage,
+        pendingMessage: ""
+      });
+    }
+    if (event) {
+      this.setState({
+        pendingMessage: event.target.value,
+        pollAnswerMessage: ""
+      });
+    }
   }
 
   /**
    * Handles scrolling
    */
   private handleScroll = async (e: any) => {
-    if (this.state.loading || this.state.previousMessagesLoaded) {
+    if (this.state.loading || this.state.previousMessagesLoaded) {
       return;
     }
 
     let element = e.target
     if (element.scrollTop < 50) {
-      this.setState({loading: true});
+      this.setState({ loading: true });
       const earliestMessage = this.getEarliestMessage();
       const { threadId, keycloak } = this.props;
       if (!keycloak || !keycloak.token || !threadId) {
@@ -316,7 +435,7 @@ class Chat extends React.Component<Props, State> {
    * Toggles the chat window open or closed
    */
   private toggleWindow = () => {
-    const {open} = this.state;
+    const { open } = this.state;
     this.setState({
       open: !open
     });
@@ -327,7 +446,7 @@ class Chat extends React.Component<Props, State> {
    */
   private scrollToBottom = () => {
     setTimeout(() => this.messagesEnd.scrollIntoView({ behavior: "smooth" }), 50);
-    
+
   }
 
   /**
@@ -352,7 +471,7 @@ class Chat extends React.Component<Props, State> {
         });
         this.scrollToBottom();
       }
-    } catch(e) {
+    } catch (e) {
       console.warn(e);
     }
   }
@@ -361,7 +480,7 @@ class Chat extends React.Component<Props, State> {
    * Return moment representing latest time message has arrived
    */
   private getLatestMessage = () => {
-    let latestMessage = moment(0);
+    let latestMessage = moment(0);
     this.state.messages.forEach((message) => {
       const messageMoment = moment(message.created);
       if (messageMoment.isAfter(latestMessage)) {
@@ -376,7 +495,7 @@ class Chat extends React.Component<Props, State> {
    * Return moment representing latest time message has arrived
    */
   private getEarliestMessage = () => {
-    let earliestMessage = moment();
+    let earliestMessage = moment();
     this.state.messages.forEach((message) => {
       const messageMoment = moment(message.created);
       if (messageMoment.isBefore(earliestMessage)) {
@@ -387,11 +506,11 @@ class Chat extends React.Component<Props, State> {
     return earliestMessage;
   }
 
-    /**
-   * Loads image
-   */
-  private loadImage =  async (url?: string, defaultImage?: string) => {
-    if (!url || !this.props.keycloak || !this.props.keycloak.token || !process.env.REACT_APP_API_URL) {
+  /**
+ * Loads image
+ */
+  private loadImage = async (url?: string, defaultImage?: string) => {
+    if (!url || !this.props.keycloak || !this.props.keycloak.token || !process.env.REACT_APP_API_URL) {
       return defaultImage || AVATAR_PLACEHOLDER;
     }
 
@@ -405,7 +524,7 @@ class Chat extends React.Component<Props, State> {
    * 
    * @param chatMessages messages to translate
    */
-  private translateMessages = async(chatMessages: ChatMessage[]): Promise<MessageItem[]> => {
+  private translateMessages = async (chatMessages: ChatMessage[]): Promise<MessageItem[]> => {
     const messagePromises = chatMessages.map(chatMessage => this.translateMessage(chatMessage));
     return await Promise.all(messagePromises);
   }
@@ -421,9 +540,9 @@ class Chat extends React.Component<Props, State> {
       id: chatMessage.id!,
       created: new Date(chatMessage.createdAt || 0),
       text: chatMessage.contents || "",
-      image: chatMessage.image && chatMessage.image.indexOf("gravatar") > -1 ? chatMessage.image : chatMessage.image ?  await this.loadImage(chatMessage.image) : undefined,
+      image: chatMessage.image && chatMessage.image.indexOf("gravatar") > -1 ? chatMessage.image : chatMessage.image ? await this.loadImage(chatMessage.image) : undefined,
       userName: contact.displayName || "",
-      userId: contact.id || "",
+      userId: contact.id || "",
       avatar: contact.avatarUrl && contact.avatarUrl.indexOf("gravatar") > -1 ? contact.avatarUrl : await this.loadImage(contact.avatarUrl)
     }
   }
@@ -451,26 +570,29 @@ class Chat extends React.Component<Props, State> {
    * Uploads message to the server
    * 
    */
-  private uploadMessage = async() : Promise<ChatMessage> => {
+  private uploadMessage = async (): Promise<ChatMessage> => {
     const { threadId, keycloak } = this.props;
     if (!keycloak || !keycloak.token || !threadId) {
       return Promise.reject();
     }
     const { user } = this.state;
 
-    this.setState({loading: true});
-
-    const message = await Api.getChatMessagesService(keycloak.token).createChatMessage({
-      contents: this.state.pendingMessage,
+    this.setState({ loading: true, pollAnswerLoading: true });
+    const messageService = await Api.getChatMessagesService(keycloak.token);
+    const message = await messageService.createChatMessage({
+      contents: this.state.pollAnswerMessage ? this.state.pollAnswerMessage : this.state.pendingMessage,
       threadId: threadId,
       userId: user!.id
     }, threadId);
 
-    this.setState({
-      pendingMessage: "",
-      loading: false
-    });
-
+    if (this.state.thread && this.state.thread.answerType === "TEXT") {
+      this.setState({
+        pollAnswerMessage: "",
+        pendingMessage: "",
+      });
+    }
+    this.setState({ loading: false });
+    setTimeout(() => { this.setState({ pollAnswerLoading: false }) }, 4000);
     return message;
   }
 }

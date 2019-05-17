@@ -107,6 +107,7 @@
   "berry": "Marja",
   "close": "Sulje",
   "send": "Lähetä",
+  "sendAnswer": "Lähetä vastaus",
   "confirmRejectText": "Haluatko varmasti hylätä sopimuksen? Kirjoita perustelut alle.",
   "cancel": "Peruuta",
   "signContractFirst": "Allekirjoita sopimus ensin",
@@ -197,5 +198,12 @@
   "newQuestionGroup": "+ Uusi kysymysryhmä",
   "newChatGroup": "+ Uusi keskusteluryhmä",
   "newQuestionGroupTitle": "Uusi kysymysryhmä",
-  "newChatGroupTitle": "Uusi keskusteluryhmä"
+  "newChatGroupTitle": "Uusi keskusteluryhmä",
+  "lastDayToAnswer": "Viimeinen vastauspäivä ",
+  "expireDate": "Vanhenemis päivämäärä",
+  "voteResults": "Äänestyksen tulokset",
+  "answerType": "Vastauksen tyyppi",
+  "pollDescription": "Äänestyksen kuvaus",
+  "pollChoices": "Äänestyksen valinnat",
+  "insertPollChoicesBelow": "Syötä äänestyksen valinnat alla olevaan tekstilaatikkoon"
 }
