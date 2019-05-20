@@ -11,6 +11,7 @@ import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import fi from 'date-fns/esm/locale/fi';
 import strings from "../../localization/strings";
+import PriceChart from "../generic/PriceChart";
 
 /**
  * Interface for component props
@@ -42,6 +43,11 @@ interface State {
   deliveryNotes: DeliveryNote[],
   deliveryId?: string,
   userId: string
+  chartVisible: boolean
+  redBoxesLoaned: number
+  redBoxesReturned: number
+  grayBoxesLoaned: number
+  grayBoxesReturned: number
 }
 
 /**
@@ -57,6 +63,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
+      chartVisible: false,
       loading: false,
       products: [],
       deliveryPlaces: [],
@@ -65,7 +72,11 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       deliveryNotes: [],
       amount: 0,
       userId: "",
-      deliveryQualities: []
+      deliveryQualities: [],
+      redBoxesLoaned: 0,
+      redBoxesReturned: 0,
+      grayBoxesLoaned: 0,
+      grayBoxesReturned: 0
     };
     registerLocale('fi', fi);
   }
@@ -186,7 +197,11 @@ class ManageDeliveryModal extends React.Component<Props, State> {
         amount: this.state.amount,
         price: "0",
         deliveryPlaceId: this.state.selectedPlaceId,
-        qualityId: this.state.selectedQualityId
+        qualityId: this.state.selectedQualityId,
+        loans: [
+          {item: "RED_BOX", loaned: this.state.redBoxesLoaned, returned: this.state.redBoxesReturned},
+          {item: "GRAY_BOX", loaned: this.state.grayBoxesLoaned, returned: this.state.grayBoxesReturned}
+        ]
       }
   
       const response = await deliveryService.updateDelivery(delivery, this.state.deliveryId);
@@ -283,8 +298,63 @@ class ManageDeliveryModal extends React.Component<Props, State> {
               Tila: { this.getStatusText() }
             </Form.Field>
             <Form.Field>
+              <label>Hinta</label>
+              <PriceChart showLatestPrice productId={this.state.selectedProductId || ""} />
+            </Form.Field>
+            <Form.Field>
               <label>{strings.product}</label>
               {this.renderDropDown(productOptions, "selectedProductId")}
+            </Form.Field>
+            <Form.Field>
+              <label>{strings.redBoxesReturned}</label>
+              <Input
+                type="number"
+                placeholder="Palautettu"
+                value={this.state.redBoxesReturned}
+                onChange={(e, data) => {
+                  this.setState({
+                    redBoxesReturned: parseInt(data.value)
+                  })
+                }}/>
+            </Form.Field>
+            <Form.Field>
+              <label>{strings.redBoxesLoaned}</label>
+              <Input
+                type="number"
+                placeholder="Lainattu"
+                value={this.state.redBoxesLoaned}
+                onChange={(e, data) => {
+                  this.setState({
+                    redBoxesLoaned: parseInt(data.value)
+                  })
+                }}/>
+            </Form.Field>
+            <Form.Field>
+              <label>{strings.grayBoxesReturned}</label>
+              <Input
+                type="number"
+                placeholder="Palautettu"
+                value={this.state.grayBoxesReturned}
+                onChange={(e, data) => {
+                  this.setState({
+                    grayBoxesReturned: parseInt(data.value)
+                  })
+                }}/>
+            </Form.Field>
+            <Form.Field>
+              <label>{strings.grayBoxesLoaned}</label>
+              <Input
+                type="number"
+                placeholder="Lainattu"
+                value={this.state.grayBoxesLoaned}
+                onChange={(e, data) => {
+                  this.setState({
+                    grayBoxesLoaned: parseInt(data.value)
+                  })
+                }}/>
+            </Form.Field>
+            <Form.Field>
+              Yhteensä: { this.getStatusText() }
             </Form.Field>
             { this.renderQualityField() }
             <Form.Field>

@@ -205,6 +205,10 @@ export interface IStrings extends LocalizedStringsMethods {
   newChatGroup: string,
   newQuestionGroupTitle: string,
   newChatGroupTitle: string
+  redBoxesLoaned: string
+  redBoxesReturned: string
+  grayBoxesLoaned: string
+  grayBoxesReturned: string
 }
 
 const strings: IStrings = new LocalizedStrings({
