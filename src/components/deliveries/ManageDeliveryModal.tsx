@@ -5,7 +5,7 @@ import { StoreState, DeliveriesState, Options, DeliveryDataValue, HttpErrorRespo
 import Api, { Product, DeliveryPlace, Delivery, DeliveryNote, DeliveryQuality } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import { Dropdown, Form, Input, Button, Modal, Segment } from "semantic-ui-react";
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";

@@ -1,5 +1,5 @@
 import * as React from "react";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import { Grid } from "semantic-ui-react";
 import { ContractTableData } from "src/types";
 import strings from "../../localization/strings";

@@ -4,7 +4,7 @@ import BasicLayout from "../generic/BasicLayout";
 import { StoreState } from "../../types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import Api, { OperationReportItem, OperationReport, OperationType } from "pakkasmarja-client";
 import { Table, Header, Dimmer, Loader, Button } from "semantic-ui-react";
 import { Link } from "react-router-dom";

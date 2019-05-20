@@ -1,5 +1,5 @@
 import * as React from "react";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import { Input, Header, Form, Checkbox, TextArea, Modal, Grid, Icon } from "semantic-ui-react";
 import { Contract, ItemGroup } from "pakkasmarja-client";
 import strings from "src/localization/strings";

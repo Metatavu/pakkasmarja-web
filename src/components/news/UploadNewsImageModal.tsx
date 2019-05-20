@@ -3,7 +3,7 @@ import * as actions from "../../actions/";
 import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import { Modal, Header, Button } from "semantic-ui-react";
 import { FileService, FileResponse } from "src/api/file.service";
 import Dropzone from "react-dropzone";

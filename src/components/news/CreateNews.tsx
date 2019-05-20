@@ -4,7 +4,7 @@ import * as actions from "../../actions/";
 import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import BasicLayout from "../generic/BasicLayout";
 import { Form, Button, Image } from "semantic-ui-react";
 import Api, { NewsArticle } from "pakkasmarja-client";
