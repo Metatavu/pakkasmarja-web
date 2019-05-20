@@ -197,5 +197,9 @@
   "newQuestionGroup": "+ Uusi kysymysryhmä",
   "newChatGroup": "+ Uusi keskusteluryhmä",
   "newQuestionGroupTitle": "Uusi kysymysryhmä",
-  "newChatGroupTitle": "Uusi keskusteluryhmä"
+  "newChatGroupTitle": "Uusi keskusteluryhmä",
+  "redBoxesLoaned": "Lainattu (Punaiset laatikot)",
+  "redBoxesReturned": "Palautettu (Punaiset laatikot)",
+  "grayBoxesLoaned": "Lainattu (Harmaat laatikot)",
+  "grayBoxesReturned": "Palautettu (Harmaat laatikot)"
 }
