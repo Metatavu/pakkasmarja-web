@@ -4,7 +4,7 @@ import BasicLayout from "../generic/BasicLayout";
 import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import Api, { ChatGroup } from "pakkasmarja-client";
 import { Header, Dimmer, Loader, Grid, Tab, TabPaneProps, TabProps, Confirm, Button } from "semantic-ui-react";
 import { Redirect } from "react-router-dom";

@@ -8,7 +8,7 @@ import Api from "pakkasmarja-client";
 import BasicLayout from "../generic/BasicLayout";
 import { Checkbox, Input, Button, Dropdown, Container, Header, Divider, Form, Modal, Dimmer, Loader } from "semantic-ui-react";
 import { PDFService } from "src/api/pdf.service";
-import "./styles.scss";
+import "./styles.css";
 import { Link } from "react-router-dom";
 import strings from "src/localization/strings";
 

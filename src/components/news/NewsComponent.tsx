@@ -5,7 +5,7 @@ import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import Api, { NewsArticle } from "pakkasmarja-client";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import { Button, Item, Confirm } from "semantic-ui-react";
 import { Link, Redirect } from "react-router-dom";
 import Moment from 'react-moment';

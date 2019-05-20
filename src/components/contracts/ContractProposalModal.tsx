@@ -1,8 +1,8 @@
 import * as React from "react";
 import { Modal, Header, Form, Dropdown, Input, TextArea, Button } from "semantic-ui-react";
 import { ItemGroup } from "pakkasmarja-client";
-import "../../styles/common.scss";
-import "./styles.scss";
+import "../../styles/common.css";
+import "./styles.css";
 import strings from "src/localization/strings";
 
 /**

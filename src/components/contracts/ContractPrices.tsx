@@ -1,5 +1,5 @@
 import * as React from "react";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import { Grid, Header, List, Icon } from "semantic-ui-react";
 import { ItemGroup, ItemGroupPrice } from "pakkasmarja-client";
 import strings from "src/localization/strings";

@@ -3,7 +3,7 @@ import * as actions from "../../actions/";
 import { StoreState, DeliveriesState, DeliveryProduct } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import { Segment, Header, Divider, Item, Button } from "semantic-ui-react";
 import { Link } from "react-router-dom";
 import Moment from "react-moment";

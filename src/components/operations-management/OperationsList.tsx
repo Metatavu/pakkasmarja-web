@@ -4,7 +4,7 @@ import BasicLayout from "../generic/BasicLayout";
 import { StoreState, HttpErrorResponse } from "../../types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import Api, { OperationReport, OperationType } from "pakkasmarja-client";
 import { Table, Header, Dimmer, Loader, Grid, Button, Icon, Select, DropdownItemProps, DropdownProps } from "semantic-ui-react";
 import * as moment from "moment";

@@ -3,7 +3,7 @@ import * as actions from "../../actions/";
 import { StoreState, DeliveriesState, DeliveryProduct } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import { Segment, Header, Divider, Item } from "semantic-ui-react";
 import Moment from "react-moment";
 import ViewModal from "./ViewModal";

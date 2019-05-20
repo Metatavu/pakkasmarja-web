@@ -4,7 +4,7 @@ import BasicLayout from "../generic/BasicLayout";
 import { StoreState, DeliveryProduct, DeliveriesState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import Api, { Product } from "pakkasmarja-client";
 import { ItemGroup } from "pakkasmarja-client";
 import { Menu } from "semantic-ui-react";
