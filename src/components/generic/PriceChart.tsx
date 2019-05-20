@@ -52,7 +52,7 @@ class PriceChart extends React.Component<Props, State> {
    * Component did mount life-cycle event
    */
   public async componentDidMount() {
-    const { keycloak, productId, maxValues} = this.props;
+    const { keycloak, productId, maxValues } = this.props;
     if (!keycloak || !keycloak.token) {
       return;
     }

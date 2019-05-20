@@ -43,7 +43,6 @@ interface State {
   deliveryNotes: DeliveryNote[],
   deliveryId?: string,
   userId: string
-  chartVisible: boolean
   redBoxesLoaned: number
   redBoxesReturned: number
   grayBoxesLoaned: number
@@ -63,7 +62,6 @@ class ManageDeliveryModal extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      chartVisible: false,
       loading: false,
       products: [],
       deliveryPlaces: [],
