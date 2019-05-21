@@ -18,7 +18,7 @@ interface Props {
   keycloak?: Keycloak.KeycloakInstance;
   groupId?: number,
   type: "CHAT" | "QUESTION",
-  onThreadSelected: (threadId: number) => void
+  onThreadSelected: (threadId: number, answerType: ChatThread.AnswerTypeEnum) => void
   onBackClick?: () => void
   onError?: (errorMsg: string) => void
 };
@@ -41,7 +41,8 @@ interface ConversationListItem {
   title: string,
   subtitle: string,
   date?: Date,
-  unread: number
+  unread: number,
+  answerType: ChatThread.AnswerTypeEnum
 }
 
 /**
@@ -115,11 +116,11 @@ class ChatThreadList extends React.Component<Props, State> {
   public render() {
     const conversations = this.state.conversationListItems.map((conversationListItem) => {
       return (
-        <Item key={conversationListItem.id} onClick={() => this.selectThread(conversationListItem.id)}>
+        <Item key={conversationListItem.id} onClick={() => this.selectThread(conversationListItem.id, conversationListItem.answerType)}>
           <Item.Image avatar style={{width:"45px"}} src={conversationListItem.avatar} />
           <Item.Content>
             <p className="chat-header">{conversationListItem.title.length > 30 ? `${conversationListItem.title.substring(0, 30)}...` : conversationListItem.title}</p>
-            <Item.Meta>{conversationListItem.subtitle}</Item.Meta>
+            {conversationListItem.answerType === "TEXT" ? <Item.Meta>{conversationListItem.subtitle}</Item.Meta> : "- KYSELY -"}
             <Item.Extra>{moment(conversationListItem.date).format("DD.MM.YYYY HH:mm:ss")}</Item.Extra>
           </Item.Content>
         </Item>
@@ -149,7 +150,8 @@ class ChatThreadList extends React.Component<Props, State> {
       alt: "Avatar",
       title: chatThread.title,
       subtitle: "",
-      unread: 0
+      unread: 0,
+      answerType: chatThread.answerType
     };
 
     if (!this.props.keycloak || !this.props.keycloak.token) {
@@ -182,8 +184,8 @@ class ChatThreadList extends React.Component<Props, State> {
   /**
    * Opens chat
    */
-  private selectThread = async (chatThreadId: number) => {
-    this.props.onThreadSelected(chatThreadId);
+  private selectThread = async (chatThreadId: number, answerType: ChatThread.AnswerTypeEnum) => {
+    this.props.onThreadSelected(chatThreadId, answerType);
   }
 }
 

@@ -113,6 +113,7 @@ export interface IStrings extends LocalizedStringsMethods {
   berry: string
   close: string
   send: string
+  sendAnswer: string
   confirmRejectText: string
   cancel: string
   signContractFirst: string
@@ -204,7 +205,14 @@ export interface IStrings extends LocalizedStringsMethods {
   newQuestionGroup: string,
   newChatGroup: string,
   newQuestionGroupTitle: string,
-  newChatGroupTitle: string
+  newChatGroupTitle: string,
+  lastDayToAnswer: string,
+  expireDate: string,
+  voteResults: string,
+  answerType: string,
+  pollDescription: string,
+  pollChoices: string,
+  insertPollChoicesBelow: string,
   redBoxesLoaned: string
   redBoxesReturned: string
   grayBoxesLoaned: string
