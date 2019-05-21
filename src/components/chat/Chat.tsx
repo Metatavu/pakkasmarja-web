@@ -6,7 +6,7 @@ import * as actions from "../../actions/";
 import Api, { Contact, ChatMessage, ChatThread } from "pakkasmarja-client";
 import strings from "src/localization/strings";
 import * as moment from "moment";
-import { Segment, Comment, Icon, Button, Grid, Modal, Header, Radio, Divider, Loader } from "semantic-ui-react";
+import { Segment, Comment, Icon, Button, Grid, Modal, Header, Divider, Loader } from "semantic-ui-react";
 import AVATAR_PLACEHOLDER from "../../gfx/avatar.png";
 import { FileService } from "src/api/file.service";
 import { mqttConnection } from "src/mqtt";
@@ -104,29 +104,25 @@ class Chat extends React.Component<Props, State> {
     }
     this.setState({ loading: true });
     try {
-      const chatMessages = await Api.getChatMessagesService(keycloak.token).listChatMessages(threadId, undefined, undefined, 0, 20);
-      mqttConnection.subscribe("chatmessages", this.onMessage);
+      const thread = await Api.getChatThreadsService(keycloak.token).findChatThread(threadId);
+      const maxResult = thread.answerType === "POLL" ? 1 : 30;
+      const chatMessages = await Api.getChatMessagesService(keycloak.token).listChatMessages(threadId, undefined, undefined, 0, maxResult);
+      thread.answerType === "TEXT" && mqttConnection.subscribe("chatmessages", this.onMessage);
       const messages = await this.translateMessages(chatMessages);
       const user = await Api.getContactsService(keycloak.token).findContact(keycloak.subject || "");
       const userAvatar = user.avatarUrl && user.avatarUrl.indexOf("gravatar") > -1 ? user.avatarUrl : await this.loadImage(user.avatarUrl);
-      const thread = await Api.getChatThreadsService(keycloak.token).findChatThread(threadId);
-
-      /*** Redo finding latest user message for poll answer when backend is done */
-      const usersMessages = messages.filter(message => { return message.userId === keycloak.subject && message });
-      const usersLatestMessage = _.sortBy(usersMessages, 'created').reverse()[0];
-      if (usersLatestMessage && thread.answerType === "POLL") {
-        if (thread.pollPredefinedTexts && thread.pollPredefinedTexts.indexOf(usersLatestMessage.text) > -1) {
-          this.setState({ pollAnswerMessage: usersLatestMessage.text });
+      if (messages[0] && thread.answerType === "POLL") {
+        if (thread.pollPredefinedTexts && thread.pollPredefinedTexts.indexOf(messages[0].text) > -1) {
+          this.setState({ pollAnswerMessage: messages[0].text });
         }
         else {
-          if (usersLatestMessage.text) {
-            this.setState({ pendingMessage: usersLatestMessage.text });
+          if (messages[0].text) {
+            this.setState({ pendingMessage: messages[0].text });
           }
         }
       }
-      /********************* */
 
-      this.setState({
+      await this.setState({
         messages: messages.reverse(),
         user: user,
         thread: thread,
@@ -142,7 +138,7 @@ class Chat extends React.Component<Props, State> {
         loading: false
       })
     }
-    this.startPolling();
+    this.state.thread && this.state.thread.answerType === "TEXT" && this.startPolling();
   }
 
   public componentWillUnmount = () => {
@@ -244,13 +240,8 @@ class Chat extends React.Component<Props, State> {
                   return (
                     <Grid.Row key={answer} style={{ padding: "5px 0px 5px 0px" }} >
                       <Grid.Column>
-                        <Segment style={this.state.pollAnswerMessage === answer ? { background: "rgb(229, 29, 42)", color: "white", padding: "9px" } : { padding: "9px" }}>
-                          <Radio
-                            name='radioGroup'
-                            value={answer}
-                            checked={this.state.pollAnswerMessage === answer}
-                            onChange={() => this.handleMessageChange(undefined, answer)}
-                          /> {answer}
+                        <Segment className={this.state.pollAnswerMessage === answer ? "" : "open-modal-element"} onClick={() => this.handleMessageChange(undefined, answer)} style={this.state.pollAnswerMessage === answer ? { background: "rgb(229, 29, 42)", color: "white", padding: "9px" } : { padding: "9px" }}>
+                          {answer}
                         </Segment>
                       </Grid.Column>
                     </Grid.Row>

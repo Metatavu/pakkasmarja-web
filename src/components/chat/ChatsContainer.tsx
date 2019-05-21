@@ -61,7 +61,7 @@ class ChatsContainer extends React.Component<Props, State> {
     });
 
     return (
-      <div className="chat-container" style={{ position: "fixed", right: "10px", bottom: "0", width: "350px" }}>
+      <div className="chat-container" style={{ position: "fixed", right: "10px", bottom: "0", width: "350px", zIndex:999 }}>
         <Segment.Group stacked>
           <Segment style={{ color: "#fff", background: "rgb(229, 29, 42)" }}>
             <span onClick={this.toggleWindow}>
