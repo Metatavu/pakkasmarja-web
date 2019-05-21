@@ -4,10 +4,11 @@ import { StoreState, DeliveriesState, DeliveryProduct } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
-import { Segment, Item, Header, Divider, Button } from "semantic-ui-react";
+import { Item, Button } from "semantic-ui-react";
 import Moment from "react-moment";
 import ProposalAcceptModal from "./ProposalAcceptModal";
 import strings from "src/localization/strings";
+import BasicLayout from "../generic/BasicLayout";
 
 /**
  * Interface for component props
@@ -16,6 +17,7 @@ interface Props {
   authenticated: boolean;
   keycloak?: Keycloak.KeycloakInstance;
   deliveries?: DeliveriesState;
+  location?: any;
 }
 
 /**
@@ -23,10 +25,11 @@ interface Props {
  */
 interface State {
   keycloak?: Keycloak.KeycloakInstance;
-  freshProposals: DeliveryProduct[];
-  frozenProposals: DeliveryProduct[];
+  proposals: DeliveryProduct[];
   proposalAcceptModal: boolean;
   deliveryId?: string;
+  pageTitle?: string;
+  category?: string;
 }
 
 /**
@@ -42,8 +45,7 @@ class ProposalsView extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      freshProposals: [],
-      frozenProposals: [],
+      proposals: [],
       proposalAcceptModal: false
     };
   }
@@ -51,7 +53,9 @@ class ProposalsView extends React.Component<Props, State> {
   /**
    * Component did mount life-sycle event
    */
-  public async componentDidMount() {
+  public componentDidMount = async () => {
+    const category = this.props.location.state ? this.props.location.state.category : "";
+    await this.setState({ category });
     this.loadData();
   }
 
@@ -62,12 +66,16 @@ class ProposalsView extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token || !this.props.deliveries) {
       return;
     }
-    const frozenDeliveryData: DeliveryProduct[] = await this.props.deliveries.frozenDeliveryData;
-    const frozenProposals: DeliveryProduct[] = frozenDeliveryData.filter(deliveryData => deliveryData.delivery.status === "PROPOSAL");
-    const freshDeliveryData: DeliveryProduct[] = await this.props.deliveries.freshDeliveryData;
-    const freshProposals: DeliveryProduct[] = freshDeliveryData.filter(deliveryData => deliveryData.delivery.status === "PROPOSAL");
-
-    this.setState({ frozenProposals, freshProposals });
+    if (this.state.category === "FRESH") {
+      const freshDeliveryData: DeliveryProduct[] = await this.props.deliveries.freshDeliveryData;
+      const freshProposals: DeliveryProduct[] = freshDeliveryData.filter(deliveryData => deliveryData.delivery.status === "PROPOSAL");
+      this.setState({ proposals: freshProposals, pageTitle: strings.freshProposals });
+    }
+    if (this.state.category === "FROZEN") {
+      const frozenDeliveryData: DeliveryProduct[] = await this.props.deliveries.frozenDeliveryData;
+      const frozenProposals: DeliveryProduct[] = frozenDeliveryData.filter(deliveryData => deliveryData.delivery.status === "PROPOSAL");
+      this.setState({ proposals: frozenProposals, pageTitle: strings.frozenProposals });
+    }
   }
 
   /**
@@ -75,66 +83,34 @@ class ProposalsView extends React.Component<Props, State> {
    */
   public render() {
     return (
-      <React.Fragment>
-        <Segment >
-          <Header as='h2'>{strings.freshProposals}</Header>
-          <Divider />
-          <Item.Group divided>
-            {
-              this.state.freshProposals.map((deliveryProduct) => {
-                if (!deliveryProduct.product) {
-                  return;
-                }
-                return (
-                  <Item key={deliveryProduct.delivery.id}>
-                    <Item.Content>
-                      <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
-                      <Item.Description><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Description>
-                    </Item.Content>
-                    <Button style={{ maxHeight: "37px", marginBottom: "1%" }} color="red" floated="right" onClick={() => this.setState({ deliveryId: deliveryProduct.delivery.id, proposalAcceptModal: true })}>
-                      {strings.check}
-                    </Button>
-                  </Item>
-                )
-              })
-            }
-          </Item.Group>
-        </Segment>
-        <Segment >
-          <Header as='h2'>{strings.frozenProposals}</Header>
-          <Divider />
-          <Item.Group divided>
-            {
-              this.state.frozenProposals.map((deliveryProduct) => {
-                if (!deliveryProduct.product) {
-                  return;
-                }
-                return (
-                  <Item key={deliveryProduct.delivery.id}>
-                    <Item.Content >
-                      <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
-                      <Item.Description>
-                        <Moment format="DD.MM.YYYY HH:mm">
-                          {deliveryProduct.delivery.time.toString()}
-                        </Moment>
-                      </Item.Description>
-                    </Item.Content>
-                    <Button style={{ maxHeight: "37px", marginBottom: "1%" }} floated="right" color="red" onClick={() => this.setState({ deliveryId: deliveryProduct.delivery.id, proposalAcceptModal: true })}>
-                      {strings.check}
-                    </Button>
-                  </Item>
-                )
-              })
-            }
-          </Item.Group>
-        </Segment>
+      <BasicLayout pageTitle={this.state.pageTitle}>
+        <Item.Group divided>
+          {
+            this.state.proposals.map((deliveryProduct) => {
+              if (!deliveryProduct.product) {
+                return;
+              }
+              return (
+                <Item key={deliveryProduct.delivery.id}>
+                  <Item.Content>
+                    <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.delivery.amount} ${deliveryProduct.product.unitName} `}</Item.Header>
+                    <Item.Description><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Description>
+                  </Item.Content>
+                  <Button style={{ maxHeight: "37px", marginBottom: "1%" }} color="red" floated="right" onClick={() => this.setState({ deliveryId: deliveryProduct.delivery.id, proposalAcceptModal: true })}>
+                    {strings.check}
+                  </Button>
+                </Item>
+              )
+            })
+          }
+        </Item.Group>
         <ProposalAcceptModal
           modalOpen={this.state.proposalAcceptModal}
           closeModal={() => this.setState({ proposalAcceptModal: false })}
           deliveryId={this.state.deliveryId || ""}
           loadData={this.loadData}
         />
-      </React.Fragment>
+      </BasicLayout>
     );
   }
 }

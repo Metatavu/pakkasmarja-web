@@ -155,8 +155,6 @@ export interface IStrings extends LocalizedStringsMethods {
   freshProducts: string
   frozenProducts: string
   open: string
-  pastFreshDeliveries: string
-  pastFrozenDeliveries: string
   deliveried: string
   acceptSuggestion: string
   productName: string
@@ -204,7 +202,15 @@ export interface IStrings extends LocalizedStringsMethods {
   newQuestionGroup: string,
   newChatGroup: string,
   newQuestionGroupTitle: string,
-  newChatGroupTitle: string
+  newChatGroupTitle: string,
+  pastFreshDeliveries: string,
+  pastFrozenDeliveries: string,
+  createNewFreshPrediction : string,
+  createNewFrozenPrediction : string,
+  freshDeliveries: string,
+  frozenDeliveries: string,
+  createNewFreshDelivery : string,
+  createNewFrozenDelivery : string
 }
 
 const strings: IStrings = new LocalizedStrings({

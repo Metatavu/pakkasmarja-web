@@ -4,13 +4,13 @@ import { StoreState, DeliveriesState, DeliveryProduct } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
-import { Segment, Header, Divider, Item, Button } from "semantic-ui-react";
-import { Link } from "react-router-dom";
+import { Header, Item, Button } from "semantic-ui-react";
+import { Link, Redirect } from "react-router-dom";
 import Moment from "react-moment";
 import ViewModal from "./ViewModal";
 import Api, { Delivery, ItemGroupCategory } from "pakkasmarja-client";
-import ApplicationRoles from "../../utils/application-roles";
 import strings from "src/localization/strings";
+import BasicLayout from "../generic/BasicLayout";
 
 /**
  * Interface for component props
@@ -20,6 +20,7 @@ interface Props {
   keycloak?: Keycloak.KeycloakInstance;
   deliveries?: DeliveriesState;
   deliveriesLoaded?: (deliveries: DeliveriesState) => void;
+  location?: any;
 }
 
 /**
@@ -27,11 +28,13 @@ interface Props {
  */
 interface State {
   keycloak?: Keycloak.KeycloakInstance;
-  frozenDeliveries?: DeliveryProduct[];
-  freshDeliveries?: DeliveryProduct[];
+  deliveries?: DeliveryProduct[];
   viewModal: boolean;
   deliveryId?: string;
   redirect: boolean;
+  pageTitle?: string;
+  category?: string;
+  redirectTo?: string;
 }
 
 /**
@@ -66,13 +69,18 @@ class IncomingDeliveries extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token || !this.props.deliveries) {
       return;
     }
-
+    const category = this.props.location.state ? this.props.location.state.category : "";
     const filterCondition = ["PROPOSAL", "PLANNED", "DELIVERY"];
-    const frozenDeliveryData: DeliveryProduct[] = this.props.deliveries.frozenDeliveryData;
-    const frozenDeliveries: DeliveryProduct[] = frozenDeliveryData.filter(deliveryData => filterCondition.includes(deliveryData.delivery.status));
-    const freshDeliveryData: DeliveryProduct[] = this.props.deliveries.freshDeliveryData;
-    const freshDeliveries: DeliveryProduct[] = freshDeliveryData.filter(deliveryData => filterCondition.includes(deliveryData.delivery.status));
-    this.setState({ frozenDeliveries, freshDeliveries });
+    if (category === "FRESH") {
+      const freshDeliveryData: DeliveryProduct[] = this.props.deliveries.freshDeliveryData;
+      const freshDeliveries: DeliveryProduct[] = freshDeliveryData.filter(deliveryData => filterCondition.includes(deliveryData.delivery.status));
+      this.setState({ deliveries: freshDeliveries, category, pageTitle: strings.freshDeliveries });
+    }
+    if (category === "FROZEN") {
+      const frozenDeliveryData: DeliveryProduct[] = this.props.deliveries.frozenDeliveryData;
+      const frozenDeliveries: DeliveryProduct[] = frozenDeliveryData.filter(deliveryData => filterCondition.includes(deliveryData.delivery.status));
+      this.setState({ deliveries: frozenDeliveries, category, pageTitle: strings.frozenDeliveries });
+    }
   }
 
   /**
@@ -172,78 +180,54 @@ class IncomingDeliveries extends React.Component<Props, State> {
   }
 
   /**
+   * redirects to another page
+   */
+  private redirectTo = () => {
+    this.state.category === "FRESH"
+      ? this.setState({ redirectTo: "/createDelivery/FRESH" })
+      : this.setState({ redirectTo: "/createDelivery/FROZEN" })
+  }
+
+  /**
    * Render method
    */
   public render() {
+    if (this.state.redirectTo) {
+      return (
+        <Redirect to={this.state.redirectTo} />
+      );
+    }
     return (
-      <React.Fragment>
-        {
-          this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_DELIVERIES) && 
-          <Button style={{ marginTop: 20 }} as={Link} to="manageIncomingDeliveries">
-            {strings.manageIncomingDeliveries}
-          </Button>
-        }
-
-        <Button style={{ marginTop: 20 }} color="red" attached="top" as={Link} to="createDelivery/FRESH">
-          {strings.newFreshDelivery}
-        </Button>
-        <Segment attached>
-          <Header as='h2'>{strings.fresh}</Header>
-          <Divider />
-          <Item.Group divided>
-            {
-              this.state.freshDeliveries && this.state.freshDeliveries.map((deliveryProduct) => {
-                if (!deliveryProduct.product) {
-                  return;
-                }
-                return (
-                  <Item className="open-modal-element" key={deliveryProduct.delivery.id}>
-                    <Item.Content onClick={() => { this.setState({ deliveryId: deliveryProduct.delivery.id, viewModal: true }) }}>
-                      <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
-                      <Item.Meta><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Meta>
-                    </Item.Content>
-                    {
-                      this.renderStatus(deliveryProduct, "FRESH")
-                    }
-                  </Item>
-                )
-              })
-            }
-          </Item.Group>
-        </Segment>
-        <Button style={{ marginTop: 20 }} color="red" attached="top" as={Link} to="createDelivery/FROZEN">
-          {strings.newFrozenDelivery}
-        </Button>
-        <Segment attached>
-          <Header as='h2'>{strings.frozen}</Header>
-          <Divider />
-          <Item.Group divided>
-            {
-              this.state.frozenDeliveries && this.state.frozenDeliveries.map((deliveryProduct) => {
-                if (!deliveryProduct.product) {
-                  return;
-                }
-                return (
-                  <Item className="open-modal-element" key={deliveryProduct.delivery.id}>
-                    <Item.Content onClick={() => { this.setState({ deliveryId: deliveryProduct.delivery.id, viewModal: true }) }}>
-                      <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
-                      <Item.Meta><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Meta>
-                    </Item.Content>
-                    {
-                      this.renderStatus(deliveryProduct, "FROZEN")
-                    }
-                  </Item>
-                )
-              })
-            }
-          </Item.Group>
-        </Segment>
+      <BasicLayout
+        pageTitle={this.state.pageTitle}
+        topBarButtonText={this.state.category === "FRESH" ? strings.createNewFreshDelivery : strings.createNewFrozenDelivery}
+        onTopBarButtonClick={this.redirectTo}>
+        <Item.Group divided>
+          {
+            this.state.deliveries && this.state.deliveries.map((deliveryProduct) => {
+              if (!deliveryProduct.product) {
+                return;
+              }
+              return (
+                <Item className="open-modal-element" key={deliveryProduct.delivery.id}>
+                  <Item.Content onClick={() => { this.setState({ deliveryId: deliveryProduct.delivery.id, viewModal: true }) }}>
+                    <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
+                    <Item.Meta><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Meta>
+                  </Item.Content>
+                  {
+                    this.renderStatus(deliveryProduct, "FRESH")
+                  }
+                </Item>
+              )
+            })
+          }
+        </Item.Group>
         <ViewModal
           modalOpen={this.state.viewModal}
           closeModal={() => this.setState({ viewModal: false })}
           deliveryId={this.state.deliveryId || ""}
         />
-      </React.Fragment>
+      </BasicLayout>
     );
   }
 }

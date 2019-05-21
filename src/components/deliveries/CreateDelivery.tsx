@@ -219,8 +219,8 @@ class CreateDelivery extends React.Component<Props, State> {
   public render() {
     if (this.state.redirect) {
       return <Redirect to={{
-        pathname: '/deliveries',
-        state: { activeItem: 'incomingDeliveries' }
+        pathname: '/incomingDeliveries',
+        state: { category: this.state.category }
       }} />;
     }
 

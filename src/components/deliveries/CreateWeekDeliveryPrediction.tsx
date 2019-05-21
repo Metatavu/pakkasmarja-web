@@ -233,8 +233,8 @@ class CreateWeekDeliveryPrediction extends React.Component<Props, State> {
   public render() {
     if (this.state.redirect) {
       return <Redirect to={{
-        pathname: '/deliveries',
-        state: { activeItem: 'weekDeliveryPredictions' }
+        pathname: '/weekDeliveryPredictions',
+        state: { category: this.state.category }
       }} />;
     }
 

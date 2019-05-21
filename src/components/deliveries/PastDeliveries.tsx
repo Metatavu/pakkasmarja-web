@@ -4,10 +4,11 @@ import { StoreState, DeliveriesState, DeliveryProduct } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
-import { Segment, Item, Header, Divider } from "semantic-ui-react";
+import { Item, Header } from "semantic-ui-react";
 import Moment from "react-moment";
 import ViewModal from "./ViewModal";
 import strings from "src/localization/strings";
+import BasicLayout from "../generic/BasicLayout";
 
 /**
  * Interface for component props
@@ -16,6 +17,7 @@ interface Props {
   authenticated: boolean;
   keycloak?: Keycloak.KeycloakInstance;
   deliveries?: DeliveriesState;
+  location?: any;
 }
 
 /**
@@ -23,10 +25,11 @@ interface Props {
  */
 interface State {
   keycloak?: Keycloak.KeycloakInstance;
-  freshPastDeliveries: DeliveryProduct[];
-  frozenPastDeliveries: DeliveryProduct[];
+  pastDeliveries: DeliveryProduct[];
   deliveryId?: string;
   viewModal: boolean;
+  pageTitle?: string;
+  category?: string;
 }
 
 /**
@@ -42,8 +45,7 @@ class PastDeliveries extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      freshPastDeliveries: [],
-      frozenPastDeliveries: [],
+      pastDeliveries: [],
       viewModal: false
     };
   }
@@ -55,13 +57,18 @@ class PastDeliveries extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token || !this.props.deliveries) {
       return;
     }
-    const frozenDeliveryData: DeliveryProduct[] = this.props.deliveries.frozenDeliveryData;
-    const frozenPastDeliveries: DeliveryProduct[] = frozenDeliveryData.filter(deliveryData => deliveryData.delivery.status === "DONE");
 
-    const freshDeliveryData: DeliveryProduct[] = this.props.deliveries.freshDeliveryData;
-    const freshPastDeliveries: DeliveryProduct[] = freshDeliveryData.filter(deliveryData => deliveryData.delivery.status === "DONE");
-
-    this.setState({ frozenPastDeliveries, freshPastDeliveries });
+    const category = this.props.location.state ? this.props.location.state.category : "";
+    if (category === "FRESH") {
+      const freshDeliveryData: DeliveryProduct[] = this.props.deliveries.freshDeliveryData;
+      const freshPastDeliveries: DeliveryProduct[] = freshDeliveryData.filter(deliveryData => deliveryData.delivery.status === "DONE");
+      this.setState({ pastDeliveries: freshPastDeliveries, pageTitle: strings.pastFreshDeliveries, category });
+    }
+    if (category === "FROZEN") {
+      const frozenDeliveryData: DeliveryProduct[] = this.props.deliveries.frozenDeliveryData;
+      const frozenPastDeliveries: DeliveryProduct[] = frozenDeliveryData.filter(deliveryData => deliveryData.delivery.status === "DONE");
+      this.setState({ pastDeliveries: frozenPastDeliveries, pageTitle : strings.pastFrozenDeliveries, category });
+    }
   }
 
   /**
@@ -69,57 +76,31 @@ class PastDeliveries extends React.Component<Props, State> {
    */
   public render() {
     return (
-      <React.Fragment>
-        <Segment >
-          <Header as='h2'>{strings.pastFreshDeliveries}</Header>
-          <Divider />
-          <Item.Group divided>
-            {
-              this.state.freshPastDeliveries.map((deliveryProduct) => {
-                if (!deliveryProduct.product) {
-                  return;
-                }
-                return (
-                  <Item className="open-modal-element" key={deliveryProduct.delivery.id} onClick={() => { this.setState({ deliveryId: deliveryProduct.delivery.id, viewModal: true }) }}>
-                    <Item.Content>
-                      <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
-                      <Item.Description><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Description>
-                    </Item.Content>
-                    <Header style={{ margin: "auto", marginRight: 50 }} as="h3">{strings.deliveried}</Header>
-                  </Item>
-                )
-              })
-            }
-          </Item.Group>
-        </Segment>
-        <Segment >
-          <Header as='h2'>{strings.pastFrozenDeliveries}</Header>
-          <Divider />
-          <Item.Group divided>
-            {
-              this.state.frozenPastDeliveries.map((deliveryProduct) => {
-                if (!deliveryProduct.product) {
-                  return;
-                }
-                return (
-                  <Item className="open-modal-element" key={deliveryProduct.delivery.id} onClick={() => { this.setState({ deliveryId: deliveryProduct.delivery.id, viewModal: true }) }}>
-                    <Item.Content>
-                      <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
-                      <Item.Description><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Description>
-                    </Item.Content>
-                    <Header style={{ margin: "auto", marginRight: 50 }} as="h3">{strings.deliveried}</Header>
-                  </Item>
-                )
-              })
-            }
-          </Item.Group>
-        </Segment>
+      <BasicLayout pageTitle={this.state.pageTitle}>
+        <Item.Group divided>
+          {
+            this.state.pastDeliveries.map((deliveryProduct) => {
+              if (!deliveryProduct.product) {
+                return;
+              }
+              return (
+                <Item className="open-modal-element" key={deliveryProduct.delivery.id} onClick={() => { this.setState({ deliveryId: deliveryProduct.delivery.id, viewModal: true }) }}>
+                  <Item.Content>
+                    <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
+                    <Item.Description><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Description>
+                  </Item.Content>
+                  <Header style={{ margin: "auto", marginRight: 50 }} as="h3">{strings.deliveried}</Header>
+                </Item>
+              )
+            })
+          }
+        </Item.Group>
         <ViewModal
           modalOpen={this.state.viewModal}
           closeModal={() => this.setState({ viewModal: false })}
           deliveryId={this.state.deliveryId || ""}
         />
-      </React.Fragment>
+      </BasicLayout>
     );
   }
 }

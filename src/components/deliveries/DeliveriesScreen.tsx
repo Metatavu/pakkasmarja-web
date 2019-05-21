@@ -7,13 +7,10 @@ import { connect } from "react-redux";
 import "../../styles/common.scss";
 import Api, { Product } from "pakkasmarja-client";
 import { ItemGroup } from "pakkasmarja-client";
-import { Menu } from "semantic-ui-react";
-import PastDeliveries from "./PastDeliveries"
-import { Delivery } from "pakkasmarja-client"
-import ProposalsView from "./ProposalsView";
-import WeekDeliveryPredictions from "./WeekDeliveryPredictions";
-import IncomingDeliveries from "./IncomingDeliveries";
+import { Grid, Header, Icon, SemanticICONS, Menu } from "semantic-ui-react";
+import { Delivery } from "pakkasmarja-client";
 import strings from "src/localization/strings";
+import { Redirect } from "react-router";
 
 /**
  * Interface for component props
@@ -32,7 +29,12 @@ interface State {
   keycloak?: Keycloak.KeycloakInstance;
   itemGroups?: ItemGroup[];
   activeItem?: string;
+  tabActiveItem: string;
   deliveries: Delivery[];
+  pageTitle: string;
+  redirect: boolean;
+  redirectTo?: string;
+  redirectObj?: {};
 }
 
 /**
@@ -48,7 +50,10 @@ class DeliveriesScreen extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      deliveries: []
+      deliveries: [],
+      pageTitle: "toimitukset",
+      tabActiveItem: "FRESH",
+      redirect: false
     };
   }
 
@@ -103,39 +108,82 @@ class DeliveriesScreen extends React.Component<Props, State> {
   }
 
   /**
-   * Handle menu click
-   * 
-   * @param value value
-   */
-  private handleMenuItemClick = (value: string) => this.setState({ activeItem: value })
-
-  /**
    * Render method
    */
   public render() {
-    const { activeItem } = this.state
+    if (this.state.redirect && this.state.redirectTo) {
+      return (
+        <Redirect to={{
+          pathname: `${this.state.redirectTo}`,
+          state: this.state.redirectObj
+        }} />
+      );
+    }
+    const { tabActiveItem } = this.state;
+    const tabs: { value: string, pageTitle: string, src: SemanticICONS }[] = [
+      {
+        value: "proposals",
+        pageTitle: "Ehdotukset",
+        src: "edit outline"
+      },
+      {
+        value: "weekDeliveryPredictions",
+        pageTitle: "Viikkoennusteet",
+        src: "calendar alternate outline"
+      },
+      {
+        value: "incomingDeliveries",
+        pageTitle: "Tulevat toimitukset",
+        src: "truck"
+      },
+      {
+        value: "pastDeliveries",
+        pageTitle: "Tehdyt toimitukset",
+        src: "check circle outline"
+      }
+    ]
     return (
-      <BasicLayout pageTitle="Toimitukset">
-        <Menu fluid widths={4} attached='top' inverted color="red">
-          <Menu.Item name={strings.suggestions} active={activeItem === 'proposals'} onClick={() => this.handleMenuItemClick("proposals")} />
-          <Menu.Item color="black" name={strings.weekDeliveryPredictions} active={activeItem === 'weekDeliveryPredictions'} onClick={() => this.handleMenuItemClick("weekDeliveryPredictions")} />
-          <Menu.Item color="black" name={strings.incomingDeliveries} active={activeItem === 'incomingDeliveries'} onClick={() => this.handleMenuItemClick("incomingDeliveries")} />
-          <Menu.Item color="black" name={strings.pastDeliveries} active={activeItem === 'pastDeliveries'} onClick={() => this.handleMenuItemClick("pastDeliveries")} />
-        </Menu>
-        {
-          this.state.activeItem === "proposals" && <ProposalsView />
-        }
-        {
-          this.state.activeItem === "weekDeliveryPredictions" && <WeekDeliveryPredictions />
-        }
-        {
-          this.state.activeItem === "incomingDeliveries" && <IncomingDeliveries />
-        }
-        {
-          this.state.activeItem === "pastDeliveries" && <PastDeliveries />
-        }
+      <BasicLayout pageTitle={`${tabActiveItem === "FRESH" ? "Tuore, " : "Pakaste, "} ${this.state.pageTitle.toLowerCase()}`}>
+        <Grid>
+          <Grid.Column width={4}></Grid.Column>
+          <Grid.Column width={8}>
+            <Menu color="red" pointing secondary widths={2}>
+              <Menu.Item name={strings.fresh} active={tabActiveItem === 'FRESH'} onClick={() => this.setState({ tabActiveItem: "FRESH" })} />
+              <Menu.Item name={strings.frozen} active={tabActiveItem === 'FROZEN'} onClick={() => this.setState({ tabActiveItem: "FROZEN" })} />
+            </Menu>
+          </Grid.Column>
+          <Grid.Column width={4}></Grid.Column>
+        </Grid>
+        <Grid verticalAlign='middle'>
+          {
+            tabs.map((tab) => {
+              return (
+                <Grid.Row key={tab.value}>
+                  <Grid.Column width={4}>
+                  </Grid.Column>
+                  <Grid.Column textAlign="right" width={2}>
+                    <Icon color="red" name={tab.src} size='huge' />
+                  </Grid.Column>
+                  <Grid.Column width={6} className="open-modal-element" onClick={() => this.handleTabChange(tab.value)}>
+                    <Header style={{ display: "inline" }}>{tab.pageTitle}</Header>
+                    <Icon size="large" name="arrow right" style={{ float: "right" }} />
+                  </Grid.Column>
+                  <Grid.Column width={4}>
+                  </Grid.Column>
+                </Grid.Row>
+              );
+            })
+          }
+        </Grid>
       </BasicLayout>
     );
+  }
+
+  /**
+   * Handles tab change
+   */
+  private handleTabChange = ( value: string) => {
+    this.setState({ redirectTo: value, redirect: true, redirectObj: { category:this.state.tabActiveItem} });
   }
 }
 

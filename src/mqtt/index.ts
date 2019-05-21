@@ -8,6 +8,8 @@ import { IClientOptions } from "mqtt";
 export type OnMessageCallback = (message: any) => void;
 
 export interface MqttConfig {
+  username: string,
+  password: string,
   host: string,
   port: number,
   secure: boolean,
@@ -43,6 +45,8 @@ export class MqttConnection {
 
     const url = (config.secure ? "wss://" : "ws://") + config.host + ":" + config.port;
     const options: IClientOptions = { 
+      username: config.username,
+      password: config.password,
       host: config.host,
       port: config.port,
       keepalive: 30 
