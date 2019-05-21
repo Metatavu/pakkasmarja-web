@@ -279,7 +279,7 @@ class EditChatGroup extends React.Component<Props, State> {
         placeholder={this.state.answerType}
         value={this.state.answerType}
         options={options}
-        onChange={(event: React.SyntheticEvent<HTMLElement, Event>, data: DropdownProps) =>
+        onChange={(event: any, data: DropdownProps) =>
           this.setState({ answerType: data.value as ChatThread.AnswerTypeEnum })
         }
       />
