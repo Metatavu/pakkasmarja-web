@@ -3,7 +3,7 @@ import * as actions from "../../actions/";
 import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import { Modal, Divider, Header, Image, Loader, Grid, Button } from "semantic-ui-react";
 import Api, { PublicFile } from "pakkasmarja-client";
 import strings from "src/localization/strings";

@@ -205,5 +205,9 @@
   "answerType": "Vastauksen tyyppi",
   "pollDescription": "Äänestyksen kuvaus",
   "pollChoices": "Äänestyksen valinnat",
-  "insertPollChoicesBelow": "Syötä äänestyksen valinnat alla olevaan tekstilaatikkoon"
+  "insertPollChoicesBelow": "Syötä äänestyksen valinnat alla olevaan tekstilaatikkoon",
+  "redBoxesLoaned": "Lainattu (Punaiset laatikot)",
+  "redBoxesReturned": "Palautettu (Punaiset laatikot)",
+  "grayBoxesLoaned": "Lainattu (Harmaat laatikot)",
+  "grayBoxesReturned": "Palautettu (Harmaat laatikot)"
 }

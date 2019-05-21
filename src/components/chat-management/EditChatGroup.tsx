@@ -5,7 +5,7 @@ import BasicLayout from "../generic/BasicLayout";
 import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import Api, { ChatGroupPermissionScope, UserGroup, ChatGroup, ChatThread } from "pakkasmarja-client";
 import { Header, Dimmer, Loader, Select, DropdownItemProps, Button, DropdownProps, Form, Input, InputOnChangeData, Image, Dropdown, Checkbox } from "semantic-ui-react";
 import ImageGallery from "../generic/ImageGallery";

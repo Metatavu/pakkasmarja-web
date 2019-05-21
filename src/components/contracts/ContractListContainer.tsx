@@ -1,5 +1,5 @@
 import * as React from "react";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import { Header, Table } from "semantic-ui-react";
 import { ContractTableData } from "../../types";
 import ContractItem from "./ContractItem";

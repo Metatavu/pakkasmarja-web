@@ -3,7 +3,7 @@ import * as actions from "../../actions";
 import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import "./styles.scss";
+import "./styles.css";
 import ChatIndex from "./ChatIndex";
 import Chat from "./Chat";
 import { Segment, Icon } from "semantic-ui-react";

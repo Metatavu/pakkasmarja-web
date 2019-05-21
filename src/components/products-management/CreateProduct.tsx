@@ -4,7 +4,7 @@ import { StoreState, DeliveriesState, Options, DeliveryDataValue } from "src/typ
 import Api, { Product, ItemGroup } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import { Header, Dropdown, Form, Input, Button, Divider } from "semantic-ui-react";
 import BasicLayout from "../generic/BasicLayout";
 import { Redirect } from "react-router";

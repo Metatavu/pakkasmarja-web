@@ -212,7 +212,11 @@ export interface IStrings extends LocalizedStringsMethods {
   answerType: string,
   pollDescription: string,
   pollChoices: string,
-  insertPollChoicesBelow: string
+  insertPollChoicesBelow: string,
+  redBoxesLoaned: string
+  redBoxesReturned: string
+  grayBoxesLoaned: string
+  grayBoxesReturned: string
 }
 
 const strings: IStrings = new LocalizedStrings({

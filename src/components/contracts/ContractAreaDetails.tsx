@@ -1,6 +1,6 @@
 import * as React from "react";
-import "../../styles/common.scss";
-import "./styles.scss";
+import "../../styles/common.css";
+import "./styles.css";
 import { Grid, Header, Button, Input } from "semantic-ui-react";
 import { ItemGroup, AreaDetail } from "pakkasmarja-client";
 import strings from "src/localization/strings";
