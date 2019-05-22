@@ -4,7 +4,7 @@ import * as actions from "../../actions/";
 import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import { withRouter } from "react-router-dom";
 import { Route } from "react-router";
 import Login from "../login/Login";

@@ -4,7 +4,7 @@ import BasicLayout from "../generic/BasicLayout";
 import { StoreState, ContractTableData } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import Api from "pakkasmarja-client";
 import { ItemGroup } from "pakkasmarja-client";
 import { Header, Button, Dimmer, Loader } from "semantic-ui-react";

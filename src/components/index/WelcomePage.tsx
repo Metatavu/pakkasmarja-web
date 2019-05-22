@@ -5,7 +5,7 @@ import {
 } from "semantic-ui-react";
 import strings from "../../localization/strings";
 import BasicLayout from "../generic/BasicLayout";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 
 /**
  * Class for welcome page

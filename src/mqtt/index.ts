@@ -8,8 +8,8 @@ import { IClientOptions } from "mqtt";
 export type OnMessageCallback = (message: any) => void;
 
 export interface MqttConfig {
-  username: string,
-  password: string,
+  username?: string,
+  password?: string,
   host: string,
   port: number,
   secure: boolean,

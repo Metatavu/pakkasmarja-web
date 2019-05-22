@@ -2,7 +2,7 @@ import * as React from "react";
 import * as actions from "../../actions/";
 import { connect } from "react-redux";
 import { Dispatch } from "redux";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import { ContractTableData, StoreState, ContractData, ContractDataKey } from "src/types";
 import { Contract, ItemGroup, Contact, ItemGroupPrice, DeliveryPlace, AreaDetail, SignAuthenticationService } from "pakkasmarja-client";
 import Api from "pakkasmarja-client";

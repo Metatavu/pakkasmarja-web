@@ -4,7 +4,7 @@ import * as actions from "../../actions/";
 import { StoreState, Options, DeliveryDataValue } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import BasicLayout from "../generic/BasicLayout";
 import { Form, Button, Header, Input, Divider, Dropdown, Dimmer, Loader } from "semantic-ui-react";
 import Api, { Product, ItemGroup } from "pakkasmarja-client";

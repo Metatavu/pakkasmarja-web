@@ -4,7 +4,7 @@ import { Dispatch } from "redux";
 import { StoreState } from "../../types";
 import { connect } from "react-redux";
 import { Header, Accordion } from "semantic-ui-react";
-import "./styles.scss";
+import "./styles.css";
 import strings from "src/localization/strings";
 import { PDFService } from "src/api/pdf.service";
 

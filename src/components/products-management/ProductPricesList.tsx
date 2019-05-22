@@ -4,13 +4,14 @@ import BasicLayout from "../generic/BasicLayout";
 import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import Api, { ProductPrice } from "pakkasmarja-client";
 import { Button, Confirm, Table, Header, List, Dimmer, Loader } from "semantic-ui-react";
 import { Link } from "react-router-dom";
 import CreateProductPriceModal from "./CreateProductPriceModal";
 import * as moment from "moment";
 import EditProductPriceModal from "./EditProductPriceModal";
+import PriceChart from "../generic/PriceChart";
 
 /**
  * Interface for component props
@@ -116,6 +117,9 @@ class ProductPricesList extends React.Component<Props, State> {
         <Header floated='left' className="contracts-header">
           <p>Tuote hinnat</p>
         </Header>
+        <div style={{paddingTop: "25px", paddingBottom: "25px"}}>
+          <PriceChart showAxis productId={this.state.productId} width={800} height={300} />
+        </div>
         <Table celled fixed unstackable>
           <Table.Header>
             <Table.Row>

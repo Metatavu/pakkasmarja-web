@@ -4,7 +4,7 @@ import BasicLayout from "../generic/BasicLayout";
 import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import Api from "pakkasmarja-client";
 import { NewsArticle } from "pakkasmarja-client";
 import NewsComponent from "./NewsComponent";

@@ -4,7 +4,7 @@ import * as actions from "../../actions/";
 import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import Api, { DeliveryPlace, Product, Contact, Delivery, DeliveryQuality } from "pakkasmarja-client";
 import { Dimmer, Loader, Dropdown, DropdownProps, Modal, Button, Input, Image, Icon, Popup } from "semantic-ui-react";
 import { Table } from 'semantic-ui-react';
@@ -15,6 +15,8 @@ import ManageDeliveryModal from "./ManageDeliveryModal";
 import DatePicker, { registerLocale } from "react-datepicker";
 import fi from 'date-fns/esm/locale/fi'
 import IncomingDeliveryIcon from "../../gfx/incoming-delivery-icon.png";
+import "./styles.css"
+import CreateDeliveryModal from "./CreateDeliveryModal";
 
 /**
  * Interface for component props
@@ -32,15 +34,16 @@ interface State {
   loading: boolean
   deliveryPlaces: DeliveryPlace[]
   products: Product[],
-  contacts: Contact[],
   deliveries: Delivery[],
   selectedDeliveryPlaceId?: string
   selectedDelivery?: Delivery
   proposalProduct?: Product
-  proposalContact?: Contact
+  proposalContactId?: string
   proposalAmount?: number
   addingProposal: boolean,
+  contacts: Contact[]
   deliveryQualities: { [key: string] : DeliveryQuality },
+  newDeliveryModalOpen: boolean,
   error?: string
 }
 
@@ -62,11 +65,12 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       loading: false,
       deliveryPlaces: [],
       products: [],
-      contacts: [],
       deliveries: [],
+      contacts: [],
       selectedDate: new Date(),
       addingProposal: false,
-      deliveryQualities: {}
+      deliveryQualities: {},
+      newDeliveryModalOpen: false
     };
     registerLocale('fi', fi);
   }
@@ -83,14 +87,12 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     this.setState({ loading: true });
     const deliveryPlaces = await Api.getDeliveryPlacesService(keycloak.token).listDeliveryPlaces();
     const products = await Api.getProductsService(keycloak.token).listProducts(undefined, "FRESH");
-    const contacts = await Api.getContactsService(keycloak.token).listContacts();
     const deliveryQualities = await Api.getDeliveryQualitiesService(keycloak.token).listDeliveryQualities("FRESH");
     
     this.setState({ 
       loading: false,
       deliveryPlaces: deliveryPlaces,
       products: products,
-      contacts: contacts,
       deliveryQualities: _.keyBy(deliveryQualities, "id")
     });
 
@@ -141,7 +143,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       }
     });
 
-    const {contacts, products} = this.state;
+    const {products, deliveries} = this.state;
 
     const productHeaderCells = products.map((product) => {
       return (
@@ -149,57 +151,17 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       );
     });
 
-    const tableRows: JSX.Element[] = [];
-    for(let i = 0; i < contacts.length; i++) {
-      let tableCells: JSX.Element[] = [];
-      let contact = contacts[i];
-      tableCells.push(<Table.Cell>{contact.displayName}</Table.Cell>);
-      for(let j = 0; j < products.length; j++) {
-        let product = products[j];
-        const deliveries = this.listContactDeliveries(contact, product);
-        if (!deliveries.length) {
-          tableCells.push(
-            <Table.Cell 
-              key={`${contact.id}-${product.id}`}
-              selectable
-              onClick={() => this.handleCreateDelivery(contact, product)} />
-          );
-        } else {
-          if (deliveries.length > 1) {
-            const deliveryButtons = deliveries.map((delivery) => {
-              return <Button basic onClick={() => this.handleEditDelivery(delivery!)}> { delivery.amount } ({ this.getDeliveryStatusText(delivery) }) </Button>
-            });
+    const morningDeliveries = this.state.deliveries.filter((delivery) => moment(delivery.time).utc().hour() <= 12);
+    const eveningDeliveries = this.state.deliveries.filter((delivery) => moment(delivery.time).utc().hour() > 12);
 
-            tableCells.push(
-              <Table.Cell key={`${contact.id}-${product.id}`} style={{ paddingLeft: "5px", paddingRight: "5px" }} selectable onClick={() => {}}>
-                 <Popup style={{ textAlign: "center", whiteSpace: "nowrap" }} wide trigger={<Button style={{ width: "100%" }} basic content='Valitse' />} on='click'>
-                  { deliveryButtons }
-                 </Popup>
-              </Table.Cell>
-            );
-          } else {
-            const delivery = deliveries[0];
-
-            const textStyle = this.getDeliveryTextStyle(delivery);
-
-            tableCells.push(
-              <Table.Cell 
-                key={`${contact.id}-${product.id}`}
-                style={{...textStyle}}
-                selectable
-                onClick={() => this.handleEditDelivery(delivery!)}>
-                { this.renderDeliveryIcon(delivery) }
-                { delivery.amount }
-              </Table.Cell>
-            );
-          }
-        }
-      }
-      tableRows.push(<Table.Row key={contact.id}>{tableCells}</Table.Row>)
-    }
+    let tableRows = this.getTableRows(morningDeliveries);
+    tableRows.push(this.getTableSummaryRow(morningDeliveries, "Klo 12 mennessä yht."));
+    tableRows = tableRows.concat(this.getTableRows(eveningDeliveries));
+    tableRows.push(this.getTableSummaryRow(deliveries, "Varastossa nyt", true));
+    tableRows.push(this.getTableSummaryRow(deliveries, "Klo 17 mennessä yht."))
 
     return (
-      <TableBasicLayout error={ this.state.error } onErrorClose={ () => this.setState({ error: undefined }) } pageTitle="Päiväennuste, tuoreet">
+      <TableBasicLayout topBarButtonText={this.state.selectedDeliveryPlaceId ? "Uusi" : undefined} onTopBarButtonClick={this.state.selectedDeliveryPlaceId ? () => this.setState({newDeliveryModalOpen: true}) : undefined} error={ this.state.error } onErrorClose={ () => this.setState({ error: undefined }) } pageTitle="Päiväennuste, tuoreet">
         <Dropdown
           placeholder="Toimituspaikka"
           options={deliveryPlaceOptions}
@@ -218,9 +180,9 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
           locale="fi"
         />
         {this.state.selectedDeliveryPlaceId &&
-          <Table celled padded>
+          <Table celled padded selectable>
             <Table.Header>
-              <Table.Row>
+              <Table.Row className="table-header-row">
                 <Table.HeaderCell key="viljelija">Viljelijä</Table.HeaderCell>
                 {productHeaderCells}
               </Table.Row>
@@ -238,21 +200,151 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
             open={true}
             delivery={this.state.selectedDelivery} />
         }
-        {this.state.proposalContact && this.state.proposalProduct &&
-          <Modal size="tiny" open={true} onClose={() => this.setState({proposalContact: undefined, proposalProduct: undefined})}>
+        {this.state.proposalContactId && this.state.proposalProduct &&
+          <Modal size="tiny" open={true} onClose={() => this.setState({proposalContactId: undefined, proposalProduct: undefined})}>
             <Modal.Header>Luo toimitusehdotus</Modal.Header>
             <Modal.Content>
               <p>Syötä ehdotettava määrä</p>
               <Input value={this.state.proposalAmount} type="number" onChange={(e, data) => {this.setState({proposalAmount: parseInt(data.value, 10)})}} />
             </Modal.Content>
             <Modal.Actions>
-              <Button onClick={() => this.setState({proposalContact: undefined, proposalProduct: undefined})} negative>Peruuta</Button>
+              <Button onClick={() => this.setState({proposalContactId: undefined, proposalProduct: undefined})} negative>Peruuta</Button>
               <Button onClick={() => this.addProposal()} loading={this.state.addingProposal} positive icon='checkmark' labelPosition='right' content='Tee ehdotus' />
             </Modal.Actions>
           </Modal>
         }
+        {this.state.selectedDeliveryPlaceId &&
+          <CreateDeliveryModal 
+            open={this.state.newDeliveryModalOpen}
+            onClose={(created?: boolean) => {
+              this.setState({newDeliveryModalOpen: false});
+              if (created) {
+                this.reloadDeliveries();
+              }
+            }}
+            products={this.state.products} date={this.state.selectedDate} deliveryPlaceId={this.state.selectedDeliveryPlaceId} />
+        }
       </TableBasicLayout>
     );
+  }
+
+  private getTableRows(deliveries: Delivery[]) {
+
+    const {products} = this.state;
+
+    const tableRows: JSX.Element[] = [];
+    let index = 0;
+    const contactIds = _.uniq(deliveries.map(delivery => delivery.userId));
+    for(let i = 0; i < contactIds.length; i++) {
+      index++;
+      let tableCells: JSX.Element[] = [];
+      let contactId = contactIds[i];
+      let contact = this.getContact(contactId);
+      tableCells.push(<Table.Cell>{contact ? contact.displayName : <Loader size="mini" inline />}</Table.Cell>);
+      for(let j = 0; j < products.length; j++) {
+        let product = products[j];
+        const productDeliveries = this.listContactDeliveries(contactId, product, deliveries);
+        if (!productDeliveries.length) {
+          tableCells.push(
+            <Table.Cell 
+              key={`${contactId}-${product.id}`}
+              selectable
+              onClick={() => this.handleCreateDelivery(contactId, product)} />
+          );
+        } else {
+          if (productDeliveries.length > 1) {
+            const deliveryButtons = productDeliveries.map((delivery) => {
+              return <Button basic onClick={() => this.handleEditDelivery(delivery!)}> { delivery.amount } ({ this.getDeliveryStatusText(delivery) }) </Button>
+            });
+
+            tableCells.push(
+              <Table.Cell key={`${contactId}-${product.id}`} style={{ paddingLeft: "5px", paddingRight: "5px" }} selectable onClick={() => {}}>
+                <Popup style={{ textAlign: "center", whiteSpace: "nowrap" }} wide trigger={<Button style={{ width: "100%" }} basic content='Valitse' />} on='click'>
+                  { deliveryButtons }
+                </Popup>
+              </Table.Cell>
+            );
+          } else {
+            const delivery = productDeliveries[0];
+            const textStyle = this.getDeliveryTextStyle(delivery);
+            tableCells.push(
+              <Table.Cell 
+                key={`${contactId}-${product.id}`}
+                style={{...textStyle}}
+                selectable
+                onClick={() => this.handleEditDelivery(delivery!)}>
+                { this.renderDeliveryIcon(delivery) }
+                { delivery.amount }
+              </Table.Cell>
+            );
+          }
+        }
+      }
+      tableRows.push(<Table.Row key={`${index}-${contactId}`}>{tableCells}</Table.Row>)
+    }
+
+    return tableRows;
+  }
+
+  private getTableSummaryRow(deliveries: Delivery[], headerText: string, onlyDelivered?: boolean) {
+
+    const {products} = this.state;
+    let tableCells: JSX.Element[] = [];
+    tableCells.push(<Table.Cell>{headerText}</Table.Cell>);
+    for(let j = 0; j < products.length; j++) {
+      let product = products[j];
+      tableCells.push(
+        <Table.Cell key={`${headerText}-summary-cell-${product.id}`} style={{ paddingLeft: "5px", paddingRight: "5px" }} selectable onClick={() => {}}>
+          {this.countDeliveryAmountByProduct(deliveries, product, onlyDelivered)}
+        </Table.Cell>
+      );
+    }
+
+    return (<Table.Row className={onlyDelivered ? "summary-delivered-row": "summary-total-row"} key={`${headerText}-summary-row`}>{tableCells}</Table.Row>);
+  }
+
+  private countDeliveryAmountByProduct(deliveries: Delivery[], product: Product, onlyDelivered?: boolean) {
+    let count = 0;
+
+    deliveries.forEach((delivery) => {
+      if (delivery.productId === product.id) {
+        if (onlyDelivered) {
+          if (delivery.status === "DONE") {
+            count += delivery.amount;
+          }
+        } else {
+          count += delivery.amount;
+        }
+      }
+    });
+
+    return count;
+  }
+
+  private getContact(contactId: string) {
+    const contact = this.state.contacts.find((contact) => contact.id === contactId);
+    if (contact) {
+      return contact;
+    }
+
+    this.loadContact(contactId);
+    return undefined;
+  }
+
+  private loadContact = async (contactId: string) => {
+    const { keycloak } = this.props;
+    if (!keycloak || !keycloak.token) {
+      return undefined;
+    }
+
+    const contact = await Api.getContactsService(keycloak.token).findContact(contactId);
+    const currentContacts = [...this.state.contacts];
+    currentContacts.push(contact);
+    this.setState({
+      contacts: currentContacts
+    });
+
+    return contact;
   }
 
   /**
@@ -293,8 +385,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
 
   private addProposal = async () => {
     const { keycloak } = this.props;
-    const { proposalContact, proposalProduct, proposalAmount, selectedDeliveryPlaceId, selectedDate } = this.state;
-    if (!keycloak || !keycloak.token || !proposalContact || !proposalAmount || !proposalProduct || !proposalAmount || !selectedDeliveryPlaceId) {
+    const { proposalContactId, proposalProduct, proposalAmount, selectedDeliveryPlaceId, selectedDate } = this.state;
+    if (!keycloak || !keycloak.token || !proposalContactId || !proposalAmount || !proposalProduct || !proposalAmount || !selectedDeliveryPlaceId) {
       return;
     }
 
@@ -308,13 +400,13 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       productId: proposalProduct.id!,
       status: "PROPOSAL",
       time: selectedDate,
-      userId: proposalContact.id!
+      userId: proposalContactId!
     });
 
     this.setState({
       addingProposal: false,
       proposalAmount: undefined,
-      proposalContact: undefined,
+      proposalContactId: undefined,
       proposalProduct: undefined
     });
 
@@ -346,9 +438,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
    * @param contact contact
    * @param product product
    */
-  private listContactDeliveries(contact: Contact, product: Product): Delivery[] {
-    const { deliveries } = this.state;
-    return (deliveries || []).filter((delivery) => delivery.productId == product.id && delivery.userId == contact.id);
+  private listContactDeliveries(contactId: string, product: Product, deliveries: Delivery[]): Delivery[] {
+    return (deliveries || []).filter((delivery) => delivery.productId == product.id && delivery.userId == contactId);
   }
   
   private handleDeliveryPlaceChange = (event: React.SyntheticEvent<HTMLElement>, data: DropdownProps) => {
@@ -406,9 +497,9 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     }
   }
 
-  private handleCreateDelivery = (contact: Contact, product: Product) => {
+  private handleCreateDelivery = (contactId: string, product: Product) => {
     this.setState({
-      proposalContact: contact,
+      proposalContactId: contactId,
       proposalProduct: product
     });
   }

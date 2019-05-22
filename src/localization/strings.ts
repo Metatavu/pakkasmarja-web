@@ -113,6 +113,7 @@ export interface IStrings extends LocalizedStringsMethods {
   berry: string
   close: string
   send: string
+  sendAnswer: string
   confirmRejectText: string
   cancel: string
   signContractFirst: string
@@ -210,7 +211,18 @@ export interface IStrings extends LocalizedStringsMethods {
   freshDeliveries: string,
   frozenDeliveries: string,
   createNewFreshDelivery : string,
-  createNewFrozenDelivery : string
+  createNewFrozenDelivery : string,
+  lastDayToAnswer: string,
+  expireDate: string,
+  voteResults: string,
+  answerType: string,
+  pollDescription: string,
+  pollChoices: string,
+  insertPollChoicesBelow: string,
+  redBoxesLoaned: string
+  redBoxesReturned: string
+  grayBoxesLoaned: string
+  grayBoxesReturned: string
 }
 
 const strings: IStrings = new LocalizedStrings({

@@ -4,8 +4,8 @@ import { StoreState, DeliveriesState, DeliveryProduct, Options, DeliveryDataValu
 import Api, { Product, DeliveryPlace, ItemGroupCategory, Delivery, DeliveryNote, ProductPrice } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import "../../styles/common.scss";
 import { Header, Dropdown, Form, Input, Button, Divider, Icon } from "semantic-ui-react";
+import "../../styles/common.css";
 import BasicLayout from "../generic/BasicLayout";
 import DeliveryNoteModal from "./DeliveryNoteModal";
 import { Redirect } from "react-router";

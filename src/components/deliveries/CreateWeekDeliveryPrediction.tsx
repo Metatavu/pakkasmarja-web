@@ -4,7 +4,7 @@ import { StoreState, DeliveryDataValue, Options } from "src/types";
 import Api, { ItemGroupCategory, ItemGroup, WeekDeliveryPredictionDays, WeekDeliveryPrediction } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import { Header, Form, Input, Button, Divider, Dropdown, Checkbox, CheckboxProps, Dimmer, Loader } from "semantic-ui-react";
 import BasicLayout from "../generic/BasicLayout";
 import { Redirect } from "react-router";

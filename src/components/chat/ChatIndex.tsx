@@ -3,10 +3,11 @@ import * as actions from "../../actions/";
 import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import { Tab } from "semantic-ui-react";
 import ChatThreadList from "./ChatThreadList";
 import ChatGroupList from "./ChatGroupList";
+import { ChatThread } from "pakkasmarja-client";
 
 /**
  * Interface for component props
@@ -14,7 +15,7 @@ import ChatGroupList from "./ChatGroupList";
 interface Props {
   authenticated: boolean;
   keycloak?: Keycloak.KeycloakInstance;
-  onChatThreadSelected: (chatThreadId: number) => void
+  onChatThreadSelected: (chatThreadId: number, answerType: ChatThread.AnswerTypeEnum) => void
   onChatGroupSelected: (chatGroup: number) => void
   onResetChatGroupId: () => void;
   chatGroup?: number

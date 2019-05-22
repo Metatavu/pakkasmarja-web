@@ -1,5 +1,5 @@
 import * as React from "react";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import { Button } from "semantic-ui-react";
 import { Redirect } from "react-router-dom";
 import strings from "src/localization/strings";

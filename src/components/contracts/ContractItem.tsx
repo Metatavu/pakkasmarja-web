@@ -1,5 +1,5 @@
 import * as React from "react";
-import "../../styles/common.scss";
+import "../../styles/common.css";
 import { Modal, Icon, SemanticICONS, SemanticCOLORS, Table } from "semantic-ui-react";
 import { ContractTableData, StoreState } from "src/types";
 import { Contract } from "pakkasmarja-client";
