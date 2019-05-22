@@ -1,11 +1,11 @@
 import * as React from "react";
 import * as actions from "../../actions/";
 import { StoreState, DeliveriesState, DeliveryProduct, Options, DeliveryDataValue } from "src/types";
-import Api, { Product, DeliveryPlace, ItemGroupCategory, Delivery, DeliveryNote } from "pakkasmarja-client";
+import Api, { Product, DeliveryPlace, ItemGroupCategory, Delivery, DeliveryNote, ProductPrice } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
-import { Header, Dropdown, Form, Input, Button, Divider } from "semantic-ui-react";
+import { Header, Dropdown, Form, Input, Button, Divider, Icon } from "semantic-ui-react";
 import BasicLayout from "../generic/BasicLayout";
 import DeliveryNoteModal from "./DeliveryNoteModal";
 import { Redirect } from "react-router";
@@ -13,6 +13,7 @@ import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import fi from 'date-fns/esm/locale/fi';
 import strings from "src/localization/strings";
+import * as moment from "moment";
 
 /**
  * Interface for component props
@@ -35,10 +36,13 @@ interface State {
   selectedPlaceId: string;
   amount: number;
   date: Date;
+  time?: Date;
   modalOpen: boolean;
   category: string;
   redirect: boolean;
   deliveryNotes: DeliveryNote[];
+  productPrice?: ProductPrice;
+  deliveryTimeValue?: number;
 }
 
 /**
@@ -91,10 +95,24 @@ class CreateDelivery extends React.Component<Props, State> {
   /**
    * Handle inputchange
    */
-  private handleInputChange = (key: string, value: DeliveryDataValue) => {
+  private handleInputChange = async (key: string, value: DeliveryDataValue) => {
+    if (key === "selectedProductId") {
+      if (!this.props.keycloak || !this.props.keycloak.token || !value) {
+        return;
+      }
+      const productPricesService = await Api.getProductPricesService(this.props.keycloak.token);
+      const productPriceList = await productPricesService.listProductPrices(value.toString(), "CREATED_AT_DESC", 0, 1);
+      const productPrice = productPriceList[0];
+      this.setState({ productPrice });
+    } else if (key === "deliveryTimeValue") {
+      let time: string | Date = moment(this.state.date).format("YYYY-MM-DD");
+      time = `${time} ${value}:00 +0000`
+      time = moment(time, "YYYY-MM-DD HH:mm Z").toDate();
+      this.setState({ time });
+    }
+
     const state: State = this.state;
     state[key] = value;
-
     this.setState(state);
   }
 
@@ -110,7 +128,6 @@ class CreateDelivery extends React.Component<Props, State> {
       return <Dropdown fluid />;
     }
     const value = this.state[key];
-
     return (
       <Dropdown
         selection
@@ -141,16 +158,15 @@ class CreateDelivery extends React.Component<Props, State> {
    * Handles delivery submit
    */
   private handleDeliverySubmit = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.selectedPlaceId || !this.state.selectedProductId || !this.state.date) {
+    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.selectedPlaceId || !this.state.selectedProductId || !this.state.time) {
       return;
     }
     const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
 
     const delivery: Delivery = {
-      id: "",
       productId: this.state.selectedProductId,
       userId: this.props.keycloak.subject || "",
-      time: this.state.date,
+      time: this.state.time,
       status: "PLANNED",
       amount: this.state.amount,
       price: "0",
@@ -239,8 +255,18 @@ class CreateDelivery extends React.Component<Props, State> {
       };
     });
 
+    const deliveryTimeValue: Options[] = [{
+      key: "deliveryTimeValue1",
+      text: "Ennen kello 11",
+      value: 11
+    }, {
+      key: "deliveryTimeValue2",
+      text: "Jälkeen kello 11",
+      value: 17
+    }]
+
     return (
-      <BasicLayout>
+      <BasicLayout pageTitle={this.state.category && `Uusi ${this.state.category === "FRESH" ? "tuore" : "pakaste"} toimitus`}>
         <Header as="h2">
           Uusi {this.state.category === "FRESH" ? "tuore" : "pakaste"} toimitus
         </Header>
@@ -249,6 +275,11 @@ class CreateDelivery extends React.Component<Props, State> {
             <label>{strings.product}</label>
             {this.renderDropDown(productOptions, strings.product, "selectedProductId")}
           </Form.Field>
+          {this.state.productPrice &&
+            <Form.Field>
+              <p><Icon name="info circle" size="large" color="red" />Tämän hetkinen hinta on {this.state.productPrice.price} {this.state.productPrice.unit}</p>
+            </Form.Field>
+          }
           <Form.Field>
             <label>{strings.amount}</label>
             <Input
@@ -268,6 +299,10 @@ class CreateDelivery extends React.Component<Props, State> {
               selected={this.state.date}
               locale="fi"
             />
+          </Form.Field>
+          <Form.Field style={{ marginTop: 20 }}>
+            <label>{"Ajankohta"}</label>
+            {this.renderDropDown(deliveryTimeValue, "Valitse ajankohta", "deliveryTimeValue")}
           </Form.Field>
           <Form.Field style={{ marginTop: 20 }}>
             <label>{strings.deliveryPlace}</label>

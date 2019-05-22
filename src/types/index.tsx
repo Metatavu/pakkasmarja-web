@@ -57,7 +57,7 @@ export type DeliveryDataValue = undefined | string | number | boolean | (string 
 export interface Options {
   key: string | undefined,
   text: string | undefined,
-  value: string | undefined
+  value: string | undefined | number
 }
 
 /**
