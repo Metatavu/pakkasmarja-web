@@ -161,9 +161,9 @@ class CreateWeekDeliveryPrediction extends React.Component<Props, State> {
   }
 
   /**
-   * Handles delivery submit
+   * Handles submit
    */
-  private handleDeliverySubmit = async () => {
+  private handleSubmit = async () => {
     if (!this.props.keycloak || !this.props.keycloak.token || !this.state.selectedItemGroupId) {
       return;
     }
@@ -302,7 +302,7 @@ class CreateWeekDeliveryPrediction extends React.Component<Props, State> {
               inverted
               color="red">{strings.back}</Button>
             <Button.Or text="" />
-            <Button onClick={this.handleDeliverySubmit} color="red">
+            <Button onClick={this.handleSubmit} color="red">
               {this.state.category === "FRESH" ? strings.newFreshWeekDeliveryPrediction : strings.newFrozenWeekDeliveryPrediction}
             </Button>
           </Button.Group>

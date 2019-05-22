@@ -11,6 +11,7 @@ import { Grid, Header, Icon, SemanticICONS, Menu } from "semantic-ui-react";
 import { Delivery } from "pakkasmarja-client";
 import strings from "src/localization/strings";
 import { Redirect } from "react-router";
+import * as _ from "lodash";
 
 /**
  * Interface for component props
@@ -30,11 +31,13 @@ interface State {
   itemGroups?: ItemGroup[];
   activeItem?: string;
   tabActiveItem: string;
-  deliveries: Delivery[];
   pageTitle: string;
   redirect: boolean;
   redirectTo?: string;
   redirectObj?: {};
+  proposalCount?: number;
+  incomingDeliveriesCount?: number;
+  deliveries?: DeliveriesState;
 }
 
 /**
@@ -50,7 +53,6 @@ class DeliveriesScreen extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      deliveries: [],
       pageTitle: "toimitukset",
       tabActiveItem: "FRESH",
       redirect: false
@@ -67,6 +69,34 @@ class DeliveriesScreen extends React.Component<Props, State> {
     const activeItem = this.props.location.state ? this.props.location.state.activeItem : "";
     this.setState({ activeItem });
     await this.loadDeliveriesData();
+    this.setTabCounts();
+  }
+
+  /**
+   * Component did update life-sycle event
+   */
+  public componentDidUpdate = (prevProps: Props, prevState: State) => {
+    if (prevState.tabActiveItem != this.state.tabActiveItem) {
+      this.setTabCounts();
+    }
+  }
+
+  /**
+   * Sets tabs counts
+   */
+  private setTabCounts = () => {
+    const deliveries = this.state.deliveries;
+    if (deliveries) {
+      if (this.state.tabActiveItem === "FRESH") {
+        const proposalCount = _.filter(deliveries.freshDeliveryData, ({ delivery }) => delivery.status === "PROPOSAL").length;
+        const incomingDeliveriesCount = _.filter(deliveries.freshDeliveryData, ({ delivery }) => delivery.status === "PLANNED").length;
+        this.setState({ proposalCount, incomingDeliveriesCount });
+      } else {
+        const proposalCount = _.filter(deliveries.frozenDeliveryData, ({ delivery }) => delivery.status === "PROPOSAL").length;
+        const incomingDeliveriesCount = _.filter(deliveries.frozenDeliveryData, ({ delivery }) => delivery.status === "PLANNED").length;
+        this.setState({ proposalCount, incomingDeliveriesCount });
+      }
+    }
   }
 
   /**
@@ -104,6 +134,7 @@ class DeliveriesScreen extends React.Component<Props, State> {
       frozenDeliveryData: frozenDeliveriesAndProducts
     };
 
+    this.setState({ deliveries: deliveriesState });
     this.props.deliveriesLoaded && this.props.deliveriesLoaded(deliveriesState);
   }
 
@@ -120,11 +151,12 @@ class DeliveriesScreen extends React.Component<Props, State> {
       );
     }
     const { tabActiveItem } = this.state;
-    const tabs: { value: string, pageTitle: string, src: SemanticICONS }[] = [
+    const tabs: { value: string, pageTitle: string, src: SemanticICONS, count?: number }[] = [
       {
         value: "proposals",
         pageTitle: "Ehdotukset",
-        src: "edit outline"
+        src: "edit outline",
+        count: this.state.proposalCount && this.state.proposalCount
       },
       {
         value: "weekDeliveryPredictions",
@@ -134,7 +166,8 @@ class DeliveriesScreen extends React.Component<Props, State> {
       {
         value: "incomingDeliveries",
         pageTitle: "Tulevat toimitukset",
-        src: "truck"
+        src: "truck",
+        count: this.state.incomingDeliveriesCount && this.state.incomingDeliveriesCount
       },
       {
         value: "pastDeliveries",
@@ -164,9 +197,13 @@ class DeliveriesScreen extends React.Component<Props, State> {
                   <Grid.Column textAlign="right" width={2}>
                     <Icon color="red" name={tab.src} size='huge' />
                   </Grid.Column>
-                  <Grid.Column width={6} className="open-modal-element" onClick={() => this.handleTabChange(tab.value)}>
+                  <Grid.Column style={{ height: 40 }} width={6} className="open-modal-element" onClick={() => this.handleTabChange(tab.value)}>
                     <Header style={{ display: "inline" }}>{tab.pageTitle}</Header>
-                    <Icon size="large" name="arrow right" style={{ float: "right" }} />
+                    {
+                      tab.count ?
+                        <div className="delivery-count-container"><p>{tab.count}</p></div>
+                        : null
+                    }
                   </Grid.Column>
                   <Grid.Column width={4}>
                   </Grid.Column>
@@ -182,8 +219,8 @@ class DeliveriesScreen extends React.Component<Props, State> {
   /**
    * Handles tab change
    */
-  private handleTabChange = ( value: string) => {
-    this.setState({ redirectTo: value, redirect: true, redirectObj: { category:this.state.tabActiveItem} });
+  private handleTabChange = (value: string) => {
+    this.setState({ redirectTo: value, redirect: true, redirectObj: { category: this.state.tabActiveItem } });
   }
 }
 

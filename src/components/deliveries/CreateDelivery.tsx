@@ -12,7 +12,6 @@ import { Redirect } from "react-router";
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import fi from 'date-fns/esm/locale/fi';
-import { Link } from "react-router-dom";
 import strings from "src/localization/strings";
 
 /**
@@ -278,11 +277,7 @@ class CreateDelivery extends React.Component<Props, State> {
           <Divider />
           <Button.Group floated="right" >
             <Button
-              as={Link}
-              to={{
-                pathname: '/deliveries',
-                state: { activeItem: 'incomingDeliveries' }
-              }}
+              onClick={() => this.setState({ redirect: true })}
               inverted
               color="red">{strings.back}</Button>
             <Button.Or text="" />

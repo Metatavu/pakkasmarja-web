@@ -17,6 +17,8 @@
     color: red !important; }
   .open-modal-element:hover i {
     color: red !important; }
+  .open-modal-element:hover .delivery-count-container {
+    background-color: red; }
 
 .contract-blue-container {
   background-color: #DAE7FA;
@@ -44,3 +46,29 @@
   .pdf-icon:hover {
     cursor: pointer;
     color: white !important; }
+
+.delivery-count-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  float: right;
+  background-color: #e51d2a;
+  width: 30px;
+  height: 30px;
+  border-radius: 15px;
+  box-shadow: 0px 0px 3px grey; }
+  .delivery-count-container p {
+    margin: 0;
+    padding: 0;
+    color: #fff;
+    font-weight: bold;
+    font-size: 1.4em; }
+
+.delivery-sort-time-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #efefef;
+  width: 100%;
+  height: 50px;
+  border-bottom: 1px solid #dadada; }

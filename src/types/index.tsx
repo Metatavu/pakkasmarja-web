@@ -81,6 +81,22 @@ export interface DeliveryProduct {
 }
 
 /**
+ * Interface for time and deliveryproduct
+ */
+export interface SortedDeliveryProduct {
+  time: string;
+  deliveryProducts: DeliveryProduct[]
+}
+
+/**
+ * Interface for sorted week delivery predictions
+ */
+export interface SortedPredictions {
+  week: string;
+  WeekDeliveryPredictionTableData: WeekDeliveryPredictionTableData[]
+}
+
+/**
  * Interface for contract table data
  */
 export interface WeekDeliveryPredictionTableData {

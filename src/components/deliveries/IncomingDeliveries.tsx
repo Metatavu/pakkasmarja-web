@@ -1,16 +1,20 @@
 import * as React from "react";
 import * as actions from "../../actions/";
-import { StoreState, DeliveriesState, DeliveryProduct } from "src/types";
+import { StoreState, DeliveriesState, DeliveryProduct, SortedDeliveryProduct } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
-import { Header, Item, Button } from "semantic-ui-react";
+import { Header, Item, Button, Grid, Image } from "semantic-ui-react";
 import { Link, Redirect } from "react-router-dom";
 import Moment from "react-moment";
 import ViewModal from "./ViewModal";
-import Api, { Delivery, ItemGroupCategory } from "pakkasmarja-client";
+import Api, { Delivery } from "pakkasmarja-client";
 import strings from "src/localization/strings";
 import BasicLayout from "../generic/BasicLayout";
+import InDeliveryIcon from "../../gfx/indelivery_logo.png";
+import PakkasmarjaRedLogo from "../../gfx/red_logo.png";
+import * as _ from "lodash";
+import * as moment from "moment";
 
 /**
  * Interface for component props
@@ -28,7 +32,7 @@ interface Props {
  */
 interface State {
   keycloak?: Keycloak.KeycloakInstance;
-  deliveries?: DeliveryProduct[];
+  sortedDeliveriesByTime?: ArrayLike<SortedDeliveryProduct>;
   viewModal: boolean;
   deliveryId?: string;
   redirect: boolean;
@@ -74,30 +78,57 @@ class IncomingDeliveries extends React.Component<Props, State> {
     if (category === "FRESH") {
       const freshDeliveryData: DeliveryProduct[] = this.props.deliveries.freshDeliveryData;
       const freshDeliveries: DeliveryProduct[] = freshDeliveryData.filter(deliveryData => filterCondition.includes(deliveryData.delivery.status));
-      this.setState({ deliveries: freshDeliveries, category, pageTitle: strings.freshDeliveries });
+      const sortedDeliveriesByTime = this.sortDeliveryProducts(freshDeliveries);
+      this.setState({ sortedDeliveriesByTime, category, pageTitle: strings.freshDeliveries });
     }
     if (category === "FROZEN") {
       const frozenDeliveryData: DeliveryProduct[] = this.props.deliveries.frozenDeliveryData;
       const frozenDeliveries: DeliveryProduct[] = frozenDeliveryData.filter(deliveryData => filterCondition.includes(deliveryData.delivery.status));
-      this.setState({ deliveries: frozenDeliveries, category, pageTitle: strings.frozenDeliveries });
+      const sortedDeliveriesByTime = this.sortDeliveryProducts(frozenDeliveries);
+      this.setState({ sortedDeliveriesByTime, category, pageTitle: strings.frozenDeliveries });
     }
+  }
+
+  /**
+   * Sort delivery products
+   * 
+   * @param deliveryProductArray deliveryProductArray
+   * @returns sorted array
+   */
+  private sortDeliveryProducts = (deliveryProductArray: DeliveryProduct[]) => {
+    const sorted : ArrayLike<SortedDeliveryProduct> = _.chain(deliveryProductArray)
+      .groupBy(deliveryProduct => moment(deliveryProduct.delivery.time).format("DD.MM.YYYY"))
+      .map((v, i) => {
+        return {
+          time: i,
+          deliveryProducts: v
+        }
+      }).value();
+      const SortedDeliveryProductArrayDesc = _.sortBy(sorted, (obj) => obj.time).reverse();
+      return SortedDeliveryProductArrayDesc;
   }
 
   /**
    * Renders elements depending on delivery status
    * 
    * @param deliveryProduct deliveryProduct
-   * @param category category
    */
-  private renderStatus(deliveryProduct: DeliveryProduct, category: ItemGroupCategory) {
+  private renderStatus(deliveryProduct: DeliveryProduct) {
     const status: string = deliveryProduct.delivery.status;
+    const category: string = this.state.category || "";
     if (status === "PROPOSAL") {
       return (
-        <Header style={{ margin: "auto", marginRight: 50 }} as="h3">Tarkistuksessa</Header>
+        <React.Fragment>
+          <Image src={PakkasmarjaRedLogo} style={{ float: "left", margin: "auto", maxHeight: "28px", maxWidth: "28px", marginRight: "17px" }} />
+          <Header style={{ margin: "auto", marginRight: 35 }} color="red" as="h4">Ehdotuksissa</Header>
+        </React.Fragment>
       );
     } else if (status === "DELIVERY") {
       return (
-        <Header style={{ margin: "auto", marginRight: 50 }} as="h3">Toimituksessa</Header>
+        <React.Fragment>
+          <Image src={InDeliveryIcon} style={{ float: "left", margin: "auto", maxHeight: "21px", maxWidth: "35px", marginRight: "10px" }} />
+          <Header style={{ margin: "auto", marginRight: 30 }} color="green" as="h4">Toimituksessa</Header>
+        </React.Fragment>
       );
     } else if (status === "PLANNED") {
       return (
@@ -197,31 +228,51 @@ class IncomingDeliveries extends React.Component<Props, State> {
         <Redirect to={this.state.redirectTo} />
       );
     }
+    const { sortedDeliveriesByTime } = this.state;
     return (
       <BasicLayout
         pageTitle={this.state.pageTitle}
         topBarButtonText={this.state.category === "FRESH" ? strings.createNewFreshDelivery : strings.createNewFrozenDelivery}
         onTopBarButtonClick={this.redirectTo}>
-        <Item.Group divided>
-          {
-            this.state.deliveries && this.state.deliveries.map((deliveryProduct) => {
-              if (!deliveryProduct.product) {
-                return;
+        <Grid>
+          <Grid.Row>
+            <Grid.Column width={3}>
+            </Grid.Column>
+            <Grid.Column width={10}>
+              {
+                sortedDeliveriesByTime && Array.from(sortedDeliveriesByTime).map((obj) => {
+                  return (
+                    <React.Fragment key={obj.deliveryProducts[0].delivery.id}>
+                      <div className="delivery-sort-time-container"><h3>Päivämäärä {obj.time}</h3></div>
+                      <Item.Group divided >
+                        {
+                          obj.deliveryProducts.map((deliveryProduct) => {
+                            if (!deliveryProduct.product) {
+                              return;
+                            }
+                            return (
+                              <Item key={deliveryProduct.delivery.id}>
+                                <Item.Content className="open-modal-element" onClick={() => { this.setState({ deliveryId: deliveryProduct.delivery.id, viewModal: true }) }}>
+                                  <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.delivery.amount} x ${deliveryProduct.product.units} ${deliveryProduct.product.unitName} `}</Item.Header>
+                                  <Item.Meta><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Meta>
+                                </Item.Content>
+                                {
+                                  this.renderStatus(deliveryProduct)
+                                }
+                              </Item>
+                            )
+                          })
+                        }
+                      </Item.Group>
+                    </React.Fragment>
+                  )
+                })
               }
-              return (
-                <Item className="open-modal-element" key={deliveryProduct.delivery.id}>
-                  <Item.Content onClick={() => { this.setState({ deliveryId: deliveryProduct.delivery.id, viewModal: true }) }}>
-                    <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.product.unitSize} G x ${deliveryProduct.product.units}`}</Item.Header>
-                    <Item.Meta><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Meta>
-                  </Item.Content>
-                  {
-                    this.renderStatus(deliveryProduct, "FRESH")
-                  }
-                </Item>
-              )
-            })
-          }
-        </Item.Group>
+            </Grid.Column>
+            <Grid.Column width={3}>
+            </Grid.Column>
+          </Grid.Row>
+        </Grid>
         <ViewModal
           modalOpen={this.state.viewModal}
           closeModal={() => this.setState({ viewModal: false })}
