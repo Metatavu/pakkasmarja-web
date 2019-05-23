@@ -39,6 +39,7 @@ interface State {
   pageTitle?: string;
   category?: string;
   redirectTo?: string;
+  deliveryProduct?: DeliveryProduct;
 }
 
 /**
@@ -96,7 +97,8 @@ class IncomingDeliveries extends React.Component<Props, State> {
    * @returns sorted array
    */
   private sortDeliveryProducts = (deliveryProductArray: DeliveryProduct[]) => {
-    const sorted : ArrayLike<SortedDeliveryProduct> = _.chain(deliveryProductArray)
+    const sortedDeliveryProductByDate = _.sortBy(deliveryProductArray, (deliveryProduct) => deliveryProduct.delivery.time).reverse();
+    const sorted: ArrayLike<SortedDeliveryProduct> = _.chain(sortedDeliveryProductByDate)
       .groupBy(deliveryProduct => moment(deliveryProduct.delivery.time).format("DD.MM.YYYY"))
       .map((v, i) => {
         return {
@@ -104,8 +106,7 @@ class IncomingDeliveries extends React.Component<Props, State> {
           deliveryProducts: v
         }
       }).value();
-      const SortedDeliveryProductArrayDesc = _.sortBy(sorted, (obj) => obj.time).reverse();
-      return SortedDeliveryProductArrayDesc;
+    return sorted;
   }
 
   /**
@@ -252,9 +253,9 @@ class IncomingDeliveries extends React.Component<Props, State> {
                             }
                             return (
                               <Item key={deliveryProduct.delivery.id}>
-                                <Item.Content className="open-modal-element" onClick={() => { this.setState({ deliveryId: deliveryProduct.delivery.id, viewModal: true }) }}>
-                                  <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.delivery.amount} x ${deliveryProduct.product.units} ${deliveryProduct.product.unitName} `}</Item.Header>
-                                  <Item.Meta><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Meta>
+                                <Item.Content className="open-modal-element" onClick={() => { this.setState({ deliveryProduct, deliveryId: deliveryProduct.delivery.id, viewModal: true }) }}>
+                                  <Item.Header style={{ fontWeight: 500 }}>{`${deliveryProduct.product.name} ${deliveryProduct.delivery.amount} x ${deliveryProduct.product.units} ${deliveryProduct.product.unitName} `}</Item.Header>
+                                  <Item.Meta><Moment format="DD.MM.YYYY">{deliveryProduct.delivery.time.toString()}</Moment></Item.Meta>
                                 </Item.Content>
                                 {
                                   this.renderStatus(deliveryProduct)
@@ -277,6 +278,7 @@ class IncomingDeliveries extends React.Component<Props, State> {
           modalOpen={this.state.viewModal}
           closeModal={() => this.setState({ viewModal: false })}
           deliveryId={this.state.deliveryId || ""}
+          deliveryProduct={this.state.deliveryProduct}
         />
       </BasicLayout>
     );

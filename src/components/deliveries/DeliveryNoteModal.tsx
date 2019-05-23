@@ -94,6 +94,7 @@ class DeliveryNoteModal extends React.Component<Props, State> {
         text: this.state.noteText
       }
       this.props.addDeliveryNote(deliveryNote);
+      this.setState({url: "", noteText: "", imgLabel: ""});
       this.closeModal();
     }
   }
@@ -134,7 +135,7 @@ class DeliveryNoteModal extends React.Component<Props, State> {
             </Form.Field>
           </Form>
           <Divider style={{ paddingBottom: 0, marginBottom: 0 }} />
-          <Button.Group floated="right" className="contract-button-group" >
+          <Button.Group style={{paddingTop: 10, paddingBottom: 10}} floated="right">
             <Button onClick={this.closeModal} color="black">{strings.close}</Button>
             <Button.Or text="" />
             <Button onClick={this.addDeliveryNote} color="red">{strings.save}</Button>

@@ -3,7 +3,7 @@ import * as actions from "../../actions/";
 import { StoreState, WeekDeliveryPredictionTableData, SortedPredictions } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import { Item, Header, Grid } from "semantic-ui-react";
+import { Item, Header, Grid, Loader } from "semantic-ui-react";
 import "../../styles/common.css";
 import Api, { WeekDeliveryPrediction, ItemGroup } from "pakkasmarja-client";
 import { Redirect } from "react-router-dom";
@@ -33,6 +33,7 @@ interface State {
   pageTitle?: string;
   category?: string;
   redirectTo?: string;
+  loading: boolean;
 }
 
 /**
@@ -48,7 +49,8 @@ class WeekDeliveryPredictions extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      modal: false
+      modal: false,
+      loading: false
     };
   }
 
@@ -59,6 +61,7 @@ class WeekDeliveryPredictions extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
+    this.setState({ loading: true });
     const category = this.props.location.state ? this.props.location.state.category : "";
     const userId = this.props.keycloak.subject;
     const weekDeliveryPredictionsService = Api.getWeekDeliveryPredictionsService(this.props.keycloak.token);
@@ -77,12 +80,12 @@ class WeekDeliveryPredictions extends React.Component<Props, State> {
     if (category === "FRESH") {
       const freshWeekDeliveryPredictions: WeekDeliveryPredictionTableData[] = weekDeliveryPredictionState.filter((prediction) => prediction.itemGroup.category === "FRESH");
       const weekDeliveryPredictions = this.sortWeekDeliveryPredictionTableData(freshWeekDeliveryPredictions);
-      this.setState({ weekDeliveryPredictions, category, pageTitle: strings.freshWeekDeliveryPredictions });
+      this.setState({ weekDeliveryPredictions, category, pageTitle: strings.freshWeekDeliveryPredictions, loading: false });
     }
     if (category === "FROZEN") {
       const frozenWeekDeliveryPredictions: WeekDeliveryPredictionTableData[] = weekDeliveryPredictionState.filter((prediction) => prediction.itemGroup.category === "FROZEN");
       const weekDeliveryPredictions = this.sortWeekDeliveryPredictionTableData(frozenWeekDeliveryPredictions);
-      this.setState({ weekDeliveryPredictions, category, pageTitle: strings.frozenWeekDeliveryPredictions });
+      this.setState({ weekDeliveryPredictions, category, pageTitle: strings.frozenWeekDeliveryPredictions, loading: false });
     }
   }
 
@@ -114,7 +117,7 @@ class WeekDeliveryPredictions extends React.Component<Props, State> {
     return (
       <Item className="open-modal-element" key={predictionTableData.weekDeliveryPrediction.id} onClick={() => this.setState({ modal: true, predictionDataForModal: predictionTableData })}>
         <Item.Content>
-          <Item.Header >{`${predictionTableData.itemGroup.displayName} ${predictionTableData.weekDeliveryPrediction.amount} KG`}</Item.Header>
+          <Item.Header style={{ fontWeight: 500 }}>{`${predictionTableData.itemGroup.displayName} ${predictionTableData.weekDeliveryPrediction.amount} KG`}</Item.Header>
           <Item.Description >{strings.week} {predictionTableData.weekDeliveryPrediction.weekNumber}</Item.Description>
         </Item.Content>
         <Header style={{ margin: "auto", marginRight: 50 }} as="h3">{strings.open}</Header>
@@ -146,32 +149,34 @@ class WeekDeliveryPredictions extends React.Component<Props, State> {
         pageTitle={this.state.pageTitle}
         topBarButtonText={this.state.category === "FRESH" ? strings.createNewFreshPrediction : strings.createNewFrozenPrediction}
         onTopBarButtonClick={this.redirectTo}>
-        <Grid>
-          <Grid.Row>
-            <Grid.Column width={4}>
-            </Grid.Column>
-            <Grid.Column width={8}>
-              {
-                weekDeliveryPredictions && Array.from(weekDeliveryPredictions).map((obj) => {
-                  return (
-                    <React.Fragment key={obj.WeekDeliveryPredictionTableData[0].weekDeliveryPrediction.id}>
-                      <div className="delivery-sort-time-container"><h3>Viikko {obj.week}</h3></div>
-                      <Item.Group divided >
-                        {
-                          obj.WeekDeliveryPredictionTableData.map((predictionTableData: WeekDeliveryPredictionTableData) => {
-                            return this.renderListItem(predictionTableData)
-                          })
-                        }
-                      </Item.Group>
-                    </React.Fragment>
-                  )
-                })
-              }
-            </Grid.Column>
-            <Grid.Column width={4}>
-            </Grid.Column>
-          </Grid.Row>
-        </Grid>
+        {this.state.loading ? <Loader size="medium" content={strings.loading} active /> :
+          <Grid>
+            <Grid.Row>
+              <Grid.Column width={4}>
+              </Grid.Column>
+              <Grid.Column width={8}>
+                {
+                  weekDeliveryPredictions && Array.from(weekDeliveryPredictions).map((obj) => {
+                    return (
+                      <React.Fragment key={obj.WeekDeliveryPredictionTableData[0].weekDeliveryPrediction.id}>
+                        <div className="delivery-sort-time-container"><h3>Viikko {obj.week}</h3></div>
+                        <Item.Group divided >
+                          {
+                            obj.WeekDeliveryPredictionTableData.map((predictionTableData: WeekDeliveryPredictionTableData) => {
+                              return this.renderListItem(predictionTableData)
+                            })
+                          }
+                        </Item.Group>
+                      </React.Fragment>
+                    )
+                  })
+                }
+              </Grid.Column>
+              <Grid.Column width={4}>
+              </Grid.Column>
+            </Grid.Row>
+          </Grid>
+        }
         <WeekDeliveryPredictionViewModal
           modalOpen={this.state.modal}
           closeModal={() => this.setState({ modal: false })}

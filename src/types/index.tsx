@@ -89,6 +89,15 @@ export interface SortedDeliveryProduct {
 }
 
 /**
+ * Interface for delivery note with img base 64
+ */
+export interface deliveryNoteImg64 {
+  id?: string;
+  text?: string,
+  img64?: string
+}
+
+/**
  * Interface for sorted week delivery predictions
  */
 export interface SortedPredictions {

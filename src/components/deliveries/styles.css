@@ -1,0 +1,15 @@
+.ui.table thead th {
+  background: #e51d2a;
+  color: #fff; }
+
+.summary-total-row {
+  background: #54c849;
+  color: #fff;
+  font-weight: bold;
+  font-size: 15px; }
+
+.summary-delivered-row {
+  background: #0ab130;
+  color: #fff;
+  font-weight: bold;
+  font-size: 15px; }

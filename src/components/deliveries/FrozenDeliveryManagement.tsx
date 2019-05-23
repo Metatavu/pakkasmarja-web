@@ -6,7 +6,7 @@ import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
 import Api, { DeliveryPlace, Product, Contact, Delivery, DeliveryQuality } from "pakkasmarja-client";
-import { Dimmer, Loader, Dropdown, DropdownProps, Modal, Button, Input, Image, Icon, Popup } from "semantic-ui-react";
+import { Dimmer, Loader, Dropdown, DropdownProps, Modal, Button, Input, Image, Icon, Popup, Form } from "semantic-ui-react";
 import { Table } from 'semantic-ui-react';
 import BasicLayout from "../generic/BasicLayout";
 import * as moment from "moment";
@@ -42,7 +42,7 @@ interface State {
   proposalAmount?: number
   addingProposal: boolean,
   contacts: Contact[]
-  deliveryQualities: { [key: string] : DeliveryQuality },
+  deliveryQualities: { [key: string]: DeliveryQuality },
   newDeliveryModalOpen: boolean,
   error?: string
 }
@@ -88,8 +88,8 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
     const deliveryPlaces = await Api.getDeliveryPlacesService(keycloak.token).listDeliveryPlaces();
     const products = await Api.getProductsService(keycloak.token).listProducts(undefined, "FROZEN");
     const deliveryQualities = await Api.getDeliveryQualitiesService(keycloak.token).listDeliveryQualities("FROZEN");
-    
-    this.setState({ 
+
+    this.setState({
       loading: false,
       deliveryPlaces: deliveryPlaces,
       products: products,
@@ -114,7 +114,7 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
   public async componentDidUpdate(prevProps: Props, prevState: State) {
     const { selectedDeliveryPlaceId, selectedDate } = this.state;
     const isSameDay = moment(selectedDate).isSame(prevState.selectedDate, "day");
-    if (selectedDeliveryPlaceId && ((selectedDeliveryPlaceId != prevState.selectedDeliveryPlaceId) || !isSameDay)) {
+    if (selectedDeliveryPlaceId && ((selectedDeliveryPlaceId != prevState.selectedDeliveryPlaceId) || !isSameDay)) {
       this.updateTableData();
     }
   }
@@ -143,7 +143,7 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
       }
     });
 
-    const {products, deliveries} = this.state;
+    const { products, deliveries } = this.state;
 
     const productHeaderCells = products.map((product) => {
       return (
@@ -161,24 +161,37 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
     tableRows.push(this.getTableSummaryRow(deliveries, "Klo 17 mennessä yht."))
 
     return (
-      <TableBasicLayout topBarButtonText={this.state.selectedDeliveryPlaceId ? "Uusi" : undefined} onTopBarButtonClick={this.state.selectedDeliveryPlaceId ? () => this.setState({newDeliveryModalOpen: true}) : undefined} error={ this.state.error } onErrorClose={ () => this.setState({ error: undefined }) } pageTitle="Päiväennuste, pakasteet">
-        <Dropdown
-          placeholder="Toimituspaikka"
-          options={deliveryPlaceOptions}
-          value={this.state.selectedDeliveryPlaceId}
-          search
-          onChange={this.handleDeliveryPlaceChange}
-        />
-        <br/><br/><br/>
-        <DatePicker
-          onChange={(date: Date) => {
-            this.setState({
-              selectedDate: date
-            });
-          }}
-          selected={this.state.selectedDate}
-          locale="fi"
-        />
+      <TableBasicLayout topBarButtonText={this.state.selectedDeliveryPlaceId ? "+ Uusi ehdotus viljelijälle" : undefined} onTopBarButtonClick={this.state.selectedDeliveryPlaceId ? () => this.setState({ newDeliveryModalOpen: true }) : undefined} error={this.state.error} onErrorClose={() => this.setState({ error: undefined })} pageTitle="Päiväennuste, pakasteet">
+        <div style={{ display: "flex", flex: 1, flexDirection: "column" }}>
+          <div style={{ display: "flex", flex: 1, justifyContent: "center", padding: 10, fontSize:"1.5em" }}><p>Valitse toimituspaikka ja päivämäärä</p></div>
+          <div style={{ display: "flex", flex: 1, flexDirection: "row" }}>
+            <div style={{ display: "flex", flex: 1, justifyContent: "flex-end", marginRight: "0.5%" }}>
+              <Dropdown
+                selection
+                placeholder="Toimituspaikka"
+                options={deliveryPlaceOptions}
+                value={this.state.selectedDeliveryPlaceId}
+                search
+                onChange={this.handleDeliveryPlaceChange}
+              />
+            </div>
+            <div style={{ display: "flex", flex: 1, justifyContent: "flex-start", marginLeft: "0.5%" }}>
+              <Form>
+                <Form.Field>
+                  <DatePicker
+                    onChange={(date: Date) => {
+                      this.setState({
+                        selectedDate: date
+                      });
+                    }}
+                    selected={this.state.selectedDate}
+                    locale="fi"
+                  />
+                </Form.Field>
+              </Form>
+            </div>
+          </div>
+        </div>
         {this.state.selectedDeliveryPlaceId &&
           <Table celled padded selectable>
             <Table.Header>
@@ -194,35 +207,41 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
         }
         {this.state.selectedDelivery &&
           <ManageDeliveryModal
-            onError={ this.handleError }
-            onUpdate={() => { this.setState({selectedDelivery: undefined}); this.updateTableData();} }
-            onClose={() => this.setState({selectedDelivery: undefined})}
+            onError={this.handleError}
+            onUpdate={() => { this.setState({ selectedDelivery: undefined }); this.updateTableData(); }}
+            onClose={() => this.setState({ selectedDelivery: undefined })}
             open={true}
-            delivery={this.state.selectedDelivery} />
+            delivery={this.state.selectedDelivery} 
+            category="FROZEN"
+            />
         }
         {this.state.proposalContactId && this.state.proposalProduct &&
-          <Modal size="tiny" open={true} onClose={() => this.setState({proposalContactId: undefined, proposalProduct: undefined})}>
+          <Modal size="tiny" open={true} onClose={() => this.setState({ proposalContactId: undefined, proposalProduct: undefined })}>
             <Modal.Header>Luo toimitusehdotus</Modal.Header>
             <Modal.Content>
               <p>Syötä ehdotettava määrä</p>
-              <Input value={this.state.proposalAmount} type="number" onChange={(e, data) => {this.setState({proposalAmount: parseInt(data.value, 10)})}} />
+              <Input value={this.state.proposalAmount} type="number" onChange={(e, data) => { this.setState({ proposalAmount: parseInt(data.value, 10) }) }} />
             </Modal.Content>
             <Modal.Actions>
-              <Button onClick={() => this.setState({proposalContactId: undefined, proposalProduct: undefined})} negative>Peruuta</Button>
+              <Button onClick={() => this.setState({ proposalContactId: undefined, proposalProduct: undefined })} negative>Peruuta</Button>
               <Button onClick={() => this.addProposal()} loading={this.state.addingProposal} positive icon='checkmark' labelPosition='right' content='Tee ehdotus' />
             </Modal.Actions>
           </Modal>
         }
         {this.state.selectedDeliveryPlaceId &&
-          <CreateDeliveryModal 
+          <CreateDeliveryModal
             open={this.state.newDeliveryModalOpen}
             onClose={(created?: boolean) => {
-              this.setState({newDeliveryModalOpen: false});
+              this.setState({ newDeliveryModalOpen: false });
               if (created) {
                 this.reloadDeliveries();
               }
             }}
-            products={this.state.products} date={this.state.selectedDate} deliveryPlaceId={this.state.selectedDeliveryPlaceId} />
+            products={this.state.products} 
+            date={this.state.selectedDate} 
+            deliveryPlaceId={this.state.selectedDeliveryPlaceId}
+            deliveryPlace={this.state.deliveryPlaces.find(place => place.id === this.state.selectedDeliveryPlaceId)} 
+            />
         }
       </TableBasicLayout>
     );
@@ -230,23 +249,23 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
 
   private getTableRows(deliveries: Delivery[]) {
 
-    const {products} = this.state;
+    const { products } = this.state;
 
     const tableRows: JSX.Element[] = [];
     let index = 0;
     const contactIds = _.uniq(deliveries.map(delivery => delivery.userId));
-    for(let i = 0; i < contactIds.length; i++) {
+    for (let i = 0; i < contactIds.length; i++) {
       index++;
       let tableCells: JSX.Element[] = [];
       let contactId = contactIds[i];
       let contact = this.getContact(contactId);
       tableCells.push(<Table.Cell>{contact ? contact.displayName : <Loader size="mini" inline />}</Table.Cell>);
-      for(let j = 0; j < products.length; j++) {
+      for (let j = 0; j < products.length; j++) {
         let product = products[j];
         const productDeliveries = this.listContactDeliveries(contactId, product, deliveries);
         if (!productDeliveries.length) {
           tableCells.push(
-            <Table.Cell 
+            <Table.Cell
               key={`${contactId}-${product.id}`}
               selectable
               onClick={() => this.handleCreateDelivery(contactId, product)} />
@@ -254,13 +273,13 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
         } else {
           if (productDeliveries.length > 1) {
             const deliveryButtons = productDeliveries.map((delivery) => {
-              return <Button basic onClick={() => this.handleEditDelivery(delivery!)}> { delivery.amount } ({ this.getDeliveryStatusText(delivery) }) </Button>
+              return <Button basic onClick={() => this.handleEditDelivery(delivery!)}> {delivery.amount} ({this.getDeliveryStatusText(delivery)}) </Button>
             });
 
             tableCells.push(
-              <Table.Cell key={`${contactId}-${product.id}`} style={{ paddingLeft: "5px", paddingRight: "5px" }} selectable onClick={() => {}}>
+              <Table.Cell key={`${contactId}-${product.id}`} style={{ paddingLeft: "5px", paddingRight: "5px" }} selectable onClick={() => { }}>
                 <Popup style={{ textAlign: "center", whiteSpace: "nowrap" }} wide trigger={<Button style={{ width: "100%" }} basic content='Valitse' />} on='click'>
-                  { deliveryButtons }
+                  {deliveryButtons}
                 </Popup>
               </Table.Cell>
             );
@@ -268,13 +287,13 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
             const delivery = productDeliveries[0];
             const textStyle = this.getDeliveryTextStyle(delivery);
             tableCells.push(
-              <Table.Cell 
+              <Table.Cell
                 key={`${contactId}-${product.id}`}
-                style={{...textStyle}}
+                style={{ ...textStyle }}
                 selectable
                 onClick={() => this.handleEditDelivery(delivery!)}>
-                { this.renderDeliveryIcon(delivery) }
-                { delivery.amount }
+                {this.renderDeliveryIcon(delivery)}
+                {delivery.amount}
               </Table.Cell>
             );
           }
@@ -288,19 +307,19 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
 
   private getTableSummaryRow(deliveries: Delivery[], headerText: string, onlyDelivered?: boolean) {
 
-    const {products} = this.state;
+    const { products } = this.state;
     let tableCells: JSX.Element[] = [];
     tableCells.push(<Table.Cell>{headerText}</Table.Cell>);
-    for(let j = 0; j < products.length; j++) {
+    for (let j = 0; j < products.length; j++) {
       let product = products[j];
       tableCells.push(
-        <Table.Cell key={`${headerText}-summary-cell-${product.id}`} style={{ paddingLeft: "5px", paddingRight: "5px" }} selectable onClick={() => {}}>
+        <Table.Cell key={`${headerText}-summary-cell-${product.id}`} style={{ paddingLeft: "5px", paddingRight: "5px" }} selectable onClick={() => { }}>
           {this.countDeliveryAmountByProduct(deliveries, product, onlyDelivered)}
         </Table.Cell>
       );
     }
 
-    return (<Table.Row className={onlyDelivered ? "summary-delivered-row": "summary-total-row"} key={`${headerText}-summary-row`}>{tableCells}</Table.Row>);
+    return (<Table.Row className={onlyDelivered ? "summary-delivered-row" : "summary-total-row"} key={`${headerText}-summary-row`}>{tableCells}</Table.Row>);
   }
 
   private countDeliveryAmountByProduct(deliveries: Delivery[], product: Product, onlyDelivered?: boolean) {
@@ -353,13 +372,13 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
    * @param delivery delivery
    */
   private renderDeliveryIcon(delivery: Delivery) {
-    if (delivery.status == "DELIVERY") {
-      return  <Image src={ IncomingDeliveryIcon } style={{ float: "left", maxWidth: "32px", marginRight: "10px" }}/>
+    if (delivery.status == "DELIVERY") {
+      return <Image src={IncomingDeliveryIcon} style={{ float: "left", maxWidth: "32px", marginRight: "10px" }} />
     }
 
     if (delivery.qualityId) {
       const deliveryQuality = this.state.deliveryQualities[delivery.qualityId];
-      return <Icon size="small" style={{ color: deliveryQuality ? deliveryQuality.color : "#000" }} name="circle"/>
+      return <Icon size="small" style={{ color: deliveryQuality ? deliveryQuality.color : "#000" }} name="circle" />
     }
 
     return null;
@@ -386,7 +405,7 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
   private addProposal = async () => {
     const { keycloak } = this.props;
     const { proposalContactId, proposalProduct, proposalAmount, selectedDeliveryPlaceId, selectedDate } = this.state;
-    if (!keycloak || !keycloak.token || !proposalContactId || !proposalAmount || !proposalProduct || !proposalAmount || !selectedDeliveryPlaceId) {
+    if (!keycloak || !keycloak.token || !proposalContactId || !proposalAmount || !proposalProduct || !proposalAmount || !selectedDeliveryPlaceId) {
       return;
     }
 
@@ -441,7 +460,7 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
   private listContactDeliveries(contactId: string, product: Product, deliveries: Delivery[]): Delivery[] {
     return (deliveries || []).filter((delivery) => delivery.productId == product.id && delivery.userId == contactId);
   }
-  
+
   private handleDeliveryPlaceChange = (event: React.SyntheticEvent<HTMLElement>, data: DropdownProps) => {
     this.setState({
       selectedDeliveryPlaceId: data.value as string
@@ -486,14 +505,14 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
   /**
    * Updates table data and shows a loading screen 
    */
-  private updateTableData = async() => {
+  private updateTableData = async () => {
     const { keycloak } = this.props;
     const { selectedDeliveryPlaceId } = this.state;
-    if (selectedDeliveryPlaceId  && keycloak && keycloak.token) {
-      this.setState({loading: true});
+    if (selectedDeliveryPlaceId && keycloak && keycloak.token) {
+      this.setState({ loading: true });
       const deliveries = await this.loadDeliveries(keycloak.token);
 
-      this.setState({loading: false, deliveries: deliveries});
+      this.setState({ loading: false, deliveries: deliveries });
     }
   }
 
@@ -509,7 +528,7 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
       selectedDelivery: delivery
     });
   }
-  
+
   /**
    * Handles error from components
    * 

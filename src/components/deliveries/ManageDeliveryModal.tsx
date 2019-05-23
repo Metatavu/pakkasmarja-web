@@ -22,8 +22,9 @@ interface Props {
   delivery: Delivery
   open: boolean,
   onError?: (errorMsg: string) => void,
-  onClose: () => void
-  onUpdate: () => void
+  onClose: () => void,
+  onUpdate: () => void,
+  category: string,
 }
 
 /**
@@ -86,7 +87,6 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
-
     this.setState({
       loading: true
     });
@@ -106,7 +106,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     if (!deliveryProduct) {
       throw new Error("Could not find delivery product");
     }
-    
+
     const itemGroup = await itemGroupsService.findItemGroup(deliveryProduct.itemGroupId);
     if (!itemGroup) {
       throw new Error("Could not find item group");
@@ -128,7 +128,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       loading: false
     });
   }
-  
+
   /**
    * Check if object is http error response
    */
@@ -197,11 +197,11 @@ class ManageDeliveryModal extends React.Component<Props, State> {
         deliveryPlaceId: this.state.selectedPlaceId,
         qualityId: this.state.selectedQualityId,
         loans: [
-          {item: "RED_BOX", loaned: this.state.redBoxesLoaned, returned: this.state.redBoxesReturned},
-          {item: "GRAY_BOX", loaned: this.state.grayBoxesLoaned, returned: this.state.grayBoxesReturned}
+          { item: "RED_BOX", loaned: this.state.redBoxesLoaned, returned: this.state.redBoxesReturned },
+          { item: "GRAY_BOX", loaned: this.state.grayBoxesLoaned, returned: this.state.grayBoxesReturned }
         ]
       }
-  
+
       const response = await deliveryService.updateDelivery(delivery, this.state.deliveryId);
       if (this.isHttpErrorResponse(response)) {
         const errorResopnse: HttpErrorResponse = response;
@@ -229,7 +229,6 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     try {
       const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
       const delivery: Delivery = {
-        id: "",
         productId: this.state.selectedProductId,
         userId: this.state.userId || "",
         time: this.state.date,
@@ -239,7 +238,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
         deliveryPlaceId: this.state.selectedPlaceId,
         qualityId: this.state.selectedQualityId
       }
-  
+
       const response = await deliveryService.updateDelivery(delivery, this.state.deliveryId);
       if (this.isHttpErrorResponse(response)) {
         const errorResopnse: HttpErrorResponse = response;
@@ -255,7 +254,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       })
     }
   }
-  
+
   /**
    * Render method
    */
@@ -293,7 +292,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
         <Modal.Content>
           <Form>
             <Form.Field>
-              Tila: { this.getStatusText() }
+              Tila: {this.getStatusText()}
             </Form.Field>
             <Form.Field>
               <label>Hinta</label>
@@ -303,58 +302,64 @@ class ManageDeliveryModal extends React.Component<Props, State> {
               <label>{strings.product}</label>
               {this.renderDropDown(productOptions, "selectedProductId")}
             </Form.Field>
-            <Form.Field>
-              <label>{strings.redBoxesReturned}</label>
-              <Input
-                type="number"
-                placeholder="Palautettu"
-                value={this.state.redBoxesReturned}
-                onChange={(e, data) => {
-                  this.setState({
-                    redBoxesReturned: parseInt(data.value)
-                  })
-                }}/>
-            </Form.Field>
-            <Form.Field>
-              <label>{strings.redBoxesLoaned}</label>
-              <Input
-                type="number"
-                placeholder="Lainattu"
-                value={this.state.redBoxesLoaned}
-                onChange={(e, data) => {
-                  this.setState({
-                    redBoxesLoaned: parseInt(data.value)
-                  })
-                }}/>
-            </Form.Field>
-            <Form.Field>
-              <label>{strings.grayBoxesReturned}</label>
-              <Input
-                type="number"
-                placeholder="Palautettu"
-                value={this.state.grayBoxesReturned}
-                onChange={(e, data) => {
-                  this.setState({
-                    grayBoxesReturned: parseInt(data.value)
-                  })
-                }}/>
-            </Form.Field>
-            <Form.Field>
-              <label>{strings.grayBoxesLoaned}</label>
-              <Input
-                type="number"
-                placeholder="Lainattu"
-                value={this.state.grayBoxesLoaned}
-                onChange={(e, data) => {
-                  this.setState({
-                    grayBoxesLoaned: parseInt(data.value)
-                  })
-                }}/>
-            </Form.Field>
-            <Form.Field>
-              Yhteensä: { this.getStatusText() }
-            </Form.Field>
-            { this.renderQualityField() }
+            {
+              this.props.category === "FROZEN" ?
+                <React.Fragment>
+                  <Form.Field>
+                    <label>{strings.redBoxesReturned}</label>
+                    <Input
+                      type="number"
+                      placeholder="Palautettu"
+                      value={this.state.redBoxesReturned}
+                      onChange={(e, data) => {
+                        this.setState({
+                          redBoxesReturned: parseInt(data.value)
+                        })
+                      }} />
+                  </Form.Field>
+                  <Form.Field>
+                    <label>{strings.redBoxesLoaned}</label>
+                    <Input
+                      type="number"
+                      placeholder="Lainattu"
+                      value={this.state.redBoxesLoaned}
+                      onChange={(e, data) => {
+                        this.setState({
+                          redBoxesLoaned: parseInt(data.value)
+                        })
+                      }} />
+                  </Form.Field>
+                  <Form.Field>
+                    <label>{strings.grayBoxesReturned}</label>
+                    <Input
+                      type="number"
+                      placeholder="Palautettu"
+                      value={this.state.grayBoxesReturned}
+                      onChange={(e, data) => {
+                        this.setState({
+                          grayBoxesReturned: parseInt(data.value)
+                        })
+                      }} />
+                  </Form.Field>
+                  <Form.Field>
+                    <label>{strings.grayBoxesLoaned}</label>
+                    <Input
+                      type="number"
+                      placeholder="Lainattu"
+                      value={this.state.grayBoxesLoaned}
+                      onChange={(e, data) => {
+                        this.setState({
+                          grayBoxesLoaned: parseInt(data.value)
+                        })
+                      }} />
+                  </Form.Field>
+                  <Form.Field>
+                    Yhteensä: {this.getStatusText()}
+                  </Form.Field>
+                </React.Fragment>
+                : null
+            }
+            {this.renderQualityField()}
             <Form.Field>
               <label>{strings.amount}</label>
               <Input
@@ -379,9 +384,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
               <label>{strings.deliveryPlace}</label>
               {this.renderDropDown(deliveryPlaceOptions, "selectedPlaceId")}
             </Form.Field>
-
-            { this.renderSubmitButton() }
-            
+            {this.renderSubmitButton()}
           </Form>
         </Modal.Content>
       </Modal>
@@ -433,20 +436,20 @@ class ManageDeliveryModal extends React.Component<Props, State> {
   /**
    * Renders submit button
    */
-  private renderSubmitButton() {
-    if (this.props.delivery.status == "DONE") {
-      return <Button disabled color="grey" type='submit'>Toimitus on jo hyväksytty</Button>;
+  private renderSubmitButton() {
+    if (this.props.delivery.status == "DONE") {
+      return <Button disabled color="grey" type='submit'>Toimitus on jo hyväksytty</Button>;
     }
 
-    if (this.props.delivery.status == "REJECTED") {
-      return <Button disabled color="grey" type='submit'>Toimitus hylätty</Button>;
+    if (this.props.delivery.status == "REJECTED") {
+      return <Button disabled color="grey" type='submit'>Toimitus hylätty</Button>;
     }
 
-    if (this.props.delivery.status == "PROPOSAL") {
-      return <Button disabled={ !this.isValid() } color="green" onClick={ this.handleDeliverySave }  type='submit'>Muokkaa ehdotusta</Button>;
+    if (this.props.delivery.status == "PROPOSAL") {
+      return <Button disabled={!this.isValid()} color="green" onClick={this.handleDeliverySave} type='submit'>Muokkaa ehdotusta</Button>;
     }
 
-    return <Button disabled={ !this.isValid() } color="red" onClick={ this.handleDeliveryAccept } type='submit'>Hyväksy toimitus</Button>;
+    return <Button disabled={!this.isValid()} color="red" onClick={this.handleDeliveryAccept} type='submit'>Hyväksy toimitus</Button>;
   }
 
   /**
@@ -468,7 +471,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     }
 
     return true;
-  } 
+  }
 }
 
 /**

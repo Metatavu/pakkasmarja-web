@@ -1,10 +1,10 @@
 import * as React from "react";
 import * as actions from "../../actions/";
-import { StoreState, DeliveriesState, DeliveryProduct, Options, DeliveryDataValue } from "src/types";
+import { StoreState, DeliveriesState, DeliveryProduct, Options, DeliveryDataValue, deliveryNoteImg64 } from "src/types";
 import Api, { Product, DeliveryPlace, ItemGroupCategory, Delivery, DeliveryNote, ProductPrice } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import { Header, Dropdown, Form, Input, Button, Divider, Icon } from "semantic-ui-react";
+import { Header, Dropdown, Form, Input, Button, Divider, Icon, Image, Loader } from "semantic-ui-react";
 import "../../styles/common.css";
 import BasicLayout from "../generic/BasicLayout";
 import DeliveryNoteModal from "./DeliveryNoteModal";
@@ -14,6 +14,10 @@ import "react-datepicker/dist/react-datepicker.css";
 import fi from 'date-fns/esm/locale/fi';
 import strings from "src/localization/strings";
 import * as moment from "moment";
+import PriceChart from "../generic/PriceChart";
+import { FileService } from "src/api/file.service";
+import Lightbox from 'react-image-lightbox';
+import 'react-image-lightbox/style.css';
 
 /**
  * Interface for component props
@@ -32,17 +36,20 @@ interface Props {
 interface State {
   products: Product[];
   deliveryPlaces: DeliveryPlace[];
-  selectedProductId: string;
+  selectedProductId?: string;
   selectedPlaceId: string;
   amount: number;
   date: Date;
-  time?: Date;
   modalOpen: boolean;
   category: string;
   redirect: boolean;
   deliveryNotes: DeliveryNote[];
+  deliveryNotesWithImgBase64: deliveryNoteImg64[];
   productPrice?: ProductPrice;
   deliveryTimeValue?: number;
+  openImage?: string;
+  loading: boolean;
+  selectedProduct?: Product;
 }
 
 /**
@@ -61,13 +68,14 @@ class CreateDelivery extends React.Component<Props, State> {
       redirect: false,
       products: [],
       deliveryPlaces: [],
-      selectedProductId: "",
       selectedPlaceId: "",
       amount: 0,
       date: new Date(),
       modalOpen: false,
       category: "",
-      deliveryNotes: []
+      deliveryNotes: [],
+      deliveryNotesWithImgBase64: [],
+      loading: false
     };
     registerLocale('fi', fi);
   }
@@ -79,6 +87,7 @@ class CreateDelivery extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
+    this.setState({ loading: true });
     const category: ItemGroupCategory = this.props.match.params.category;
     const productsService = await Api.getProductsService(this.props.keycloak.token);
     const deliveryPlacesService = await Api.getDeliveryPlacesService(this.props.keycloak.token);
@@ -88,7 +97,8 @@ class CreateDelivery extends React.Component<Props, State> {
     this.setState({
       products,
       deliveryPlaces,
-      category
+      category,
+      loading: false
     });
   }
 
@@ -103,12 +113,9 @@ class CreateDelivery extends React.Component<Props, State> {
       const productPricesService = await Api.getProductPricesService(this.props.keycloak.token);
       const productPriceList = await productPricesService.listProductPrices(value.toString(), "CREATED_AT_DESC", 0, 1);
       const productPrice = productPriceList[0];
-      this.setState({ productPrice });
-    } else if (key === "deliveryTimeValue") {
-      let time: string | Date = moment(this.state.date).format("YYYY-MM-DD");
-      time = `${time} ${value}:00 +0000`
-      time = moment(time, "YYYY-MM-DD HH:mm Z").toDate();
-      this.setState({ time });
+      const selectedProductId = value.toString();
+      const selectedProduct = this.state.products.find(product => product.id === selectedProductId);
+      this.setState({ productPrice, selectedProductId, selectedProduct });
     }
 
     const state: State = this.state;
@@ -148,25 +155,41 @@ class CreateDelivery extends React.Component<Props, State> {
    * 
    * @param deliveryNote deliveryNote
    */
-  private addDeliveryNote = (deliveryNote: DeliveryNote) => {
+  private addDeliveryNote = async (deliveryNote: DeliveryNote) => {
+    if (!process.env.REACT_APP_API_URL || !this.props.keycloak || !this.props.keycloak.token) {
+      return;
+    }
+    const deliveryNotesWithImgBase64 = this.state.deliveryNotesWithImgBase64;
+    if (deliveryNote.image) {
+      const fileService = new FileService(process.env.REACT_APP_API_URL, this.props.keycloak.token);
+      const imageData = await fileService.getFile(deliveryNote.image || "");
+      const src = `data:image/jpeg;base64,${imageData.data}`
+      deliveryNotesWithImgBase64.push({ text: deliveryNote.text, img64: src });
+    } else {
+      deliveryNotesWithImgBase64.push({ text: deliveryNote.text, img64: "" });
+    }
+
     const deliveryNotes: DeliveryNote[] = this.state.deliveryNotes || [];
     deliveryNotes.push(deliveryNote);
-    this.setState({ deliveryNotes });
+    this.setState({ deliveryNotes, deliveryNotesWithImgBase64 });
   }
 
   /**
    * Handles delivery submit
    */
   private handleDeliverySubmit = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.selectedPlaceId || !this.state.selectedProductId || !this.state.time) {
+    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.selectedPlaceId || !this.state.selectedProductId || !this.state.date) {
       return;
     }
     const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
+    let time: string | Date = moment(this.state.date).format("YYYY-MM-DD");
+    time = `${time} ${this.state.deliveryTimeValue}:00 +0000`
+    time = moment(time, "YYYY-MM-DD HH:mm Z").toDate();
 
     const delivery: Delivery = {
       productId: this.state.selectedProductId,
       userId: this.props.keycloak.subject || "",
-      time: this.state.time,
+      time: time,
       status: "PLANNED",
       amount: this.state.amount,
       price: "0",
@@ -229,6 +252,17 @@ class CreateDelivery extends React.Component<Props, State> {
   }
 
   /**
+   * Remove note
+   */
+  private removeNote = (note: deliveryNoteImg64, index: number) => {
+    const deliveryNotesWithImgBase64 = this.state.deliveryNotesWithImgBase64;
+    const newNotesWith64 = deliveryNotesWithImgBase64.filter((note, i) => i !== index);
+    const deliveryNotes = this.state.deliveryNotes;
+    const newDeliveryNotes = deliveryNotes.filter((note, i) => i !== index);
+    this.setState({ deliveryNotesWithImgBase64: newNotesWith64, deliveryNotes: newDeliveryNotes });
+  }
+
+  /**
    * Render method
    */
   public render() {
@@ -266,66 +300,102 @@ class CreateDelivery extends React.Component<Props, State> {
     }]
 
     return (
-      <BasicLayout pageTitle={this.state.category && `Uusi ${this.state.category === "FRESH" ? "tuore" : "pakaste"} toimitus`}>
+      <BasicLayout pageTitle={"Uusi toimitus"}>
         <Header as="h2">
           Uusi {this.state.category === "FRESH" ? "tuore" : "pakaste"} toimitus
         </Header>
-        <Form>
-          <Form.Field>
-            <label>{strings.product}</label>
-            {this.renderDropDown(productOptions, strings.product, "selectedProductId")}
-          </Form.Field>
-          {this.state.productPrice &&
+        {this.state.loading ?
+          <Loader size="medium" content={strings.loading} active /> :
+          <Form>
             <Form.Field>
-              <p><Icon name="info circle" size="large" color="red" />Tämän hetkinen hinta on {this.state.productPrice.price} {this.state.productPrice.unit}</p>
+              <label>{strings.product}</label>
+              {this.renderDropDown(productOptions, strings.product, "selectedProductId")}
             </Form.Field>
-          }
-          <Form.Field>
-            <label>{strings.amount}</label>
-            <Input
-              placeholder={strings.amount}
-              value={this.state.amount}
-              onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
-                this.handleInputChange("amount", event.currentTarget.value)
-              }}
-            />
-          </Form.Field>
-          <Form.Field>
-            <label>{strings.deliveyDate}</label>
-            <DatePicker
-              onChange={(date: Date) => {
-                this.handleInputChange("date", date)
-              }}
-              selected={this.state.date}
-              locale="fi"
-            />
-          </Form.Field>
-          <Form.Field style={{ marginTop: 20 }}>
-            <label>{"Ajankohta"}</label>
-            {this.renderDropDown(deliveryTimeValue, "Valitse ajankohta", "deliveryTimeValue")}
-          </Form.Field>
-          <Form.Field style={{ marginTop: 20 }}>
-            <label>{strings.deliveryPlace}</label>
-            {this.renderDropDown(deliveryPlaceOptions, strings.deliveryPlace, "selectedPlaceId")}
-          </Form.Field>
-          <Button color="red" inverted onClick={() => this.setState({ modalOpen: true })}>{`${strings.addNote} (${this.state.deliveryNotes.length})`}</Button>
-          <Divider />
-          <Button.Group floated="right" >
-            <Button
-              onClick={() => this.setState({ redirect: true })}
-              inverted
-              color="red">{strings.back}</Button>
-            <Button.Or text="" />
-            <Button color="red" onClick={this.handleDeliverySubmit} type='submit'>
-              {this.state.category === "FRESH" ? strings.newFreshDelivery : strings.newFrozenDelivery}
-            </Button>
-          </Button.Group>
-        </Form>
+            {this.state.productPrice && this.state.selectedProductId &&
+              <Form.Field>
+                <PriceChart productId={this.state.selectedProductId} />
+                <p style={{ paddingTop: 10 }}><Icon name="info circle" size="large" color="red" />Tämän hetkinen hinta on {this.state.productPrice.price} {this.state.productPrice.unit}</p>
+              </Form.Field>
+            }
+            <Form.Field>
+              <label>{strings.amount}</label>
+              <Input
+                placeholder={strings.amount}
+                value={this.state.amount}
+                onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
+                  this.handleInputChange("amount", event.currentTarget.value)
+                }}
+              />
+            </Form.Field>
+            {this.state.amount && this.state.selectedProduct ?
+              <Form.Field>
+                <p>= <b>{this.state.amount * (this.state.selectedProduct.units * this.state.selectedProduct.unitSize)} KG</b></p>
+              </Form.Field>
+              : null
+            }
+            <Form.Field>
+              <label>{strings.deliveyDate}</label>
+              <DatePicker
+                onChange={(date: Date) => {
+                  this.handleInputChange("date", date)
+                }}
+                selected={this.state.date}
+                locale="fi"
+              />
+            </Form.Field>
+            <Form.Field style={{ marginTop: 20 }}>
+              <label>{"Ajankohta"}</label>
+              {this.renderDropDown(deliveryTimeValue, "Valitse ajankohta", "deliveryTimeValue")}
+            </Form.Field>
+            <Form.Field style={{ marginTop: 20 }}>
+              <label>{strings.deliveryPlace}</label>
+              {this.renderDropDown(deliveryPlaceOptions, strings.deliveryPlace, "selectedPlaceId")}
+            </Form.Field>
+            {this.state.deliveryNotesWithImgBase64[0] ?
+              this.state.deliveryNotesWithImgBase64.map((deliveryNote, i) => {
+                return (
+                  <React.Fragment key={`${deliveryNote.text} ${i}`}>
+                    <h4 style={{ marginTop: 14 }}>Huomio {i + 1}</h4>
+                    <div style={{ marginBottom: 10 }} className="delivery-note-container">
+                      <div className="delivery-note-img-container">
+                        <p>{deliveryNote.img64 ? <Image onClick={() => this.setState({ openImage: deliveryNote.img64 })} src={deliveryNote.img64} size="small" /> : "Huomiolla ei ole kuvaa"}</p>
+                      </div>
+                      <div className="delivery-note-text-container">
+                        <p style={{ padding: 20 }}> {deliveryNote.text}</p>
+                      </div>
+                      <div style={{ display: "flex", flex: 0.2, minHeight: "100px", alignItems: "center" }}>
+                        <Button onClick={() => this.removeNote(deliveryNote, i)} color="black">Poista huomio</Button>
+                      </div>
+                    </div>
+                  </React.Fragment>
+                )
+              }) : null
+            }
+            <Button color="red" inverted onClick={() => this.setState({ modalOpen: true })}>{`${strings.addNote}`}</Button>
+            <Divider />
+            <Button.Group floated="right" >
+              <Button
+                onClick={() => this.setState({ redirect: true })}
+                inverted
+                color="red">{strings.back}</Button>
+              <Button.Or text="" />
+              <Button color="red" onClick={this.handleDeliverySubmit} type='submit'>
+                {this.state.category === "FRESH" ? strings.newFreshDelivery : strings.newFrozenDelivery}
+              </Button>
+            </Button.Group>
+          </Form>
+        }
         <DeliveryNoteModal
           modalOpen={this.state.modalOpen}
           closeModal={() => this.setState({ modalOpen: false })}
           addDeliveryNote={this.addDeliveryNote}
         />
+        {this.state.openImage &&
+          <Lightbox
+            mainSrc={this.state.openImage}
+            onCloseRequest={() => this.setState({ openImage: undefined })}
+          />
+        }
       </BasicLayout>
     );
   }

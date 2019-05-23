@@ -50,9 +50,9 @@ export default class ContractListContainer extends React.Component<Props, State>
           <Table style={{ backgroundColor: "transparent", border: "0" }} padded fixed>
             <Table.Header >
               <Table.Row>
-                <Table.HeaderCell width={4} style={{ backgroundColor: "transparent" }}>{strings.berry}</Table.HeaderCell>
-                <Table.HeaderCell width={5} style={{ backgroundColor: "transparent" }}>{strings.deliveredQuantity}</Table.HeaderCell>
-                <Table.HeaderCell width={5} style={{ backgroundColor: "transparent" }}>{strings.contractQuantity}</Table.HeaderCell>
+                <Table.HeaderCell width={4} style={{ backgroundColor: "transparent", color:"black" }}>{strings.berry}</Table.HeaderCell>
+                <Table.HeaderCell width={5} style={{ backgroundColor: "transparent", color:"black" }}>{strings.deliveredQuantity}</Table.HeaderCell>
+                <Table.HeaderCell width={5} style={{ backgroundColor: "transparent", color:"black" }}>{strings.contractQuantity}</Table.HeaderCell>
                 <Table.HeaderCell textAlign="center" width={2} style={{ backgroundColor: "transparent" }}>{strings.downloadPdf}</Table.HeaderCell>
               </Table.Row>
             </Table.Header>
@@ -73,8 +73,8 @@ export default class ContractListContainer extends React.Component<Props, State>
           <Table style={{ backgroundColor: "transparent", border: "0" }} padded fixed>
             <Table.Header>
               <Table.Row>
-                <Table.HeaderCell width={4} style={{ backgroundColor: "transparent" }}>{strings.berry}</Table.HeaderCell>
-                <Table.HeaderCell width={10}  style={{ backgroundColor: "transparent" }}>{strings.status}</Table.HeaderCell>
+                <Table.HeaderCell width={4} style={{ backgroundColor: "transparent", color:"black" }}>{strings.berry}</Table.HeaderCell>
+                <Table.HeaderCell width={10}  style={{ backgroundColor: "transparent", color:"black" }}>{strings.status}</Table.HeaderCell>
                 <Table.HeaderCell width={2}  style={{ backgroundColor: "transparent" }}></Table.HeaderCell>
               </Table.Row>
             </Table.Header>

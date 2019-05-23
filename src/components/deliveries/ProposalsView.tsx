@@ -3,7 +3,7 @@ import * as actions from "../../actions/";
 import { StoreState, DeliveriesState, DeliveryProduct, SortedDeliveryProduct } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import { Item, Button, Grid } from "semantic-ui-react";
+import { Item, Button, Grid, Loader } from "semantic-ui-react";
 import "../../styles/common.css";
 import Moment from "react-moment";
 import ProposalAcceptModal from "./ProposalAcceptModal";
@@ -33,6 +33,8 @@ interface State {
   deliveryId?: string;
   pageTitle?: string;
   category?: string;
+  loading: boolean;
+  deliveryProduct?: DeliveryProduct;
 }
 
 /**
@@ -49,7 +51,8 @@ class ProposalsView extends React.Component<Props, State> {
     super(props);
     this.state = {
       proposals: [],
-      proposalAcceptModal: false
+      proposalAcceptModal: false,
+      loading: false
     };
   }
 
@@ -69,17 +72,18 @@ class ProposalsView extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token || !this.props.deliveries) {
       return;
     }
+    this.setState({ loading: true });
     if (this.state.category === "FRESH") {
       const freshDeliveryData: DeliveryProduct[] = await this.props.deliveries.freshDeliveryData;
       const freshProposals: DeliveryProduct[] = freshDeliveryData.filter(deliveryData => deliveryData.delivery.status === "PROPOSAL");
       const sortedProposalsByTime = this.sortDeliveryProducts(freshProposals);
-      this.setState({ sortedProposalsByTime, proposals: freshProposals, pageTitle: strings.freshProposals });
+      this.setState({ sortedProposalsByTime, proposals: freshProposals, pageTitle: strings.freshProposals, loading: false });
     }
     if (this.state.category === "FROZEN") {
       const frozenDeliveryData: DeliveryProduct[] = await this.props.deliveries.frozenDeliveryData;
       const frozenProposals: DeliveryProduct[] = frozenDeliveryData.filter(deliveryData => deliveryData.delivery.status === "PROPOSAL");
       const sortedProposalsByTime = this.sortDeliveryProducts(frozenProposals);
-      this.setState({ sortedProposalsByTime, proposals: frozenProposals, pageTitle: strings.frozenProposals });
+      this.setState({ sortedProposalsByTime, proposals: frozenProposals, pageTitle: strings.frozenProposals, loading: false });
     }
   }
 
@@ -90,7 +94,8 @@ class ProposalsView extends React.Component<Props, State> {
    * @returns sorted array
    */
   private sortDeliveryProducts = (deliveryProductArray: DeliveryProduct[]) => {
-    const sorted : ArrayLike<SortedDeliveryProduct> = _.chain(deliveryProductArray)
+    const sortedDeliveryProductByDate = _.sortBy(deliveryProductArray, (deliveryProduct) => deliveryProduct.delivery.time).reverse();
+    const sorted: ArrayLike<SortedDeliveryProduct> = _.chain(sortedDeliveryProductByDate)
       .groupBy(deliveryProduct => moment(deliveryProduct.delivery.time).format("DD.MM.YYYY"))
       .map((v, i) => {
         return {
@@ -98,8 +103,7 @@ class ProposalsView extends React.Component<Props, State> {
           deliveryProducts: v
         }
       }).value();
-      const SortedDeliveryProductArrayDesc = _.sortBy(sorted, (obj) => obj.time).reverse();
-      return SortedDeliveryProductArrayDesc;
+    return sorted;
   }
 
   /**
@@ -109,50 +113,53 @@ class ProposalsView extends React.Component<Props, State> {
     const { sortedProposalsByTime } = this.state;
     return (
       <BasicLayout pageTitle={this.state.pageTitle}>
-        <Grid verticalAlign='middle'>
-          <Grid.Row>
-            <Grid.Column width={4}>
-            </Grid.Column>
-            <Grid.Column width={8}>
-              {
-                sortedProposalsByTime && Array.from(sortedProposalsByTime).map((obj) => {
-                  return (
-                    <React.Fragment key={obj.deliveryProducts[0].delivery.id}>
-                      <div className="delivery-sort-time-container"><h3>Päivämäärä {obj.time}</h3></div>
-                      <Item.Group divided >
-                        {
-                          obj.deliveryProducts.map((deliveryProduct) => {
-                            if (!deliveryProduct.product) {
-                              return;
-                            }
-                            return (
-                              <Item key={deliveryProduct.delivery.id}>
-                                <Item.Content>
-                                  <Item.Header>{`${deliveryProduct.product.name} ${deliveryProduct.delivery.amount} x ${deliveryProduct.product.units} ${deliveryProduct.product.unitName} `}</Item.Header>
-                                  <Item.Description><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Description>
-                                </Item.Content>
-                                <Button style={{ maxHeight: "37px", marginBottom: "1%" }} color="red" floated="right" onClick={() => this.setState({ deliveryId: deliveryProduct.delivery.id, proposalAcceptModal: true })}>
-                                  {strings.check}
-                                </Button>
-                              </Item>
-                            )
-                          })
-                        }
-                      </Item.Group>
-                    </React.Fragment>
-                  )
-                })
-              }
-            </Grid.Column>
-            <Grid.Column width={4}>
-            </Grid.Column>
-          </Grid.Row>
-        </Grid>
+        {this.state.loading ? <Loader size="medium" content={strings.loading} active /> :
+          <Grid verticalAlign='middle'>
+            <Grid.Row>
+              <Grid.Column width={4}>
+              </Grid.Column>
+              <Grid.Column width={8}>
+                {
+                  sortedProposalsByTime && Array.from(sortedProposalsByTime).map((obj) => {
+                    return (
+                      <React.Fragment key={obj.deliveryProducts[0].delivery.id}>
+                        <div className="delivery-sort-time-container"><h3>Päivämäärä {obj.time}</h3></div>
+                        <Item.Group divided >
+                          {
+                            obj.deliveryProducts.map((deliveryProduct) => {
+                              if (!deliveryProduct.product) {
+                                return;
+                              }
+                              return (
+                                <Item key={deliveryProduct.delivery.id}>
+                                  <Item.Content>
+                                    <Item.Header style={{ fontWeight: 500 }}>{`${deliveryProduct.product.name} ${deliveryProduct.delivery.amount} x ${deliveryProduct.product.units} ${deliveryProduct.product.unitName} `}</Item.Header>
+                                    <Item.Description><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Description>
+                                  </Item.Content>
+                                  <Button style={{ maxHeight: "37px", marginBottom: "1%" }} color="red" floated="right" onClick={() => this.setState({ deliveryId: deliveryProduct.delivery.id, proposalAcceptModal: true, deliveryProduct })}>
+                                    {strings.check}
+                                  </Button>
+                                </Item>
+                              )
+                            })
+                          }
+                        </Item.Group>
+                      </React.Fragment>
+                    )
+                  })
+                }
+              </Grid.Column>
+              <Grid.Column width={4}>
+              </Grid.Column>
+            </Grid.Row>
+          </Grid>
+        }
         <ProposalAcceptModal
           modalOpen={this.state.proposalAcceptModal}
           closeModal={() => this.setState({ proposalAcceptModal: false })}
           deliveryId={this.state.deliveryId || ""}
           loadData={this.loadData}
+          deliveryProduct={this.state.deliveryProduct}
         />
       </BasicLayout>
     );
