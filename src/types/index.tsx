@@ -57,7 +57,7 @@ export type DeliveryDataValue = undefined | string | number | boolean | (string 
 export interface Options {
   key: string | undefined,
   text: string | undefined,
-  value: string | undefined
+  value: string | undefined | number
 }
 
 /**
@@ -78,6 +78,31 @@ export interface FilterContracts {
 export interface DeliveryProduct {
   delivery: Delivery;
   product?: Product;
+}
+
+/**
+ * Interface for time and deliveryproduct
+ */
+export interface SortedDeliveryProduct {
+  time: string;
+  deliveryProducts: DeliveryProduct[]
+}
+
+/**
+ * Interface for delivery note with img base 64
+ */
+export interface deliveryNoteImg64 {
+  id?: string;
+  text?: string,
+  img64?: string
+}
+
+/**
+ * Interface for sorted week delivery predictions
+ */
+export interface SortedPredictions {
+  week: string;
+  WeekDeliveryPredictionTableData: WeekDeliveryPredictionTableData[]
 }
 
 /**

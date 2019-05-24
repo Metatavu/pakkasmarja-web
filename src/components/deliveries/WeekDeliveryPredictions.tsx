@@ -1,15 +1,16 @@
 import * as React from "react";
 import * as actions from "../../actions/";
-import { StoreState, WeekDeliveryPredictionTableData } from "src/types";
+import { StoreState, WeekDeliveryPredictionTableData, SortedPredictions } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
+import { Item, Header, Grid, Loader } from "semantic-ui-react";
 import "../../styles/common.css";
-import { Segment, Item, Header, Divider, Button } from "semantic-ui-react";
 import Api, { WeekDeliveryPrediction, ItemGroup } from "pakkasmarja-client";
-import { Link } from "react-router-dom";
+import { Redirect } from "react-router-dom";
 import WeekDeliveryPredictionViewModal from "./WeekDeliveryPredictionViewModal";
 import * as _ from "lodash";
 import strings from "src/localization/strings";
+import BasicLayout from "../generic/BasicLayout"
 
 
 /**
@@ -18,6 +19,7 @@ import strings from "src/localization/strings";
 interface Props {
   authenticated: boolean;
   keycloak?: Keycloak.KeycloakInstance;
+  location?: any;
 }
 
 /**
@@ -25,10 +27,13 @@ interface Props {
  */
 interface State {
   keycloak?: Keycloak.KeycloakInstance;
-  freshWeekDeliveryPredictions: WeekDeliveryPredictionTableData[];
-  frozenWeekDeliveryPredictions: WeekDeliveryPredictionTableData[];
+  weekDeliveryPredictions?: ArrayLike<SortedPredictions>;
   predictionDataForModal?: WeekDeliveryPredictionTableData;
   modal: boolean;
+  pageTitle?: string;
+  category?: string;
+  redirectTo?: string;
+  loading: boolean;
 }
 
 /**
@@ -45,8 +50,7 @@ class WeekDeliveryPredictions extends React.Component<Props, State> {
     super(props);
     this.state = {
       modal: false,
-      freshWeekDeliveryPredictions: [],
-      frozenWeekDeliveryPredictions: []
+      loading: false
     };
   }
 
@@ -57,7 +61,8 @@ class WeekDeliveryPredictions extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
-
+    this.setState({ loading: true });
+    const category = this.props.location.state ? this.props.location.state.category : "";
     const userId = this.props.keycloak.subject;
     const weekDeliveryPredictionsService = Api.getWeekDeliveryPredictionsService(this.props.keycloak.token);
     const itemGroupsService = await Api.getItemGroupsService(this.props.keycloak.token);
@@ -72,12 +77,35 @@ class WeekDeliveryPredictions extends React.Component<Props, State> {
         itemGroup: itemGroup ? itemGroup : {}
       });
     });
-    let freshWeekDeliveryPredictions: WeekDeliveryPredictionTableData[] = weekDeliveryPredictionState.filter((prediction) => prediction.itemGroup.category === "FRESH");
-    freshWeekDeliveryPredictions = _.reverse(_.sortBy(freshWeekDeliveryPredictions, ['weekDeliveryPrediction.weekNumber']));
-    let frozenWeekDeliveryPredictions: WeekDeliveryPredictionTableData[] = weekDeliveryPredictionState.filter((prediction) => prediction.itemGroup.category === "FROZEN");
-    frozenWeekDeliveryPredictions = _.reverse(_.sortBy(frozenWeekDeliveryPredictions, ['weekDeliveryPrediction.weekNumber']));
+    if (category === "FRESH") {
+      const freshWeekDeliveryPredictions: WeekDeliveryPredictionTableData[] = weekDeliveryPredictionState.filter((prediction) => prediction.itemGroup.category === "FRESH");
+      const weekDeliveryPredictions = this.sortWeekDeliveryPredictionTableData(freshWeekDeliveryPredictions);
+      this.setState({ weekDeliveryPredictions, category, pageTitle: strings.freshWeekDeliveryPredictions, loading: false });
+    }
+    if (category === "FROZEN") {
+      const frozenWeekDeliveryPredictions: WeekDeliveryPredictionTableData[] = weekDeliveryPredictionState.filter((prediction) => prediction.itemGroup.category === "FROZEN");
+      const weekDeliveryPredictions = this.sortWeekDeliveryPredictionTableData(frozenWeekDeliveryPredictions);
+      this.setState({ weekDeliveryPredictions, category, pageTitle: strings.frozenWeekDeliveryPredictions, loading: false });
+    }
+  }
 
-    this.setState({ freshWeekDeliveryPredictions, frozenWeekDeliveryPredictions });
+  /**
+   * Sort week delivery predictions
+   * 
+   * @param weekDeliveryPredictionArray weekDeliveryPredictionArray
+   * @returns sorted array
+   */
+  private sortWeekDeliveryPredictionTableData = (weekDeliveryPredictionArray: WeekDeliveryPredictionTableData[]) => {
+    const sorted: ArrayLike<SortedPredictions> = _.chain(weekDeliveryPredictionArray)
+      .groupBy(WeekDeliveryPredictionTableData => WeekDeliveryPredictionTableData.weekDeliveryPrediction.weekNumber)
+      .map((v, i) => {
+        return {
+          week: i,
+          WeekDeliveryPredictionTableData: v
+        }
+      }).value();
+    const weekDeliveryPredictionArrayDesc = _.sortBy(sorted, (obj) => obj.week).reverse();
+    return weekDeliveryPredictionArrayDesc;
   }
 
   /**
@@ -89,7 +117,7 @@ class WeekDeliveryPredictions extends React.Component<Props, State> {
     return (
       <Item className="open-modal-element" key={predictionTableData.weekDeliveryPrediction.id} onClick={() => this.setState({ modal: true, predictionDataForModal: predictionTableData })}>
         <Item.Content>
-          <Item.Header >{`${predictionTableData.itemGroup.displayName} ${predictionTableData.weekDeliveryPrediction.amount} KG`}</Item.Header>
+          <Item.Header style={{ fontWeight: 500 }}>{`${predictionTableData.itemGroup.displayName} ${predictionTableData.weekDeliveryPrediction.amount} KG`}</Item.Header>
           <Item.Description >{strings.week} {predictionTableData.weekDeliveryPrediction.weekNumber}</Item.Description>
         </Item.Content>
         <Header style={{ margin: "auto", marginRight: 50 }} as="h3">{strings.open}</Header>
@@ -98,45 +126,63 @@ class WeekDeliveryPredictions extends React.Component<Props, State> {
   }
 
   /**
+   * redirects to another page
+   */
+  private redirectTo = () => {
+    this.state.category === "FRESH"
+      ? this.setState({ redirectTo: "/createWeekDeliveryPrediction/FRESH" })
+      : this.setState({ redirectTo: "/createWeekDeliveryPrediction/FROZEN" })
+  }
+
+  /**
    * Render method
    */
   public render() {
+    if (this.state.redirectTo) {
+      return (
+        <Redirect to={this.state.redirectTo} />
+      );
+    }
+    const { weekDeliveryPredictions } = this.state;
     return (
-      <React.Fragment>
-        <Button style={{ marginTop: 20 }} color="red" attached="top" as={Link} to="createWeekDeliveryPrediction/FRESH">
-          {strings.newFreshWeekDeliveryPrediction}
-        </Button>
-        <Segment attached>
-          <Header as='h2'>{strings.freshWeekDeliveryPredictions}</Header>
-          <Divider />
-          <Item.Group divided>
-            {
-              this.state.freshWeekDeliveryPredictions.map((predictionTableData: WeekDeliveryPredictionTableData) => {
-                return this.renderListItem(predictionTableData)
-              })
-            }
-          </Item.Group>
-        </Segment>
-        <Button style={{ marginTop: 20 }} color="red" attached="top" as={Link} to="createWeekDeliveryPrediction/FROZEN">
-          {strings.newFrozenWeekDeliveryPrediction}
-        </Button>
-        <Segment attached>
-          <Header as='h2'>{strings.frozenWeekDeliveryPredictions}</Header>
-          <Divider />
-          <Item.Group divided>
-            {
-              this.state.frozenWeekDeliveryPredictions.map((predictionTableData: WeekDeliveryPredictionTableData) => {
-                return this.renderListItem(predictionTableData)
-              })
-            }
-          </Item.Group>
-        </Segment>
+      <BasicLayout
+        pageTitle={this.state.pageTitle}
+        topBarButtonText={this.state.category === "FRESH" ? strings.createNewFreshPrediction : strings.createNewFrozenPrediction}
+        onTopBarButtonClick={this.redirectTo}>
+        {this.state.loading ? <Loader size="medium" content={strings.loading} active /> :
+          <Grid>
+            <Grid.Row>
+              <Grid.Column width={4}>
+              </Grid.Column>
+              <Grid.Column width={8}>
+                {
+                  weekDeliveryPredictions && Array.from(weekDeliveryPredictions).map((obj) => {
+                    return (
+                      <React.Fragment key={obj.WeekDeliveryPredictionTableData[0].weekDeliveryPrediction.id}>
+                        <div className="delivery-sort-time-container"><h3>Viikko {obj.week}</h3></div>
+                        <Item.Group divided >
+                          {
+                            obj.WeekDeliveryPredictionTableData.map((predictionTableData: WeekDeliveryPredictionTableData) => {
+                              return this.renderListItem(predictionTableData)
+                            })
+                          }
+                        </Item.Group>
+                      </React.Fragment>
+                    )
+                  })
+                }
+              </Grid.Column>
+              <Grid.Column width={4}>
+              </Grid.Column>
+            </Grid.Row>
+          </Grid>
+        }
         <WeekDeliveryPredictionViewModal
           modalOpen={this.state.modal}
           closeModal={() => this.setState({ modal: false })}
           data={this.state.predictionDataForModal}
         />
-      </React.Fragment>
+      </BasicLayout>
     );
   }
 }

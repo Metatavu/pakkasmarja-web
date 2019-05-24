@@ -161,9 +161,9 @@ class CreateWeekDeliveryPrediction extends React.Component<Props, State> {
   }
 
   /**
-   * Handles delivery submit
+   * Handles submit
    */
-  private handleDeliverySubmit = async () => {
+  private handleSubmit = async () => {
     if (!this.props.keycloak || !this.props.keycloak.token || !this.state.selectedItemGroupId) {
       return;
     }
@@ -233,8 +233,8 @@ class CreateWeekDeliveryPrediction extends React.Component<Props, State> {
   public render() {
     if (this.state.redirect) {
       return <Redirect to={{
-        pathname: '/deliveries',
-        state: { activeItem: 'weekDeliveryPredictions' }
+        pathname: '/weekDeliveryPredictions',
+        state: { category: this.state.category }
       }} />;
     }
 
@@ -302,7 +302,7 @@ class CreateWeekDeliveryPrediction extends React.Component<Props, State> {
               inverted
               color="red">{strings.back}</Button>
             <Button.Or text="" />
-            <Button onClick={this.handleDeliverySubmit} color="red">
+            <Button onClick={this.handleSubmit} color="red">
               {this.state.category === "FRESH" ? strings.newFreshWeekDeliveryPrediction : strings.newFrozenWeekDeliveryPrediction}
             </Button>
           </Button.Group>

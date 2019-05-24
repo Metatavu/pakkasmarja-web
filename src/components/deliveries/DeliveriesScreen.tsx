@@ -7,13 +7,11 @@ import { connect } from "react-redux";
 import "../../styles/common.css";
 import Api, { Product } from "pakkasmarja-client";
 import { ItemGroup } from "pakkasmarja-client";
-import { Menu } from "semantic-ui-react";
-import PastDeliveries from "./PastDeliveries"
-import { Delivery } from "pakkasmarja-client"
-import ProposalsView from "./ProposalsView";
-import WeekDeliveryPredictions from "./WeekDeliveryPredictions";
-import IncomingDeliveries from "./IncomingDeliveries";
+import { Grid, Header, Icon, SemanticICONS, Menu, Loader } from "semantic-ui-react";
+import { Delivery } from "pakkasmarja-client";
 import strings from "src/localization/strings";
+import { Redirect } from "react-router";
+import * as _ from "lodash";
 
 /**
  * Interface for component props
@@ -32,7 +30,15 @@ interface State {
   keycloak?: Keycloak.KeycloakInstance;
   itemGroups?: ItemGroup[];
   activeItem?: string;
-  deliveries: Delivery[];
+  tabActiveItem: string;
+  pageTitle: string;
+  redirect: boolean;
+  redirectTo?: string;
+  redirectObj?: {};
+  proposalCount?: number;
+  incomingDeliveriesCount?: number;
+  deliveries?: DeliveriesState;
+  loading: boolean;
 }
 
 /**
@@ -48,7 +54,10 @@ class DeliveriesScreen extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      deliveries: []
+      pageTitle: "toimitukset",
+      tabActiveItem: "FRESH",
+      redirect: false,
+      loading: false
     };
   }
 
@@ -59,9 +68,37 @@ class DeliveriesScreen extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
-    const activeItem = this.props.location.state ? this.props.location.state.activeItem : "";
-    this.setState({ activeItem });
+    this.setState({ loading: true });
     await this.loadDeliveriesData();
+    this.setTabCounts();
+    this.setState({ loading: false });
+  }
+
+  /**
+   * Component did update life-sycle event
+   */
+  public componentDidUpdate = (prevProps: Props, prevState: State) => {
+    if (prevState.tabActiveItem != this.state.tabActiveItem) {
+      this.setTabCounts();
+    }
+  }
+
+  /**
+   * Sets tabs counts
+   */
+  private setTabCounts = () => {
+    const deliveries = this.state.deliveries;
+    if (deliveries) {
+      if (this.state.tabActiveItem === "FRESH") {
+        const proposalCount = _.filter(deliveries.freshDeliveryData, ({ delivery }) => delivery.status === "PROPOSAL").length;
+        const incomingDeliveriesCount = _.filter(deliveries.freshDeliveryData, ({ delivery }) => delivery.status === "PLANNED").length;
+        this.setState({ proposalCount, incomingDeliveriesCount });
+      } else {
+        const proposalCount = _.filter(deliveries.frozenDeliveryData, ({ delivery }) => delivery.status === "PROPOSAL").length;
+        const incomingDeliveriesCount = _.filter(deliveries.frozenDeliveryData, ({ delivery }) => delivery.status === "PLANNED").length;
+        this.setState({ proposalCount, incomingDeliveriesCount });
+      }
+    }
   }
 
   /**
@@ -99,43 +136,95 @@ class DeliveriesScreen extends React.Component<Props, State> {
       frozenDeliveryData: frozenDeliveriesAndProducts
     };
 
+    this.setState({ deliveries: deliveriesState });
     this.props.deliveriesLoaded && this.props.deliveriesLoaded(deliveriesState);
   }
-
-  /**
-   * Handle menu click
-   * 
-   * @param value value
-   */
-  private handleMenuItemClick = (value: string) => this.setState({ activeItem: value })
 
   /**
    * Render method
    */
   public render() {
-    const { activeItem } = this.state
+    if (this.state.redirect && this.state.redirectTo) {
+      return (
+        <Redirect to={{
+          pathname: `${this.state.redirectTo}`,
+          state: this.state.redirectObj
+        }} />
+      );
+    }
+    const { tabActiveItem } = this.state;
+    const tabs: { value: string, pageTitle: string, src: SemanticICONS, count?: number }[] = [
+      {
+        value: "proposals",
+        pageTitle: "Ehdotukset",
+        src: "edit outline",
+        count: this.state.proposalCount && this.state.proposalCount
+      },
+      {
+        value: "weekDeliveryPredictions",
+        pageTitle: "Viikkoennusteet",
+        src: "calendar alternate outline"
+      },
+      {
+        value: "incomingDeliveries",
+        pageTitle: "Tulevat toimitukset",
+        src: "truck",
+        count: this.state.incomingDeliveriesCount && this.state.incomingDeliveriesCount
+      },
+      {
+        value: "pastDeliveries",
+        pageTitle: "Tehdyt toimitukset",
+        src: "check circle outline"
+      }
+    ]
     return (
-      <BasicLayout pageTitle="Toimitukset">
-        <Menu fluid widths={4} attached='top' inverted color="red">
-          <Menu.Item name={strings.suggestions} active={activeItem === 'proposals'} onClick={() => this.handleMenuItemClick("proposals")} />
-          <Menu.Item color="black" name={strings.weekDeliveryPredictions} active={activeItem === 'weekDeliveryPredictions'} onClick={() => this.handleMenuItemClick("weekDeliveryPredictions")} />
-          <Menu.Item color="black" name={strings.incomingDeliveries} active={activeItem === 'incomingDeliveries'} onClick={() => this.handleMenuItemClick("incomingDeliveries")} />
-          <Menu.Item color="black" name={strings.pastDeliveries} active={activeItem === 'pastDeliveries'} onClick={() => this.handleMenuItemClick("pastDeliveries")} />
-        </Menu>
-        {
-          this.state.activeItem === "proposals" && <ProposalsView />
-        }
-        {
-          this.state.activeItem === "weekDeliveryPredictions" && <WeekDeliveryPredictions />
-        }
-        {
-          this.state.activeItem === "incomingDeliveries" && <IncomingDeliveries />
-        }
-        {
-          this.state.activeItem === "pastDeliveries" && <PastDeliveries />
-        }
+      <BasicLayout pageTitle={`${tabActiveItem === "FRESH" ? "Tuore, " : "Pakaste, "} ${this.state.pageTitle.toLowerCase()}`}>
+        <Grid>
+          <Grid.Column width={4}></Grid.Column>
+          <Grid.Column width={8}>
+            <Menu color="red" pointing secondary widths={2}>
+              <Menu.Item name={strings.fresh} active={tabActiveItem === 'FRESH'} onClick={() => this.setState({ tabActiveItem: "FRESH" })} />
+              <Menu.Item name={strings.frozen} active={tabActiveItem === 'FROZEN'} onClick={() => this.setState({ tabActiveItem: "FROZEN" })} />
+            </Menu>
+          </Grid.Column>
+          <Grid.Column width={4}></Grid.Column>
+        </Grid>
+        {this.state.loading ?
+          <Loader size="medium" content={strings.loading} active /> :
+          <Grid verticalAlign='middle'>
+            {
+              tabs.map((tab) => {
+                return (
+                  <Grid.Row key={tab.value}>
+                    <Grid.Column width={4}>
+                    </Grid.Column>
+                    <Grid.Column textAlign="right" width={2}>
+                      <Icon color="red" name={tab.src} size='huge' />
+                    </Grid.Column>
+                    <Grid.Column style={{ height: 40 }} width={6} className="open-modal-element" onClick={() => this.handleTabChange(tab.value)}>
+                      <Header style={{ display: "inline" }}>{tab.pageTitle}</Header>
+                      {
+                        tab.count ?
+                          <div className="delivery-count-container"><p>{tab.count}</p></div>
+                          : null
+                      }
+                    </Grid.Column>
+                    <Grid.Column width={4}>
+                    </Grid.Column>
+                  </Grid.Row>
+                );
+              })
+            }
+          </Grid>}
       </BasicLayout>
     );
+  }
+
+  /**
+   * Handles tab change
+   */
+  private handleTabChange = (value: string) => {
+    this.setState({ redirectTo: value, redirect: true, redirectObj: { category: this.state.tabActiveItem } });
   }
 }
 

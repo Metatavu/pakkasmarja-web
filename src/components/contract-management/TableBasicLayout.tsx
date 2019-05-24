@@ -36,11 +36,11 @@ class TableBasicLayout extends React.Component<Props, any> {
           <div style={{ textAlign: "center" }}>
             <h3 style={{ color: "red" }}> Virhe! </h3>
             <p style={{ color: "black" }}> {this.props.error} </p>
-            <Button basic onClick={ this.props.onErrorClose }> Sulje </Button>
+            <Button basic onClick={this.props.onErrorClose}> Sulje </Button>
           </div>
         </Dimmer>
       );
-    } 
+    }
 
     return (
       <div>
@@ -56,10 +56,16 @@ class TableBasicLayout extends React.Component<Props, any> {
           </Container>
           <MenuContainer />
         </div>
-        <div className="tablecontainer">
+        <div style={{
+          maxWidth: "90%",
+          marginTop: "50px",
+          paddingBottom: "100px",
+          marginLeft: "auto",
+          marginRight: "auto",
+        }}>
           {this.props.children}
         </div>
-      </div>
+      </div >
     );
   }
 }
