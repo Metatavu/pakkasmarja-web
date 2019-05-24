@@ -7,7 +7,7 @@ import { connect } from "react-redux";
 import "../../styles/common.css";
 import Api, { Product } from "pakkasmarja-client";
 import { ItemGroup } from "pakkasmarja-client";
-import { Grid, Header, Icon, SemanticICONS, Menu } from "semantic-ui-react";
+import { Grid, Header, Icon, SemanticICONS, Menu, Loader } from "semantic-ui-react";
 import { Delivery } from "pakkasmarja-client";
 import strings from "src/localization/strings";
 import { Redirect } from "react-router";
@@ -38,6 +38,7 @@ interface State {
   proposalCount?: number;
   incomingDeliveriesCount?: number;
   deliveries?: DeliveriesState;
+  loading: boolean;
 }
 
 /**
@@ -55,7 +56,8 @@ class DeliveriesScreen extends React.Component<Props, State> {
     this.state = {
       pageTitle: "toimitukset",
       tabActiveItem: "FRESH",
-      redirect: false
+      redirect: false,
+      loading: false
     };
   }
 
@@ -66,10 +68,10 @@ class DeliveriesScreen extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
-    const activeItem = this.props.location.state ? this.props.location.state.activeItem : "";
-    this.setState({ activeItem });
+    this.setState({ loading: true });
     await this.loadDeliveriesData();
     this.setTabCounts();
+    this.setState({ loading: false });
   }
 
   /**
@@ -187,31 +189,33 @@ class DeliveriesScreen extends React.Component<Props, State> {
           </Grid.Column>
           <Grid.Column width={4}></Grid.Column>
         </Grid>
-        <Grid verticalAlign='middle'>
-          {
-            tabs.map((tab) => {
-              return (
-                <Grid.Row key={tab.value}>
-                  <Grid.Column width={4}>
-                  </Grid.Column>
-                  <Grid.Column textAlign="right" width={2}>
-                    <Icon color="red" name={tab.src} size='huge' />
-                  </Grid.Column>
-                  <Grid.Column style={{ height: 40 }} width={6} className="open-modal-element" onClick={() => this.handleTabChange(tab.value)}>
-                    <Header style={{ display: "inline" }}>{tab.pageTitle}</Header>
-                    {
-                      tab.count ?
-                        <div className="delivery-count-container"><p>{tab.count}</p></div>
-                        : null
-                    }
-                  </Grid.Column>
-                  <Grid.Column width={4}>
-                  </Grid.Column>
-                </Grid.Row>
-              );
-            })
-          }
-        </Grid>
+        {this.state.loading ?
+          <Loader size="medium" content={strings.loading} active /> :
+          <Grid verticalAlign='middle'>
+            {
+              tabs.map((tab) => {
+                return (
+                  <Grid.Row key={tab.value}>
+                    <Grid.Column width={4}>
+                    </Grid.Column>
+                    <Grid.Column textAlign="right" width={2}>
+                      <Icon color="red" name={tab.src} size='huge' />
+                    </Grid.Column>
+                    <Grid.Column style={{ height: 40 }} width={6} className="open-modal-element" onClick={() => this.handleTabChange(tab.value)}>
+                      <Header style={{ display: "inline" }}>{tab.pageTitle}</Header>
+                      {
+                        tab.count ?
+                          <div className="delivery-count-container"><p>{tab.count}</p></div>
+                          : null
+                      }
+                    </Grid.Column>
+                    <Grid.Column width={4}>
+                    </Grid.Column>
+                  </Grid.Row>
+                );
+              })
+            }
+          </Grid>}
       </BasicLayout>
     );
   }

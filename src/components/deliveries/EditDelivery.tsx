@@ -5,7 +5,7 @@ import { StoreState, DeliveriesState, DeliveryProduct, Options, DeliveryDataValu
 import Api, { Product, DeliveryPlace, ItemGroupCategory, Delivery, DeliveryNote, ProductPrice } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import { Header, Dropdown, Form, Input, Button, Divider, Icon, Image, Loader } from "semantic-ui-react";
+import { Header, Dropdown, Form, Input, Button, Divider, Image, Loader } from "semantic-ui-react";
 import "../../styles/common.css";
 import BasicLayout from "../generic/BasicLayout";
 import DeliveryNoteModal from "./DeliveryNoteModal";
@@ -97,17 +97,13 @@ class EditDelivery extends React.Component<Props, State> {
     const productsService = await Api.getProductsService(this.props.keycloak.token);
     const deliveryPlacesService = await Api.getDeliveryPlacesService(this.props.keycloak.token);
     const deliveriesService = await Api.getDeliveriesService(this.props.keycloak.token);
-    const productPricesService = await Api.getProductPricesService(this.props.keycloak.token);
     const delivery = await deliveriesService.findDelivery(deliveryId);
     const deliveryPlaces = await deliveryPlacesService.listDeliveryPlaces();
     const products: Product[] = await productsService.listProducts(undefined, category, undefined, undefined, 100);
-    const productPriceList = await productPricesService.listProductPrices(delivery.productId, "CREATED_AT_DESC", 0, 1);
-    const productPrice = productPriceList[0];
     const selectedProduct = products.find(product => product.id === delivery.productId);
     const deliveryTimeValue = Number(moment(delivery.time).utc().format("HH"));
     await this.setState({
       products,
-      productPrice,
       deliveryPlaces,
       category,
       deliveryId,
@@ -156,15 +152,9 @@ class EditDelivery extends React.Component<Props, State> {
    */
   private handleInputChange = async (key: string, value: DeliveryDataValue) => {
     if (key === "selectedProductId") {
-      if (!this.props.keycloak || !this.props.keycloak.token || !value) {
-        return;
-      }
-      const productPricesService = await Api.getProductPricesService(this.props.keycloak.token);
-      const productPriceList = await productPricesService.listProductPrices(value.toString(), "CREATED_AT_DESC", 0, 1);
-      const productPrice = productPriceList[0];
-      const selectedProductId = value.toString();
+      const selectedProductId = value && value.toString() || "";
       const selectedProduct = this.state.products.find(product => product.id === selectedProductId);
-      this.setState({ productPrice, selectedProductId, selectedProduct });
+      this.setState({ selectedProductId, selectedProduct });
     }
 
     const state: State = this.state;
@@ -385,14 +375,13 @@ class EditDelivery extends React.Component<Props, State> {
               <label>{strings.product}</label>
               {this.renderDropDown(productOptions, "selectedProductId")}
             </Form.Field>
-            {this.state.productPrice && this.state.selectedProductId &&
+            {this.state.selectedProductId &&
               <Form.Field>
-                <PriceChart productId={this.state.selectedProductId} />
-                <p style={{ paddingTop: 10 }}><Icon name="info circle" size="large" color="red" />Tämän hetkinen hinta on {this.state.productPrice.price} {this.state.productPrice.unit}</p>
+                <PriceChart showLatestPrice productId={this.state.selectedProductId} />
               </Form.Field>
             }
             <Form.Field>
-              <label>{strings.amount}</label>
+              <label>{`${strings.amount} ( ${this.state.selectedProduct && this.state.selectedProduct.unitName || "Tuotetta ei ole valittu"} )`}</label>
               <Input
                 placeholder={strings.amount}
                 value={this.state.amount}

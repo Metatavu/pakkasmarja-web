@@ -1,10 +1,10 @@
 import * as React from "react";
 import * as actions from "../../actions/";
 import { StoreState, DeliveriesState, DeliveryProduct, Options, DeliveryDataValue, deliveryNoteImg64 } from "src/types";
-import Api, { Product, DeliveryPlace, ItemGroupCategory, Delivery, DeliveryNote, ProductPrice } from "pakkasmarja-client";
+import Api, { Product, DeliveryPlace, ItemGroupCategory, Delivery, DeliveryNote } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import { Header, Dropdown, Form, Input, Button, Divider, Icon, Image, Loader } from "semantic-ui-react";
+import { Header, Dropdown, Form, Input, Button, Divider, Image, Loader } from "semantic-ui-react";
 import "../../styles/common.css";
 import BasicLayout from "../generic/BasicLayout";
 import DeliveryNoteModal from "./DeliveryNoteModal";
@@ -45,7 +45,6 @@ interface State {
   redirect: boolean;
   deliveryNotes: DeliveryNote[];
   deliveryNotesWithImgBase64: deliveryNoteImg64[];
-  productPrice?: ProductPrice;
   deliveryTimeValue?: number;
   openImage?: string;
   loading: boolean;
@@ -105,17 +104,11 @@ class CreateDelivery extends React.Component<Props, State> {
   /**
    * Handle inputchange
    */
-  private handleInputChange = async (key: string, value: DeliveryDataValue) => {
+  private handleInputChange = (key: string, value: DeliveryDataValue) => {
     if (key === "selectedProductId") {
-      if (!this.props.keycloak || !this.props.keycloak.token || !value) {
-        return;
-      }
-      const productPricesService = await Api.getProductPricesService(this.props.keycloak.token);
-      const productPriceList = await productPricesService.listProductPrices(value.toString(), "CREATED_AT_DESC", 0, 1);
-      const productPrice = productPriceList[0];
-      const selectedProductId = value.toString();
+      const selectedProductId = value && value.toString() || "";
       const selectedProduct = this.state.products.find(product => product.id === selectedProductId);
-      this.setState({ productPrice, selectedProductId, selectedProduct });
+      this.setState({ selectedProductId, selectedProduct });
     }
 
     const state: State = this.state;
@@ -311,14 +304,13 @@ class CreateDelivery extends React.Component<Props, State> {
               <label>{strings.product}</label>
               {this.renderDropDown(productOptions, strings.product, "selectedProductId")}
             </Form.Field>
-            {this.state.productPrice && this.state.selectedProductId &&
+            {this.state.selectedProductId &&
               <Form.Field>
-                <PriceChart productId={this.state.selectedProductId} />
-                <p style={{ paddingTop: 10 }}><Icon name="info circle" size="large" color="red" />Tämän hetkinen hinta on {this.state.productPrice.price} {this.state.productPrice.unit}</p>
+                <PriceChart showLatestPrice productId={this.state.selectedProductId} />
               </Form.Field>
             }
             <Form.Field>
-              <label>{strings.amount}</label>
+              <label>{`${strings.amount} ( ${this.state.selectedProduct && this.state.selectedProduct.unitName || "Tuotetta ei ole valittu"} )`}</label>
               <Input
                 placeholder={strings.amount}
                 value={this.state.amount}

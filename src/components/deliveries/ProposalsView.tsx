@@ -5,7 +5,6 @@ import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import { Item, Button, Grid, Loader } from "semantic-ui-react";
 import "../../styles/common.css";
-import Moment from "react-moment";
 import ProposalAcceptModal from "./ProposalAcceptModal";
 import strings from "src/localization/strings";
 import BasicLayout from "../generic/BasicLayout";
@@ -134,7 +133,7 @@ class ProposalsView extends React.Component<Props, State> {
                                 <Item key={deliveryProduct.delivery.id}>
                                   <Item.Content>
                                     <Item.Header style={{ fontWeight: 500 }}>{`${deliveryProduct.product.name} ${deliveryProduct.delivery.amount} x ${deliveryProduct.product.units} ${deliveryProduct.product.unitName} `}</Item.Header>
-                                    <Item.Description><Moment format="DD.MM.YYYY HH:mm">{deliveryProduct.delivery.time.toString()}</Moment></Item.Description>
+                                    <Item.Description>{`${Number(moment(deliveryProduct.delivery.time).utc().format("HH")) > 12 ? "Jälkeen kello 11" : "Ennen kello 11"}`}</Item.Description>
                                   </Item.Content>
                                   <Button style={{ maxHeight: "37px", marginBottom: "1%" }} color="red" floated="right" onClick={() => this.setState({ deliveryId: deliveryProduct.delivery.id, proposalAcceptModal: true, deliveryProduct })}>
                                     {strings.check}

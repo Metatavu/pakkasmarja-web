@@ -6,7 +6,6 @@ import { connect } from "react-redux";
 import { Header, Item, Button, Grid, Image } from "semantic-ui-react";
 import { Link, Redirect } from "react-router-dom";
 import "../../styles/common.css";
-import Moment from "react-moment";
 import ViewModal from "./ViewModal";
 import Api, { Delivery } from "pakkasmarja-client";
 import strings from "src/localization/strings";
@@ -255,7 +254,7 @@ class IncomingDeliveries extends React.Component<Props, State> {
                               <Item key={deliveryProduct.delivery.id}>
                                 <Item.Content className="open-modal-element" onClick={() => { this.setState({ deliveryProduct, deliveryId: deliveryProduct.delivery.id, viewModal: true }) }}>
                                   <Item.Header style={{ fontWeight: 500 }}>{`${deliveryProduct.product.name} ${deliveryProduct.delivery.amount} x ${deliveryProduct.product.units} ${deliveryProduct.product.unitName} `}</Item.Header>
-                                  <Item.Meta><Moment format="DD.MM.YYYY">{deliveryProduct.delivery.time.toString()}</Moment></Item.Meta>
+                                  <Item.Description>{`${Number(moment(deliveryProduct.delivery.time).utc().format("HH")) > 12 ? "Jälkeen kello 11" : "Ennen kello 11"}`}</Item.Description>
                                 </Item.Content>
                                 {
                                   this.renderStatus(deliveryProduct)
