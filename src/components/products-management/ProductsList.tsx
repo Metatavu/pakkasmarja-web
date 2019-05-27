@@ -81,7 +81,7 @@ class ProductsList extends React.Component<Props, State> {
     }
 
     const productsService = await Api.getProductsService(this.props.keycloak.token);
-    const products: Product[] = await productsService.listProducts();
+    const products: Product[] = await productsService.listProducts(undefined, undefined, undefined, undefined, 9999);
     this.setState({ products });
   }
 
