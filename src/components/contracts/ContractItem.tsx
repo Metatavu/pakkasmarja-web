@@ -103,7 +103,7 @@ class ContractItem extends React.Component<Props, State> {
     }
 
     const contractId = this.props.contractData.contract.id || "";
-    const type = new Date().getFullYear().toString();
+    const type = this.props.contractData.contract.year.toString();
     const pdfService = new PDFService(process.env.REACT_APP_API_URL || "", this.props.keycloak.token);
     const pdfData: Response = await pdfService.getPdf(contractId, type);
     this.downloadPdfBlob(pdfData, "sopimus", contractId);
@@ -140,7 +140,7 @@ class ContractItem extends React.Component<Props, State> {
         <Redirect to={`contracts/${this.props.contractData.contract.id}`} />
       );
     }
-
+    const contractYear = this.props.contractData.contract.year;
     const itemGroupName = this.props.contractData.itemGroup ? this.props.contractData.itemGroup.displayName : "-";
     const contractStatus = this.props.contractData.contract.status;
     const contractQuantity = this.props.contractData.contract.contractQuantity;
@@ -183,13 +183,15 @@ class ContractItem extends React.Component<Props, State> {
           contractStatus === "TERMINATED" ?
             <Table.Row >
               <Table.Cell >
-                {itemGroupName}
+                {`${itemGroupName} (${contractYear})`}
               </Table.Cell>
               <Table.Cell>
                 {this.renderItemDescription(contractStatus)}
               </Table.Cell>
               <Table.Cell className="pdf-icon" textAlign="center">
-                <Icon onClick={this.downloadPdf} size="large" name="file pdf outline" />
+                {contractYear > 2017 &&
+                  <Icon onClick={this.downloadPdf} size="large" name="file pdf outline" />
+                }
               </Table.Cell>
             </Table.Row>
             : null
