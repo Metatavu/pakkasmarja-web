@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as actions from "../../actions/";
 import BasicLayout from "../generic/BasicLayout";
-import { StoreState, ContractTableData } from "src/types";
+import { StoreState, ContractTableData, ChatWindow } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
@@ -12,6 +12,7 @@ import ContractProposalModal from "./ContractProposalModal";
 import strings from "src/localization/strings";
 import * as _ from "lodash";
 import ContractListContainer from "./ContractListContainer";
+import AppConfig from "src/utils/AppConfig";
 
 /**
  * Interface for component props
@@ -19,6 +20,7 @@ import ContractListContainer from "./ContractListContainer";
 interface Props {
   authenticated: boolean;
   keycloak?: Keycloak.KeycloakInstance;
+  chatOpen: (chat: ChatWindow) => void;
 }
 
 /**
@@ -133,7 +135,58 @@ class ContractList extends React.Component<Props, State> {
    * On contract proposal clicked
    */
   private onContractProposalClick = async () => {
-    //TODO: Implement when chat messages are ready
+
+    const appConfig = await AppConfig.getAppConfig();
+    const questionGroupId = appConfig['contracts-question-group'];
+    if (!questionGroupId || !this.props.keycloak || !this.props.keycloak.token) {
+      return
+    }
+
+    this.setState({
+      contractsLoading: true
+    });
+
+    const questionGroupThreads = await Api.getChatThreadsService(this.props.keycloak.token).listChatThreads(questionGroupId, "QUESTION");
+    if (questionGroupThreads.length != 1) {
+      return; //Application is misconfigured, bail out.
+    }
+    const threadId = questionGroupThreads[0].id!;
+    await Api.getChatMessagesService(this.props.keycloak.token).createChatMessage({
+      contents: this.getProposalMessageContents(),
+      threadId: threadId,
+      userId: this.props.keycloak.subject
+    }, threadId);
+
+
+    this.props.chatOpen({
+      open: true,
+      threadId: threadId,
+      answerType: "TEXT"
+    });
+
+    this.setState({
+      contractsLoading: false,
+      proposeContractModalOpen: false
+    });
+  }
+
+  /**
+   * Gets message to use for suggesting new contract
+   */
+  private getProposalMessageContents = (): string => {
+    const { selectedBerry, itemGroups } = this.state;
+    const itemGroup = itemGroups.find((itemgroup) => itemgroup.id == selectedBerry);
+    let message = `Hei, haluaisin ehdottaa uutta sopimusta marjasta: ${itemGroup ? itemGroup.displayName : ""}.`;
+    if (this.state.proposedContractQuantity) {
+      message += `
+      Määräarvio on ${this.state.proposedContractQuantity} kg.`;
+    }
+    if (this.state.proposedContractQuantityComment) {
+      message += `
+      Lisätietoa: ${this.state.proposedContractQuantityComment}`;
+    }
+
+    return message;
   }
 
   /**
@@ -220,6 +273,7 @@ class ContractList extends React.Component<Props, State> {
         </Button>
         <ContractProposalModal
           modalOpen={this.state.proposeContractModalOpen}
+          contractType={this.state.proposeContractModalType}
           itemGroups={this.state.itemGroups}
           closeModal={() => this.setState({ proposeContractModalOpen: false })}
           onSelectedBerryChange={(value: string) => this.setState({ selectedBerry: value })}
@@ -254,6 +308,7 @@ export function mapStateToProps(state: StoreState) {
  */
 export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
   return {
+    chatOpen: (chat: ChatWindow) => dispatch(actions.chatOpen(chat))
   };
 }
 

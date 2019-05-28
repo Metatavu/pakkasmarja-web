@@ -13,6 +13,7 @@ interface Props {
   closeModal: () => void,
   itemGroups: ItemGroup[],
   selectedBerry: string,
+  contractType: string,
   onSelectedBerryChange: (value: string) => void;
   onQuantityChange: (value: string) => void;
   onQuantityCommentChange: (value: string) => void;
@@ -27,13 +28,14 @@ interface Props {
  */
 interface State {
   modalOpen: boolean,
+  itemGroups: ItemGroup[]
 };
 
 /**
  * Contract proposal modal component class
  */
 export default class ContractProposalModal extends React.Component<Props, State> {
-  
+
   /**
    * Constructor
    * 
@@ -42,8 +44,19 @@ export default class ContractProposalModal extends React.Component<Props, State>
   constructor(props: Props) {
     super(props);
     this.state = {
-      modalOpen: false
+      modalOpen: false,
+      itemGroups: []
     };
+  }
+
+/**
+ * Component did update life-cycle event
+ */
+  public componentDidUpdate = (prevProps:Props) => {
+    if(prevProps.contractType !== this.props.contractType){
+      const itemGroups = this.props.itemGroups.filter((itemGroup) => itemGroup.category === this.props.contractType);
+      this.setState({ itemGroups });
+    }
   }
 
   /**
@@ -57,7 +70,7 @@ export default class ContractProposalModal extends React.Component<Props, State>
    * Render method
    */
   public render() {
-    const itemGroupOptions = this.props.itemGroups.map((itemGroup) => {
+    const itemGroupOptions = this.state.itemGroups.map((itemGroup) => {
       return {
         key: itemGroup.id,
         text: itemGroup.displayName ? itemGroup.displayName : itemGroup.name,

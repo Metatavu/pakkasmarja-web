@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as actions from "../../actions";
-import { StoreState } from "src/types";
+import { StoreState, ChatWindow } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "./styles.css";
@@ -15,24 +15,17 @@ import { ChatThread } from "pakkasmarja-client";
 interface Props {
   authenticated: boolean;
   keycloak?: Keycloak.KeycloakInstance;
+  chats: ChatWindow[];
+  chatOpen: (chat: ChatWindow) => void;
+  chatClose: (chat: ChatWindow) => void;
 }
 
 /**
  * Interface for component state
  */
 interface State {
-  chats: ChatWindow[]
   open: boolean
   chatGroupId?: number
-}
-
-/**
- * Interface representing chat window
- */
-interface ChatWindow {
-  open: boolean,
-  threadId: number,
-  answerType: ChatThread.AnswerTypeEnum
 }
 
 /**
@@ -43,7 +36,6 @@ class ChatsContainer extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      chats: [],
       open: false
     };
   }
@@ -52,7 +44,7 @@ class ChatsContainer extends React.Component<Props, State> {
    * Render
    */
   public render() {
-    const chatWindows = this.state.chats.map((chatWindow, index) => {
+    const chatWindows = this.props.chats.map((chatWindow, index) => {
       return (
         <div key={chatWindow.threadId} style={{ width: "350px", position: "fixed", bottom: "0", right: `${((index + 1) * 365)}px` }}>
           <Chat onExit={() => this.closeChat(chatWindow.threadId)} threadId={chatWindow.threadId} answerType={chatWindow.answerType} />
@@ -61,7 +53,7 @@ class ChatsContainer extends React.Component<Props, State> {
     });
 
     return (
-      <div className="chat-container" style={{ position: "fixed", right: "10px", bottom: "0", width: "350px", zIndex:999 }}>
+      <div className="chat-container" style={{ position: "fixed", right: "10px", bottom: "0", width: "350px", zIndex: 999 }}>
         <Segment.Group stacked>
           <Segment style={{ color: "#fff", background: "rgb(229, 29, 42)" }}>
             <span onClick={this.toggleWindow}>
@@ -87,7 +79,7 @@ class ChatsContainer extends React.Component<Props, State> {
   /**
    * Reset chat group id
    */
-  private resetChatGroupId = () =>{
+  private resetChatGroupId = () => {
     this.setState({ chatGroupId: undefined })
   }
 
@@ -95,17 +87,17 @@ class ChatsContainer extends React.Component<Props, State> {
    * Closes chat with thread id
    */
   private closeChat = (threadId: number) => {
-    const openChats = this.state.chats.filter(chatWindow => chatWindow.threadId != threadId);
-    this.setState({
-      chats: openChats
-    });
+    const chatToClose = this.props.chats.find(chatWindow => chatWindow.threadId === threadId);
+    if (chatToClose) {
+      this.props.chatClose(chatToClose);
+    }
   }
 
   /**
    * Toggles window
    */
   private toggleWindow = () => {
-    const {open} = this.state;
+    const { open } = this.state;
     this.setState({
       open: !open
     });
@@ -123,8 +115,8 @@ class ChatsContainer extends React.Component<Props, State> {
   /**
    * Thread select handler
    */
-  private onSelectThread = (chatThreadId: number, answerType : ChatThread.AnswerTypeEnum) => {
-    const { chats } = this.state;
+  private onSelectThread = (chatThreadId: number, answerType: ChatThread.AnswerTypeEnum) => {
+    const { chats } = this.props;
     let found = false;
     chats.forEach((chatWindow) => {
       if (chatWindow.threadId === chatThreadId) {
@@ -134,16 +126,12 @@ class ChatsContainer extends React.Component<Props, State> {
     });
 
     if (!found) {
-      chats.push({
+      this.props.chatOpen({
         open: true,
         threadId: chatThreadId,
         answerType
       });
     }
-
-    this.setState({
-      chats: chats
-    });
   }
 }
 
@@ -155,7 +143,8 @@ class ChatsContainer extends React.Component<Props, State> {
 export function mapStateToProps(state: StoreState) {
   return {
     authenticated: state.authenticated,
-    keycloak: state.keycloak
+    keycloak: state.keycloak,
+    chats: state.openChats
   }
 }
 
@@ -166,6 +155,8 @@ export function mapStateToProps(state: StoreState) {
  */
 export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
   return {
+    chatOpen: (chat: ChatWindow) => dispatch(actions.chatOpen(chat)),
+    chatClose: (chat: ChatWindow) => dispatch(actions.chatClose(chat))
   };
 }
 
