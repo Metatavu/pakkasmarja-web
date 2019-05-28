@@ -129,7 +129,7 @@
   "newFrozenDelivery": "Uusi pakastetoimitus",
   "newFreshWeekDeliveryPrediction": "Uusi tuore viikkoennuste",
   "newFrozenWeekDeliveryPrediction": "Uusi pakaste viikkoennuste",
-  "lastWeekDeliveries": "Viimeviikon kaikki toimitukset: {0} KG",
+  "lastWeekDeliveries": "Viimeviikon toimitukset: {0} KG",
   "nextWeekPrediction": "Ennuste ensi viikolle (KG)",
   "dailyAverage": "Keskimäärin: {0} KG/PV",
   "changeComparedToLastWeek": "Muutos viime viikkoon: {0} %",

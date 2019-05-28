@@ -154,9 +154,9 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     const morningDeliveries = this.state.deliveries.filter((delivery) => moment(delivery.time).utc().hour() <= 12);
     const eveningDeliveries = this.state.deliveries.filter((delivery) => moment(delivery.time).utc().hour() > 12);
 
-    let tableRows = this.getTableRows(morningDeliveries);
+    let tableRows = this.getTableRows(morningDeliveries, 0);
     tableRows.push(this.getTableSummaryRow(morningDeliveries, "Klo 12 mennessä yht."));
-    tableRows = tableRows.concat(this.getTableRows(eveningDeliveries));
+    tableRows = tableRows.concat(this.getTableRows(eveningDeliveries, tableRows.length));
     tableRows.push(this.getTableSummaryRow(deliveries, "Varastossa nyt", true));
     tableRows.push(this.getTableSummaryRow(deliveries, "Klo 17 mennessä yht."))
 
@@ -251,26 +251,26 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     );
   }
 
-  private getTableRows(deliveries: Delivery[]) {
+  private getTableRows(deliveries: Delivery[], initialIndex?: number) {
 
     const { products } = this.state;
 
     const tableRows: JSX.Element[] = [];
-    let index = 0;
+    let index = initialIndex || 0;
     const contactIds = _.uniq(deliveries.map(delivery => delivery.userId));
     for (let i = 0; i < contactIds.length; i++) {
       index++;
       let tableCells: JSX.Element[] = [];
       let contactId = contactIds[i];
       let contact = this.getContact(contactId);
-      tableCells.push(<Table.Cell key={`${contactId}`}>{contact ? contact.displayName : <Loader size="mini" inline />}</Table.Cell>);
+      tableCells.push(<Table.Cell key={`${index}-${contactId}`}>{contact ? contact.displayName : <Loader size="mini" inline />}</Table.Cell>);
       for (let j = 0; j < products.length; j++) {
         let product = products[j];
         const productDeliveries = this.listContactDeliveries(contactId, product, deliveries);
         if (!productDeliveries.length) {
           tableCells.push(
             <Table.Cell
-              key={`${contactId}-${product.id}`}
+              key={`${index}-${contactId}-${product.id}`}
               selectable
               onClick={() => this.handleCreateDelivery(contactId, product)} />
           );
@@ -281,7 +281,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
             });
 
             tableCells.push(
-              <Table.Cell key={`${contactId}-${product.id}`} style={{ paddingLeft: "5px", paddingRight: "5px" }} selectable onClick={() => { }}>
+              <Table.Cell key={`${index}-${contactId}-${product.id}`} style={{ paddingLeft: "5px", paddingRight: "5px" }} selectable onClick={() => { }}>
                 <Popup style={{ textAlign: "center", whiteSpace: "nowrap" }} wide trigger={<Button style={{ width: "100%" }} basic content='Valitse' />} on='click'>
                   {deliveryButtons}
                 </Popup>
@@ -292,7 +292,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
             const textStyle = this.getDeliveryTextStyle(delivery);
             tableCells.push(
               <Table.Cell
-                key={`${contactId}-${product.id}`}
+                key={`${index}-${contactId}-${product.id}`}
                 style={{ ...textStyle }}
                 selectable
                 onClick={() => this.handleEditDelivery(delivery!)}>
@@ -477,8 +477,10 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   private reloadDeliveries = async () => {
     const { keycloak } = this.props;
     if (keycloak && keycloak.token && !this.state.loading) {
+      if (this.state.selectedDeliveryPlaceId && keycloak && keycloak.token) {
       const deliveries = await this.loadDeliveries(keycloak.token);
       this.setState({ deliveries: deliveries });
+      }
     }
   }
 
@@ -489,10 +491,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
    */
   private loadDeliveries = (token: string) => {
     const { selectedDeliveryPlaceId, selectedDate } = this.state;
-
     const timeBefore = moment(selectedDate).endOf("day").toDate();
     const timeAfter = moment(selectedDate).startOf("day").toDate();
-
     return Api.getDeliveriesService(token).listDeliveries(
       undefined,
       undefined,
@@ -515,7 +515,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     if (selectedDeliveryPlaceId && keycloak && keycloak.token) {
       this.setState({ loading: true });
       const deliveries = await this.loadDeliveries(keycloak.token);
-
+      deliveries.forEach(d => console.log(d.deliveryPlaceId));
       this.setState({ loading: false, deliveries: deliveries });
     }
   }

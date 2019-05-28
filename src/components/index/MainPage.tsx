@@ -46,6 +46,7 @@ import ProposalsView from "../deliveries/ProposalsView";
 import WeekDeliveryPredictions from "../deliveries/WeekDeliveryPredictions";
 import IncomingDeliveries from "../deliveries/IncomingDeliveries";
 import PastDeliveries from "../deliveries/PastDeliveries";
+import WeekPredictionsManagement from "../deliveries/WeekPredictionsManagement";
 
 /**
  * Interface for component props
@@ -116,10 +117,12 @@ class MainPage extends React.Component<Props, {}> {
         <Route exact path="/editChatGroup/:chatGroupId" component={EditChatGroup}/>
         <Route exact path="/manageFreshDeliveries" component={FreshDeliveryManagement}/>
         <Route exact path="/manageFrozenDeliveries" component={FrozenDeliveryManagement}/>
+        <Route exact path="/manageWeekPredictions" component={WeekPredictionsManagement}/>
         <Route exact path="/proposals" component={ProposalsView}/>
         <Route exact path="/weekDeliveryPredictions" component={WeekDeliveryPredictions}/>
         <Route exact path="/incomingDeliveries" component={IncomingDeliveries}/>
         <Route exact path="/pastDeliveries" component={PastDeliveries}/>
+        
       </div>
     );
   }

@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as actions from "../../actions";
-import { StoreState, DeliveryDataValue, Options } from "src/types";
+import { StoreState, Options } from "src/types";
 import Api, { ItemGroupCategory, ItemGroup, WeekDeliveryPredictionDays, WeekDeliveryPrediction } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
@@ -12,6 +12,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { Link } from "react-router-dom";
 import * as moment from "moment";
 import strings from "src/localization/strings";
+import * as _ from "lodash";
 
 /**
  * Interface for component props
@@ -97,29 +98,45 @@ class CreateWeekDeliveryPrediction extends React.Component<Props, State> {
     const category: ItemGroupCategory = this.props.match.params.category;
     const itemGroupsService = await Api.getItemGroupsService(this.props.keycloak.token);
     const itemGroups = await itemGroupsService.listItemGroups();
-    await this.setLastWeeksTotal();
     const filteredItemGroups: ItemGroup[] = itemGroups.filter((item) => item.category == category);
     this.setState({ filteredItemGroups, category });
   }
 
   /**
-   * Handle inputchange
+   * Handle amount change
    * 
-   * @param key key
    * @param value value
    */
-  private handleInputChange = (key: string, value: DeliveryDataValue) => {
-    const state: State = this.state;
-    state[key] = value;
-    this.setState(state);
+  private handleAmountChange = (value: number) => {
+    const averageDailyAmount: number = Math.round(value / 7);
+    this.setState({ amount: value, averageDailyAmount }, () => {
+      this.calculatePercentage();
+    })
+  }
 
+  /**
+   * Handle inputchange
+   * 
+   * @param itemGroupId
+   */
+  private handleItemGroupChange = (value: string) => {
+    this.setState({ amount: 0, averageDailyAmount: 0, selectedItemGroupId: value }, () => {
+      this.setLastWeeksTotal();
+      this.calculatePercentage();
+    })
+  }
+
+  /**
+   * Calculate percentage
+   */
+  private calculatePercentage = (inputValue?: number) => {
+    const value = inputValue || this.state.amount;
     let percentageAmount: string = "0";
-    const averageDailyAmount: number = Math.round(this.state.amount / 7);
-    if (this.state.lastWeeksDeliveryPredictionTotalAmount > 0 && this.state.amount > 0) {
-      percentageAmount = ((this.state.amount / this.state.lastWeeksDeliveryPredictionTotalAmount) * 100).toFixed(2);
+    const lastWeeksAmount = this.state.lastWeeksDeliveryPredictionTotalAmount > 0 ? this.state.lastWeeksDeliveryPredictionTotalAmount : 1;
+    if (value > 0) {
+      lastWeeksAmount === 1 ? percentageAmount = value.toFixed(2) : percentageAmount = ((value / lastWeeksAmount) * 100 - 100).toFixed(2);
     }
-
-    this.setState({ averageDailyAmount, percentageAmount });
+    this.setState({ percentageAmount });
   }
 
   /**
@@ -142,7 +159,7 @@ class CreateWeekDeliveryPrediction extends React.Component<Props, State> {
         placeholder={placeholder}
         value={value}
         options={options}
-        onChange={(event, data) => { this.handleInputChange(key, data.value) }}
+        onChange={(event, data) => { this.handleItemGroupChange(data.value as string) }}
       />
     );
   }
@@ -191,13 +208,11 @@ class CreateWeekDeliveryPrediction extends React.Component<Props, State> {
 
     const lastWeekNumber: number = moment().subtract(1, "weeks").week();
     const weekDeliveryPredictionService = await Api.getWeekDeliveryPredictionsService(this.props.keycloak.token);
-    const filteredByWeekNumber = await weekDeliveryPredictionService.listWeekDeliveryPredictions(undefined, undefined, this.props.keycloak.subject, lastWeekNumber);
+    const filteredByWeekNumber = await weekDeliveryPredictionService.listWeekDeliveryPredictions(this.state.selectedItemGroupId, undefined, this.props.keycloak.subject, lastWeekNumber, moment().year(), undefined, 999);
 
-    filteredByWeekNumber.forEach((weekDeliveryPrediction) => {
-      const amount: number = weekDeliveryPrediction.amount;
-      const totalAmount = this.state.lastWeeksDeliveryPredictionTotalAmount + amount;
-      this.setState({ lastWeeksDeliveryPredictionTotalAmount: totalAmount });
-    });
+    const lastWeeksDeliveryPredictionTotalAmount = _.sumBy(filteredByWeekNumber, prediction => prediction.amount);
+    this.setState({ lastWeeksDeliveryPredictionTotalAmount });
+
   }
 
   /**
@@ -263,7 +278,7 @@ class CreateWeekDeliveryPrediction extends React.Component<Props, State> {
         <Header as="h2">
           {this.state.category === "FRESH" ? strings.newFreshWeekDeliveryPrediction : strings.newFrozenWeekDeliveryPrediction}
         </Header>
-        <p>{strings.formatString(strings.lastWeekDeliveries, this.state.lastWeeksDeliveryPredictionTotalAmount)}</p>
+        {this.state.selectedItemGroupId && <p>{strings.formatString(strings.lastWeekDeliveries, this.state.lastWeeksDeliveryPredictionTotalAmount)}</p>}
         <Form>
           <Form.Field>
             <label>{strings.product}</label>
@@ -276,7 +291,7 @@ class CreateWeekDeliveryPrediction extends React.Component<Props, State> {
               placeholder={strings.amount}
               value={this.state.amount}
               onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
-                this.handleInputChange("amount", event.currentTarget.value)
+                this.handleAmountChange(Number(event.currentTarget.value))
               }}
             />
             <p style={{ marginTop: "1%" }}>{strings.formatString(strings.dailyAverage, this.state.averageDailyAmount)}
