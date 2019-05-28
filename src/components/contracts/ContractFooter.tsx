@@ -13,7 +13,9 @@ interface Props {
   acceptContract: () => void,
   declineContract: () => void,
   downloadContractPdf?: () => void,
-  approveButtonText: string
+  approveButtonText: string,
+  canAccept: boolean,
+  errorText?: string
 };
 
 /**
@@ -50,21 +52,25 @@ export default class ContractFooter extends React.Component<Props, State> {
     return (
       <React.Fragment>
         {
+          this.props.errorText &&
+          <p style={{ textAlign: "right", color: "red" }}>{this.props.errorText}</p>
+        }
+        {
           this.props.isActiveContract &&
           <Button.Group floated="right" >
             <Button onClick={this.props.downloadContractPdf} color="red">{strings.downloadContractAsPDF}</Button>
             <Button.Or text="" />
-            <Button  onClick={() => this.setState({ redirect: true })}  color="black">{strings.back}</Button>
+            <Button onClick={() => this.setState({ redirect: true })} color="black">{strings.back}</Button>
           </Button.Group>
         }
         {
           !this.props.isActiveContract &&
           <Button.Group floated="right" >
-            <Button onClick={this.props.acceptContract} color="red">{this.props.approveButtonText}</Button>
+            <Button onClick={this.props.acceptContract} disabled={!this.props.canAccept} color="red">{this.props.approveButtonText}</Button>
             <Button.Or text="" />
-            <Button  onClick={this.props.declineContract} inverted color="red">{strings.decline}</Button>
+            <Button onClick={this.props.declineContract} inverted color="red">{strings.decline}</Button>
             <Button.Or text="" />
-            <Button onClick={() => this.setState({ redirect: true })}  color="black">{strings.back}</Button>
+            <Button onClick={() => this.setState({ redirect: true })} color="black">{strings.back}</Button>
           </Button.Group>
         }
       </React.Fragment>

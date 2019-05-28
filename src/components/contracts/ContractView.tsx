@@ -19,6 +19,7 @@ import ContractDocument from "./ContractDocument";
 import ContractRejectModal from "./ContractRejectModal";
 import { Redirect } from "react-router";
 import { PDFService } from "src/api/pdf.service";
+import * as moment from "moment";
 
 /**
  * Interface for component State
@@ -51,6 +52,7 @@ interface State {
   redirect: boolean;
   navigateToTerms: boolean;
   pdfType: string;
+  missingPrerequisiteContract: boolean;
 }
 
 /**
@@ -76,6 +78,7 @@ class ContractView extends React.Component<Props, State> {
       redirect: false,
       navigateToTerms: false,
       pdfType: "2019",
+      missingPrerequisiteContract: false,
       contractData: {
         rejectComment: "",
         proposedQuantity: 0,
@@ -110,6 +113,13 @@ class ContractView extends React.Component<Props, State> {
       this.updateContractData("rejectComment", contract.rejectComment || "");
       this.updateContractData("proposedQuantity", contract.proposedQuantity || contract.contractQuantity || "");
       this.updateContractData("areaDetailValues", contract.areaDetails || []);
+    }
+
+
+    const prerequisiteContractItemGroupId = itemGroup ? itemGroup.prerequisiteContractItemGroupId : null;
+    if (prerequisiteContractItemGroupId) {
+      const hasContract = (await this.hasContractInItemGroup(prerequisiteContractItemGroupId, "APPROVED")) || (await this.hasContractInItemGroup(prerequisiteContractItemGroupId, "ON_HOLD"));
+      this.setState({ missingPrerequisiteContract: !hasContract });
     }
 
     this.setState({
@@ -222,7 +232,7 @@ class ContractView extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.state.contract || !this.props.keycloak.token) {
       return;
     }
-
+    const contractsService = await Api.getContractsService(this.props.keycloak.token);
     const contractData = this.state.contractData;
     const contract = this.state.contract;
 
@@ -231,6 +241,9 @@ class ContractView extends React.Component<Props, State> {
     contract.deliveryPlaceComment = contractData.deliveryPlaceComment;
     contract.proposedQuantity = contractData.proposedQuantity;
     contract.quantityComment = contractData.quantityComment;
+    if (this.state.companyApprovalRequired) {
+      contract.status = "ON_HOLD";
+    }
 
     if (contractData.areaDetailValues && contractData.areaDetailValues.length > 0) {
       const areaDetails: AreaDetail[] = [];
@@ -246,7 +259,7 @@ class ContractView extends React.Component<Props, State> {
       contract.areaDetails = areaDetails;
     }
 
-    const contractsService = await Api.getContractsService(this.props.keycloak.token);
+
     const updatedContract = await contractsService.updateContract(contract, contract.id || "");
 
     if (updatedContract.status !== "DRAFT") {
@@ -258,6 +271,18 @@ class ContractView extends React.Component<Props, State> {
     }
   }
 
+  /**
+   * 
+   * @returns returns whether logged user has given itemgroup and status
+   */
+  private hasContractInItemGroup = async (itemGroupId: string, status: string) => {
+    if (!this.props.keycloak || !this.props.keycloak.token) {
+      return false;
+    }
+    const contractsService = await Api.getContractsService(this.props.keycloak.token);
+    const contracts = await contractsService.listContracts("application/json", undefined, undefined, itemGroupId, moment().year(), status);
+    return contracts.length > 0;
+  }
   /**
    * Decline button clicked
    */
@@ -399,6 +424,8 @@ class ContractView extends React.Component<Props, State> {
             contractId={this.state.contract && this.state.contract.id || ""}
           />
           <ContractFooter
+            canAccept={!this.state.missingPrerequisiteContract}
+            errorText={this.state.missingPrerequisiteContract ? "Sinulta puuttu hyväksytty sopimus pakastemarjasta. Tarkasta, muuta tarvittaessa ja hyväksy ensin sopimus pakastemarjasta" : undefined}
             isActiveContract={this.state.contract ? this.state.contract.status === "APPROVED" : false}
             downloadContractPdf={this.downloadContractPdfClicked}
             acceptContract={this.acceptContractClicked}
