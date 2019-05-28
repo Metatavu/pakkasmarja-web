@@ -1,17 +1,21 @@
 import * as React from "react";
 import * as actions from "../../actions";
 import * as _ from "lodash";
-import { StoreState, DeliveriesState, Options, DeliveryDataValue, HttpErrorResponse } from "../../types";
+import { StoreState, DeliveriesState, Options, DeliveryDataValue, HttpErrorResponse, deliveryNoteImg64 } from "../../types";
 import Api, { Product, DeliveryPlace, Delivery, DeliveryNote, DeliveryQuality } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
-import { Dropdown, Form, Input, Button, Modal, Segment } from "semantic-ui-react";
+import { Dropdown, Form, Input, Button, Modal, Segment, Image } from "semantic-ui-react";
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import fi from 'date-fns/esm/locale/fi';
 import strings from "../../localization/strings";
 import PriceChart from "../generic/PriceChart";
+import { FileService } from "src/api/file.service";
+import Lightbox from 'react-image-lightbox';
+import 'react-image-lightbox/style.css';
+import DeliveryNoteModal from "./DeliveryNoteModal";
 
 /**
  * Interface for component props
@@ -42,7 +46,10 @@ interface State {
   date: Date,
   category: string,
   deliveryNotes: DeliveryNote[],
+  deliveryNotesWithImgBase64: deliveryNoteImg64[],
+  openImage?: string,
   deliveryId?: string,
+  modalOpen: boolean,
   userId: string
   redBoxesLoaned: number
   redBoxesReturned: number
@@ -69,13 +76,15 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       date: new Date(),
       category: "",
       deliveryNotes: [],
+      deliveryNotesWithImgBase64: [],
       amount: 0,
       userId: "",
       deliveryQualities: [],
       redBoxesLoaned: 0,
       redBoxesReturned: 0,
       grayBoxesLoaned: 0,
-      grayBoxesReturned: 0
+      grayBoxesReturned: 0,
+      modalOpen: false
     };
     registerLocale('fi', fi);
   }
@@ -114,7 +123,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
 
     const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(itemGroup.category);
 
-    this.setState({
+    await this.setState({
       products,
       deliveryPlaces,
       userId: delivery.userId,
@@ -127,6 +136,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       deliveryQualities: deliveryQualities,
       loading: false
     });
+    this.getNotes();
   }
 
   /**
@@ -174,6 +184,75 @@ class ManageDeliveryModal extends React.Component<Props, State> {
         }
       />
     );
+  }
+
+  /**
+   * Get notes
+   */
+  private getNotes = async () => {
+    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.deliveryId || !process.env.REACT_APP_API_URL) {
+      return;
+    }
+    const deliveriesService = await Api.getDeliveriesService(this.props.keycloak.token);
+    const deliveryNotes = await deliveriesService.listDeliveryNotes(this.state.deliveryId);
+    const fileService = new FileService(process.env.REACT_APP_API_URL, this.props.keycloak.token);
+    const deliveryNotesWithImgBase64Promises = deliveryNotes.map(async (note) => {
+      if (note.image) {
+        const imageData = await fileService.getFile(note.image || "");
+        const src = `data:image/jpeg;base64,${imageData.data}`
+        const deliveryNoteImg64: deliveryNoteImg64 = { text: note.text, img64: src, id: note.id };
+        return deliveryNoteImg64;
+      } else {
+        const deliveryNoteImg64: deliveryNoteImg64 = { text: note.text, img64: "", id: note.id };
+        return deliveryNoteImg64;
+      }
+
+    })
+    const deliveryNotesWithImgBase64 = await Promise.all(deliveryNotesWithImgBase64Promises.map(note => Promise.resolve(note)))
+    this.setState({ deliveryNotes, deliveryNotesWithImgBase64 });
+  }
+
+  /**
+   * Add delivery note to state
+   * 
+   * @param deliveryNote deliveryNote
+   */
+  private addDeliveryNote = async (deliveryNote: DeliveryNote) => {
+    if (!process.env.REACT_APP_API_URL || !this.props.keycloak || !this.props.keycloak.token || !this.state.deliveryId) {
+      return;
+    }
+    const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
+    await deliveryService.createDeliveryNote(deliveryNote, this.state.deliveryId);
+    this.getNotes();
+  }
+
+  /**
+   * Remove note
+   */
+  private removeNote = async (note: deliveryNoteImg64, index: number) => {
+    if (note.id) {
+      if (!this.props.keycloak || !this.props.keycloak.token || !process.env.REACT_APP_API_URL || !this.state.deliveryId) {
+        return;
+      }
+      const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
+      this.filterNotes(index);
+      return deliveryService.deleteDeliveryNote(this.state.deliveryId, note.id);
+    } else {
+      this.filterNotes(index);
+    }
+  }
+
+  /**
+   * filter notes and add to state
+   * 
+   * @param index
+   */
+  private filterNotes = (index: number) => {
+    const deliveryNotesWithImgBase64 = this.state.deliveryNotesWithImgBase64;
+    const newNotesWith64 = deliveryNotesWithImgBase64.filter((note, i) => i !== index);
+    const deliveryNotes = this.state.deliveryNotes;
+    const newDeliveryNotes = deliveryNotes.filter((note, i) => i !== index);
+    this.setState({ deliveryNotesWithImgBase64: newNotesWith64, deliveryNotes: newDeliveryNotes });
   }
 
   /**
@@ -296,7 +375,10 @@ class ManageDeliveryModal extends React.Component<Props, State> {
             </Form.Field>
             <Form.Field>
               <label>Hinta</label>
-              <PriceChart showLatestPrice productId={this.state.selectedProductId || ""} />
+              {
+                this.state.selectedProductId &&
+                <PriceChart showLatestPrice productId={this.state.selectedProductId} />
+              }
             </Form.Field>
             <Form.Field>
               <label>{strings.product}</label>
@@ -384,8 +466,40 @@ class ManageDeliveryModal extends React.Component<Props, State> {
               <label>{strings.deliveryPlace}</label>
               {this.renderDropDown(deliveryPlaceOptions, "selectedPlaceId")}
             </Form.Field>
+            {this.state.deliveryNotesWithImgBase64[0] ?
+              this.state.deliveryNotesWithImgBase64.map((deliveryNote, i) => {
+                return (
+                  <React.Fragment key={`${deliveryNote.text} ${i}`}>
+                    <h4 style={{ marginTop: 5 }}>Huomio {i + 1}</h4>
+                    <div style={{ marginBottom: 10 }} className="delivery-note-container">
+                      <div className="delivery-note-img-container">
+                        <p>{deliveryNote.img64 ? <Image onClick={() => this.setState({ openImage: deliveryNote.img64 })} src={deliveryNote.img64} size="small" /> : "Ei kuvaa"}</p>
+                      </div>
+                      <div className="delivery-note-text-container">
+                        <p style={{ padding: 20 }}> {deliveryNote.text}</p>
+                      </div>
+                      <div style={{ display: "flex", flex: 0.3, minHeight: "100px", alignItems: "center" }}>
+                        <Button onClick={() => this.removeNote(deliveryNote, i)} color="black">Poista huomio</Button>
+                      </div>
+                    </div>
+                  </React.Fragment>
+                )
+              }) : null
+            }
+            <Button color="red" inverted onClick={() => this.setState({ modalOpen: true })}>{strings.addNote}</Button>
             {this.renderSubmitButton()}
           </Form>
+          {this.state.openImage &&
+            <Lightbox
+              mainSrc={this.state.openImage}
+              onCloseRequest={() => this.setState({ openImage: undefined })}
+            />
+          }
+          <DeliveryNoteModal
+            modalOpen={this.state.modalOpen}
+            closeModal={() => this.setState({ modalOpen: false })}
+            addDeliveryNote={this.addDeliveryNote}
+          />
         </Modal.Content>
       </Modal>
     );
@@ -438,18 +552,18 @@ class ManageDeliveryModal extends React.Component<Props, State> {
    */
   private renderSubmitButton() {
     if (this.props.delivery.status == "DONE") {
-      return <Button disabled color="grey" type='submit'>Toimitus on jo hyväksytty</Button>;
+      return <Button disabled floated="right" color="grey" type='submit'>Toimitus on jo hyväksytty</Button>;
     }
 
     if (this.props.delivery.status == "REJECTED") {
-      return <Button disabled color="grey" type='submit'>Toimitus hylätty</Button>;
+      return <Button disabled floated="right" color="grey" type='submit'>Toimitus hylätty</Button>;
     }
 
     if (this.props.delivery.status == "PROPOSAL") {
-      return <Button disabled={!this.isValid()} color="green" onClick={this.handleDeliverySave} type='submit'>Muokkaa ehdotusta</Button>;
+      return <Button disabled={!this.isValid()} floated="right" color="green" onClick={this.handleDeliverySave} type='submit'>Muokkaa ehdotusta</Button>;
     }
 
-    return <Button disabled={!this.isValid()} color="red" onClick={this.handleDeliveryAccept} type='submit'>Hyväksy toimitus</Button>;
+    return <Button disabled={!this.isValid()} floated="right" color="red" onClick={this.handleDeliveryAccept} type='submit'>Hyväksy toimitus</Button>;
   }
 
   /**

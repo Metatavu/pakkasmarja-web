@@ -71,12 +71,17 @@ class MenuContainer extends React.Component<Props, object> {
               <Link to="/chatManagement">{strings.chatManagement}</Link>
             </Menu.Item>
           }
+          { this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.LIST_ALL_WEEK_DELIVERY_PREDICTION) &&
+            <Menu.Item as="div">
+              <Link to="/manageWeekPredictions">Viikkoennusteet</Link>
+            </Menu.Item>
+          }
           { this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_DELIVERIES) &&
             <Menu.Menu>
               <Dropdown item simple text="Vastaanotto">
                 <Dropdown.Menu>
-                  <Dropdown.Item to="/manageFreshDeliveries" as={Link}>Tuoreet</Dropdown.Item>
-                  <Dropdown.Item to="/manageFrozenDeliveries" as={Link}>Pakasteet</Dropdown.Item>
+                  <Dropdown.Item to="/manageFreshDeliveries" as={Link}>Tuore toimitukset</Dropdown.Item>
+                  <Dropdown.Item to="/manageFrozenDeliveries" as={Link}>Pakaste toimitukset</Dropdown.Item>
                 </Dropdown.Menu>
               </Dropdown>
             </Menu.Menu>

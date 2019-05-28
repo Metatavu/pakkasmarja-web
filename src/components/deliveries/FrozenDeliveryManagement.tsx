@@ -163,7 +163,7 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
     return (
       <TableBasicLayout topBarButtonText={this.state.selectedDeliveryPlaceId ? "+ Uusi ehdotus viljelijälle" : undefined} onTopBarButtonClick={this.state.selectedDeliveryPlaceId ? () => this.setState({ newDeliveryModalOpen: true }) : undefined} error={this.state.error} onErrorClose={() => this.setState({ error: undefined })} pageTitle="Päiväennuste, pakasteet">
         <div style={{ display: "flex", flex: 1, flexDirection: "column" }}>
-          <div style={{ display: "flex", flex: 1, justifyContent: "center", padding: 10, fontSize:"1.5em" }}><p>Valitse toimituspaikka ja päivämäärä</p></div>
+          <div style={{ display: "flex", flex: 1, justifyContent: "center", padding: 10, fontSize: "1.5em" }}><p>Valitse toimituspaikka ja päivämäärä</p></div>
           <div style={{ display: "flex", flex: 1, flexDirection: "row" }}>
             <div style={{ display: "flex", flex: 1, justifyContent: "flex-end", marginRight: "0.5%" }}>
               <Dropdown
@@ -211,9 +211,9 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
             onUpdate={() => { this.setState({ selectedDelivery: undefined }); this.updateTableData(); }}
             onClose={() => this.setState({ selectedDelivery: undefined })}
             open={true}
-            delivery={this.state.selectedDelivery} 
+            delivery={this.state.selectedDelivery}
             category="FROZEN"
-            />
+          />
         }
         {this.state.proposalContactId && this.state.proposalProduct &&
           <Modal size="tiny" open={true} onClose={() => this.setState({ proposalContactId: undefined, proposalProduct: undefined })}>
@@ -237,47 +237,47 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
                 this.reloadDeliveries();
               }
             }}
-            products={this.state.products} 
-            date={this.state.selectedDate} 
+            products={this.state.products}
+            date={this.state.selectedDate}
             deliveryPlaceId={this.state.selectedDeliveryPlaceId}
-            deliveryPlace={this.state.deliveryPlaces.find(place => place.id === this.state.selectedDeliveryPlaceId)} 
-            />
+            deliveryPlace={this.state.deliveryPlaces.find(place => place.id === this.state.selectedDeliveryPlaceId)}
+          />
         }
       </TableBasicLayout>
     );
   }
 
-  private getTableRows(deliveries: Delivery[]) {
+  private getTableRows(deliveries: Delivery[], initialIndex?: number) {
 
     const { products } = this.state;
 
     const tableRows: JSX.Element[] = [];
-    let index = 0;
+    let index = initialIndex || 0;
     const contactIds = _.uniq(deliveries.map(delivery => delivery.userId));
     for (let i = 0; i < contactIds.length; i++) {
       index++;
       let tableCells: JSX.Element[] = [];
       let contactId = contactIds[i];
       let contact = this.getContact(contactId);
-      tableCells.push(<Table.Cell>{contact ? contact.displayName : <Loader size="mini" inline />}</Table.Cell>);
+      tableCells.push(<Table.Cell key={`${index}-${contactId}`}>{contact ? contact.displayName : <Loader size="mini" inline />}</Table.Cell>);
       for (let j = 0; j < products.length; j++) {
         let product = products[j];
         const productDeliveries = this.listContactDeliveries(contactId, product, deliveries);
         if (!productDeliveries.length) {
           tableCells.push(
             <Table.Cell
-              key={`${contactId}-${product.id}`}
+              key={`${index}-${contactId}-${product.id}`}
               selectable
               onClick={() => this.handleCreateDelivery(contactId, product)} />
           );
         } else {
           if (productDeliveries.length > 1) {
             const deliveryButtons = productDeliveries.map((delivery) => {
-              return <Button basic onClick={() => this.handleEditDelivery(delivery!)}> {delivery.amount} ({this.getDeliveryStatusText(delivery)}) </Button>
+              return <Button key={delivery.id} basic onClick={() => this.handleEditDelivery(delivery!)}> {delivery.amount} ({this.getDeliveryStatusText(delivery)}) </Button>
             });
 
             tableCells.push(
-              <Table.Cell key={`${contactId}-${product.id}`} style={{ paddingLeft: "5px", paddingRight: "5px" }} selectable onClick={() => { }}>
+              <Table.Cell key={`${index}-${contactId}-${product.id}`} style={{ paddingLeft: "5px", paddingRight: "5px" }} selectable onClick={() => { }}>
                 <Popup style={{ textAlign: "center", whiteSpace: "nowrap" }} wide trigger={<Button style={{ width: "100%" }} basic content='Valitse' />} on='click'>
                   {deliveryButtons}
                 </Popup>
@@ -288,7 +288,7 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
             const textStyle = this.getDeliveryTextStyle(delivery);
             tableCells.push(
               <Table.Cell
-                key={`${contactId}-${product.id}`}
+                key={`${index}-${contactId}-${product.id}`}
                 style={{ ...textStyle }}
                 selectable
                 onClick={() => this.handleEditDelivery(delivery!)}>
