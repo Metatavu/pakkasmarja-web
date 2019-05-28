@@ -9,10 +9,9 @@ import strings from "src/localization/strings";
  * Interface for component State
  */
 interface Props {
-  itemGroup?: ItemGroup;
-  areaDetails?: AreaDetail[];
+  itemGroup: ItemGroup;
   areaDetailValues: AreaDetail[];
-  isActiveContract: boolean;
+  isReadOnly: boolean;
   onUserInputChange: (key: any, value: any) => void;
 }
 
@@ -101,8 +100,8 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
    * @param size size
    * @param species species
    */
-  private renderAreaDetailsRow = (index: number, name?: string, size?: number, species?: string) => {
-    const minimumEstimation = this.props.itemGroup ? this.props.itemGroup.minimumProfitEstimation : null;
+  private renderAreaDetailsRow = (index: number, name?: string, size?: number, species?: string, profitEstimation?: number) => {
+    const minimumEstimation = this.props.itemGroup && this.props.itemGroup.minimumProfitEstimation ? this.props.itemGroup.minimumProfitEstimation : null;
 
     const style = {
       height: 40,
@@ -115,20 +114,20 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
     }
 
     return (
-      <Grid.Row style={{paddingTop:0}} key={index} columns={!minimumEstimation ? "4" : "3"}>
+      <Grid.Row style={{ paddingTop: 0 }} key={index} columns={!minimumEstimation ? "4" : "3"}>
         <Grid.Column>
-          {this.renderInputField(index, "name", !this.props.isActiveContract, name || "", style)}
+          {this.renderInputField(index, "name", !this.props.isReadOnly, name || "", style)}
         </Grid.Column>
         <Grid.Column>
-          {this.renderInputField(index, "size", !this.props.isActiveContract, size && size.toString() || "", style)}
+          {this.renderInputField(index, "size", !this.props.isReadOnly, size && size.toString() || "", style, "number")}
         </Grid.Column>
         <Grid.Column>
-          {this.renderInputField(index, "species", !this.props.isActiveContract, species || "", style)}
+          {this.renderInputField(index, "species", !this.props.isReadOnly, species || "", style)}
         </Grid.Column>
         {
           !minimumEstimation &&
           <Grid.Column>
-            {this.renderInputField(index, "profitEstimation", !this.props.isActiveContract, "0", style)}
+            {this.renderInputField(index, "profitEstimation", !this.props.isReadOnly, profitEstimation || 0, style, "number")}
           </Grid.Column>
         }
       </Grid.Row>
@@ -145,11 +144,12 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
    * @param value value
    * @param style style
    */
-  private renderInputField = (index: number, key: string, editable: boolean, value: string, style: any) => {
+  private renderInputField = (index: number, key: string, editable: boolean, value: string | number, style: any, type?: string) => {
     return (
       <Input
         style={style}
         value={value}
+        type={type}
         disabled={!editable}
         onChange={(e: any) => this.handleInputChange(index, key, e.target.value)}
       />
@@ -193,7 +193,7 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
     }, 0);
 
     const totalProfit = this.props.areaDetailValues.reduce((total, areaDetailValue) => {
-      const estimation = minimumProfit || 0;
+      const estimation = minimumProfit || areaDetailValue.profitEstimation || 0;
       const totalHectares = areaDetailValue.size ? areaDetailValue.size : 0;
 
       return total += estimation * totalHectares;
@@ -201,7 +201,7 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
 
     if (minimumProfit) {
       return (
-        <div style={{marginTop:10}}>
+        <div style={{ marginTop: 10 }}>
           <p>
             {strings.formatString(strings.totalAmountOfBlocks, blocks, totalHectares)}
           </p>
@@ -223,15 +223,12 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
    * Render method
    */
   public render() {
-    if (!this.props.areaDetails || !this.props.itemGroup) {
-      return <div></div>;
-    }
 
     return (
       <div className="contract-white-container">
-          <Header as='h2'>
-            {strings.hectaresInProduction}
-         </Header>
+        <Header as='h2'>
+          {strings.hectaresInProduction}
+        </Header>
         <Grid >
           {
             this.renderAreaDetailHeaders()
@@ -239,15 +236,15 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
           {
             this.props.areaDetailValues && this.props.areaDetailValues.length > 0 && this.props.areaDetailValues.map((areaDetail, index) => {
               return (
-                this.renderAreaDetailsRow(index, areaDetail.name, areaDetail.size, areaDetail.species)
+                this.renderAreaDetailsRow(index, areaDetail.name, areaDetail.size, areaDetail.species, areaDetail.profitEstimation)
               );
             })
           }
         </Grid>
         {
-          !this.props.isActiveContract &&
-            <Button className="contract-full-width-button"color="red" onClick={this.createEmptyAreaDetail}>
-              {strings.addRow}
+          !this.props.isReadOnly &&
+          <Button className="contract-full-width-button" color="red" onClick={this.createEmptyAreaDetail}>
+            {strings.addRow}
           </Button>
         }
         {

@@ -8,9 +8,9 @@ import strings from "src/localization/strings";
  * Interface for component State
  */
 interface Props {
-  itemGroup?: ItemGroup;
-  contract?: Contract;
-  contracts?: Contract[];
+  itemGroup: ItemGroup;
+  contract: Contract;
+  contracts: Contract[];
   onUserInputChange: (key: any, value: any) => void;
   proposedAmount: number;
   contractAmount?: number;
@@ -23,7 +23,7 @@ interface Props {
  */
 interface State {
   showPastContracts: boolean;
-  isActiveContract: boolean;
+  isReadOnly: boolean;
   pastContracts: Contract[];
 }
 
@@ -41,7 +41,7 @@ export default class ContractAmount extends React.Component<Props, State> {
     super(props);
     this.state = {
       showPastContracts: false,
-      isActiveContract: false,
+      isReadOnly: false,
       pastContracts: []
     };
   }
@@ -50,11 +50,7 @@ export default class ContractAmount extends React.Component<Props, State> {
    * Component did mount 
    */
   public componentDidMount = () => {
-    if (!this.props.contract || !this.props.contracts) {
-      return;
-    }
-
-    this.setState({ isActiveContract: this.props.contract.status === "APPROVED" });
+    this.setState({ isReadOnly: this.props.contract.status !== "DRAFT" });
     const pastContracts = this.props.contracts.filter(contract => contract.year < new Date().getFullYear());
     this.setState({ pastContracts: pastContracts });
   }
@@ -63,10 +59,6 @@ export default class ContractAmount extends React.Component<Props, State> {
    * Render method
    */
   public render() {
-    if (!this.props.contract || !this.props.itemGroup) {
-      return <div></div>;
-    }
-
     const category = this.props.itemGroup.category;
     const quantityValue = this.props.proposedAmount || this.props.contractAmount;
 
@@ -88,7 +80,7 @@ export default class ContractAmount extends React.Component<Props, State> {
               placeholder={strings.amount}
               value={quantityValue}
               onChange={(event: any) => this.props.onUserInputChange("proposedQuantity", event.target.value)}
-              disabled={this.state.isActiveContract}
+              disabled={this.state.isReadOnly}
             />
           </Form.Field>
           <p>
@@ -102,7 +94,7 @@ export default class ContractAmount extends React.Component<Props, State> {
             <Checkbox
               checked={this.props.deliverAllChecked}
               onChange={(event: any) => {
-                !this.state.isActiveContract && this.props.onUserInputChange("deliverAllChecked", !this.props.deliverAllChecked)
+                !this.state.isReadOnly && this.props.onUserInputChange("deliverAllChecked", !this.props.deliverAllChecked)
               }}
               label={strings.wantToDeliverAll}
             />
@@ -111,7 +103,7 @@ export default class ContractAmount extends React.Component<Props, State> {
             <TextArea
               value={this.props.quantityComment}
               onChange={(event: any) => {
-                !this.state.isActiveContract && this.props.onUserInputChange("quantityComment", event.target.value)
+                !this.state.isReadOnly && this.props.onUserInputChange("quantityComment", event.target.value)
               }}
               placeholder={strings.comment}
             />

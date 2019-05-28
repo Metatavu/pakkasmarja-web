@@ -370,7 +370,7 @@ class ContractView extends React.Component<Props, State> {
       return <Redirect to={`/contracts/${this.state.contract.id}/terms`} push={true} />;
     }
 
-    if (this.state.loading) {
+    if (this.state.loading || !this.state.contracts || !this.state.contract || !this.state.itemGroup || !this.state.deliveryPlaces) {
       return (
         <BasicLayout>
           <Dimmer active inverted>
@@ -399,6 +399,7 @@ class ContractView extends React.Component<Props, State> {
           <ContractAmount
             itemGroup={this.state.itemGroup}
             contract={this.state.contract}
+            contracts={this.state.contracts}
             onUserInputChange={this.updateContractData}
             contractAmount={this.state.contract ? this.state.contract.contractQuantity : 0}
             proposedAmount={this.state.contractData.proposedQuantity}
@@ -407,9 +408,8 @@ class ContractView extends React.Component<Props, State> {
           />
           <ContractAreaDetails
             itemGroup={this.state.itemGroup}
-            areaDetails={this.state.contract ? this.state.contract.areaDetails : undefined}
             areaDetailValues={this.state.contractData.areaDetailValues}
-            isActiveContract={this.state.contract ? this.state.contract.status === "APPROVED" : false}
+            isReadOnly={this.state.contract.status !== "DRAFT"}
             onUserInputChange={this.updateContractData}
           />
           <ContractDeliveryPlace
@@ -418,7 +418,7 @@ class ContractView extends React.Component<Props, State> {
             deliveryPlaces={this.state.deliveryPlaces}
             selectedPlaceId={this.state.contractData.deliveryPlaceId}
             deliveryPlaceComment={this.state.contractData.deliveryPlaceComment}
-            isActiveContract={this.state.contract ? this.state.contract.status === "APPROVED" : false}
+            isReadOnly={this.state.contract.status !== "DRAFT"}
           />
           <ContractDocument
             contractId={this.state.contract && this.state.contract.id || ""}

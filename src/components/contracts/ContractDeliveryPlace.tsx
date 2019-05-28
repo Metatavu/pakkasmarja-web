@@ -7,14 +7,13 @@ import strings from "src/localization/strings";
  * Interface for component props
  */
 interface Props {
-  contract?: Contract,
-  deliveryPlaces?: DeliveryPlace[],
+  contract: Contract,
+  deliveryPlaces: DeliveryPlace[],
   styles?: any,
   onUserInputChange: (key: any, value: any) => void,
   selectedPlaceId: string,
   deliveryPlaceComment: string,
-  isActiveContract: boolean,
-  match?: any;
+  isReadOnly: boolean,
 };
 
 /**
@@ -71,20 +70,21 @@ export default class ContractDeliveryPlace extends React.Component<Props, State>
   /**
    * Render drop down
    * 
-   * @param deliveryPalceOptions deliveryPalceOptions
+   * @param deliveryPlaceOptions deliveryPalceOptions
    */
-  private renderDropDown = (deliveryPalceOptions: any) => {
-    if (deliveryPalceOptions.length <= 0) {
-      return <Dropdown fluid/>;
+  private renderDropDown = (deliveryPlaceOptions: any) => {
+    if (deliveryPlaceOptions.length <= 0) {
+      return <Dropdown fluid />;
     }
 
     return (
       <Dropdown
         fluid
         selection
+        disabled={this.props.isReadOnly}
         placeholder={strings.deliveryPlace}
         value={this.props.selectedPlaceId}
-        options={deliveryPalceOptions}
+        options={deliveryPlaceOptions}
         onChange={(event, data) => {
           this.props.onUserInputChange("deliveryPlaceId", data.value)
         }
@@ -97,7 +97,7 @@ export default class ContractDeliveryPlace extends React.Component<Props, State>
    * Render method
    */
   public render() {
-    const deliveryPalceOptions = this.props.deliveryPlaces && this.props.deliveryPlaces.map((deliveryPlace) => {
+    const deliveryPlaceOptions = this.props.deliveryPlaces && this.props.deliveryPlaces.map((deliveryPlace) => {
       return {
         key: deliveryPlace.id || "",
         text: deliveryPlace.name || "",
@@ -110,24 +110,25 @@ export default class ContractDeliveryPlace extends React.Component<Props, State>
         <div className="contract-blue-container">
           <Header as='h2'>
             {strings.deliveryPlace}
-         </Header>
-        <Form>
-          {this.renderDropDown(deliveryPalceOptions)}
-          {
-            this.state.proposedDeliveryPlace &&
-            <p>
-              {`Pakkasmarjan ehdotus: ${this.state.proposedDeliveryPlace}`}
-            </p>
-          }
-          <p>{strings.comment}</p>
+          </Header>
+          <Form>
+            {this.renderDropDown(deliveryPlaceOptions)}
+            {
+              this.state.proposedDeliveryPlace &&
+              <p>
+                {`Pakkasmarjan ehdotus: ${this.state.proposedDeliveryPlace}`}
+              </p>
+            }
+            <p>{strings.comment}</p>
 
-          <TextArea
-            value={this.props.deliveryPlaceComment}
-            onChange={(event: any) => {
-              !this.props.isActiveContract && this.onDeliveryPlaceChange(event.target.value)
-            }}
-          />
-        </Form>
+            <TextArea
+              value={this.props.deliveryPlaceComment}
+              onChange={(event: any) => {
+                !this.props.isReadOnly && this.onDeliveryPlaceChange(event.target.value)
+              }}
+              disabled={this.props.isReadOnly}
+            />
+          </Form>
         </div>
       </Container>
     );
