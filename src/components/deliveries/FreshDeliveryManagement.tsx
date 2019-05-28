@@ -515,7 +515,6 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     if (selectedDeliveryPlaceId && keycloak && keycloak.token) {
       this.setState({ loading: true });
       const deliveries = await this.loadDeliveries(keycloak.token);
-      deliveries.forEach(d => console.log(d.deliveryPlaceId));
       this.setState({ loading: false, deliveries: deliveries });
     }
   }
