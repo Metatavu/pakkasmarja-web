@@ -154,7 +154,7 @@ class PastDeliveries extends React.Component<Props, State> {
                               <Item className="open-modal-element" key={deliveryProduct.delivery.id} onClick={() => this.handleItemClick(deliveryProduct)}>
                                 <Item.Content>
                                   <Item.Header style={{ fontWeight: 500 }}>{`${deliveryProduct.product.name} ${deliveryProduct.delivery.amount} x ${deliveryProduct.product.units} ${deliveryProduct.product.unitName} `}</Item.Header>
-                                  <Item.Description>{`${Number(moment(deliveryProduct.delivery.time).utc().format("HH")) > 12 ? "Jälkeen kello 11" : "Ennen kello 11"}`}</Item.Description>
+                                  <Item.Description>{`${Number(moment(deliveryProduct.delivery.time).utc().format("HH")) > 12 ? "Jälkeen kello 12" : "Ennen kello 12"}`}</Item.Description>
                                 </Item.Content>
                                 {deliveryProduct.delivery.qualityId && this.renderQuality(deliveryProduct.delivery.qualityId)}
                               </Item>

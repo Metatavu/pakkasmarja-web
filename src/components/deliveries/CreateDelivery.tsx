@@ -284,11 +284,11 @@ class CreateDelivery extends React.Component<Props, State> {
 
     const deliveryTimeValue: Options[] = [{
       key: "deliveryTimeValue1",
-      text: "Ennen kello 11",
+      text: "Ennen kello 12",
       value: 11
     }, {
       key: "deliveryTimeValue2",
-      text: "Jälkeen kello 11",
+      text: "Jälkeen kello 12",
       value: 17
     }]
 

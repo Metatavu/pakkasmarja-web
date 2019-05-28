@@ -151,7 +151,7 @@ class ViewModal extends React.Component<Props, State> {
                   <h4>Toimituspäivä</h4>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p>{`${moment(deliveryProduct.delivery.time).format("DD.MM.YYYY")} - ${Number(moment(deliveryProduct.delivery.time).utc().format("HH")) > 12 ? "Jälkeen kello 11" : "Ennen kello 11"}`}</p>
+                  <p>{`${moment(deliveryProduct.delivery.time).format("DD.MM.YYYY")} - ${Number(moment(deliveryProduct.delivery.time).utc().format("HH")) > 12 ? "Jälkeen kello 12" : "Ennen kello 12"}`}</p>
                 </div>
               </div>
               {deliveryProduct.delivery.price ?

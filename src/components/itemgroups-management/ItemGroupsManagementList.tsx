@@ -7,7 +7,7 @@ import "../../styles/common.css";
 import "./styles.css";
 import Api, { ItemGroupDocumentTemplate } from "pakkasmarja-client";
 import { ItemGroup } from "pakkasmarja-client";
-import { Header, List, Dimmer, Loader, Button } from "semantic-ui-react";
+import { Header, List, Dimmer, Loader } from "semantic-ui-react";
 import { Table } from 'semantic-ui-react';
 import { Link, Redirect } from "react-router-dom";
 import BasicLayout from "../generic/BasicLayout";
@@ -165,9 +165,6 @@ class ItemGroupsManagementList extends React.Component<Props, State> {
                 Marjalajin nimi
               </Table.HeaderCell>
               <Table.HeaderCell width={3}>
-                <Button as={Link} to="createItemGroup" color="red" style={{ width: "100%" }}>
-                  Uusi marjalaji
-                </Button>
               </Table.HeaderCell>
             </Table.Row>
           </Table.Header>

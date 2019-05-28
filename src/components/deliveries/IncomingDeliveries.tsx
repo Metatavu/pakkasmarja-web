@@ -254,7 +254,7 @@ class IncomingDeliveries extends React.Component<Props, State> {
                               <Item key={deliveryProduct.delivery.id}>
                                 <Item.Content className="open-modal-element" onClick={() => { this.setState({ deliveryProduct, deliveryId: deliveryProduct.delivery.id, viewModal: true }) }}>
                                   <Item.Header style={{ fontWeight: 500 }}>{`${deliveryProduct.product.name} ${deliveryProduct.delivery.amount} x ${deliveryProduct.product.units} ${deliveryProduct.product.unitName} `}</Item.Header>
-                                  <Item.Description>{`${Number(moment(deliveryProduct.delivery.time).utc().format("HH")) > 12 ? "Jälkeen kello 11" : "Ennen kello 11"}`}</Item.Description>
+                                  <Item.Description>{`${Number(moment(deliveryProduct.delivery.time).utc().format("HH")) > 12 ? "Jälkeen kello 12" : "Ennen kello 12"}`}</Item.Description>
                                 </Item.Content>
                                 {
                                   this.renderStatus(deliveryProduct)
