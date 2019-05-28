@@ -146,7 +146,7 @@ class ContractList extends React.Component<Props, State> {
       contractsLoading: true
     });
 
-    const questionGroupThreads = await Api.getChatThreadsService(this.props.keycloak.token).listChatThreads(questionGroupId, "QUESTION");
+    const questionGroupThreads = await Api.getChatThreadsService(this.props.keycloak.token).listChatThreads(questionGroupId, "QUESTION", this.props.keycloak.subject);
     if (questionGroupThreads.length != 1) {
       return; //Application is misconfigured, bail out.
     }
