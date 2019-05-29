@@ -12,3 +12,9 @@ export type CHAT_OPEN = typeof CHAT_OPEN;
 
 export const CHAT_CLOSE = "CHAT_CLOSE";
 export type CHAT_CLOSE = typeof CHAT_CLOSE;
+
+export const UNREADS_UPDATE = "UNREADS_UPDATE";
+export type UNREADS_UPDATE = typeof UNREADS_UPDATE;
+
+export const UNREAD_REMOVED = "UNREAD_REMOVED";
+export type UNREAD_REMOVED = typeof UNREAD_REMOVED;

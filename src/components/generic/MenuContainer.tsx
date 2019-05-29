@@ -6,40 +6,43 @@ import {
   Menu,
   Dropdown,
   Container,
+  Label,
   Icon
 } from "semantic-ui-react"
-import { StoreState } from "src/types";
+import { StoreState } from "../../types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import * as actions from "../../actions/";
 import ApplicationRoles from "src/utils/application-roles";
+import { Unread } from "pakkasmarja-client";
 
-export interface Props {
+interface Props {
   authenticated: boolean,
   keycloak?: KeycloakInstance,
-  onLogout?: () => void
+  onLogout?: () => void,
+  unreads: Unread[]
 }
 
-class MenuContainer extends React.Component<Props, object> {
+interface State {
+}
 
-  onAccountItemClick = () =>  {
-    if (this.props.keycloak) {
-      window.location.href = this.props.keycloak.createAccountUrl();
-    }
+class MenuContainer extends React.Component<Props, State> {
+
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+    };
   }
 
-  onLogoutItemClick = () => {
-    if (this.props.keycloak) {
-      window.location.href = this.props.keycloak.createLogoutUrl();
-    }
-  }
+  public render() {
+    const unreadNews = this.countUnreads("news-");
 
-  render() {
     return (
       <Container>
         <Menu style={{backgroundColor: "#E51D2A", color: "#fff"}} inverted secondary>
           <Menu.Item as="div">
             <Link to="/news">{strings.news}</Link>
+            { unreadNews ? <Label color='black' circular size="mini"> { unreadNews } </Label> : null }
           </Menu.Item>
           <Menu.Item as="div">
             <Link to="/deliveries">{strings.deliveries}</Link>
@@ -102,12 +105,37 @@ class MenuContainer extends React.Component<Props, object> {
       </Container>
     );
   }
+  
+  private onAccountItemClick = () =>  {
+    if (this.props.keycloak) {
+      window.location.href = this.props.keycloak.createAccountUrl();
+    }
+  }
+
+  private onLogoutItemClick = () => {
+    if (this.props.keycloak) {
+      window.location.href = this.props.keycloak.createLogoutUrl();
+    }
+  }
+
+  /**
+   * Counts unreads by prefix
+   * 
+   * @param prefix prefix
+   * @return unreads
+   */
+  private countUnreads = (prefix: string) => {
+    return this.props.unreads.filter((unread: Unread) => {
+      return (unread.path || "").startsWith(prefix);
+    }).length;
+  }
 }
 
 export function mapStateToProps(state: StoreState) {
   return {
     authenticated: state.authenticated,
-    keycloak: state.keycloak
+    keycloak: state.keycloak,
+    unreads: state.unreads
   };
 }
 

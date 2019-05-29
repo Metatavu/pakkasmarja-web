@@ -3,9 +3,9 @@ import { connect } from "react-redux";
 import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import * as actions from "../../actions/";
-import Api, { ChatGroup } from "pakkasmarja-client";
+import Api, { ChatGroup, Unread } from "pakkasmarja-client";
 import strings from "src/localization/strings";
-import { Item, Loader } from "semantic-ui-react";
+import { Item, Loader, Label } from "semantic-ui-react";
 import AVATAR_PLACEHOLDER from "../../gfx/avatar.png";
 import { FileService } from "src/api/file.service";
 import * as moment from "moment";
@@ -17,6 +17,7 @@ interface Props {
   authenticated: boolean;
   keycloak?: Keycloak.KeycloakInstance;
   type: "CHAT" | "QUESTION",
+  unreads: Unread[],
   onGroupSelected: (threadId: number) => void
   onError?: (errorMsg: string) => void
 };
@@ -38,8 +39,7 @@ interface ConversationListItem {
   alt: string,
   title: string,
   subtitle: string,
-  date?: Date,
-  unread: number
+  date?: Date
 }
 
 /**
@@ -95,7 +95,7 @@ class ChatGroupList extends React.Component<Props, State> {
         <Item key={conversationListItem.id} onClick={() => this.selectGroup(conversationListItem.id)}>
           <Item.Image avatar style={{width:"45px"}} src={conversationListItem.avatar} />
           <Item.Content>
-            <p className="chat-header">{conversationListItem.title.length > 30 ? `${conversationListItem.title.substring(0, 30)}...` : conversationListItem.title}</p>
+            { this.renderChatHeader(conversationListItem) }
             <Item.Meta>{conversationListItem.subtitle}</Item.Meta>
             <Item.Extra>{moment(conversationListItem.date).format("DD.mm.YYYY HH:mm:ss")}</Item.Extra>
           </Item.Content>
@@ -117,6 +117,35 @@ class ChatGroupList extends React.Component<Props, State> {
   }
 
   /**
+   * Renders chat header
+   * 
+   * @param conversationListItem list item
+   */
+  private renderChatHeader = (conversationListItem: ConversationListItem) => {
+    const unreadCount = this.countUnreadsByGroup(conversationListItem.id);
+    const text = conversationListItem.title.length > 30 ? `${conversationListItem.title.substring(0, 30)}...` : conversationListItem.title;
+
+    return (
+      <p className="chat-header"> 
+        { text }
+        { unreadCount ? <div style={{ float: "right", marginRight: "5px" }}> <Label color='black' circular size="mini"> { unreadCount } </Label> </div> : null }
+      </p>
+    );
+  }
+
+  /**
+   * Counts unreads by group
+   * 
+   * @param group id
+   * @return unreads
+   */
+  private countUnreadsByGroup = (groupId: number) => {
+    return this.props.unreads.filter((unread: Unread) => {
+      return (unread.path || "").startsWith(`chat-${groupId}-`);
+    }).length;
+  }
+
+  /**
    * Loads conversation item
    */
   private loadConversationItem = async (chatGroup: ChatGroup): Promise<ConversationListItem> => {
@@ -125,8 +154,7 @@ class ChatGroupList extends React.Component<Props, State> {
       avatar: await this.loadThreadImage(chatGroup),
       alt: "Avatar",
       title: chatGroup.title,
-      subtitle: "",
-      unread: 0
+      subtitle: ""
     };
 
     if (!this.props.keycloak || !this.props.keycloak.token) {
@@ -173,7 +201,8 @@ class ChatGroupList extends React.Component<Props, State> {
 function mapStateToProps(state: StoreState) {
   return {
     authenticated: state.authenticated,
-    keycloak: state.keycloak
+    keycloak: state.keycloak,
+    unreads: state.unreads
   };
 }
 
@@ -183,7 +212,9 @@ function mapStateToProps(state: StoreState) {
  * @param dispatch dispatch method
  */
 function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
-  return {};
+  return {
+    unreadRemoved: dispatch
+  };
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(ChatGroupList);

@@ -3,7 +3,7 @@ import { connect } from "react-redux";
 import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import * as actions from "../../actions/";
-import Api, { Contact, ChatMessage, ChatThread } from "pakkasmarja-client";
+import Api, { Contact, ChatMessage, ChatThread, Unread } from "pakkasmarja-client";
 import strings from "src/localization/strings";
 import * as moment from "moment";
 import { Segment, Comment, Icon, Button, Grid, Modal, Header, Divider, Loader } from "semantic-ui-react";
@@ -28,6 +28,8 @@ interface Props {
   onError?: (errorMsg: string) => void;
   onExit?: () => void;
   answerType: ChatThread.AnswerTypeEnum;
+  unreads: Unread[],
+  unreadRemoved: (unread: Unread) => void;
 };
 
 /**
@@ -122,6 +124,8 @@ class Chat extends React.Component<Props, State> {
         }
       }
 
+      await this.removeUnreads(thread);
+
       await this.setState({
         messages: messages.reverse(),
         user: user,
@@ -130,7 +134,9 @@ class Chat extends React.Component<Props, State> {
         loading: false,
         pollAnswers: thread.pollPredefinedTexts || []
       });
+
       thread.answerType === "TEXT" && this.scrollToBottom();
+
     } catch (e) {
       console.log(e, "error");
       this.props.onError && this.props.onError(strings.errorCommunicatingWithServer);
@@ -321,6 +327,34 @@ class Chat extends React.Component<Props, State> {
   }
 
   /**
+   * Counts unreads by group
+   * 
+   * @param group id
+   * @return unreads
+   */
+  private removeUnreads = async (thread: ChatThread) => {
+    const { keycloak } = this.props;
+    
+    if (!keycloak || !keycloak.token || !thread || !thread.id || !thread.groupId) {
+      return;
+    }
+
+    const unreadsService = Api.getUnreadsService(keycloak.token);
+
+    const unreads = this.props.unreads
+      .filter((unread: Unread) => {
+        const path = (unread.path || "");
+        return path.startsWith(`chat-${thread.groupId}-${thread.id}-`);
+      });
+
+    await Promise.all(unreads.map(async (unread) => {
+      this.props.unreadRemoved(unread);
+      await unreadsService.deleteUnread(unread.id!)
+    }));
+
+  }
+
+  /**
    * Checks if there is new messages available
    */
   private checkMessages = async () => {
@@ -437,7 +471,6 @@ class Chat extends React.Component<Props, State> {
    */
   private scrollToBottom = () => {
     setTimeout(() => this.messagesEnd.scrollIntoView({ behavior: "smooth" }), 50);
-
   }
 
   /**
@@ -596,7 +629,8 @@ class Chat extends React.Component<Props, State> {
 function mapStateToProps(state: StoreState) {
   return {
     authenticated: state.authenticated,
-    keycloak: state.keycloak
+    keycloak: state.keycloak,
+    unreads: state.unreads
   };
 }
 
@@ -606,7 +640,9 @@ function mapStateToProps(state: StoreState) {
  * @param dispatch dispatch method
  */
 function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
-  return {};
+  return {
+    unreadRemoved: (unread: Unread) => dispatch(actions.unreadRemoved(unread))
+  };
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(Chat);

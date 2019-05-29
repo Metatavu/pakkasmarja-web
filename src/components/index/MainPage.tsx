@@ -47,20 +47,24 @@ import WeekDeliveryPredictions from "../deliveries/WeekDeliveryPredictions";
 import IncomingDeliveries from "../deliveries/IncomingDeliveries";
 import PastDeliveries from "../deliveries/PastDeliveries";
 import WeekPredictionsManagement from "../deliveries/WeekPredictionsManagement";
+import Api, { Unread } from "pakkasmarja-client";
 import ManageContact from "../contact/ManageContact";
 
 /**
  * Interface for component props
  */
 interface Props {
-  authenticated: boolean;
-  keycloak?: Keycloak.KeycloakInstance;
+  authenticated: boolean,
+  keycloak?: Keycloak.KeycloakInstance,
+  unreadsUpdate: (unreads: Unread[]) => void
 }
 
 /**
  * Class for main page component
  */
 class MainPage extends React.Component<Props, {}> {
+
+  private intervalId: any;
 
   /**
    * Constructor
@@ -70,6 +74,23 @@ class MainPage extends React.Component<Props, {}> {
   constructor(props: Props) {
     super(props);
     this.state = {};
+  }
+
+  /**
+   * Component did mount life cycle method
+   */
+  public componentDidMount = () => {
+    this.intervalId = setInterval(this.checkUnreads, 1000 * 30);
+  }
+
+  /**
+   * Component will unmount life cycle method
+   */
+  public componentWillUnmount = () => {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = undefined;
+    }
   }
 
   /**
@@ -127,6 +148,15 @@ class MainPage extends React.Component<Props, {}> {
       </div>
     );
   }
+
+  private checkUnreads = async () => {
+    if (!this.props.keycloak || !this.props.keycloak.token) {
+      return;
+    }
+    
+    const unreadsService = await Api.getUnreadsService(this.props.keycloak.token);
+    this.props.unreadsUpdate(await unreadsService.listUnreads());
+  }
 }
 
 /**
@@ -136,7 +166,8 @@ class MainPage extends React.Component<Props, {}> {
  */
 function mapStateToProps(state: StoreState) {
   return {
-    authenticated: state.authenticated
+    authenticated: state.authenticated,
+    keycloak: state.keycloak
   }
 }
 
@@ -147,6 +178,7 @@ function mapStateToProps(state: StoreState) {
  */
 function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
   return {
+    unreadsUpdate: (unreads: Unread[]) => dispatch(actions.unreadsUpdate(unreads))
   };
 }
 

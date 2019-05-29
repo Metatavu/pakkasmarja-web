@@ -1,11 +1,12 @@
 import { KeycloakInstance } from "keycloak-js";
-import { Contract, ItemGroup, AreaDetail, Delivery, Product, WeekDeliveryPrediction, ItemGroupDocumentTemplate, ChatThread } from "pakkasmarja-client";
+import { Contract, ItemGroup, AreaDetail, Delivery, Product, WeekDeliveryPrediction, ItemGroupDocumentTemplate, ChatThread, Unread } from "pakkasmarja-client";
 
 export interface StoreState {
   keycloak?: KeycloakInstance,
   authenticated: boolean,
   deliveries?: DeliveriesState,
-  openChats: ChatWindow[]
+  openChats: ChatWindow[],
+  unreads: Unread[]
 }
 
 export interface DeliveriesState {

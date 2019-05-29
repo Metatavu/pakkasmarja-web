@@ -6,7 +6,7 @@ import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
 import BasicLayout from "../generic/BasicLayout";
-import Api, { NewsArticle } from "pakkasmarja-client";
+import Api, { NewsArticle, Unread } from "pakkasmarja-client";
 import { Divider, Container, Header, Image } from "semantic-ui-react";
 import Moment from "react-moment";
 import { FileService } from "src/api/file.service";
@@ -16,7 +16,8 @@ import { FileService } from "src/api/file.service";
  */
 interface Props {
   keycloak?: Keycloak.KeycloakInstance;
-  match?: any
+  match?: any,
+  unreads: Unread[]
 }
 
 /**
@@ -51,6 +52,8 @@ class WatchNews extends React.Component<Props, State> {
       this.setImage(newsArticle.imageUrl || "");
       this.setState({ news: newsArticleObject });
     });
+
+    this.markRead();
   }
 
   /**
@@ -59,7 +62,7 @@ class WatchNews extends React.Component<Props, State> {
    * @param url url
    */
   private setImage = async (url: string) => {
-    if (!this.props.keycloak || !this.props.keycloak.token || !process.env.REACT_APP_API_URL) {
+    if (!url || !this.props.keycloak || !this.props.keycloak.token || !process.env.REACT_APP_API_URL) {
       return;
     }
     
@@ -71,7 +74,7 @@ class WatchNews extends React.Component<Props, State> {
     });
   }
 
-  render() {
+  public render() {
     if (this.state.news && this.state.news.createdAt) {
       return (
         
@@ -101,11 +104,37 @@ class WatchNews extends React.Component<Props, State> {
       </BasicLayout>
     );
   }
+
+  /**
+   * Retuns related unread
+   * 
+   * @return related unread
+   */
+  private markRead = () => {
+    if (!this.props.keycloak || !this.props.keycloak.token) {
+      return;
+    }
+
+    const unread = this.props.unreads.find((unread: Unread) => {
+      return (unread.path || "").startsWith(`news-${this.state.news ? this.state.news.id : ""}`);
+    });
+
+    if (!unread) {
+      return;
+    }
+
+    if (!this.props.keycloak || !this.props.keycloak.token) {
+      return;
+    }
+
+    Api.getUnreadsService(this.props.keycloak.token).deleteUnread(unread.id!);
+  }
 }
 
 export function mapStateToProps(state: StoreState) {
   return {
-    keycloak: state.keycloak
+    keycloak: state.keycloak,
+    unreads: state.unreads
   }
 }
 

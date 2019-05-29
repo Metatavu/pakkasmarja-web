@@ -16,7 +16,8 @@ Api.configure(`${process.env.REACT_APP_API_URL}/rest/v1` || DEFAULT_API_PATH);
 
 const store = createStore<StoreState, AppAction, any, any>(processAction, {
   authenticated: false,
-  openChats: []
+  openChats: [],
+  unreads: []
 });
 
 ReactDOM.render(
