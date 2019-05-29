@@ -4,7 +4,7 @@ import * as actions from "../../actions/";
 import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import Api, { NewsArticle } from "pakkasmarja-client";
+import Api, { NewsArticle, Unread } from "pakkasmarja-client";
 import "../../styles/common.css";
 import { Button, Item, Confirm } from "semantic-ui-react";
 import { Link, Redirect } from "react-router-dom";
@@ -16,8 +16,9 @@ import strings from "src/localization/strings";
  * Interface for component State
  */
 interface Props {
-  data: NewsArticle;
-  keycloak?: Keycloak.KeycloakInstance;
+  data: NewsArticle,
+  keycloak?: Keycloak.KeycloakInstance,
+  unreads: Unread[]
 }
 
 /**
@@ -52,13 +53,16 @@ class NewsComponent extends React.Component<Props, State> {
     });
   }
 
-  render() {
+  public render() {
     if (this.state.redirect) {
       return <Redirect to="/news" push={true} />;
     }
     return (
       <Item className="open-modal-element">
         <Item.Content as={Link} to={`watchNews/${this.props.data.id}`}>
+          {
+            this.isUnread() ? <b style={{ color: "red" }}> (Uusi) </b> : null
+          }
           {
             this.props.data.title.length < 70 ?
               <Item.Header>{this.props.data.title}</Item.Header>
@@ -80,11 +84,23 @@ class NewsComponent extends React.Component<Props, State> {
       </Item>
     );
   }
+
+  /**
+   * Retuns whether news item is unread
+   * 
+   * @return whether news item is unread
+   */
+  private isUnread = () => {
+    return !!this.props.unreads.find((unread: Unread) => {
+      return (unread.path || "").startsWith(`news-${this.props.data.id}`);
+    });
+  }
 }
 
 export function mapStateToProps(state: StoreState) {
   return {
-    keycloak: state.keycloak
+    keycloak: state.keycloak,
+    unreads: state.unreads
   }
 }
 

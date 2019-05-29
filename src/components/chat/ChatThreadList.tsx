@@ -3,9 +3,9 @@ import { connect } from "react-redux";
 import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import * as actions from "../../actions/";
-import Api, { ChatThread } from "pakkasmarja-client";
+import Api, { ChatThread, Unread } from "pakkasmarja-client";
 import strings from "src/localization/strings";
-import { Item, Loader } from "semantic-ui-react";
+import { Item, Loader, Label } from "semantic-ui-react";
 import AVATAR_PLACEHOLDER from "../../gfx/avatar.png";
 import { FileService } from "src/api/file.service";
 import * as moment from "moment";
@@ -18,6 +18,7 @@ interface Props {
   keycloak?: Keycloak.KeycloakInstance;
   groupId?: number,
   type: "CHAT" | "QUESTION",
+  unreads: Unread[],
   onThreadSelected: (threadId: number, answerType: ChatThread.AnswerTypeEnum) => void
   onBackClick?: () => void
   onError?: (errorMsg: string) => void
@@ -36,6 +37,7 @@ interface State {
  */
 interface ConversationListItem {
   id: number,
+  groupId: number,
   avatar: string,
   alt: string,
   title: string,
@@ -119,7 +121,7 @@ class ChatThreadList extends React.Component<Props, State> {
         <Item key={conversationListItem.id} onClick={() => this.selectThread(conversationListItem.id, conversationListItem.answerType)}>
           <Item.Image avatar style={{width:"45px"}} src={conversationListItem.avatar} />
           <Item.Content>
-            <p className="chat-header">{conversationListItem.title.length > 30 ? `${conversationListItem.title.substring(0, 30)}...` : conversationListItem.title}</p>
+            { this.renderChatHeader(conversationListItem) }
             {conversationListItem.answerType === "TEXT" ? <Item.Meta>{conversationListItem.subtitle}</Item.Meta> : "- KYSELY -"}
             <Item.Extra>{moment(conversationListItem.date).format("DD.MM.YYYY HH:mm:ss")}</Item.Extra>
           </Item.Content>
@@ -141,11 +143,41 @@ class ChatThreadList extends React.Component<Props, State> {
   }
 
   /**
+   * Renders chat header
+   * 
+   * @param conversationListItem list item
+   */
+  private renderChatHeader = (conversationListItem: ConversationListItem) => {
+    const unreadCount = this.countUnreads(conversationListItem.groupId, conversationListItem.id);
+    const text = (conversationListItem.title.length > 30 ? `${conversationListItem.title.substring(0, 30)}...` : conversationListItem.title);
+
+    return (
+      <p className="chat-header"> 
+        { text }
+        { unreadCount ? <div style={{ float: "right", marginRight: "5px" }}> <Label color='black' circular size="mini"> { unreadCount } </Label> </div> : null }
+      </p>
+    );
+  }
+
+  /**
+   * Counts unreads by group
+   * 
+   * @param group id
+   * @return unreads
+   */
+  private countUnreads = (groupId: number, threadId: number) => {
+    return this.props.unreads.filter((unread: Unread) => {
+      return (unread.path || "").startsWith(`chat-${groupId}-${threadId}-`);
+    }).length;
+  }
+
+  /**
    * Loads conversation item
    */
   private loadConversationItem = async (chatThread: ChatThread): Promise<ConversationListItem> => {
     const conversationItem: ConversationListItem = {
       id: chatThread.id!,
+      groupId: chatThread.groupId,
       avatar: await this.loadThreadImage(chatThread),
       alt: "Avatar",
       title: chatThread.title,
@@ -197,7 +229,8 @@ class ChatThreadList extends React.Component<Props, State> {
 function mapStateToProps(state: StoreState) {
   return {
     authenticated: state.authenticated,
-    keycloak: state.keycloak
+    keycloak: state.keycloak,
+    unreads: state.unreads
   };
 }
 

@@ -16,8 +16,8 @@ import ApplicationRoles from "src/utils/application-roles";
  * Interface for component props
  */
 interface Props {
-  authenticated: boolean;
-  keycloak?: Keycloak.KeycloakInstance;
+  authenticated: boolean,
+  keycloak?: Keycloak.KeycloakInstance
 }
 
 /**

@@ -6,8 +6,8 @@ import { connect } from "react-redux";
 import "./styles.css";
 import ChatIndex from "./ChatIndex";
 import Chat from "./Chat";
-import { Segment, Icon } from "semantic-ui-react";
-import { ChatThread } from "pakkasmarja-client";
+import { Segment, Icon, Label } from "semantic-ui-react";
+import { ChatThread, Unread } from "pakkasmarja-client";
 
 /**
  * Interface for component props
@@ -16,6 +16,7 @@ interface Props {
   authenticated: boolean;
   keycloak?: Keycloak.KeycloakInstance;
   chats: ChatWindow[];
+  unreads: Unread[],
   chatOpen: (chat: ChatWindow) => void;
   chatClose: (chat: ChatWindow) => void;
 }
@@ -25,7 +26,7 @@ interface Props {
  */
 interface State {
   open: boolean
-  chatGroupId?: number
+  chatGroupId?: number,
 }
 
 /**
@@ -40,7 +41,7 @@ class ChatsContainer extends React.Component<Props, State> {
     };
   }
 
-  /**
+  /*
    * Render
    */
   public render() {
@@ -58,11 +59,8 @@ class ChatsContainer extends React.Component<Props, State> {
           <Segment style={{ color: "#fff", background: "rgb(229, 29, 42)" }}>
             <span onClick={this.toggleWindow}>
               Keskustelu
-            {this.state.open ? (
-                <Icon name="angle down" />
-              ) : (
-                  <Icon name="angle up" />
-                )}
+              { this.state.open ? <Icon name="angle down" /> : <Icon name="angle up" /> }
+              { this.renderUnreads() }
             </span>
             {
               this.state.chatGroupId &&
@@ -74,6 +72,25 @@ class ChatsContainer extends React.Component<Props, State> {
         {chatWindows}
       </div>
     )
+  }
+
+  /**
+   * Render unreads label if needed
+   */
+  private renderUnreads = () => {
+    if (!this.props.unreads.length) {
+      return null;
+    }
+
+    const unreadChats = this.props.unreads.filter((unread: Unread) => {
+      return (unread.path || "").startsWith("chat");
+    });    
+
+    return (
+      <div style={{ float: "right" }}>
+        <Label color='black' circular size="mini"> { unreadChats.length } </Label>
+      </div>
+    );
   }
 
   /**
@@ -144,7 +161,8 @@ export function mapStateToProps(state: StoreState) {
   return {
     authenticated: state.authenticated,
     keycloak: state.keycloak,
-    chats: state.openChats
+    chats: state.openChats,
+    unreads: state.unreads
   }
 }
 

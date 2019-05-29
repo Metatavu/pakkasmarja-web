@@ -1,6 +1,7 @@
 import * as constants from '../constants'
 import { KeycloakInstance } from 'keycloak-js';
 import { DeliveriesState, ChatWindow } from 'src/types';
+import { Unread } from 'pakkasmarja-client';
 
 export interface UserLogin {
   type: constants.USER_LOGIN;
@@ -36,7 +37,23 @@ export interface ChatClose {
   chat: ChatWindow
 }
 
-export type AppAction = UserLogin | UserLogout | DeliveriesLoaded | ChatOpen | ChatClose;
+/**
+ * Unreads update
+ */
+export interface UnreadsUpdate {
+  type: constants.UNREADS_UPDATE,
+  unreads: Unread[]
+}
+
+/**
+ * Unread removed
+ */
+export interface UnreadRemoved {
+  type: constants.UNREAD_REMOVED,
+  unread: Unread
+}
+
+export type AppAction = UserLogin | UserLogout | DeliveriesLoaded | ChatOpen | ChatClose | UnreadsUpdate | UnreadRemoved;
 
 export function userLogin(keycloak: KeycloakInstance, authenticated: boolean): UserLogin {
   return {
@@ -66,6 +83,19 @@ export function chatClose(chat: ChatWindow): ChatClose {
   }
 }
 
+export function unreadsUpdate(unreads: Unread[]): UnreadsUpdate {
+  return {
+    type: constants.UNREADS_UPDATE,
+    unreads: unreads
+  }
+}
+
+export function unreadRemoved(unread: Unread): UnreadRemoved {
+  return {
+    type: constants.UNREAD_REMOVED,
+    unread: unread
+  }
+}
 /**
  * Store method for deliveries
  * 
