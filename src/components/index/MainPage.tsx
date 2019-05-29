@@ -47,6 +47,7 @@ import WeekDeliveryPredictions from "../deliveries/WeekDeliveryPredictions";
 import IncomingDeliveries from "../deliveries/IncomingDeliveries";
 import PastDeliveries from "../deliveries/PastDeliveries";
 import WeekPredictionsManagement from "../deliveries/WeekPredictionsManagement";
+import ManageContact from "../contact/ManageContact";
 
 /**
  * Interface for component props
@@ -112,17 +113,17 @@ class MainPage extends React.Component<Props, {}> {
         <Route exact path="/operationsManagement" component={OperationsList} />
         <Route exact path="/operationsReports/:operationReportId" component={OperationReport} />
         <Route exact path="/productPrices/:productId" component={ProductPricesList} />
-        <Route exact path="/chatManagement" component={ChatManagementList}/>
-        <Route exact path="/editQuestionGroup/:chatGroupId" component={EditQuestionGroup}/>
-        <Route exact path="/editChatGroup/:chatGroupId" component={EditChatGroup}/>
-        <Route exact path="/manageFreshDeliveries" component={FreshDeliveryManagement}/>
-        <Route exact path="/manageFrozenDeliveries" component={FrozenDeliveryManagement}/>
-        <Route exact path="/manageWeekPredictions" component={WeekPredictionsManagement}/>
-        <Route exact path="/proposals" component={ProposalsView}/>
-        <Route exact path="/weekDeliveryPredictions" component={WeekDeliveryPredictions}/>
-        <Route exact path="/incomingDeliveries" component={IncomingDeliveries}/>
-        <Route exact path="/pastDeliveries" component={PastDeliveries}/>
-        
+        <Route exact path="/chatManagement" component={ChatManagementList} />
+        <Route exact path="/editQuestionGroup/:chatGroupId" component={EditQuestionGroup} />
+        <Route exact path="/editChatGroup/:chatGroupId" component={EditChatGroup} />
+        <Route exact path="/manageFreshDeliveries" component={FreshDeliveryManagement} />
+        <Route exact path="/manageFrozenDeliveries" component={FrozenDeliveryManagement} />
+        <Route exact path="/manageWeekPredictions" component={WeekPredictionsManagement} />
+        <Route exact path="/proposals" component={ProposalsView} />
+        <Route exact path="/weekDeliveryPredictions" component={WeekDeliveryPredictions} />
+        <Route exact path="/incomingDeliveries" component={IncomingDeliveries} />
+        <Route exact path="/pastDeliveries" component={PastDeliveries} />
+        <Route exact path="/manageContact" component={ManageContact} />
       </div>
     );
   }

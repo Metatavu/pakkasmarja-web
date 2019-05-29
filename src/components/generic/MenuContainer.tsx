@@ -5,7 +5,8 @@ import { KeycloakInstance } from "keycloak-js";
 import {
   Menu,
   Dropdown,
-  Container
+  Container,
+  Icon
 } from "semantic-ui-react"
 import { StoreState } from "src/types";
 import { Dispatch } from "redux";
@@ -90,8 +91,9 @@ class MenuContainer extends React.Component<Props, object> {
             <Menu.Menu position="right">
               <Dropdown item simple text={strings.menuBarUserItemText}>
                 <Dropdown.Menu>
-                  <Dropdown.Item onClick={this.onAccountItemClick}>{strings.menuBarManageAccountText}</Dropdown.Item>
-                  <Dropdown.Item onClick={this.onLogoutItemClick}>{strings.menuBarLogoutText}</Dropdown.Item>
+                  <Dropdown.Item to="/manageContact" as={Link}><Icon name='user' color="red" />Yhteystiedot</Dropdown.Item>
+                  <Dropdown.Item onClick={this.onAccountItemClick}><Icon name='setting' color="red" />{strings.menuBarManageAccountText}</Dropdown.Item>
+                  <Dropdown.Item onClick={this.onLogoutItemClick}><Icon name='log out' flipped="horizontally" color="red" />{strings.menuBarLogoutText}</Dropdown.Item>
                 </Dropdown.Menu>
               </Dropdown>
             </Menu.Menu>
