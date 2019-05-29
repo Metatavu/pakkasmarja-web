@@ -358,7 +358,7 @@ class ManageContact extends React.Component<Props, State> {
     const phoneNumbers: string[] = [
       phoneNumber1 || "",
       phoneNumber2 || "",
-    ]
+    ];
 
     const addresses: Address[] = [
       {
@@ -384,7 +384,8 @@ class ManageContact extends React.Component<Props, State> {
       audit: audit || undefined,
       vatLiable: vatLiable || undefined,
       addresses: addresses[0] || addresses[1] ? addresses : []
-    }
+    };
+    
     contactService.updateContact(newContact, keycloak.subject).then((updatedData) => {
       this.setState({ openModal: true, modalText: "Tietojen päivittäminen onnistui." })
     }).catch((err) => {
