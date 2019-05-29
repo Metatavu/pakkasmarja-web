@@ -5,7 +5,7 @@ import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
-import Api, { DeliveryPlace, Product, Contact, Delivery, DeliveryQuality } from "pakkasmarja-client";
+import Api, { DeliveryPlace, Product, Contact, Delivery, DeliveryQuality, DataSheet } from "pakkasmarja-client";
 import { Dimmer, Loader, Dropdown, DropdownProps, Modal, Button, Input, Image, Icon, Popup, Form } from "semantic-ui-react";
 import { Table } from 'semantic-ui-react';
 import BasicLayout from "../generic/BasicLayout";
@@ -17,6 +17,8 @@ import fi from 'date-fns/esm/locale/fi'
 import IncomingDeliveryIcon from "../../gfx/incoming-delivery-icon.png";
 import "./styles.css"
 import CreateDeliveryModal from "./CreateDeliveryModal";
+import StorageDataTable from "./StorageTable";
+import TableDataUtils from "src/utils/table-data-utils";
 
 /**
  * Interface for component props
@@ -44,7 +46,8 @@ interface State {
   contacts: Contact[]
   deliveryQualities: { [key: string]: DeliveryQuality },
   newDeliveryModalOpen: boolean,
-  error?: string
+  error?: string,
+  storageDataSheet?: DataSheet
 }
 
 /**
@@ -88,12 +91,13 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     const deliveryPlaces = await Api.getDeliveryPlacesService(keycloak.token).listDeliveryPlaces();
     const products = await Api.getProductsService(keycloak.token).listProducts(undefined, "FRESH");
     const deliveryQualities = await Api.getDeliveryQualitiesService(keycloak.token).listDeliveryQualities("FRESH");
-
+    
     this.setState({
       loading: false,
       deliveryPlaces: deliveryPlaces,
       products: products,
-      deliveryQualities: _.keyBy(deliveryQualities, "id")
+      deliveryQualities: _.keyBy(deliveryQualities, "id"),
+      storageDataSheet: await this.findOrCreateDataSheet(`fresh-storage-${moment().format("YYYY-MM-DD")}`)
     });
 
     this.pollInterval = setInterval(() => {
@@ -155,10 +159,10 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     const eveningDeliveries = this.state.deliveries.filter((delivery) => moment(delivery.time).utc().hour() > 12);
 
     let tableRows = this.getTableRows(morningDeliveries, 0);
-    tableRows.push(this.getTableSummaryRow(morningDeliveries, "Klo 12 mennessä yht."));
+    tableRows.push(this.getTableSummaryRow("morning", morningDeliveries, "Klo 12 mennessä yht."));
     tableRows = tableRows.concat(this.getTableRows(eveningDeliveries, tableRows.length));
-    tableRows.push(this.getTableSummaryRow(deliveries, "Varastossa nyt", true));
-    tableRows.push(this.getTableSummaryRow(deliveries, "Klo 17 mennessä yht."))
+    tableRows.push(this.getTableSummaryRow("now", deliveries, "Varastossa nyt", true));
+    tableRows.push(this.getTableSummaryRow("total", deliveries, "Klo 17 mennessä yht."))
 
     return (
       <TableBasicLayout topBarButtonText={this.state.selectedDeliveryPlaceId ? "+ Uusi ehdotus viljelijälle" : undefined} onTopBarButtonClick={this.state.selectedDeliveryPlaceId ? () => this.setState({ newDeliveryModalOpen: true }) : undefined} error={this.state.error} onErrorClose={() => this.setState({ error: undefined })} pageTitle="Päiväennuste, tuoreet">
@@ -192,6 +196,9 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
             </div>
           </div>
         </div>
+        {
+          this.renderStorageTable()
+        }
         {
           this.state.selectedDeliveryPlaceId &&
           <Table celled padded selectable>
@@ -249,6 +256,120 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
         }
       </TableBasicLayout >
     );
+  }
+
+  /**
+   * Finds or create datasheet by given name
+   * 
+   * @param name
+   * @return data sheet
+   */
+  private findOrCreateDataSheet = async (name: string) => {
+    const { keycloak } = this.props;
+    if (!keycloak || !keycloak.token) {
+      return;
+    }
+
+    const dataSheetsService = Api.getDataSheetsService(keycloak.token);
+    const sheets = await dataSheetsService.listDataSheets(name);
+    if (sheets.length) {
+      return sheets[0];
+    } else {
+      return await dataSheetsService.createDataSheet({
+        data: [],
+        name: name
+      });
+    }
+  }
+
+  /**
+   * Renders storage value
+   */
+  private renderStorageTable = () => {
+    if (!this.state.storageDataSheet) {
+      return null;
+    }
+
+    const qualities = _.values(this.state.deliveryQualities);
+
+    return <StorageDataTable
+      products={ this.state.products } 
+      qualities={ qualities } 
+      getCellValue={ this.getStorageTableValue }
+      onApplyValue={ this.onApplyStorageTableValue }/>
+  }
+
+  /**
+   * Returns value for storage table
+   * 
+   * @param productId product id
+   * @param qualityId quality id
+   * @returns value or null if not found
+   */
+  private getStorageTableValue = (productId: string, qualityId: string): number | null => {
+    const { keycloak } = this.props;
+    if (!keycloak || !keycloak.token) {
+      return null;
+    }
+
+    if (!this.state.storageDataSheet || !this.state.storageDataSheet.id) {
+      return null;
+    }
+
+    const data: string[][] = this.state.storageDataSheet.data || [[]];
+
+    const productIndex = TableDataUtils.findCellIndex(data, 0, productId);
+    const qualityIndex = TableDataUtils.findRowIndex(data, 0, qualityId);
+    const cellValue = productIndex > -1 && qualityIndex > -1 ? TableDataUtils.getCellValue(data, qualityIndex, productIndex) : null;    
+
+    return cellValue ? parseFloat(cellValue) || null : null;
+  }
+
+  /**
+   * Applise storage table value
+   */
+  private onApplyStorageTableValue = async (productId: string, qualityId: string, value: number) => {
+    const { keycloak } = this.props;
+    if (!keycloak || !keycloak.token) {
+      return;
+    }
+
+    if (!this.state.storageDataSheet || !this.state.storageDataSheet.id) {
+      return;
+    }
+
+    const qualities = _.values(this.state.deliveryQualities);
+
+    let data: string[][] = this.state.storageDataSheet.data || [[]];
+    if (data.length < 1) {
+      data.push([]);
+    }
+
+    qualities.forEach((quality) => {
+      const index = TableDataUtils.findRowIndex(data, 0, quality.id!);
+      if (index == -1) {
+        data.push([quality.id!]);
+      }
+    });
+
+    this.state.products.forEach((product) => {
+      const index = TableDataUtils.findCellIndex(data, 0, product.id!);
+      if (index == -1) {
+        const cellIndex = TableDataUtils.getCellCount(data, 0) || 1;
+        data = TableDataUtils.setCellValue(data, 0, cellIndex, product.id!);
+      }
+    });
+
+    const productIndex = TableDataUtils.findCellIndex(data, 0, productId);
+    const qualityIndex = TableDataUtils.findRowIndex(data, 0, qualityId);
+
+    data = TableDataUtils.setCellValue(data, qualityIndex, productIndex, String(value));
+
+    const dataSheetsService = Api.getDataSheetsService(keycloak.token);
+
+    this.setState({
+      storageDataSheet: await dataSheetsService.updateDataSheet({ ... this.state.storageDataSheet, data: data }, this.state.storageDataSheet.id)
+    });
   }
 
   private getTableRows(deliveries: Delivery[], initialIndex?: number) {
@@ -309,11 +430,10 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     return tableRows;
   }
 
-  private getTableSummaryRow(deliveries: Delivery[], headerText: string, onlyDelivered?: boolean) {
-
+  private getTableSummaryRow(keyPrefix: string, deliveries: Delivery[], headerText: string, onlyDelivered?: boolean) {
     const { products } = this.state;
     let tableCells: JSX.Element[] = [];
-    tableCells.push(<Table.Cell>{headerText}</Table.Cell>);
+    tableCells.push(<Table.Cell key={`summary-row-${keyPrefix}`}>{headerText}</Table.Cell>);
     for (let j = 0; j < products.length; j++) {
       let product = products[j];
       tableCells.push(
