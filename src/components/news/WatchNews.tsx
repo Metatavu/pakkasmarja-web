@@ -18,6 +18,7 @@ interface Props {
   keycloak?: Keycloak.KeycloakInstance;
   match?: any,
   unreads: Unread[]
+  unreadRemoved?: (unread: Unread) => void;
 }
 
 /**
@@ -51,9 +52,8 @@ class WatchNews extends React.Component<Props, State> {
       const newsArticleObject: NewsArticle = newsArticle;
       this.setImage(newsArticle.imageUrl || "");
       this.setState({ news: newsArticleObject });
+      this.markRead(newsArticleObject);
     });
-
-    this.markRead();
   }
 
   /**
@@ -110,23 +110,20 @@ class WatchNews extends React.Component<Props, State> {
    * 
    * @return related unread
    */
-  private markRead = () => {
+  private markRead = (news: NewsArticle) => {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
 
     const unread = this.props.unreads.find((unread: Unread) => {
-      return (unread.path || "").startsWith(`news-${this.state.news ? this.state.news.id : ""}`);
+      return (unread.path || "") == `news-${news.id}`;
     });
 
     if (!unread) {
       return;
     }
 
-    if (!this.props.keycloak || !this.props.keycloak.token) {
-      return;
-    }
-
+    this.props.unreadRemoved && this.props.unreadRemoved(unread);
     Api.getUnreadsService(this.props.keycloak.token).deleteUnread(unread.id!);
   }
 }
@@ -140,6 +137,7 @@ export function mapStateToProps(state: StoreState) {
 
 export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
   return {
+    unreadRemoved: (unread: Unread) => dispatch(actions.unreadRemoved(unread))
   };
 }
 
