@@ -88,8 +88,8 @@ export default class StorageDataTable extends React.Component<Props, State> {
             const value = this.props.getCellValue(product.id!, quality.id!);
 
             return (
-              <Table.Cell style={{ textAlign: "center", "width": `${cellWidth}%`, padding: 0 }} key={ `storage-cell-${quality.id}-${product.id}` } onClick={ () => this.onCellClick(quality.id!, product.id!, value) }>
-                { this.state.editQualityId == quality.id && this.state.editProductId == product.id ? this.renderCellEditor(quality.id!, product.id!) : <span style={{ }}> { value } </span> }
+              <Table.Cell style={{ textAlign: "center", "width": `${cellWidth}%`, padding: 0, background: value ? quality.color + "55" : "#fff" }} key={ `storage-cell-${quality.id}-${product.id}` } onClick={ () => this.onCellClick(quality.id!, product.id!, value) }>
+                { this.state.editQualityId == quality.id && this.state.editProductId == product.id ? this.renderCellEditor(quality.id!, product.id!) : <span> { value } </span> }
               </Table.Cell>
             )
           }) 

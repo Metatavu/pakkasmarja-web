@@ -163,10 +163,10 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     const eveningDeliveries = this.state.deliveries.filter((delivery) => moment(delivery.time).utc().hour() > 12);
 
     let tableRows = this.getTableRows(morningDeliveries, 0);
-    tableRows.push(this.getTableSummaryRow("morning", morningDeliveries, "Klo 12 mennessä yht."));
+    tableRows.push(this.getTableSummaryRow("morning", "#44c336", morningDeliveries, "Klo 12 mennessä yht."));
     tableRows = tableRows.concat(this.getTableRows(eveningDeliveries, tableRows.length));
-    tableRows.push(this.getTableSummaryRow("now", deliveries, "Varastossa nyt", true));
-    tableRows.push(this.getTableSummaryRow("total", deliveries, "Klo 17 mennessä yht."))
+    tableRows.push(this.getTableSummaryRow("now", "#44c336", deliveries, "Varastossa nyt", true));
+    tableRows.push(this.getTableSummaryRow("total", "#0ab130", deliveries, "Klo 17 mennessä yht."))
 
     return (
       <TableBasicLayout topBarButtonText={this.state.selectedDeliveryPlaceId ? "+ Uusi ehdotus viljelijälle" : undefined} onTopBarButtonClick={this.state.selectedDeliveryPlaceId ? () => this.setState({ newDeliveryModalOpen: true }) : undefined} error={this.state.error} onErrorClose={() => this.setState({ error: undefined })} pageTitle="Päiväennuste, tuoreet">
@@ -689,7 +689,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
             });
 
             tableCells.push(
-              <Table.Cell key={`${index}-${contactId}-${product.id}`} style={{ paddingLeft: "5px", paddingRight: "5px" }} selectable onClick={() => { }}>
+              <Table.Cell key={`${index}-${contactId}-${product.id}`} style={{ paddingLeft: "5px", paddingRight: "5px", textAlign: "center" }} selectable onClick={() => { }}>
                 <Popup style={{ textAlign: "center", whiteSpace: "nowrap" }} wide trigger={<Button style={{ width: "100%" }} basic content='Valitse' />} on='click'>
                   {deliveryButtons}
                 </Popup>
@@ -701,7 +701,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
             tableCells.push(
               <Table.Cell
                 key={`${index}-${contactId}-${product.id}`}
-                style={{ ...textStyle }}
+                style={{ ...textStyle, textAlign: "center" }}
                 selectable
                 onClick={() => this.handleEditDelivery(delivery!)}>
                 {this.renderDeliveryIcon(delivery)}
@@ -717,14 +717,14 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     return tableRows;
   }
 
-  private getTableSummaryRow(keyPrefix: string, deliveries: Delivery[], headerText: string, onlyDelivered?: boolean) {
+  private getTableSummaryRow(keyPrefix: string, background: string, deliveries: Delivery[], headerText: string, onlyDelivered?: boolean) {
     const { products } = this.state;
     let tableCells: JSX.Element[] = [];
     tableCells.push(<Table.Cell key={`summary-row-${keyPrefix}`}>{headerText}</Table.Cell>);
     for (let j = 0; j < products.length; j++) {
       let product = products[j];
       tableCells.push(
-        <Table.Cell key={`${headerText}-summary-cell-${product.id}`} style={{ paddingLeft: "5px", paddingRight: "5px" }} selectable onClick={() => { }}>
+        <Table.Cell key={`${headerText}-summary-cell-${product.id}`} style={{ paddingLeft: "5px", paddingRight: "5px", textAlign: "center", background: background, color: "#fff" }} onClick={() => { }}>
           {this.countDeliveryAmountByProduct(deliveries, product, onlyDelivered)}
         </Table.Cell>
       );
@@ -784,7 +784,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
    */
   private renderDeliveryIcon(delivery: Delivery) {
     if (delivery.status == "DELIVERY") {
-      return <Image src={IncomingDeliveryIcon} style={{ float: "left", maxWidth: "32px", marginRight: "10px" }} />
+      return <Image src={IncomingDeliveryIcon} style={{ display: "inline-block", maxWidth: "32px", marginRight: "10px" }} />
     }
 
     if (delivery.qualityId) {
@@ -851,14 +851,14 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   private getDeliveryTextStyle(delivery: Delivery) {
     switch (delivery.status) {
       case "DELIVERY":
-        return { color: "#000", paddingLeft: "20px" };
+        return { color: "#000" };
       case "DONE":
-        return { color: "#4bb543", paddingLeft: "20px" };
+        return { color: "#4bb543" };
       case "PROPOSAL":
       case "PLANNED":
-        return { color: "#aaa", paddingLeft: "20px" };
+        return { color: "#aaa" };
       case "REJECTED":
-        return { color: "#ff0000", paddingLeft: "20px" };
+        return { color: "#ff0000" };
     }
   }
 
