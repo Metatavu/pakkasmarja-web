@@ -257,7 +257,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       key: "deliveryTimeValue2",
       text: "Jälkeen kello 12",
       value: 17
-    }]
+    }];
 
     return (
       <Modal onClose={() => this.props.onClose()} open={this.props.open}>
