@@ -75,6 +75,9 @@ export default class SalesForecastDataTable extends React.Component<Props, State
             </Table.Row>
           </Table.Header>
           <Table.Body> { rows } </Table.Body>
+          <Table.Footer>
+            { this.renderTableFooter() }
+          </Table.Footer>
         </Table>
         <div>
           <a onClick={ this.onNewClick }>
@@ -116,6 +119,35 @@ export default class SalesForecastDataTable extends React.Component<Props, State
   }
 
   /**
+   * Renders table footer
+   */
+  private renderTableFooter = () => {
+    const products = this.props.products;
+    const cellWidth = 100 / (this.props.products.length + 1);
+    const cellStyle = { background: "#fadde1", color: "#000", textAlign: "center", "width": `${cellWidth}%`, padding: 0 };
+    const cells = products.map((product) => {
+      let total = 0;
+
+      for (let rowIndex = 0; rowIndex < this.props.rowCount; rowIndex++) {
+        total += this.props.getCellValue(product.id!, rowIndex) || 0;
+      }
+
+      return (
+        <Table.Cell style={ cellStyle } key={ `${this.props.name}-footer-${product.id}` }>
+          <b> { total } </b>
+        </Table.Cell>
+      )
+    });
+
+    return (
+      <Table.Row className="table-header-row" style={{ background: "#e01e36", color: "#fff"}}>
+        <Table.Cell style={{ background: "#fadde1", color: "#000", fontWeight: "bold" }}>Yhteensä</Table.Cell>
+        { cells }
+      </Table.Row>
+    )
+  }
+
+  /**
    * Renders cell editor
    * 
    * @param rowIndex row index
@@ -147,6 +179,9 @@ export default class SalesForecastDataTable extends React.Component<Props, State
     );
   }
 
+  /**
+   * Event handler for new link click
+   */
   private onNewClick = () => {
     this.props.onAddNewRow();
   }
