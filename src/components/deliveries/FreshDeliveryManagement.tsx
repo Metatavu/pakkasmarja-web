@@ -163,6 +163,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     const eveningDeliveries = this.state.deliveries.filter((delivery) => moment(delivery.time).utc().hour() > 12);
 
     let tableRows = this.getTableRows(morningDeliveries, 0);
+
     tableRows.push(this.getTableSummaryRow("morning", "#44c336", morningDeliveries, "Klo 12 mennessä yht."));
     tableRows = tableRows.concat(this.getTableRows(eveningDeliveries, tableRows.length));
     tableRows.push(this.getTableSummaryRow("now", "#44c336", deliveries, "Varastossa nyt", true));
@@ -222,6 +223,9 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
         }
         {
           this.renderEveningSalesForecastTable()
+        }
+        {
+          this.renderSummaries()
         }
         {
           this.state.selectedDelivery &&
@@ -545,6 +549,105 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     this.setState({
       eveningSalesForecastDataSheet: await this.addDataSheetRow(this.state.eveningSalesForecastDataSheet)
     });
+  }
+
+  /**
+   * Counts delivey / sale balance for morning
+   * 
+   * @return delivey / sale balance for morning
+   */
+  private getMorningDeliveryBalance = (product: Product): number => {
+    if (!this.state.morningSalesForecastDataSheet) {
+      return 0;
+    }
+
+    const morningSalesForecastData = this.state.morningSalesForecastDataSheet.data || [];
+    const morningDeliveries = this.state.deliveries.filter((delivery) => moment(delivery.time).utc().hour() <= 12);
+
+    let morningForecastedSales = 0;
+    for (let i = 0; i < morningSalesForecastData.length - 1; i++) {
+      morningForecastedSales += this.getMorningSalesForecastCellValue(product.id!, i);
+    };
+
+    const morningDeliveryAmount = this.countDeliveryAmountByProduct(morningDeliveries, product, false);
+
+    return morningDeliveryAmount - morningForecastedSales;
+  }
+
+  /**
+   * Counts delivey / sale balance for evening
+   * 
+   * @return delivey / sale balance for evening
+   */
+  private getEveningDeliveryBalance = (product: Product): number => {
+    if (!this.state.eveningSalesForecastDataSheet) {
+      return 0;
+    }
+
+    const eveningSalesForecastData = this.state.eveningSalesForecastDataSheet.data || [];
+    const eveningDeliveries = this.state.deliveries.filter((delivery) => moment(delivery.time).utc().hour() > 12);
+
+    let eveningForecastedSales = 0;
+    for (let i = 0; i < eveningSalesForecastData.length - 1; i++) {
+      eveningForecastedSales += this.getEveningSalesForecastCellValue(product.id!, i);
+    };
+
+    const eveningDeliveryAmount = this.countDeliveryAmountByProduct(eveningDeliveries, product, false);
+
+    return eveningDeliveryAmount - eveningForecastedSales;
+  }
+
+  /**
+   * Renders summaries
+   */
+  private renderSummaries = () => {
+    if (!this.state.morningSalesForecastDataSheet || !this.state.eveningSalesForecastDataSheet) {
+      return null;
+    }
+
+    const products = this.state.products;
+    const cellWidth = 100 / (products.length + 1);
+
+    return (
+      <Table>
+        <Table.Row key={ "morning-summary-row" }>
+          <Table.Cell style={{color: "#fff", background: "#e01e36", fontWeight: "bold" }} key={ "morning-summary-header" }> Aamuauton tilanne </Table.Cell>
+          { 
+            products.map((product) => {
+              return (
+                <Table.Cell style={{ textAlign: "center", "width": `${cellWidth}%`, color: "#fff", background: "#e01e36" }} key={ `morning-summary-cell-${product.id}` }>
+                  { this.getMorningDeliveryBalance(product) }
+                </Table.Cell>
+              )
+            }) 
+          }
+        </Table.Row>
+        <Table.Row key={ "evening-summary-row" }>
+          <Table.Cell style={{color: "#fff", background: "#e01e36", fontWeight: "bold" }} key={ "evening-summary-header" }> Iltauton tilanne </Table.Cell>
+          { 
+            products.map((product) => {
+              return (
+                <Table.Cell style={{ textAlign: "center", "width": `${cellWidth}%`, color: "#fff", background: "#e01e36" }} key={ `evening-summary-cell-${product.id}` }>
+                  { this.getEveningDeliveryBalance(product) }
+                </Table.Cell>
+              )
+            }) 
+          }
+        </Table.Row>
+        <Table.Row key={ "daily-summary-row" }>
+          <Table.Cell style={{color: "#fff", background: "#e01e36", fontWeight: "bold" }} key={ "daily-summary-header" }> Varastoon jäävä ennuste </Table.Cell>
+          { 
+            products.map((product) => {
+              return (
+                <Table.Cell style={{ textAlign: "center", "width": `${cellWidth}%`, color: "#fff", background: "#e01e36" }} key={ `daily-summary-cell-${product.id}` }>
+                  { this.getMorningDeliveryBalance(product) + this.getEveningDeliveryBalance(product) }
+                </Table.Cell>
+              )
+            }) 
+          }
+        </Table.Row>
+      </Table>
+    );
   }
 
   private addDataSheetRow = async (dataSheet: DataSheet): Promise<DataSheet> => {
