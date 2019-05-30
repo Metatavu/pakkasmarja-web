@@ -43,8 +43,23 @@ export default class StorageDataTable extends React.Component<Props, State> {
    * Render method
    */
   public render() {
+    const products = this.props.products;
+    const cellWidth = 100 / (this.props.products.length + 1);
+
     return (
       <Table celled padded selectable>
+        <Table.Header>
+          <Table.Row className="table-header-row">
+            <Table.HeaderCell>Laatu</Table.HeaderCell>
+            {
+              products.map((product) => {
+                return (
+                  <Table.HeaderCell style={{ "width": `${cellWidth}%` }}> { product.name } </Table.HeaderCell>
+                )
+              }) 
+            }
+          </Table.Row>
+        </Table.Header>
         <Table.Body>
           { 
             this.props.qualities.map((quality) => {

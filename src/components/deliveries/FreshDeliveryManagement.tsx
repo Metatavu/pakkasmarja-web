@@ -19,6 +19,7 @@ import "./styles.css"
 import CreateDeliveryModal from "./CreateDeliveryModal";
 import StorageDataTable from "./StorageTable";
 import TableDataUtils from "src/utils/table-data-utils";
+import SalesForecastDataTable from "./SalesForecastTable";
 
 /**
  * Interface for component props
@@ -47,7 +48,9 @@ interface State {
   deliveryQualities: { [key: string]: DeliveryQuality },
   newDeliveryModalOpen: boolean,
   error?: string,
-  storageDataSheet?: DataSheet
+  storageDataSheet?: DataSheet,
+  morningSalesForecastDataSheet?: DataSheet,
+  eveningSalesForecastDataSheet?: DataSheet
 }
 
 /**
@@ -96,8 +99,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       loading: false,
       deliveryPlaces: deliveryPlaces,
       products: products,
-      deliveryQualities: _.keyBy(deliveryQualities, "id"),
-      storageDataSheet: await this.findOrCreateDataSheet(`fresh-storage-${moment().format("YYYY-MM-DD")}`)
+      deliveryQualities: _.keyBy(deliveryQualities, "id")
     });
 
     this.pollInterval = setInterval(() => {
@@ -119,6 +121,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     const { selectedDeliveryPlaceId, selectedDate } = this.state;
     const isSameDay = moment(selectedDate).isSame(prevState.selectedDate, "day");
     if (selectedDeliveryPlaceId && ((selectedDeliveryPlaceId != prevState.selectedDeliveryPlaceId) || !isSameDay)) {
+      this.loadDataSheets();
       this.updateTableData();
     }
   }
@@ -148,10 +151,11 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     });
 
     const { products, deliveries } = this.state;
+    const cellWidth = 100 / (products.length + 1);
 
     const productHeaderCells = products.map((product) => {
       return (
-        <Table.HeaderCell key={product.id}>{product.name}</Table.HeaderCell>
+        <Table.HeaderCell style={{ "width": `${cellWidth}%` }} key={product.id}>{product.name}</Table.HeaderCell>
       );
     });
 
@@ -214,6 +218,12 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
           </Table>
         }
         {
+          this.renderMorningSalesForecastTable()
+        }
+        {
+          this.renderEveningSalesForecastTable()
+        }
+        {
           this.state.selectedDelivery &&
           <ManageDeliveryModal
             onError={this.handleError}
@@ -259,15 +269,41 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   }
 
   /**
+   * Loads data sheets
+   */
+  private loadDataSheets = async () => {
+    const { selectedDate } = this.state;
+    const formattedDate = moment(selectedDate).format("YYYY-MM-DD");
+
+    this.setState({ 
+      loading: true,
+      storageDataSheet: undefined,
+      morningSalesForecastDataSheet: undefined,
+      eveningSalesForecastDataSheet: undefined
+    });
+
+    const storageDataSheet = await this.prepareDataSheet(await this.findOrCreateDataSheet(`fresh-storage-${formattedDate}`));
+    const morningSalesForecastDataSheet = await this.prepareDataSheet(await this.findOrCreateDataSheet(`fresh-morning-sales-forecast-${formattedDate}`));
+    const eveningSalesForecastDataSheet = await this.prepareDataSheet(await this.findOrCreateDataSheet(`fresh-evening-sales-forecast-${formattedDate}`));
+
+    this.setState({
+      loading: false,
+      storageDataSheet: storageDataSheet,
+      morningSalesForecastDataSheet: morningSalesForecastDataSheet,
+      eveningSalesForecastDataSheet: eveningSalesForecastDataSheet
+    });
+  }
+
+  /**
    * Finds or create datasheet by given name
    * 
    * @param name
    * @return data sheet
    */
-  private findOrCreateDataSheet = async (name: string) => {
+  private findOrCreateDataSheet = async (name: string): Promise<DataSheet> => {
     const { keycloak } = this.props;
     if (!keycloak || !keycloak.token) {
-      return;
+      throw new Error("Not logged in");
     }
 
     const dataSheetsService = Api.getDataSheetsService(keycloak.token);
@@ -300,6 +336,246 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   }
 
   /**
+   * Renders morning sales forecast table
+   */
+  private renderMorningSalesForecastTable = () => {
+    if (!this.state.morningSalesForecastDataSheet) {
+      return null;
+    }
+
+    return <SalesForecastDataTable
+      title="Myyntiennuste AAMU"
+      name="morning-sales-forecast"
+      products={ this.state.products }
+      setCellValue={ this.setMorningSalesForecastCellValue }
+      getCellValue={ this.getMorningSalesForecastCellValue }
+      getRowHeader={ this.getMorningSalesForecastRowHeader }
+      setRowHeader={ this.setMorningSalesForecastRowHeader }
+      onAddNewRow={ this.addMorningSalesForecastRow }
+      rowCount={ this.state.morningSalesForecastDataSheet.data.length - 1}/>
+  }
+
+  /**
+   * Returns row header for morning sales forecast table 
+   * 
+   * @param rowIndex row index
+   * @return row header for morning sales forecast table
+   */
+  private getMorningSalesForecastRowHeader = (rowIndex: number): string => {
+    if (!this.state.morningSalesForecastDataSheet) {
+      return "";
+    }
+
+    const data: string[][] = this.state.morningSalesForecastDataSheet.data || [[]];
+    return TableDataUtils.getCellValue(data, rowIndex, 0) || "Syötä nimi";
+  }
+
+  /**
+   * Sets row header for morning sales forecast table 
+   * 
+   * @param rowIndex row index
+   * @param value new value
+   */
+  private setMorningSalesForecastRowHeader = async (rowIndex: number, value: string) => {
+    if (!this.state.morningSalesForecastDataSheet) {
+      return;
+    }
+
+    let data: string[][] = this.state.morningSalesForecastDataSheet.data || [[]];
+    data = TableDataUtils.setCellValue(data, rowIndex, 0, value);
+
+    this.setState({
+      morningSalesForecastDataSheet: await this.saveDataSheet(this.state.morningSalesForecastDataSheet, data)
+    });
+  }
+
+  /**
+   * Returns cell value for morning sales forecast table 
+   * 
+   * @param productId product id
+   * @param rowIndex row index
+   * @return cell value for morning sales forecast table 
+   */
+  private getMorningSalesForecastCellValue = (productId: string, rowIndex: number): number => {
+    if (!this.state.morningSalesForecastDataSheet) {
+      return 0;
+    }
+
+    const data: string[][] = this.state.morningSalesForecastDataSheet.data || [[]];
+    const productIndex = TableDataUtils.findCellIndex(data, 0, productId);
+
+    return parseFloat(TableDataUtils.getCellValue(data, rowIndex + 1, productIndex) || "0") || 0;
+  }
+
+  /**
+   * Sets cell value for morning sales forecast table 
+   * 
+   * @param productId product id
+   * @param rowIndex row index
+   * @param value new value 
+   */
+  private setMorningSalesForecastCellValue = async (productId: string, rowIndex: number, value: number | null) => {
+    if (!this.state.morningSalesForecastDataSheet) {
+      return;
+    }
+
+    let data: string[][] = this.state.morningSalesForecastDataSheet.data || [[]];
+    const productIndex = TableDataUtils.findCellIndex(data, 0, productId);
+    data = TableDataUtils.setCellValue(data, rowIndex + 1, productIndex, String(value));
+
+    this.setState({
+      morningSalesForecastDataSheet: await this.saveDataSheet(this.state.morningSalesForecastDataSheet, data)
+    });
+  }
+
+  /**
+   * Adds new row to morning sales forecast table 
+   */
+  private addMorningSalesForecastRow = async () => {
+    if (!this.state.morningSalesForecastDataSheet) {
+      return;
+    }
+
+    this.setState({
+      morningSalesForecastDataSheet: await this.addDataSheetRow(this.state.morningSalesForecastDataSheet)
+    });
+  }
+
+  /**
+   * Renders morning sales forecast table
+   */
+  private renderEveningSalesForecastTable = () => {
+    if (!this.state.eveningSalesForecastDataSheet) {
+      return null;
+    }
+
+    return <SalesForecastDataTable
+      title="Myyntiennuste ILTA"
+      name="evening-sales-forecast"
+      products={ this.state.products }
+      setCellValue={ this.setEveningSalesForecastCellValue }
+      getCellValue={ this.getEveningSalesForecastCellValue }
+      getRowHeader={ this.getEveningSalesForecastRowHeader }
+      setRowHeader={ this.setEveningSalesForecastRowHeader }
+      onAddNewRow={ this.addEveningSalesForecastRow }
+      rowCount={ this.state.eveningSalesForecastDataSheet.data.length - 1}/>
+  }
+
+  /**
+   * Returns row header for evening sales forecast table 
+   * 
+   * @param rowIndex row index
+   * @return row header for evening sales forecast table
+   */
+  private getEveningSalesForecastRowHeader = (rowIndex: number): string => {
+    if (!this.state.eveningSalesForecastDataSheet) {
+      return "";
+    }
+
+    const data: string[][] = this.state.eveningSalesForecastDataSheet.data || [[]];
+    return TableDataUtils.getCellValue(data, rowIndex, 0) || "Syötä nimi";
+  }
+
+  /**
+   * Sets row header for evening sales forecast table 
+   * 
+   * @param rowIndex row index
+   * @param value new value
+   */
+  private setEveningSalesForecastRowHeader = async (rowIndex: number, value: string) => {
+    if (!this.state.eveningSalesForecastDataSheet) {
+      return;
+    }
+
+    let data: string[][] = this.state.eveningSalesForecastDataSheet.data || [[]];
+    data = TableDataUtils.setCellValue(data, rowIndex, 0, value);
+
+    this.setState({
+      eveningSalesForecastDataSheet: await this.saveDataSheet(this.state.eveningSalesForecastDataSheet, data)
+    });
+  }
+
+  /**
+   * Returns cell value for evening sales forecast table 
+   * 
+   * @param productId product id
+   * @param rowIndex row index
+   * @return cell value for evening sales forecast table 
+   */
+  private getEveningSalesForecastCellValue = (productId: string, rowIndex: number): number => {
+    if (!this.state.eveningSalesForecastDataSheet) {
+      return 0;
+    }
+
+    const data: string[][] = this.state.eveningSalesForecastDataSheet.data || [[]];
+    const productIndex = TableDataUtils.findCellIndex(data, 0, productId);
+
+    return parseFloat(TableDataUtils.getCellValue(data, rowIndex + 1, productIndex) || "0") || 0;
+  }
+
+  /**
+   * Sets cell value for evening sales forecast table 
+   * 
+   * @param productId product id
+   * @param rowIndex row index
+   * @param value new value 
+   */
+  private setEveningSalesForecastCellValue = async (productId: string, rowIndex: number, value: number | null) => {
+    if (!this.state.eveningSalesForecastDataSheet) {
+      return;
+    }
+
+    let data: string[][] = this.state.eveningSalesForecastDataSheet.data || [[]];
+    const productIndex = TableDataUtils.findCellIndex(data, 0, productId);
+    data = TableDataUtils.setCellValue(data, rowIndex + 1, productIndex, String(value));
+
+    this.setState({
+      eveningSalesForecastDataSheet: await this.saveDataSheet(this.state.eveningSalesForecastDataSheet, data)
+    });
+  }
+
+  /**
+   * Adds new row to evening sales forecast table 
+   */
+  private addEveningSalesForecastRow = async () => {
+    if (!this.state.eveningSalesForecastDataSheet) {
+      return;
+    }
+
+    this.setState({
+      eveningSalesForecastDataSheet: await this.addDataSheetRow(this.state.eveningSalesForecastDataSheet)
+    });
+  }
+
+  private addDataSheetRow = async (dataSheet: DataSheet): Promise<DataSheet> => {
+    let data: string[][] = dataSheet.data || [[]];
+    data.push([]);
+    return await this.saveDataSheet(dataSheet, data); 
+  }
+
+  private prepareDataSheet = async (dataSheet: DataSheet): Promise<DataSheet> => {
+    let data: string[][] = dataSheet.data || [[]];
+    if (data.length < 1) {
+      data.push([]);
+    }
+
+    this.state.products.forEach((product) => {
+      const index = TableDataUtils.findCellIndex(data, 0, product.id!);
+      if (index == -1) {
+        const cellIndex = TableDataUtils.getCellCount(data, 0) || 1;
+        data = TableDataUtils.setCellValue(data, 0, cellIndex, product.id!);
+      }
+    });
+
+    if (_.isEqual(data, dataSheet.data)) {
+      return dataSheet;
+    } else {
+      const updatedDataSheet = await this.saveDataSheet(dataSheet, data);
+      return updatedDataSheet!;
+    }
+  }
+
+  /**
    * Returns value for storage table
    * 
    * @param productId product id
@@ -329,11 +605,6 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
    * Applise storage table value
    */
   private onApplyStorageTableValue = async (productId: string, qualityId: string, value: number) => {
-    const { keycloak } = this.props;
-    if (!keycloak || !keycloak.token) {
-      return;
-    }
-
     if (!this.state.storageDataSheet || !this.state.storageDataSheet.id) {
       return;
     }
@@ -365,11 +636,27 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
 
     data = TableDataUtils.setCellValue(data, qualityIndex, productIndex, String(value));
 
+    this.setState({
+      storageDataSheet: await this.saveDataSheet(this.state.storageDataSheet, data)
+    });
+  }
+
+  /**
+   * Saves data sheet
+   * 
+   * @param dataSheet data sheet
+   * @param data data
+   * @return saved data shseet
+   */
+  private saveDataSheet = async (dataSheet: DataSheet, data: string[][]): Promise<DataSheet> => {
+    const { keycloak } = this.props;
+    if (!keycloak || !keycloak.token || !dataSheet.id) {
+      throw new Error("Failed to save");
+    }
+
     const dataSheetsService = Api.getDataSheetsService(keycloak.token);
 
-    this.setState({
-      storageDataSheet: await dataSheetsService.updateDataSheet({ ... this.state.storageDataSheet, data: data }, this.state.storageDataSheet.id)
-    });
+    return await dataSheetsService.updateDataSheet({ ... dataSheet, data: data }, dataSheet.id);
   }
 
   private getTableRows(deliveries: Delivery[], initialIndex?: number) {
