@@ -40,8 +40,9 @@ interface State {
   deliveries: Delivery[],
   selectedDeliveryPlaceId?: string
   selectedDelivery?: Delivery
-  proposalProduct?: Product
-  proposalContactId?: string
+  proposalProduct?: Product,
+  proposalContactId?: string,
+  proposalTime?: number,
   proposalAmount?: number
   addingProposal: boolean,
   contacts: Contact[]
@@ -162,10 +163,10 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     const morningDeliveries = this.state.deliveries.filter((delivery) => moment(delivery.time).utc().hour() <= 12);
     const eveningDeliveries = this.state.deliveries.filter((delivery) => moment(delivery.time).utc().hour() > 12);
 
-    let tableRows = this.getTableRows(morningDeliveries, 0);
+    let tableRows = this.getTableRows(true, morningDeliveries, 0);
 
     tableRows.push(this.getTableSummaryRow("morning", "#44c336", morningDeliveries, "Klo 12 mennessä yht."));
-    tableRows = tableRows.concat(this.getTableRows(eveningDeliveries, tableRows.length));
+    tableRows = tableRows.concat(this.getTableRows(false, eveningDeliveries, tableRows.length));
     tableRows.push(this.getTableSummaryRow("now", "#44c336", deliveries, "Varastossa nyt", true));
     tableRows.push(this.getTableSummaryRow("total", "#0ab130", deliveries, "Klo 17 mennessä yht."))
 
@@ -239,7 +240,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
             />
         }
         {
-          this.state.proposalContactId && this.state.proposalProduct &&
+          this.state.proposalContactId && this.state.proposalProduct && this.state.proposalTime &&
           <Modal size="tiny" open={true} onClose={() => this.setState({ proposalContactId: undefined, proposalProduct: undefined })}>
             <Modal.Header>Luo toimitusehdotus</Modal.Header>
             <Modal.Content>
@@ -762,7 +763,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     return await dataSheetsService.updateDataSheet({ ... dataSheet, data: data }, dataSheet.id);
   }
 
-  private getTableRows(deliveries: Delivery[], initialIndex?: number) {
+  private getTableRows(morning: boolean, deliveries: Delivery[], initialIndex?: number) {
 
     const { products } = this.state;
 
@@ -783,7 +784,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
             <Table.Cell
               key={`${index}-${contactId}-${product.id}`}
               selectable
-              onClick={() => this.handleCreateDelivery(contactId, product)} />
+              onClick={() => this.handleCreateDelivery(contactId, product, morning ? 11 : 17)} />
           );
         } else {
           if (productDeliveries.length > 1) {
@@ -918,7 +919,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
 
   private addProposal = async () => {
     const { keycloak } = this.props;
-    const { proposalContactId, proposalProduct, proposalAmount, selectedDeliveryPlaceId, selectedDate } = this.state;
+    const { proposalContactId, proposalProduct, proposalAmount, proposalTime, selectedDeliveryPlaceId, selectedDate } = this.state;
     if (!keycloak || !keycloak.token || !proposalContactId || !proposalAmount || !proposalProduct || !proposalAmount || !selectedDeliveryPlaceId) {
       return;
     }
@@ -927,12 +928,17 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       addingProposal: true
     });
 
+
+    let time: string | Date = moment(selectedDate).format("YYYY-MM-DD");
+    time = `${time} ${proposalTime}:00 +0000`
+    time = moment(time, "YYYY-MM-DD HH:mm Z").toDate();
+
     await Api.getDeliveriesService(keycloak.token).createDelivery({
       amount: proposalAmount,
       deliveryPlaceId: selectedDeliveryPlaceId,
       productId: proposalProduct.id!,
       status: "PROPOSAL",
-      time: selectedDate,
+      time: time,
       userId: proposalContactId!
     });
 
@@ -940,7 +946,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       addingProposal: false,
       proposalAmount: undefined,
       proposalContactId: undefined,
-      proposalProduct: undefined
+      proposalProduct: undefined,
+      proposalTime: undefined
     });
 
     this.updateTableData();
@@ -1029,10 +1036,11 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     }
   }
 
-  private handleCreateDelivery = (contactId: string, product: Product) => {
+  private handleCreateDelivery = (contactId: string, product: Product, time: number) => {
     this.setState({
       proposalContactId: contactId,
-      proposalProduct: product
+      proposalProduct: product,
+      proposalTime: time
     });
   }
 

@@ -1,6 +1,7 @@
 import * as React from "react";
 import * as actions from "../../actions";
 import * as _ from "lodash";
+import * as moment from "moment";
 import { StoreState, DeliveriesState, Options, DeliveryDataValue, HttpErrorResponse, deliveryNoteImg64 } from "../../types";
 import Api, { Product, DeliveryPlace, Delivery, DeliveryNote, DeliveryQuality } from "pakkasmarja-client";
 import { Dispatch } from "redux";
@@ -44,6 +45,7 @@ interface State {
   selectedQualityId?: string,
   amount: number,
   date: Date,
+  deliveryTimeValue?: number;
   category: string,
   deliveryNotes: DeliveryNote[],
   deliveryNotesWithImgBase64: deliveryNoteImg64[],
@@ -122,6 +124,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     }
 
     const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(itemGroup.category);
+    const deliveryTime = moment(delivery.time).utc().hour() <= 12 ? 11: 17;
 
     await this.setState({
       products,
@@ -133,6 +136,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       selectedPlaceId: delivery.deliveryPlaceId,
       selectedQualityId: delivery.qualityId,
       date: delivery.time,
+      deliveryTimeValue: deliveryTime,
       deliveryQualities: deliveryQualities,
       loading: false
     });
@@ -305,12 +309,16 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       return;
     }
 
+    let time: string | Date = moment(this.state.date).format("YYYY-MM-DD");
+    time = `${time} ${this.state.deliveryTimeValue}:00 +0000`
+    time = moment(time, "YYYY-MM-DD HH:mm Z").toDate();
+
     try {
       const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
       const delivery: Delivery = {
         productId: this.state.selectedProductId,
         userId: this.state.userId || "",
-        time: this.state.date,
+        time: time,
         status: this.props.delivery.status,
         amount: this.state.amount,
         price: "0",
@@ -364,6 +372,16 @@ class ManageDeliveryModal extends React.Component<Props, State> {
         value: deliveryPlace.id || ""
       };
     }) || [];
+
+    const deliveryTimeValue: Options[] = [{
+      key: "deliveryTimeValue1",
+      text: "Ennen kello 12",
+      value: 11
+    }, {
+      key: "deliveryTimeValue2",
+      text: "Jälkeen kello 12",
+      value: 17
+    }];
 
     return (
       <Modal onClose={() => this.props.onClose()} open={this.props.open}>
@@ -461,6 +479,10 @@ class ManageDeliveryModal extends React.Component<Props, State> {
                 selected={new Date(this.state.date)}
                 locale="fi"
               />
+            </Form.Field>
+            <Form.Field>
+              <label>{"Ajankohta"}</label>
+              {this.renderDropDown(deliveryTimeValue, "deliveryTimeValue")}
             </Form.Field>
             <Form.Field style={{ marginTop: 20 }}>
               <label>{strings.deliveryPlace}</label>
