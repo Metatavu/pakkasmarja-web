@@ -6,7 +6,7 @@ import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
 import Api, { DeliveryPlace, Product, Contact, Delivery, DeliveryQuality, DataSheet } from "pakkasmarja-client";
-import { Dimmer, Loader, Dropdown, DropdownProps, Modal, Button, Input, Image, Icon, Popup, Form } from "semantic-ui-react";
+import { Dimmer, Loader, Modal, Button, Input, Image, Icon, Popup, Form } from "semantic-ui-react";
 import { Table } from 'semantic-ui-react';
 import BasicLayout from "../generic/BasicLayout";
 import * as moment from "moment";
@@ -18,15 +18,16 @@ import IncomingDeliveryIcon from "../../gfx/incoming-delivery-icon.png";
 import "./styles.css"
 import CreateDeliveryModal from "./CreateDeliveryModal";
 import StorageDataTable from "./StorageTable";
-import TableDataUtils from "src/utils/table-data-utils";
+import TableDataUtils from "../../utils/table-data-utils";
 import SalesForecastDataTable from "./SalesForecastTable";
+import AppConfig from "../../utils/AppConfig";
 
 /**
  * Interface for component props
  */
 interface Props {
-  authenticated: boolean;
-  keycloak?: Keycloak.KeycloakInstance;
+  authenticated: boolean
+  keycloak?: Keycloak.KeycloakInstance
 }
 
 /**
@@ -35,10 +36,11 @@ interface Props {
 interface State {
   selectedDate: Date
   loading: boolean
-  deliveryPlaces: DeliveryPlace[]
+  deliveryPlace: DeliveryPlace,
+  deliveryPlaceId: string,
+  deliveryPlaces: DeliveryPlace[],
   products: Product[],
   deliveries: Delivery[],
-  selectedDeliveryPlaceId?: string
   selectedDelivery?: Delivery
   proposalProduct?: Product,
   proposalContactId?: string,
@@ -51,7 +53,7 @@ interface State {
   error?: string,
   storageDataSheet?: DataSheet,
   morningSalesForecastDataSheet?: DataSheet,
-  eveningSalesForecastDataSheet?: DataSheet
+  eveningSalesForecastDataSheet?: DataSheet,
 }
 
 /**
@@ -71,13 +73,15 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     this.state = {
       loading: false,
       deliveryPlaces: [],
+      deliveryPlace: { },
       products: [],
       deliveries: [],
       contacts: [],
       selectedDate: new Date(),
       addingProposal: false,
       deliveryQualities: {},
-      newDeliveryModalOpen: false
+      newDeliveryModalOpen: false,
+      deliveryPlaceId: ""
     };
     registerLocale('fi', fi);
   }
@@ -92,15 +96,28 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     }
 
     this.setState({ loading: true });
-    const deliveryPlaces = await Api.getDeliveryPlacesService(keycloak.token).listDeliveryPlaces();
-    const products = await Api.getProductsService(keycloak.token).listProducts(undefined, "FRESH");
+
+    const appConfig = await AppConfig.getAppConfig();
+    const deliveryPlaceId = appConfig.delivery["fresh-delivery-place-id"];
+    if (!deliveryPlaceId) {
+      throw new Error("Invalid configuration. Missing delivery place id");
+    }
+
+    const deliveryPlace = await Api.getDeliveryPlacesService(keycloak.token).findDeliveryPlace(deliveryPlaceId);
+    const products = await Api.getProductsService(keycloak.token).listProducts(undefined, "FRESH", undefined, 0, 999);
     const deliveryQualities = await Api.getDeliveryQualitiesService(keycloak.token).listDeliveryQualities("FRESH");
+    const deliveryPlaces = await Api.getDeliveryPlacesService(keycloak.token).listDeliveryPlaces();
     
+    this.loadDataSheets();
+    this.updateTableData();
+
     this.setState({
       loading: false,
+      deliveryPlace: deliveryPlace,
       deliveryPlaces: deliveryPlaces,
       products: products,
-      deliveryQualities: _.keyBy(deliveryQualities, "id")
+      deliveryQualities: _.keyBy(deliveryQualities, "id"),
+      deliveryPlaceId: deliveryPlaceId
     });
 
     this.pollInterval = setInterval(() => {
@@ -119,9 +136,9 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   }
 
   public async componentDidUpdate(prevProps: Props, prevState: State) {
-    const { selectedDeliveryPlaceId, selectedDate } = this.state;
+    const { selectedDate } = this.state;
     const isSameDay = moment(selectedDate).isSame(prevState.selectedDate, "day");
-    if (selectedDeliveryPlaceId && ((selectedDeliveryPlaceId != prevState.selectedDeliveryPlaceId) || !isSameDay)) {
+    if (!isSameDay) {
       this.loadDataSheets();
       this.updateTableData();
     }
@@ -143,14 +160,6 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       );
     }
 
-    const deliveryPlaceOptions = this.state.deliveryPlaces.map((deliveryPlace) => {
-      return {
-        key: deliveryPlace.id,
-        value: deliveryPlace.id,
-        text: deliveryPlace.name
-      }
-    });
-
     const { products, deliveries } = this.state;
     const cellWidth = 100 / (products.length + 1);
 
@@ -168,24 +177,15 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     tableRows.push(this.getTableSummaryRow("morning", "#44c336", morningDeliveries, "Klo 12 mennessä yht."));
     tableRows = tableRows.concat(this.getTableRows(false, eveningDeliveries, tableRows.length));
     tableRows.push(this.getTableSummaryRow("now", "#44c336", deliveries, "Varastossa nyt", true));
-    tableRows.push(this.getTableSummaryRow("total", "#0ab130", deliveries, "Klo 17 mennessä yht."))
-
+    tableRows.push(this.getTableSummaryRow("total", "#0ab130", deliveries, "Klo 17 mennessä yht."));
+    
     return (
-      <TableBasicLayout topBarButtonText={this.state.selectedDeliveryPlaceId ? "+ Uusi ehdotus viljelijälle" : undefined} onTopBarButtonClick={this.state.selectedDeliveryPlaceId ? () => this.setState({ newDeliveryModalOpen: true }) : undefined} error={this.state.error} onErrorClose={() => this.setState({ error: undefined })} pageTitle="Päiväennuste, tuoreet">
+      <TableBasicLayout topBarButtonText={ "+ Uusi ehdotus viljelijälle" } onTopBarButtonClick={() => this.setState({ newDeliveryModalOpen: true }) } error={this.state.error} onErrorClose={() => this.setState({ error: undefined })} pageTitle="Päiväennuste, tuoreet">
         <div style={{ display: "flex", flex: 1, flexDirection: "column" }}>
-          <div style={{ display: "flex", flex: 1, justifyContent: "center", padding: 10, fontSize: "1.5em" }}><p>Valitse toimituspaikka ja päivämäärä</p></div>
+          <div style={{ display: "flex", flex: 1, justifyContent: "center", padding: 10, fontSize: "1.5em" }}><p>Valitse päivämäärä</p></div>
           <div style={{ display: "flex", flex: 1, flexDirection: "row" }}>
-            <div style={{ display: "flex", flex: 1, justifyContent: "flex-end", marginRight: "0.5%" }}>
-              <Dropdown
-                selection
-                placeholder="Toimituspaikka"
-                options={deliveryPlaceOptions}
-                value={this.state.selectedDeliveryPlaceId}
-                search
-                onChange={this.handleDeliveryPlaceChange}
-              />
-            </div>
-            <div style={{ display: "flex", flex: 1, justifyContent: "flex-start", marginLeft: "0.5%" }}>
+            
+            <div style={{ display: "flex", flex: 1, justifyContent: "center" }}>
               <Form>
                 <Form.Field>
                   <DatePicker
@@ -200,22 +200,22 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
                 </Form.Field>
               </Form>
             </div>
+            
           </div>
         </div>
         {
           this.renderStorageTable()
         }
         {
-          this.state.selectedDeliveryPlaceId &&
           <Table celled padded selectable>
             <Table.Header>
               <Table.Row className="table-header-row">
                 <Table.HeaderCell key="viljelija">Viljelijä</Table.HeaderCell>
-                {productHeaderCells}
+                { productHeaderCells }
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              {tableRows}
+              { tableRows }
             </Table.Body>
           </Table>
         }
@@ -254,8 +254,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
           </Modal>
         }
         {
-          this.state.selectedDeliveryPlaceId &&
           <CreateDeliveryModal
+            deliveryPlaces={ this.state.deliveryPlaces }
             open={this.state.newDeliveryModalOpen}
             onClose={(created?: boolean) => {
               this.setState({ newDeliveryModalOpen: false });
@@ -265,8 +265,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
             }}
             products={this.state.products}
             date={this.state.selectedDate}
-            deliveryPlaceId={this.state.selectedDeliveryPlaceId}
-            deliveryPlace={this.state.deliveryPlaces.find(place => place.id === this.state.selectedDeliveryPlaceId)}
+            deliveryPlaceId={ this.state.deliveryPlaceId }
           />
         }
       </TableBasicLayout >
@@ -766,6 +765,9 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   private getTableRows(morning: boolean, deliveries: Delivery[], initialIndex?: number) {
 
     const { products } = this.state;
+    const otherDeliveryPlace =  !!deliveries.find((delivery) => {
+      return delivery.deliveryPlaceId !== this.state.deliveryPlaceId;
+    });
 
     const tableRows: JSX.Element[] = [];
     let index = initialIndex || 0;
@@ -775,7 +777,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       let tableCells: JSX.Element[] = [];
       let contactId = contactIds[i];
       let contact = this.getContact(contactId);
-      tableCells.push(<Table.Cell key={`${index}-${contactId}`}>{contact ? contact.displayName : <Loader size="mini" inline />}</Table.Cell>);
+      tableCells.push(<Table.Cell key={`${index}-${contactId}`}>{ contact ? <span> { contact.displayName  } { otherDeliveryPlace ? <Icon style={{ float: "right" }} name="map marker alternate" color="red"/> : null } </span> : <Loader size="mini" inline />}</Table.Cell>);
       for (let j = 0; j < products.length; j++) {
         let product = products[j];
         const productDeliveries = this.listContactDeliveries(contactId, product, deliveries);
@@ -919,8 +921,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
 
   private addProposal = async () => {
     const { keycloak } = this.props;
-    const { proposalContactId, proposalProduct, proposalAmount, proposalTime, selectedDeliveryPlaceId, selectedDate } = this.state;
-    if (!keycloak || !keycloak.token || !proposalContactId || !proposalAmount || !proposalProduct || !proposalAmount || !selectedDeliveryPlaceId) {
+    const { proposalContactId, proposalProduct, proposalAmount, proposalTime, selectedDate } = this.state;
+    if (!keycloak || !keycloak.token || !proposalContactId || !proposalAmount || !proposalProduct || !proposalAmount) {
       return;
     }
 
@@ -935,7 +937,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
 
     await Api.getDeliveriesService(keycloak.token).createDelivery({
       amount: proposalAmount,
-      deliveryPlaceId: selectedDeliveryPlaceId,
+      deliveryPlaceId: this.state.deliveryPlaceId,
       productId: proposalProduct.id!,
       status: "PROPOSAL",
       time: time,
@@ -982,19 +984,13 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     return (deliveries || []).filter((delivery) => delivery.productId == product.id && delivery.userId == contactId);
   }
 
-  private handleDeliveryPlaceChange = (event: React.SyntheticEvent<HTMLElement>, data: DropdownProps) => {
-    this.setState({
-      selectedDeliveryPlaceId: data.value as string
-    });
-  }
-
   /**
    * Refreshes deliveries from the server. Method does not show operation to the user
    */
   private reloadDeliveries = async () => {
     const { keycloak } = this.props;
     if (keycloak && keycloak.token && !this.state.loading) {
-      if (this.state.selectedDeliveryPlaceId && keycloak && keycloak.token) {
+      if (keycloak && keycloak.token) {
       const deliveries = await this.loadDeliveries(keycloak.token);
       this.setState({ deliveries: deliveries });
       }
@@ -1007,7 +1003,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
    * @param token access token
    */
   private loadDeliveries = (token: string) => {
-    const { selectedDeliveryPlaceId, selectedDate } = this.state;
+    const { selectedDate } = this.state;
     const timeBefore = moment(selectedDate).endOf("day").toDate();
     const timeAfter = moment(selectedDate).startOf("day").toDate();
     return Api.getDeliveriesService(token).listDeliveries(
@@ -1016,7 +1012,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       "FRESH",
       undefined,
       undefined,
-      selectedDeliveryPlaceId,
+      undefined,
       timeBefore,
       timeAfter,
       0,
@@ -1028,8 +1024,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
    */
   private updateTableData = async () => {
     const { keycloak } = this.props;
-    const { selectedDeliveryPlaceId } = this.state;
-    if (selectedDeliveryPlaceId && keycloak && keycloak.token) {
+    
+    if (keycloak && keycloak.token) {
       this.setState({ loading: true });
       const deliveries = await this.loadDeliveries(keycloak.token);
       this.setState({ loading: false, deliveries: deliveries });
