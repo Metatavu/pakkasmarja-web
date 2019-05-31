@@ -16,6 +16,7 @@ interface Props {
   contractAmount?: number;
   quantityComment: string;
   deliverAllChecked: boolean;
+  allowDeliveryAll: boolean;
 }
 
 /**
@@ -90,15 +91,18 @@ export default class ContractAmount extends React.Component<Props, State> {
             <Icon color="red" name='info circle' />
             {strings.showPastYearAmounts}
           </p>
-          <Form.Field>
-            <Checkbox
-              checked={this.props.deliverAllChecked}
-              onChange={(event: any) => {
-                !this.state.isReadOnly && this.props.onUserInputChange("deliverAllChecked", !this.props.deliverAllChecked)
-              }}
-              label={strings.wantToDeliverAll}
-            />
-          </Form.Field>
+          {
+            this.props.allowDeliveryAll &&
+            <Form.Field>
+              <Checkbox
+                checked={this.props.deliverAllChecked}
+                onChange={(event: any) => {
+                  !this.state.isReadOnly && this.props.onUserInputChange("deliverAllChecked", !this.props.deliverAllChecked)
+                }}
+                label={strings.wantToDeliverAll}
+              />
+            </Form.Field>
+          }
           <Form.Field>
             <TextArea
               value={this.props.quantityComment}

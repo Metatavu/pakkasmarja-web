@@ -16,6 +16,7 @@ interface Props {
   approveButtonText: string,
   canAccept: boolean,
   errorText?: string
+  validationErrorText: string
 };
 
 /**
@@ -65,13 +66,16 @@ export default class ContractFooter extends React.Component<Props, State> {
         }
         {
           !this.props.isActiveContract &&
-          <Button.Group floated="right" >
-            <Button onClick={this.props.acceptContract} disabled={!this.props.canAccept} color="red">{this.props.approveButtonText}</Button>
-            <Button.Or text="" />
-            <Button onClick={this.props.declineContract} inverted color="red">{strings.decline}</Button>
-            <Button.Or text="" />
-            <Button onClick={() => this.setState({ redirect: true })} color="black">{strings.back}</Button>
-          </Button.Group>
+          <React.Fragment>
+            <p style={{ color: "red", textAlign: "right", fontSize: "1.2em" }}>{this.props.validationErrorText}</p>
+            <Button.Group floated="right" >
+              <Button onClick={this.props.acceptContract} disabled={(!this.props.canAccept || !!this.props.validationErrorText )} color="red">{this.props.approveButtonText}</Button>
+              <Button.Or text="" />
+              <Button onClick={this.props.declineContract} inverted color="red">{strings.decline}</Button>
+              <Button.Or text="" />
+              <Button onClick={() => this.setState({ redirect: true })} color="black">{strings.back}</Button>
+            </Button.Group>
+          </React.Fragment>
         }
       </React.Fragment>
     );

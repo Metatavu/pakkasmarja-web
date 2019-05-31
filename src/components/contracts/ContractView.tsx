@@ -20,6 +20,7 @@ import ContractRejectModal from "./ContractRejectModal";
 import { Redirect } from "react-router";
 import { PDFService } from "src/api/pdf.service";
 import * as moment from "moment";
+import AppConfig, { AppConfigItemGroupOptions } from "../../utils/AppConfig";
 
 /**
  * Interface for component State
@@ -53,6 +54,9 @@ interface State {
   navigateToTerms: boolean;
   pdfType: string;
   missingPrerequisiteContract: boolean;
+  allowDeliveryAll: boolean;
+  requireAreaDetails: boolean;
+  validationErrorText: string;
 }
 
 /**
@@ -68,6 +72,9 @@ class ContractView extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
+      validationErrorText: "",
+      allowDeliveryAll: false,
+      requireAreaDetails: false,
       loading: false,
       loadingText: "",
       companyName: "Pakkasmarja Oy",
@@ -132,6 +139,17 @@ class ContractView extends React.Component<Props, State> {
       deliveryPlaces: deliveryPlaces
     });
 
+    const appConfig = await AppConfig.getAppConfig();
+
+    if (appConfig && itemGroup && itemGroup.id) {
+      const configItemGroups = appConfig["item-groups"];
+      const itemGroupId = itemGroup.id;
+      const configItemGroup: AppConfigItemGroupOptions = configItemGroups[itemGroupId];
+      const requireAreaDetails = configItemGroup && configItemGroup["require-area-details"] ? true : false;
+      const allowDeliveryAll = configItemGroup && configItemGroup["allow-delivery-all"] ? true : false;
+      this.state.contractData.areaDetailValues.length <= 0 && requireAreaDetails ? this.setState({ validationErrorText: "Täytä tuotannossa olevat hehtaarit taulukkoon" }) : this.setState({ validationErrorText: "" });
+      this.setState({ requireAreaDetails, allowDeliveryAll });
+    }
     this.checkIfCompanyApprovalNeeded();
   }
 
@@ -145,7 +163,7 @@ class ContractView extends React.Component<Props, State> {
 
     this.setState({ loadingText: "Loading contracts" });
     const contractsService = await Api.getContractsService(this.props.keycloak.token);
-    return await contractsService.listContracts("application/json");
+    return await contractsService.listContracts("application/json", undefined, undefined, undefined, undefined, undefined, 0, 99);
   }
 
   /**
@@ -193,7 +211,7 @@ class ContractView extends React.Component<Props, State> {
 
     this.setState({ loadingText: "Loading prices" });
     const itemGroupsService = await Api.getItemGroupsService(this.props.keycloak.token);
-    return await itemGroupsService.listItemGroupPrices(contract.itemGroupId);
+    return await itemGroupsService.listItemGroupPrices(contract.itemGroupId,undefined,"ASC",0,100);
   }
 
   /**
@@ -259,7 +277,6 @@ class ContractView extends React.Component<Props, State> {
       contract.areaDetails = areaDetails;
     }
 
-
     const updatedContract = await contractsService.updateContract(contract, contract.id || "");
 
     if (updatedContract.status !== "DRAFT") {
@@ -301,6 +318,15 @@ class ContractView extends React.Component<Props, State> {
     contractData[key] = value;
     this.setState({ contractData: contractData });
     this.checkIfCompanyApprovalNeeded();
+
+    if (key === "areaDetailValues" && this.state.requireAreaDetails) {
+      if (this.state.contractData.areaDetailValues.length > 0) {
+        this.setState({ validationErrorText: "" });
+      } else {
+        const validationErrorText = "Täytä tuotannossa olevat hehtaarit taulukkoon"
+        this.setState({ validationErrorText });
+      }
+    }
   }
 
   /**
@@ -405,13 +431,17 @@ class ContractView extends React.Component<Props, State> {
             proposedAmount={this.state.contractData.proposedQuantity}
             quantityComment={this.state.contractData.quantityComment}
             deliverAllChecked={this.state.contractData.deliverAllChecked}
+            allowDeliveryAll={this.state.allowDeliveryAll}
           />
-          <ContractAreaDetails
-            itemGroup={this.state.itemGroup}
-            areaDetailValues={this.state.contractData.areaDetailValues}
-            isReadOnly={this.state.contract.status !== "DRAFT"}
-            onUserInputChange={this.updateContractData}
-          />
+          {
+            this.state.requireAreaDetails &&
+            <ContractAreaDetails
+              itemGroup={this.state.itemGroup}
+              areaDetailValues={this.state.contractData.areaDetailValues}
+              isReadOnly={this.state.contract.status !== "DRAFT"}
+              onUserInputChange={this.updateContractData}
+            />
+          }
           <ContractDeliveryPlace
             contract={this.state.contract}
             onUserInputChange={this.updateContractData}
@@ -431,6 +461,7 @@ class ContractView extends React.Component<Props, State> {
             acceptContract={this.acceptContractClicked}
             declineContract={this.declineContractClicked}
             approveButtonText={this.state.companyApprovalRequired ? "Ehdota muutosta" : "Hyväksyn"}
+            validationErrorText={this.state.validationErrorText}
           />
           <ContractRejectModal
             onUserInputChange={this.updateContractData}
