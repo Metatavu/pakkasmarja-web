@@ -86,7 +86,7 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
 
     this.setState({ loading: true });
     const deliveryPlaces = await Api.getDeliveryPlacesService(keycloak.token).listDeliveryPlaces();
-    const products = await Api.getProductsService(keycloak.token).listProducts(undefined, "FROZEN");
+    const products = await Api.getProductsService(keycloak.token).listProducts(undefined, "FROZEN", undefined, 0, 999);
     const deliveryQualities = await Api.getDeliveryQualitiesService(keycloak.token).listDeliveryQualities("FROZEN");
 
     this.setState({

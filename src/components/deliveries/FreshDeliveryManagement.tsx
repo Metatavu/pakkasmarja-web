@@ -104,7 +104,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     }
 
     const deliveryPlace = await Api.getDeliveryPlacesService(keycloak.token).findDeliveryPlace(deliveryPlaceId);
-    const products = await Api.getProductsService(keycloak.token).listProducts(undefined, "FRESH");
+    const products = await Api.getProductsService(keycloak.token).listProducts(undefined, "FRESH", undefined, 0, 999);
     const deliveryQualities = await Api.getDeliveryQualitiesService(keycloak.token).listDeliveryQualities("FRESH");
     const deliveryPlaces = await Api.getDeliveryPlacesService(keycloak.token).listDeliveryPlaces();
     
