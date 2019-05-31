@@ -230,6 +230,7 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
         }
         {this.state.selectedDeliveryPlaceId &&
           <CreateDeliveryModal
+            deliveryPlaces={ this.state.deliveryPlaces }
             open={this.state.newDeliveryModalOpen}
             onClose={(created?: boolean) => {
               this.setState({ newDeliveryModalOpen: false });
@@ -240,7 +241,6 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
             products={this.state.products}
             date={this.state.selectedDate}
             deliveryPlaceId={this.state.selectedDeliveryPlaceId}
-            deliveryPlace={this.state.deliveryPlaces.find(place => place.id === this.state.selectedDeliveryPlaceId)}
           />
         }
       </TableBasicLayout>

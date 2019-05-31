@@ -25,9 +25,9 @@ interface Props {
   products: Product[],
   date: Date,
   deliveryPlaceId: string,
-  deliveryPlace?: DeliveryPlace,
   onClose: (created?: boolean) => void,
-  open: boolean
+  open: boolean,
+  deliveryPlaces: DeliveryPlace[] 
 }
 
 /**
@@ -36,6 +36,7 @@ interface Props {
 interface State {
   selectedProductId?: string;
   selectedContactId?: string;
+  selectedDeliveryPlaceId: string,
   amount: number;
   modalOpen: boolean;
   deliveryNotes: DeliveryNote[];
@@ -65,8 +66,10 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       deliveryNotes: [],
       contactsLoading: false,
       contacts: [],
-      deliveryNoteImgs64: []
+      deliveryNoteImgs64: [],
+      selectedDeliveryPlaceId: props.deliveryPlaceId
     };
+
     registerLocale('fi', fi);
   }
 
@@ -77,6 +80,8 @@ class CreateDeliveryModal extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
+
+
   }
 
   /**
@@ -179,7 +184,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       status: "PROPOSAL",
       amount: this.state.amount,
       price: "0",
-      deliveryPlaceId: this.props.deliveryPlaceId
+      deliveryPlaceId: this.state.selectedDeliveryPlaceId
     }
 
     const createdDelivery = await deliveryService.createDelivery(delivery);
@@ -259,6 +264,14 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       value: 17
     }];
 
+    const deliveryPlaces: Options[] = this.props.deliveryPlaces.map((deliveryPlace) => {
+      return {
+        key: deliveryPlace.id,
+        value: deliveryPlace.id,
+        text: deliveryPlace.name
+      };
+    });
+
     return (
       <Modal onClose={() => this.props.onClose()} open={this.props.open}>
         <Modal.Header>Uusi toimitusehdotus</Modal.Header>
@@ -268,7 +281,8 @@ class CreateDeliveryModal extends React.Component<Props, State> {
               <p><b>Päivämäärä: </b> {this.props.date && moment(this.props.date).format("DD.MM.YYYY")}</p>
             </Form.Field>
             <Form.Field>
-              <p><b>Toimituspaikka: </b> {this.props.deliveryPlace && this.props.deliveryPlace.name}</p>
+              <label>{strings.product}</label>
+              { this.renderDropDown(deliveryPlaces, "Toimituspaikka", "selectedDeliveryPlaceId") }
             </Form.Field>
             <Form.Field>
               <label>{strings.product}</label>
