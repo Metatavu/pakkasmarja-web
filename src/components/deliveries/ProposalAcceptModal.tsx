@@ -136,6 +136,25 @@ class ProposalAcceptModal extends React.Component<Props, State> {
   }
 
   /**
+   * Handle proposal decline
+   */
+  private handleProposalDecline = async () => {
+    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.deliveryProduct || !this.state.deliveryProduct.delivery|| !this.state.deliveryProduct.delivery.id || !this.state.deliveryProduct.product) {
+      return;
+    }
+    const delivery = this.state.deliveryProduct.delivery;
+    const deliveryId = this.state.deliveryProduct.delivery.id;
+    const deliveriesService = await Api.getDeliveriesService(this.props.keycloak.token);
+
+    const updateDelivery = await deliveriesService.updateDelivery({ ...delivery, status: "REJECTED" }, deliveryId);
+    const updatedDeliveryProduct: DeliveryProduct = { delivery: updateDelivery, product: this.state.deliveryProduct.product };
+    const updatedDeliveries = this.getUpdatedDeliveryData(updatedDeliveryProduct);
+    this.props.deliveriesLoaded && this.props.deliveriesLoaded(updatedDeliveries);
+    this.props.loadData();
+    this.closeModal();
+  }
+
+  /**
    * Get updated delivery data 
    * 
    * @param deliveryProduct deliveryProduct
@@ -257,9 +276,11 @@ class ProposalAcceptModal extends React.Component<Props, State> {
               />
             }
             <Button.Group floated="right" style={{ marginBottom: 10, marginTop: 10 }} >
-              <Button onClick={this.closeModal} color="black">{strings.close}</Button>
+              <Button onClick={this.closeModal} inverted color="red">{strings.close}</Button>
               <Button.Or text="" />
-              <Button onClick={this.handleProposalAccept} color="red">{strings.accept}</Button>
+              <Button onClick={this.handleProposalDecline} color="black">Hylkää ehdotus</Button>
+              <Button.Or text="" />
+              <Button onClick={this.handleProposalAccept} color="red">{strings.accept} ehdotus</Button>
             </Button.Group>
           </Modal.Content>
         }

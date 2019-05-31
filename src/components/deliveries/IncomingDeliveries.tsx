@@ -3,7 +3,7 @@ import * as actions from "../../actions/";
 import { StoreState, DeliveriesState, DeliveryProduct, SortedDeliveryProduct } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import { Header, Item, Button, Grid, Image } from "semantic-ui-react";
+import { Header, Item, Button, Grid, Image, Modal } from "semantic-ui-react";
 import { Link, Redirect } from "react-router-dom";
 import "../../styles/common.css";
 import ViewModal from "./ViewModal";
@@ -39,6 +39,9 @@ interface State {
   category?: string;
   redirectTo?: string;
   deliveryProduct?: DeliveryProduct;
+  confirmRemove: boolean;
+  deliveryDescription: string;
+  confirmBeginDelivery: boolean;
 }
 
 /**
@@ -55,7 +58,10 @@ class IncomingDeliveries extends React.Component<Props, State> {
     super(props);
     this.state = {
       viewModal: false,
-      redirect: false
+      redirect: false,
+      confirmRemove: false,
+      confirmBeginDelivery: false,
+      deliveryDescription: ""
     };
   }
 
@@ -135,7 +141,8 @@ class IncomingDeliveries extends React.Component<Props, State> {
         <Button.Group floated="right" style={{ maxHeight: "37px" }}>
           <Button as={Link} to={`/editDelivery/${category}/${deliveryProduct.delivery.id}`} color="red">Muokkaa</Button>
           <Button.Or text="" />
-          <Button onClick={() => this.handleBeginDelivery(deliveryProduct)} color="green">Aloita toimitus</Button>
+          <Button onClick={() => this.handleOpenBeginDeliveryModal(deliveryProduct)} color="green">Aloita toimitus</Button>
+          <Button icon='trash alternate' onClick={() => this.setState({ deliveryProduct, confirmRemove: true })} color="black" />
         </Button.Group>
       );
     }
@@ -144,20 +151,33 @@ class IncomingDeliveries extends React.Component<Props, State> {
   }
 
   /**
+   * Handle open begin delivery modal
+   */
+  private handleOpenBeginDeliveryModal = (deliveryProduct: DeliveryProduct) => {
+    if (deliveryProduct && deliveryProduct.product) {
+      const itemGroupId = deliveryProduct.product.itemGroupId;
+      this.setState({ deliveryProduct, confirmBeginDelivery: true });
+      this.checkIfNatural(itemGroupId);
+    }
+  }
+
+  /**
    * Handles begin delivery
    * 
    * @param deliveryProduct
    */
-  private handleBeginDelivery = async (deliveryProduct: DeliveryProduct) => {
+  private handleBeginDelivery = async (deliveryProduct?: DeliveryProduct) => {
+    if (!deliveryProduct) {
+      return;
+    }
     const delivery = deliveryProduct.delivery;
-    if (!this.props.keycloak || !this.props.keycloak.token || !delivery.id) {
+    if (!this.props.keycloak || !this.props.keycloak.token || !delivery.id || !this.props.keycloak.subject) {
       return;
     }
     const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
     const updatedDelivery: Delivery = {
-      id: "",
       productId: delivery.productId,
-      userId: this.props.keycloak.subject || "",
+      userId: this.props.keycloak.subject,
       time: delivery.time,
       status: "DELIVERY",
       amount: delivery.amount,
@@ -166,10 +186,54 @@ class IncomingDeliveries extends React.Component<Props, State> {
     }
 
     const updateDelivery = await deliveryService.updateDelivery(updatedDelivery, delivery.id);
+    this.setState({ confirmBeginDelivery: false });
     const updatedDeliveryProduct: DeliveryProduct = { delivery: updateDelivery, product: deliveryProduct.product };
     const updatedDeliveries = this.getUpdatedDeliveryData(updatedDeliveryProduct);
     this.props.deliveriesLoaded && this.props.deliveriesLoaded(updatedDeliveries);
     this.loadData();
+  }
+
+  /**
+   * Handles remove delivery
+   * 
+   * @param deliveryProduct
+   */
+  private handleRemoveDelivery = async (deliveryProduct?: DeliveryProduct) => {
+    if (!deliveryProduct) {
+      return;
+    }
+    this.setState({ confirmRemove: false });
+    const delivery = deliveryProduct.delivery;
+    if (!this.props.keycloak || !this.props.keycloak.token || !delivery.id) {
+      return;
+    }
+    const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
+    const updateDelivery = await deliveryService.updateDelivery({ ...delivery, status: "REJECTED" }, delivery.id);
+    const updatedDeliveryProduct: DeliveryProduct = { delivery: updateDelivery, product: deliveryProduct.product };
+    const updatedDeliveries = this.getUpdatedDeliveryData(updatedDeliveryProduct);
+    this.props.deliveriesLoaded && this.props.deliveriesLoaded(updatedDeliveries);
+    this.loadData();
+  }
+
+  /**
+   * Check if prodcuts itemgroup is natural
+   * 
+   * @param itemGroupId itemGroupId
+   * @returns if itemgroup is natural or not
+   */
+  private checkIfNatural = async (itemGroupId: string) => {
+    if (!this.props.keycloak || !this.props.keycloak.token) {
+      return;
+    }
+    const itemGroupService = Api.getItemGroupsService(this.props.keycloak.token);
+    const itemGroup = await itemGroupService.findItemGroup(itemGroupId);
+    const itemGroupDisplayName = itemGroup.displayName;
+    const description = 'Vakuutan, että toimituksessa mainittujen marjojen alkuperämaa on Suomi, ja että liitetty kuva on otettu tämän toimituksen marjoista';
+    const luomuDescription = "Vakuutan, että toimituksessa mainittujen luomumarjojen alkuperämaa on Suomi, ja että liitetty kuva on otettu tämän toimituksen marjoista. Luomumarjat ovat myös neuvoston asetuksen (EY 834/2007) ja komission asetuksen (EY 889/2008) mukaisesti tuotettu tuote."
+    if (itemGroupDisplayName) {
+      const isNatural = itemGroupDisplayName.toLowerCase().includes("luomu");
+      this.setState({ deliveryDescription: isNatural ? luomuDescription : description });
+    }
   }
 
   /**
@@ -279,6 +343,30 @@ class IncomingDeliveries extends React.Component<Props, State> {
           deliveryId={this.state.deliveryId || ""}
           deliveryProduct={this.state.deliveryProduct}
         />
+        <Modal size="tiny" open={this.state.confirmBeginDelivery}>
+          <Modal.Header>Aloita toimitus</Modal.Header>
+          <Modal.Content>
+            <p>{this.state.deliveryDescription}</p>
+          </Modal.Content>
+          <Modal.Actions>
+            <Button.Group>
+              <Button onClick={() => this.setState({ confirmBeginDelivery: false })} color="red" inverted>Sulje</Button>
+              <Button onClick={() => this.handleBeginDelivery(this.state.deliveryProduct)} positive icon='check' labelPosition='right' content='Aloita toimitus' />
+            </Button.Group>
+          </Modal.Actions>
+        </Modal>
+        <Modal size="tiny" open={this.state.confirmRemove}>
+          <Modal.Header>Hylkää toimitus</Modal.Header>
+          <Modal.Content>
+            <p>Haluatko varmasti hylkää toimituksen</p>
+          </Modal.Content>
+          <Modal.Actions>
+            <Button.Group>
+              <Button onClick={() => this.setState({ confirmRemove: false })} color="red" inverted>Sulje</Button>
+              <Button onClick={() => this.handleRemoveDelivery(this.state.deliveryProduct)} color="red" icon='trash' labelPosition='right' content='Hylkää toimitus' />
+            </Button.Group>
+          </Modal.Actions>
+        </Modal>
       </BasicLayout>
     );
   }

@@ -43,9 +43,6 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
    * Component did mount life cycle method
    */
   public componentDidMount = () => {
-    if (this.props.areaDetailValues.length <= 0) {
-      this.createEmptyAreaDetail();
-    }
 
     if (this.props.itemGroup && this.props.itemGroup.minimumProfitEstimation) {
       this.setState({ minimumProfit: this.props.itemGroup.minimumProfitEstimation });
