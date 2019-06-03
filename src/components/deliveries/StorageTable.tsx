@@ -81,9 +81,9 @@ export default class StorageDataTable extends React.Component<Props, State> {
     const cellWidth = 100 / (products.length + 1);
     const validQualities = this.props.qualities.filter((quality) => {
       if (quality.name !== "Hylätty") {
-        return quality.id;
+        return true;
       }
-      return;
+      return false;
     });
     return (
       <React.Fragment>

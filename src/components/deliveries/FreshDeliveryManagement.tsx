@@ -182,7 +182,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     tableRows.push(this.getTableSummaryRow("now", "#44c336", deliveries, "Varastossa nyt", true));
 
     return (
-      <TableBasicLayout topBarButtonText={ "+ Uusi ehdotus viljelijälle" } onTopBarButtonClick={() => this.setState({ newDeliveryModalOpen: true }) } error={this.state.error} onErrorClose={() => this.setState({ error: undefined })} pageTitle="Päiväennuste, tuoreet">
+      <TableBasicLayout topBarButtonText={"+ Uusi ehdotus viljelijälle"} onTopBarButtonClick={() => this.setState({ newDeliveryModalOpen: true })} error={this.state.error} onErrorClose={() => this.setState({ error: undefined })} pageTitle="Päiväennuste, tuoreet">
         <div style={{ display: "flex", flex: 1, flexDirection: "column" }}>
           <div style={{ display: "flex", flex: 1, justifyContent: "center", padding: 10, fontSize: "1.5em" }}><p>Valitse päivämäärä</p></div>
           <div style={{ display: "flex", flex: 1, flexDirection: "row" }}>
@@ -213,11 +213,11 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
             <Table.Header>
               <Table.Row className="table-header-row">
                 <Table.HeaderCell key="viljelija">Viljelijä</Table.HeaderCell>
-                { productHeaderCells }
+                {productHeaderCells}
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              { tableRows }
+              {tableRows}
             </Table.Body>
           </Table>
         }
@@ -257,7 +257,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
         }
         {
           <CreateDeliveryModal
-            deliveryPlaces={ this.state.deliveryPlaces }
+            deliveryPlaces={this.state.deliveryPlaces}
             open={this.state.newDeliveryModalOpen}
             onClose={(created?: boolean) => {
               this.setState({ newDeliveryModalOpen: false });
@@ -267,7 +267,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
             }}
             products={this.state.products}
             date={this.state.selectedDate}
-            deliveryPlaceId={ this.state.deliveryPlaceId }
+            deliveryPlaceId={this.state.deliveryPlaceId}
           />
         }
       </TableBasicLayout >
@@ -335,10 +335,10 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     const qualities = _.values(this.state.deliveryQualities);
 
     return <StorageDataTable
-      products={ this.state.products }
-      qualities={ qualities }
-      getCellValue={ this.getStorageTableValue }
-      onApplyValue={ this.onApplyStorageTableValue }/>
+      products={this.state.products}
+      qualities={qualities}
+      getCellValue={this.getStorageTableValue}
+      onApplyValue={this.onApplyStorageTableValue} />
   }
 
   /**
@@ -352,13 +352,13 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     return <SalesForecastDataTable
       title="Myyntiennuste AAMU"
       name="morning-sales-forecast"
-      products={ this.state.products }
-      setCellValue={ this.setMorningSalesForecastCellValue }
-      getCellValue={ this.getMorningSalesForecastCellValue }
-      getRowHeader={ this.getMorningSalesForecastRowHeader }
-      setRowHeader={ this.setMorningSalesForecastRowHeader }
-      onAddNewRow={ this.addMorningSalesForecastRow }
-      rowCount={ this.state.morningSalesForecastDataSheet.data.length - 1}/>
+      products={this.state.products}
+      setCellValue={this.setMorningSalesForecastCellValue}
+      getCellValue={this.getMorningSalesForecastCellValue}
+      getRowHeader={this.getMorningSalesForecastRowHeader}
+      setRowHeader={this.setMorningSalesForecastRowHeader}
+      onAddNewRow={this.addMorningSalesForecastRow}
+      rowCount={this.state.morningSalesForecastDataSheet.data.length - 1} />
   }
 
   /**
@@ -458,13 +458,13 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     return <SalesForecastDataTable
       title="Myyntiennuste ILTA"
       name="evening-sales-forecast"
-      products={ this.state.products }
-      setCellValue={ this.setEveningSalesForecastCellValue }
-      getCellValue={ this.getEveningSalesForecastCellValue }
-      getRowHeader={ this.getEveningSalesForecastRowHeader }
-      setRowHeader={ this.setEveningSalesForecastRowHeader }
-      onAddNewRow={ this.addEveningSalesForecastRow }
-      rowCount={ this.state.eveningSalesForecastDataSheet.data.length - 1}/>
+      products={this.state.products}
+      setCellValue={this.setEveningSalesForecastCellValue}
+      getCellValue={this.getEveningSalesForecastCellValue}
+      getRowHeader={this.getEveningSalesForecastRowHeader}
+      setRowHeader={this.setEveningSalesForecastRowHeader}
+      onAddNewRow={this.addEveningSalesForecastRow}
+      rowCount={this.state.eveningSalesForecastDataSheet.data.length - 1} />
   }
 
   /**
@@ -875,10 +875,10 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     });
 
     const values = validQualities.map((quality) => {
-      return this.getStorageTableValue(productId, quality.id!);
-    })
-    const value = _.sumBy(values);
-    return value
+      return this.getStorageTableValue(productId, quality.id!) || 0;
+    });
+
+    return _.sumBy(values);
   }
 
   private getContact(contactId: string) {
