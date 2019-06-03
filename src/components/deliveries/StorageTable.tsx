@@ -79,12 +79,7 @@ export default class StorageDataTable extends React.Component<Props, State> {
   private renderQualitySummaryRow = () => {
     const products = this.props.products;
     const cellWidth = 100 / (products.length + 1);
-    const validQualities = this.props.qualities.filter((quality) => {
-      if (quality.name !== "Hylätty") {
-        return true;
-      }
-      return false;
-    });
+    const validQualities = this.props.qualities.filter((quality) => quality.name !== "Hylätty" );
     return (
       <React.Fragment>
         <Table.Row>
