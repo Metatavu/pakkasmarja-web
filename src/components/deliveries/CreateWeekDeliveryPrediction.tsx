@@ -288,6 +288,7 @@ class CreateWeekDeliveryPrediction extends React.Component<Props, State> {
             <Header as="h4">{strings.nextWeekPrediction}</Header>
             <Input
               type="number"
+              min={0}
               placeholder={strings.amount}
               value={this.state.amount}
               onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {

@@ -5,7 +5,7 @@ import { StoreState, DeliveriesState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import { Modal, Header, Button, Table, Input } from "semantic-ui-react";
-import Api, { ProductPrice } from "pakkasmarja-client";
+import Api, { ProductPrice, Product } from "pakkasmarja-client";
 
 /**
  * Interface for component props
@@ -15,7 +15,7 @@ interface Props {
   closeModal: () => void;
   loadData: () => void;
   keycloak?: Keycloak.KeycloakInstance;
-  productId: string;
+  product: Product;
 };
 
 /**
@@ -24,7 +24,7 @@ interface Props {
 interface State {
   modalOpen: boolean;
   redirect: boolean;
-  unit: string;
+  unitName: string;
   price: string;
 
 };
@@ -44,9 +44,20 @@ class CreateProductPriceModal extends React.Component<Props, State> {
     this.state = {
       modalOpen: false,
       redirect: false,
-      unit: "€ / kg ALV 0%",
+      unitName: "",
       price: ""
     };
+  }
+
+  /**
+   * Component did mount life-sycle event
+   */
+  public componentDidMount() {
+    const { keycloak } = this.props;
+    if (!keycloak || !keycloak.token) {
+      return;
+    }
+    this.setState({unitName: this.props.product.unitName});
   }
 
 
@@ -54,17 +65,17 @@ class CreateProductPriceModal extends React.Component<Props, State> {
    * Handle product price create
    */
   private handleCreatePrice = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token) {
+    if (!this.props.keycloak || !this.props.keycloak.token || !this.props.product.id) {
       return;
     }
 
     const productPrice: ProductPrice = {
-      productId: this.props.productId,
-      unit: this.state.unit,
+      productId: this.props.product.id,
+      unit: this.state.unitName,
       price: this.state.price
     }
     const productPriceService = await Api.getProductPricesService(this.props.keycloak.token);
-    await productPriceService.createProductPrice(productPrice, this.props.productId);
+    await productPriceService.createProductPrice(productPrice, this.props.product.id);
     this.props.loadData();
     this.closeModal();
   }
@@ -114,6 +125,9 @@ class CreateProductPriceModal extends React.Component<Props, State> {
                 <Table.Cell>
                   <Input
                     value={this.state.price}
+                    type="number"
+                    step={0.01}
+                    min={0}
                     onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
                       this.handleInputChange("price", event.currentTarget.value)
                     }}
@@ -121,9 +135,10 @@ class CreateProductPriceModal extends React.Component<Props, State> {
                 </Table.Cell>
                 <Table.Cell>
                   <Input
-                    value={this.state.unit}
+                    value={this.state.unitName}
+                    disabled={true}
                     onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
-                      this.handleInputChange("unit", event.currentTarget.value)
+                      this.handleInputChange("unitName", event.currentTarget.value)
                     }}
                     fluid />
                 </Table.Cell>

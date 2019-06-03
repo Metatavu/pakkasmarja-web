@@ -49,6 +49,7 @@ interface State {
   addingProposal: boolean,
   contacts: Contact[]
   deliveryQualities: { [key: string]: DeliveryQuality },
+  deliveryQualitiesArray?: DeliveryQuality[],
   newDeliveryModalOpen: boolean,
   error?: string,
   storageDataSheet?: DataSheet,
@@ -73,7 +74,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     this.state = {
       loading: false,
       deliveryPlaces: [],
-      deliveryPlace: { },
+      deliveryPlace: {},
       products: [],
       deliveries: [],
       contacts: [],
@@ -107,7 +108,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     const products = await Api.getProductsService(keycloak.token).listProducts(undefined, "FRESH", undefined, 0, 999);
     const deliveryQualities = await Api.getDeliveryQualitiesService(keycloak.token).listDeliveryQualities("FRESH");
     const deliveryPlaces = await Api.getDeliveryPlacesService(keycloak.token).listDeliveryPlaces();
-    
+
     this.loadDataSheets();
     this.updateTableData();
 
@@ -117,6 +118,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       deliveryPlaces: deliveryPlaces,
       products: products,
       deliveryQualities: _.keyBy(deliveryQualities, "id"),
+      deliveryQualitiesArray: deliveryQualities,
       deliveryPlaceId: deliveryPlaceId
     });
 
@@ -176,15 +178,15 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
 
     tableRows.push(this.getTableSummaryRow("morning", "#44c336", morningDeliveries, "Klo 12 mennessä yht."));
     tableRows = tableRows.concat(this.getTableRows(false, eveningDeliveries, tableRows.length));
-    tableRows.push(this.getTableSummaryRow("now", "#44c336", deliveries, "Varastossa nyt", true));
     tableRows.push(this.getTableSummaryRow("total", "#0ab130", deliveries, "Klo 17 mennessä yht."));
-    
+    tableRows.push(this.getTableSummaryRow("now", "#44c336", deliveries, "Varastossa nyt", true));
+
     return (
       <TableBasicLayout topBarButtonText={ "+ Uusi ehdotus viljelijälle" } onTopBarButtonClick={() => this.setState({ newDeliveryModalOpen: true }) } error={this.state.error} onErrorClose={() => this.setState({ error: undefined })} pageTitle="Päiväennuste, tuoreet">
         <div style={{ display: "flex", flex: 1, flexDirection: "column" }}>
           <div style={{ display: "flex", flex: 1, justifyContent: "center", padding: 10, fontSize: "1.5em" }}><p>Valitse päivämäärä</p></div>
           <div style={{ display: "flex", flex: 1, flexDirection: "row" }}>
-            
+
             <div style={{ display: "flex", flex: 1, justifyContent: "center" }}>
               <Form>
                 <Form.Field>
@@ -200,7 +202,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
                 </Form.Field>
               </Form>
             </div>
-            
+
           </div>
         </div>
         {
@@ -235,9 +237,9 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
             onUpdate={() => { this.setState({ selectedDelivery: undefined }); this.updateTableData(); }}
             onClose={() => this.setState({ selectedDelivery: undefined })}
             open={true}
-            delivery={this.state.selectedDelivery} 
+            delivery={this.state.selectedDelivery}
             category="FRESH"
-            />
+          />
         }
         {
           this.state.proposalContactId && this.state.proposalProduct && this.state.proposalTime &&
@@ -279,7 +281,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     const { selectedDate } = this.state;
     const formattedDate = moment(selectedDate).format("YYYY-MM-DD");
 
-    this.setState({ 
+    this.setState({
       loading: true,
       storageDataSheet: undefined,
       morningSalesForecastDataSheet: undefined,
@@ -316,7 +318,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       return sheets[0];
     } else {
       return await dataSheetsService.createDataSheet({
-        data: [],
+        data: [],
         name: name
       });
     }
@@ -333,8 +335,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     const qualities = _.values(this.state.deliveryQualities);
 
     return <StorageDataTable
-      products={ this.state.products } 
-      qualities={ qualities } 
+      products={ this.state.products }
+      qualities={ qualities }
       getCellValue={ this.getStorageTableValue }
       onApplyValue={ this.onApplyStorageTableValue }/>
   }
@@ -370,8 +372,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       return "";
     }
 
-    const data: string[][] = this.state.morningSalesForecastDataSheet.data || [[]];
-    return TableDataUtils.getCellValue(data, rowIndex, 0) || "Syötä nimi";
+    const data: string[][] = this.state.morningSalesForecastDataSheet.data || [[]];
+    return TableDataUtils.getCellValue(data, rowIndex, 0) || "Syötä nimi";
   }
 
   /**
@@ -385,7 +387,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       return;
     }
 
-    let data: string[][] = this.state.morningSalesForecastDataSheet.data || [[]];
+    let data: string[][] = this.state.morningSalesForecastDataSheet.data || [[]];
     data = TableDataUtils.setCellValue(data, rowIndex, 0, value);
 
     this.setState({
@@ -405,10 +407,10 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       return 0;
     }
 
-    const data: string[][] = this.state.morningSalesForecastDataSheet.data || [[]];
+    const data: string[][] = this.state.morningSalesForecastDataSheet.data || [[]];
     const productIndex = TableDataUtils.findCellIndex(data, 0, productId);
 
-    return parseFloat(TableDataUtils.getCellValue(data, rowIndex + 1, productIndex) || "0") || 0;
+    return parseFloat(TableDataUtils.getCellValue(data, rowIndex + 1, productIndex) || "0") || 0;
   }
 
   /**
@@ -423,7 +425,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       return;
     }
 
-    let data: string[][] = this.state.morningSalesForecastDataSheet.data || [[]];
+    let data: string[][] = this.state.morningSalesForecastDataSheet.data || [[]];
     const productIndex = TableDataUtils.findCellIndex(data, 0, productId);
     data = TableDataUtils.setCellValue(data, rowIndex + 1, productIndex, String(value));
 
@@ -476,8 +478,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       return "";
     }
 
-    const data: string[][] = this.state.eveningSalesForecastDataSheet.data || [[]];
-    return TableDataUtils.getCellValue(data, rowIndex, 0) || "Syötä nimi";
+    const data: string[][] = this.state.eveningSalesForecastDataSheet.data || [[]];
+    return TableDataUtils.getCellValue(data, rowIndex, 0) || "Syötä nimi";
   }
 
   /**
@@ -491,7 +493,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       return;
     }
 
-    let data: string[][] = this.state.eveningSalesForecastDataSheet.data || [[]];
+    let data: string[][] = this.state.eveningSalesForecastDataSheet.data || [[]];
     data = TableDataUtils.setCellValue(data, rowIndex, 0, value);
 
     this.setState({
@@ -511,10 +513,10 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       return 0;
     }
 
-    const data: string[][] = this.state.eveningSalesForecastDataSheet.data || [[]];
+    const data: string[][] = this.state.eveningSalesForecastDataSheet.data || [[]];
     const productIndex = TableDataUtils.findCellIndex(data, 0, productId);
 
-    return parseFloat(TableDataUtils.getCellValue(data, rowIndex + 1, productIndex) || "0") || 0;
+    return parseFloat(TableDataUtils.getCellValue(data, rowIndex + 1, productIndex) || "0") || 0;
   }
 
   /**
@@ -529,7 +531,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       return;
     }
 
-    let data: string[][] = this.state.eveningSalesForecastDataSheet.data || [[]];
+    let data: string[][] = this.state.eveningSalesForecastDataSheet.data || [[]];
     const productIndex = TableDataUtils.findCellIndex(data, 0, productId);
     data = TableDataUtils.setCellValue(data, rowIndex + 1, productIndex, String(value));
 
@@ -561,7 +563,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       return 0;
     }
 
-    const morningSalesForecastData = this.state.morningSalesForecastDataSheet.data || [];
+    const morningSalesForecastData = this.state.morningSalesForecastDataSheet.data || [];
     const morningDeliveries = this.state.deliveries.filter((delivery) => moment(delivery.time).utc().hour() <= 12);
 
     let morningForecastedSales = 0;
@@ -584,7 +586,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       return 0;
     }
 
-    const eveningSalesForecastData = this.state.eveningSalesForecastDataSheet.data || [];
+    const eveningSalesForecastData = this.state.eveningSalesForecastDataSheet.data || [];
     const eveningDeliveries = this.state.deliveries.filter((delivery) => moment(delivery.time).utc().hour() > 12);
 
     let eveningForecastedSales = 0;
@@ -601,7 +603,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
    * Renders summaries
    */
   private renderSummaries = () => {
-    if (!this.state.morningSalesForecastDataSheet || !this.state.eveningSalesForecastDataSheet) {
+    if (!this.state.morningSalesForecastDataSheet || !this.state.eveningSalesForecastDataSheet) {
       return null;
     }
 
@@ -610,40 +612,40 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
 
     return (
       <Table>
-        <Table.Row key={ "morning-summary-row" }>
-          <Table.Cell style={{color: "#fff", background: "#e01e36", fontWeight: "bold" }} key={ "morning-summary-header" }> Aamuauton tilanne </Table.Cell>
-          { 
+        <Table.Row key={"morning-summary-row"}>
+          <Table.Cell style={{ color: "#fff", background: "#e01e36", fontWeight: "bold" }} key={"morning-summary-header"}> Aamuauton tilanne </Table.Cell>
+          {
             products.map((product) => {
               return (
-                <Table.Cell style={{ textAlign: "center", "width": `${cellWidth}%`, color: "#fff", background: "#e01e36" }} key={ `morning-summary-cell-${product.id}` }>
-                  { this.getMorningDeliveryBalance(product) }
+                <Table.Cell style={{ textAlign: "center", "width": `${cellWidth}%`, color: "#fff", background: "#e01e36" }} key={`morning-summary-cell-${product.id}`}>
+                  {this.getMorningDeliveryBalance(product)}
                 </Table.Cell>
               )
-            }) 
+            })
           }
         </Table.Row>
-        <Table.Row key={ "evening-summary-row" }>
-          <Table.Cell style={{color: "#fff", background: "#e01e36", fontWeight: "bold" }} key={ "evening-summary-header" }> Iltauton tilanne </Table.Cell>
-          { 
+        <Table.Row key={"evening-summary-row"}>
+          <Table.Cell style={{ color: "#fff", background: "#e01e36", fontWeight: "bold" }} key={"evening-summary-header"}> Iltauton tilanne </Table.Cell>
+          {
             products.map((product) => {
               return (
-                <Table.Cell style={{ textAlign: "center", "width": `${cellWidth}%`, color: "#fff", background: "#e01e36" }} key={ `evening-summary-cell-${product.id}` }>
-                  { this.getEveningDeliveryBalance(product) }
+                <Table.Cell style={{ textAlign: "center", "width": `${cellWidth}%`, color: "#fff", background: "#e01e36" }} key={`evening-summary-cell-${product.id}`}>
+                  {this.getEveningDeliveryBalance(product)}
                 </Table.Cell>
               )
-            }) 
+            })
           }
         </Table.Row>
-        <Table.Row key={ "daily-summary-row" }>
-          <Table.Cell style={{color: "#fff", background: "#e01e36", fontWeight: "bold" }} key={ "daily-summary-header" }> Varastoon jäävä ennuste </Table.Cell>
-          { 
+        <Table.Row key={"daily-summary-row"}>
+          <Table.Cell style={{ color: "#fff", background: "#e01e36", fontWeight: "bold" }} key={"daily-summary-header"}> Varastoon jäävä ennuste </Table.Cell>
+          {
             products.map((product) => {
               return (
-                <Table.Cell style={{ textAlign: "center", "width": `${cellWidth}%`, color: "#fff", background: "#e01e36" }} key={ `daily-summary-cell-${product.id}` }>
-                  { this.getMorningDeliveryBalance(product) + this.getEveningDeliveryBalance(product) }
+                <Table.Cell style={{ textAlign: "center", "width": `${cellWidth}%`, color: "#fff", background: "#e01e36" }} key={`daily-summary-cell-${product.id}`}>
+                  {this.getMorningDeliveryBalance(product) + this.getEveningDeliveryBalance(product)}
                 </Table.Cell>
               )
-            }) 
+            })
           }
         </Table.Row>
       </Table>
@@ -651,13 +653,13 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   }
 
   private addDataSheetRow = async (dataSheet: DataSheet): Promise<DataSheet> => {
-    let data: string[][] = dataSheet.data || [[]];
+    let data: string[][] = dataSheet.data || [[]];
     data.push([]);
-    return await this.saveDataSheet(dataSheet, data); 
+    return await this.saveDataSheet(dataSheet, data);
   }
 
   private prepareDataSheet = async (dataSheet: DataSheet): Promise<DataSheet> => {
-    let data: string[][] = dataSheet.data || [[]];
+    let data: string[][] = dataSheet.data || [[]];
     if (data.length < 1) {
       data.push([]);
     }
@@ -665,7 +667,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     this.state.products.forEach((product) => {
       const index = TableDataUtils.findCellIndex(data, 0, product.id!);
       if (index == -1) {
-        const cellIndex = TableDataUtils.getCellCount(data, 0) || 1;
+        const cellIndex = TableDataUtils.getCellCount(data, 0) || 1;
         data = TableDataUtils.setCellValue(data, 0, cellIndex, product.id!);
       }
     });
@@ -685,36 +687,36 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
    * @param qualityId quality id
    * @returns value or null if not found
    */
-  private getStorageTableValue = (productId: string, qualityId: string): number | null => {
+  private getStorageTableValue = (productId: string, qualityId: string): number | null => {
     const { keycloak } = this.props;
     if (!keycloak || !keycloak.token) {
       return null;
     }
 
-    if (!this.state.storageDataSheet || !this.state.storageDataSheet.id) {
+    if (!this.state.storageDataSheet || !this.state.storageDataSheet.id) {
       return null;
     }
 
-    const data: string[][] = this.state.storageDataSheet.data || [[]];
+    const data: string[][] = this.state.storageDataSheet.data || [[]];
 
     const productIndex = TableDataUtils.findCellIndex(data, 0, productId);
     const qualityIndex = TableDataUtils.findRowIndex(data, 0, qualityId);
-    const cellValue = productIndex > -1 && qualityIndex > -1 ? TableDataUtils.getCellValue(data, qualityIndex, productIndex) : null;    
+    const cellValue = productIndex > -1 && qualityIndex > -1 ? TableDataUtils.getCellValue(data, qualityIndex, productIndex) : null;
 
-    return cellValue ? parseFloat(cellValue) || null : null;
+    return cellValue ? parseFloat(cellValue) || null : null;
   }
 
   /**
    * Applise storage table value
    */
   private onApplyStorageTableValue = async (productId: string, qualityId: string, value: number) => {
-    if (!this.state.storageDataSheet || !this.state.storageDataSheet.id) {
+    if (!this.state.storageDataSheet || !this.state.storageDataSheet.id) {
       return;
     }
 
     const qualities = _.values(this.state.deliveryQualities);
 
-    let data: string[][] = this.state.storageDataSheet.data || [[]];
+    let data: string[][] = this.state.storageDataSheet.data || [[]];
     if (data.length < 1) {
       data.push([]);
     }
@@ -729,7 +731,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     this.state.products.forEach((product) => {
       const index = TableDataUtils.findCellIndex(data, 0, product.id!);
       if (index == -1) {
-        const cellIndex = TableDataUtils.getCellCount(data, 0) || 1;
+        const cellIndex = TableDataUtils.getCellCount(data, 0) || 1;
         data = TableDataUtils.setCellValue(data, 0, cellIndex, product.id!);
       }
     });
@@ -759,13 +761,13 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
 
     const dataSheetsService = Api.getDataSheetsService(keycloak.token);
 
-    return await dataSheetsService.updateDataSheet({ ... dataSheet, data: data }, dataSheet.id);
+    return await dataSheetsService.updateDataSheet({ ...dataSheet, data: data }, dataSheet.id);
   }
 
   private getTableRows(morning: boolean, deliveries: Delivery[], initialIndex?: number) {
 
     const { products } = this.state;
-    const otherDeliveryPlace =  !!deliveries.find((delivery) => {
+    const otherDeliveryPlace = !!deliveries.find((delivery) => {
       return delivery.deliveryPlaceId !== this.state.deliveryPlaceId;
     });
 
@@ -777,7 +779,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       let tableCells: JSX.Element[] = [];
       let contactId = contactIds[i];
       let contact = this.getContact(contactId);
-      tableCells.push(<Table.Cell key={`${index}-${contactId}`}>{ contact ? <span> { contact.displayName  } { otherDeliveryPlace ? <Icon style={{ float: "right" }} name="map marker alternate" color="red"/> : null } </span> : <Loader size="mini" inline />}</Table.Cell>);
+      tableCells.push(<Table.Cell key={`${index}-${contactId}`}>{contact ? <span> {contact.displayName} {otherDeliveryPlace ? <Icon style={{ float: "right" }} name="map marker alternate" color="red" /> : null} </span> : <Loader size="mini" inline />}</Table.Cell>);
       for (let j = 0; j < products.length; j++) {
         let product = products[j];
         const productDeliveries = this.listContactDeliveries(contactId, product, deliveries);
@@ -840,7 +842,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   }
 
   private countDeliveryAmountByProduct(deliveries: Delivery[], product: Product, onlyDelivered?: boolean) {
-    let count = 0;
+    let count = !onlyDelivered ? 0 : product.id ? this.countQualityAmountByProduct(product.id) : 0;
 
     deliveries.forEach((delivery) => {
       if (delivery.productId === product.id) {
@@ -855,6 +857,28 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     });
 
     return count;
+  }
+
+  /**
+   * count products total amount from quality table
+   */
+  private countQualityAmountByProduct = (productId: string): number => {
+    const { deliveryQualitiesArray } = this.state;
+    if (!deliveryQualitiesArray) {
+      return 0;
+    }
+    const validQualities = deliveryQualitiesArray.filter((quality) => {
+      if (quality.name !== "Hylätty") {
+        return quality.id;
+      }
+      return;
+    });
+
+    const values = validQualities.map((quality) => {
+      return this.getStorageTableValue(productId, quality.id!);
+    })
+    const value = _.sumBy(values);
+    return value
   }
 
   private getContact(contactId: string) {
@@ -991,8 +1015,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     const { keycloak } = this.props;
     if (keycloak && keycloak.token && !this.state.loading) {
       if (keycloak && keycloak.token) {
-      const deliveries = await this.loadDeliveries(keycloak.token);
-      this.setState({ deliveries: deliveries });
+        const deliveries = await this.loadDeliveries(keycloak.token);
+        this.setState({ deliveries: deliveries });
       }
     }
   }
@@ -1024,7 +1048,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
    */
   private updateTableData = async () => {
     const { keycloak } = this.props;
-    
+
     if (keycloak && keycloak.token) {
       this.setState({ loading: true });
       const deliveries = await this.loadDeliveries(keycloak.token);

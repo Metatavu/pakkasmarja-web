@@ -31,7 +31,7 @@ interface Props {
  */
 interface State {
   keycloak?: Keycloak.KeycloakInstance;
-  sortedDeliveriesByTime?: ArrayLike<SortedDeliveryProduct>;
+  sortedDeliveriesByTime?: SortedDeliveryProduct[];
   viewModal: boolean;
   deliveryId?: string;
   redirect: boolean;
@@ -103,15 +103,16 @@ class IncomingDeliveries extends React.Component<Props, State> {
    */
   private sortDeliveryProducts = (deliveryProductArray: DeliveryProduct[]) => {
     const sortedDeliveryProductByDate = _.sortBy(deliveryProductArray, (deliveryProduct) => deliveryProduct.delivery.time).reverse();
-    const sorted: ArrayLike<SortedDeliveryProduct> = _.chain(sortedDeliveryProductByDate)
+    const sortedToGroups: ArrayLike<SortedDeliveryProduct> = _.chain(sortedDeliveryProductByDate)
       .groupBy(deliveryProduct => moment(deliveryProduct.delivery.time).format("DD.MM.YYYY"))
       .map((v, i) => {
         return {
           time: i,
-          deliveryProducts: v
+          deliveryProducts: _.sortBy(v, (deliveryProduct) => deliveryProduct.delivery.time)
         }
       }).value();
-    return sorted;
+
+    return Array.from(sortedToGroups);
   }
 
   /**

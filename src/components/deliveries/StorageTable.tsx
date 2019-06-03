@@ -2,6 +2,7 @@ import * as React from "react";
 import "../../styles/common.css";
 import { DeliveryQuality, Product } from "pakkasmarja-client";
 import { Table, Input, Icon } from "semantic-ui-react";
+import * as _ from "lodash";
 
 
 /**
@@ -10,7 +11,7 @@ import { Table, Input, Icon } from "semantic-ui-react";
 interface Props {
   qualities: DeliveryQuality[],
   products: Product[],
-  getCellValue: (productId: string, qualityId: string) => number | null,
+  getCellValue: (productId: string, qualityId: string) => number | null,
   onApplyValue: (productId: string, qualityId: string, value: number) => void
 }
 
@@ -54,47 +55,85 @@ export default class StorageDataTable extends React.Component<Props, State> {
             {
               products.map((product) => {
                 return (
-                  <Table.HeaderCell style={{ "width": `${cellWidth}%` }}> { product.name } </Table.HeaderCell>
+                  <Table.HeaderCell style={{ "width": `${cellWidth}%` }}> {product.name} </Table.HeaderCell>
                 )
-              }) 
+              })
             }
           </Table.Row>
         </Table.Header>
         <Table.Body>
-          { 
+          {
             this.props.qualities.map((quality) => {
               return this.renderStorageTableRow(quality);
-            }) 
-          } 
+            })
+          }
+          {this.renderQualitySummaryRow()}
         </Table.Body>
       </Table>
     );
   }
-  
+
+  /**
+   * Renders quality summary row
+   */
+  private renderQualitySummaryRow = () => {
+    const products = this.props.products;
+    const cellWidth = 100 / (products.length + 1);
+    const validQualities = this.props.qualities.filter((quality) => {
+      if (quality.name !== "Hylätty") {
+        return quality.id;
+      }
+      return;
+    });
+    return (
+      <React.Fragment>
+        <Table.Row>
+          <Table.Cell > Yhteensä</Table.Cell>
+          {
+            products.map((product) => {
+              const values = validQualities.map((quality) => {
+                return this.props.getCellValue(product.id!, quality.id!);
+              })
+              const value = _.sumBy(values);
+              return (
+                <Table.Cell style={{ textAlign: "center", "width": `${cellWidth}%`, padding: 0, background: "#fff" }} >
+                  {<span> {value} </span>}
+                </Table.Cell>
+              )
+            })
+          }
+        </Table.Row>
+      </React.Fragment>
+    );
+  }
+
   /**
    * Renders storage table row
    * 
    * @param quality quality
    */
   private renderStorageTableRow = (quality: DeliveryQuality) => {
+    if (quality.name === "Hylätty") {
+      return;
+    }
     const products = this.props.products;
     const cellWidth = 100 / (products.length + 1);
-
     return (
-      <Table.Row key={ `storage-row-${quality.id}` }>
-        <Table.Cell key={ `storage-cell-header-${quality.id}` }> { this.renderQualityIcon(quality) } { quality.name } </Table.Cell>
-        { 
-          products.map((product) => {
-            const value = this.props.getCellValue(product.id!, quality.id!);
-
-            return (
-              <Table.Cell style={{ textAlign: "center", "width": `${cellWidth}%`, padding: 0, background: value ? quality.color + "55" : "#fff" }} key={ `storage-cell-${quality.id}-${product.id}` } onClick={ () => this.onCellClick(quality.id!, product.id!, value) }>
-                { this.state.editQualityId == quality.id && this.state.editProductId == product.id ? this.renderCellEditor(quality.id!, product.id!) : <span> { value } </span> }
-              </Table.Cell>
-            )
-          }) 
-        }
-      </Table.Row>
+      <React.Fragment>
+        <Table.Row key={`storage-row-${quality.id}`}>
+          <Table.Cell key={`storage-cell-header-${quality.id}`}> {this.renderQualityIcon(quality)} {quality.name} </Table.Cell>
+          {
+            products.map((product) => {
+              const value = this.props.getCellValue(product.id!, quality.id!);
+              return (
+                <Table.Cell style={{ textAlign: "center", "width": `${cellWidth}%`, padding: 0, background: value ? quality.color + "55" : "#fff" }} key={`storage-cell-${quality.id}-${product.id}`} onClick={() => this.onCellClick(quality.id!, product.id!, value)}>
+                  {this.state.editQualityId == quality.id && this.state.editProductId == product.id ? this.renderCellEditor(quality.id!, product.id!) : <span> {value} </span>}
+                </Table.Cell>
+              )
+            })
+          }
+        </Table.Row>
+      </React.Fragment>
     );
   }
 
@@ -104,7 +143,7 @@ export default class StorageDataTable extends React.Component<Props, State> {
    * @param quality quality
    */
   private renderQualityIcon = (quality: DeliveryQuality) => {
-    return <div key={ `storage-cell-quality-icon-${quality.id}` } style={{ background: quality.color, marginRight: "10px", color: "#fff", width: "20px", display: "inline-block", borderRadius: "10px", textAlign: "center", height: "20px", lineHeight: "20px", fontSize: "12px", fontWeight: "bold" }}> { quality.name.charAt(0) } </div>
+    return <div key={`storage-cell-quality-icon-${quality.id}`} style={{ background: quality.color, marginRight: "10px", color: "#fff", width: "20px", display: "inline-block", borderRadius: "10px", textAlign: "center", height: "20px", lineHeight: "20px", fontSize: "12px", fontWeight: "bold" }}> {quality.name.charAt(0)} </div>
   }
 
   /**
@@ -116,9 +155,9 @@ export default class StorageDataTable extends React.Component<Props, State> {
   private renderCellEditor = (qualityId: string, productId: string) => {
     return (
       <span>
-        <Input key={ `storage-cell-editor-${qualityId}-${productId}` } value={ this.state.editValue } type="number" onChange={ (event, data) => this.setState({ editValue: parseFloat(data.value) || 0 } ) } />
-        <span key={ `storage-cell-apply-${qualityId}-${productId}` } style={{ marginLeft: "5px" }} onClick={ (event) => this.onApplyClick(event, qualityId, productId) }><Icon key={ `storage-cell-apply-${qualityId}-${productId}-icon` } color="green" name="checkmark"/></span>
-        <span key={ `storage-cell-cancel-${qualityId}-${productId}` } onClick={ (event) => this.onCancelClick(event) }><Icon key={ `storage-cell-cancel-${qualityId}-${productId}-icon` } color="red" name="cancel"/></span>
+        <Input key={`storage-cell-editor-${qualityId}-${productId}`} value={this.state.editValue} type="number" onChange={(event, data) => this.setState({ editValue: parseFloat(data.value) || 0 })} />
+        <span key={`storage-cell-apply-${qualityId}-${productId}`} style={{ marginLeft: "5px" }} onClick={(event) => this.onApplyClick(event, qualityId, productId)}><Icon key={`storage-cell-apply-${qualityId}-${productId}-icon`} color="green" name="checkmark" /></span>
+        <span key={`storage-cell-cancel-${qualityId}-${productId}`} onClick={(event) => this.onCancelClick(event)}><Icon key={`storage-cell-cancel-${qualityId}-${productId}-icon`} color="red" name="cancel" /></span>
       </span>
     );
   }
@@ -139,7 +178,7 @@ export default class StorageDataTable extends React.Component<Props, State> {
       editProductId: undefined
     });
 
-    this.props.onApplyValue(productId, qualityId, this.state.editValue || 0);
+    this.props.onApplyValue(productId, qualityId, this.state.editValue || 0);
   }
 
   /**
@@ -156,7 +195,7 @@ export default class StorageDataTable extends React.Component<Props, State> {
       editProductId: undefined
     });
   }
-  
+
   /**
    * Cell click event handler
    * 
@@ -164,11 +203,11 @@ export default class StorageDataTable extends React.Component<Props, State> {
    * @param productId product id
    * @param value value
    */
-  private onCellClick = (qualityId: string, productId: string, value: number | null) => {
+  private onCellClick = (qualityId: string, productId: string, value: number | null) => {
     this.setState({
       editQualityId: qualityId,
       editProductId: productId,
-      editValue: value || 0
+      editValue: value || 0
     });
   }
 }

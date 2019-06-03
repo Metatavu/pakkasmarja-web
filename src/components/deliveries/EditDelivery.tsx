@@ -383,6 +383,8 @@ class EditDelivery extends React.Component<Props, State> {
             <Form.Field>
               <label>{`${strings.amount} ( ${this.state.selectedProduct && this.state.selectedProduct.unitName || "Tuotetta ei ole valittu"} )`}</label>
               <Input
+                type="number"
+                min={0}
                 placeholder={strings.amount}
                 value={this.state.amount}
                 onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
@@ -392,7 +394,7 @@ class EditDelivery extends React.Component<Props, State> {
             </Form.Field>
             {this.state.amount && this.state.selectedProduct ?
               <Form.Field>
-                <p>= <b>{this.state.amount * (this.state.selectedProduct.units * this.state.selectedProduct.unitSize)} KG</b></p>
+                <p>= <b>{(this.state.amount * (this.state.selectedProduct.units * this.state.selectedProduct.unitSize)).toFixed(2)} KG</b></p>
               </Form.Field>
               : null
             }
