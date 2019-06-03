@@ -46,7 +46,7 @@ export default class StorageDataTable extends React.Component<Props, State> {
   public render() {
     const products = this.props.products;
     const cellWidth = 100 / (this.props.products.length + 1);
-
+    const qualities = _.sortBy(this.props.qualities, (quality) => quality.name);
     return (
       <Table celled padded selectable>
         <Table.Header>
@@ -63,7 +63,7 @@ export default class StorageDataTable extends React.Component<Props, State> {
         </Table.Header>
         <Table.Body>
           {
-            this.props.qualities.map((quality) => {
+            qualities.map((quality) => {
               return this.renderStorageTableRow(quality);
             })
           }
