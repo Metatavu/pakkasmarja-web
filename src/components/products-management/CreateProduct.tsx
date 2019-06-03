@@ -195,6 +195,7 @@ class CreateProduct extends React.Component<Props, State> {
             <Input
               min={0}
               type="number"
+              step={0.01}
               value={this.state.unitSize}
               onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
                 this.handleInputChange("unitSize", event.currentTarget.value)

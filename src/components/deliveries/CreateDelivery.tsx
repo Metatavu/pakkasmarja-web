@@ -314,6 +314,8 @@ class CreateDelivery extends React.Component<Props, State> {
               <Input
                 placeholder={strings.amount}
                 value={this.state.amount}
+                type="number"
+                min={0}
                 onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
                   this.handleInputChange("amount", event.currentTarget.value)
                 }}
@@ -321,7 +323,7 @@ class CreateDelivery extends React.Component<Props, State> {
             </Form.Field>
             {this.state.amount && this.state.selectedProduct ?
               <Form.Field>
-                <p>= <b>{this.state.amount * (this.state.selectedProduct.units * this.state.selectedProduct.unitSize)} KG</b></p>
+                <p>= <b>{(this.state.amount * (this.state.selectedProduct.units * this.state.selectedProduct.unitSize)).toFixed(2)} KG</b></p>
               </Form.Field>
               : null
             }

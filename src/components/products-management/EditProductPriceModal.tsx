@@ -133,6 +133,9 @@ class EditProductPriceModal extends React.Component<Props, State> {
                 <Table.Cell>
                   <Input
                     value={this.state.price}
+                    type="number"
+                    step={0.01}
+                    min={0}
                     onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
                       this.handleInputChange("price", event.currentTarget.value)
                     }}
@@ -141,6 +144,7 @@ class EditProductPriceModal extends React.Component<Props, State> {
                 <Table.Cell>
                   <Input
                     value={this.state.unit}
+                    disabled={true}
                     onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
                       this.handleInputChange("unit", event.currentTarget.value)
                     }}

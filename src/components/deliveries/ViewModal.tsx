@@ -112,7 +112,7 @@ class ViewModal extends React.Component<Props, State> {
     if (!deliveryProduct || !deliveryProduct.product) {
       return <React.Fragment></React.Fragment>;
     }
-    const kilograms = deliveryProduct.delivery.amount * (deliveryProduct.product.units * deliveryProduct.product.unitSize);
+    const kilograms = (deliveryProduct.delivery.amount * (deliveryProduct.product.units * deliveryProduct.product.unitSize)).toFixed(2);
     return (
       <Modal style={{ minHeight: "200px" }} size="small" open={this.props.modalOpen} onClose={this.closeModal} closeIcon>
         {this.state.loading ? <Dimmer active inverted><Loader active inline="centered" size="large" content="Ladataan.." /></Dimmer> :
@@ -151,16 +151,21 @@ class ViewModal extends React.Component<Props, State> {
                   <h4>Toimituspäivä</h4>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p>{`${moment(deliveryProduct.delivery.time).format("DD.MM.YYYY")} - ${Number(moment(deliveryProduct.delivery.time).utc().format("HH")) > 12 ? "Jälkeen kello 12" : "Ennen kello 12"}`}</p>
+                  {
+                    deliveryProduct.delivery.status === "DONE" ?
+                      <p>{`${moment(deliveryProduct.delivery.time).format("DD.MM.YYYY HH:mm")}`}</p>
+                      :
+                      <p>{`${moment(deliveryProduct.delivery.time).format("DD.MM.YYYY")} - ${Number(moment(deliveryProduct.delivery.time).utc().format("HH")) > 12 ? "Jälkeen kello 12" : "Ennen kello 12"}`}</p>
+                  }
                 </div>
               </div>
               {deliveryProduct.delivery.price ?
                 <div style={{ display: "flex", flex: 1 }}>
                   <div style={{ flex: 0.4 }}>
-                    <h4>Maksettu hinta</h4>
+                    <h4>Yksikköhinta</h4>
                   </div>
                   <div style={{ flex: 1 }}>
-                    <p>{deliveryProduct.delivery.price}</p>
+                    <p>{deliveryProduct.delivery.price} ({deliveryProduct.product.unitName.toLocaleUpperCase()})</p>
                   </div>
                 </div>
                 : null}

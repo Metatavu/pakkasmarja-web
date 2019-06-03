@@ -124,9 +124,9 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     }
 
     const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(itemGroup.category);
-    const deliveryTime = moment(delivery.time).utc().hour() <= 12 ? 11: 17;
+    const deliveryTime = moment(delivery.time).utc().hour() <= 12 ? 11 : 17;
 
-    await this.setState({
+    this.setState({
       products,
       deliveryPlaces,
       userId: delivery.userId,
@@ -139,8 +139,8 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       deliveryTimeValue: deliveryTime,
       deliveryQualities: deliveryQualities,
       loading: false
-    });
-    this.getNotes();
+    }, () => this.getNotes());
+
   }
 
   /**
@@ -263,20 +263,19 @@ class ManageDeliveryModal extends React.Component<Props, State> {
    * Handles delivery submit
    */
   private handleDeliveryAccept = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.selectedPlaceId || !this.state.selectedProductId || !this.state.date || !this.state.deliveryId) {
+    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.selectedPlaceId || !this.state.selectedProductId || !this.state.deliveryId) {
       return;
     }
 
     try {
       const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
       const delivery: Delivery = {
-        id: "",
         productId: this.state.selectedProductId,
         userId: this.state.userId || "",
-        time: this.state.date,
+        time: new Date(),
         status: "DONE",
         amount: this.state.amount,
-        price: "0",
+        price: undefined,
         deliveryPlaceId: this.state.selectedPlaceId,
         qualityId: this.state.selectedQualityId,
         loans: [
@@ -385,7 +384,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
 
     return (
       <Modal onClose={() => this.props.onClose()} open={this.props.open}>
-        <Modal.Header>Muokkaa toimitusta</Modal.Header>
+        <Modal.Header>{this.renderHeader()}</Modal.Header>
         <Modal.Content>
           <Form>
             <Form.Field>
@@ -586,6 +585,25 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     }
 
     return <Button disabled={!this.isValid()} floated="right" color="red" onClick={this.handleDeliveryAccept} type='submit'>Hyväksy toimitus</Button>;
+  }
+
+  /**
+   * Renders header text
+   */
+  private renderHeader() {
+    if (this.props.delivery.status == "DONE") {
+      return <React.Fragment>Toimitus on jo hyväksytty</React.Fragment>
+    }
+
+    if (this.props.delivery.status == "REJECTED") {
+      return <React.Fragment>Toimitus hylätty</React.Fragment>
+    }
+
+    if (this.props.delivery.status == "PROPOSAL") {
+      return <React.Fragment>Muokkaa ehdotusta</React.Fragment>
+    }
+    
+    return <React.Fragment>Hyväksy toimitus</React.Fragment>
   }
 
   /**

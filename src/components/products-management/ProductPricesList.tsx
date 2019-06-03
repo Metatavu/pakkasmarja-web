@@ -5,7 +5,7 @@ import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
-import Api, { ProductPrice } from "pakkasmarja-client";
+import Api, { ProductPrice, Product } from "pakkasmarja-client";
 import { Button, Confirm, Table, Header, List, Dimmer, Loader } from "semantic-ui-react";
 import { Link } from "react-router-dom";
 import CreateProductPriceModal from "./CreateProductPriceModal";
@@ -35,6 +35,7 @@ interface State {
   productPriceId: string;
   createModal: boolean;
   editModal: boolean;
+  product?: Product;
 }
 
 /**
@@ -64,8 +65,8 @@ class ProductPricesList extends React.Component<Props, State> {
       return;
     }
     const productId: string = this.props.match.params.productId;
-    await this.setState({ productId });
-    await this.loadProductsPrices();
+    const product = await Api.getProductsService(this.props.keycloak.token).findProduct(productId);
+    this.setState({ product, productId }, () => this.loadProductsPrices());
   }
 
   /**
@@ -117,9 +118,12 @@ class ProductPricesList extends React.Component<Props, State> {
         <Header floated='left' className="contracts-header">
           <p>Tuote hinnat</p>
         </Header>
-        <div style={{paddingTop: "25px", paddingBottom: "25px"}}>
-          <PriceChart showAxis productId={this.state.productId} width={800} height={300} />
-        </div>
+        {
+          this.state.productId &&
+          <div style={{ paddingTop: "25px", paddingBottom: "25px" }}>
+            <PriceChart showAxis productId={this.state.productId} width={800} height={300} />
+          </div>
+        }
         <Table celled fixed unstackable>
           <Table.Header>
             <Table.Row>
@@ -179,19 +183,24 @@ class ProductPricesList extends React.Component<Props, State> {
           <Button.Or text="" />
           <Button onClick={() => this.setState({ createModal: true })} color="red">Uusi hinta</Button>
         </Button.Group>
-        <CreateProductPriceModal
-          closeModal={() => this.setState({ createModal: false })}
-          modalOpen={this.state.createModal}
-          productId={this.state.productId}
-          loadData={this.loadProductsPrices}
-        />
-        <EditProductPriceModal
-          closeModal={() => this.setState({ editModal: false })}
-          modalOpen={this.state.editModal}
-          productPriceId={this.state.productPriceId}
-          productId={this.state.productId}
-          loadData={this.loadProductsPrices}
-        />
+        {
+          this.state.product &&
+          <React.Fragment>
+            <CreateProductPriceModal
+              closeModal={() => this.setState({ createModal: false })}
+              modalOpen={this.state.createModal}
+              loadData={this.loadProductsPrices}
+              product={this.state.product}
+            />
+            <EditProductPriceModal
+              closeModal={() => this.setState({ editModal: false })}
+              modalOpen={this.state.editModal}
+              productPriceId={this.state.productPriceId}
+              productId={this.state.productId}
+              loadData={this.loadProductsPrices}
+            />
+          </React.Fragment>
+        }
       </BasicLayout>
     );
   }

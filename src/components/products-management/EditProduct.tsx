@@ -226,10 +226,11 @@ class EditProduct extends React.Component<Props, State> {
             />
           </Form.Field>
           <Form.Field>
-            <label>Yksikkö koko</label>
+            <label>Yksikkökoko</label>
             <Input
               min={0}
               type="number"
+              step={0.01}
               value={this.state.unitSize}
               onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
                 this.handleInputChange("unitSize", event.currentTarget.value)
