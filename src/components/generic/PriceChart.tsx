@@ -96,7 +96,7 @@ class PriceChart extends React.Component<Props, State> {
           <Line type="monotone" dataKey="price" stroke="#e51d2a" strokeWidth={2} />
         </LineChart>
         {this.props.showLatestPrice && latestPrice && 
-          <p style={{ paddingTop: 10 }}><Icon name="info circle" size="large" color="red" />Tämän hetkinen hinta on {latestPrice.price} {latestPrice.unit} (päivitetty {moment(latestPrice.updatedAt).format("DD.MM.YYYY HH:mm")})</p>
+          <p style={{ paddingTop: 10 }}><Icon name="info circle" size="large" color="red" />Tämän hetkinen hinta on {latestPrice.price} € / {latestPrice.unit.toUpperCase()} ALV 0% (päivitetty {moment(latestPrice.updatedAt).format("DD.MM.YYYY HH:mm")})</p>
         }
       </div>
     );

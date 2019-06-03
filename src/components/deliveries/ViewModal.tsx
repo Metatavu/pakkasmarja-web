@@ -165,7 +165,7 @@ class ViewModal extends React.Component<Props, State> {
                     <h4>Yksikköhinta</h4>
                   </div>
                   <div style={{ flex: 1 }}>
-                    <p>{deliveryProduct.delivery.price} ({deliveryProduct.product.unitName.toLocaleUpperCase()})</p>
+                    <p>{`${deliveryProduct.delivery.price} € / ${deliveryProduct.product.unitName.toLocaleUpperCase()} ALV 0%`}</p>
                   </div>
                 </div>
                 : null}
