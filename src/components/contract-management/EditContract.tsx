@@ -29,14 +29,12 @@ interface Props {
 interface State {
   errorMessage?: string;
   contract?: Contract;
-  contacts: Contact[];
-  itemGroups: ItemGroup[];
   deliveryPlaces: DeliveryPlace[];
   deliveryPlace: DeliveryPlace;
   deliveryPlaceComment: string;
   deliveryPlaceId: string;
-  proposedDeliveryPlace: DeliveryPlace;
-  contact: Contact;
+  proposedDeliveryPlace?: DeliveryPlace;
+  contact?: Contact;
   itemGroup: ItemGroup;
   sapId: string;
   status: Contract.StatusEnum;
@@ -61,14 +59,10 @@ class EditContract extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      contacts: [],
-      itemGroups: [],
       deliveryPlaces: [],
       deliveryPlace: {},
-      proposedDeliveryPlace: {},
       deliveryPlaceId: "",
       itemGroup: {},
-      contact: {},
       sapId: "",
       status: "ON_HOLD",
       quantityComment: "",
@@ -88,94 +82,40 @@ class EditContract extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
-
     this.setState({ contractEditLoading: true });
-
-    await this.loadContract();
-    await this.loadContacts();
-    await this.loadItemGroups();
-    await this.loadDeliveryPlaces();
-
-    this.loadContractManagementData();
+    await this.loadContractManagementData();
     this.setState({ contractEditLoading: false });
-  }
-
-  /**
-   * Load contract
-   */
-  private loadContract = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token) {
-      return;
-    }
-
-    const contractId: string = this.props.match.params.contractId;
-
-    const contactsService = await Api.getContractsService(this.props.keycloak.token);
-    const contract: Contract = await contactsService.findContract(contractId, "application/json");
-    this.setState({ contract });
-  }
-
-  /**
-   * Load contacts
-   */
-  private loadContacts = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token) {
-      return;
-    }
-
-    const contactsService = await Api.getContactsService(this.props.keycloak.token);
-    const contacts = await contactsService.listContacts();
-    this.setState({ contacts: contacts });
-  }
-
-  /**
-   * Load item groups
-   */
-  private loadItemGroups = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token) {
-      return;
-    }
-
-    const itemGroupsService = await Api.getItemGroupsService(this.props.keycloak.token);
-    const itemGroups = await itemGroupsService.listItemGroups();
-    this.setState({ itemGroups: itemGroups });
-  }
-
-  /**
-   * Load delivery places
-   */
-  private loadDeliveryPlaces = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token) {
-      return;
-    }
-
-    const deliveryPlacesService = await Api.getDeliveryPlacesService(this.props.keycloak.token);
-    const deliveryPlaces = await deliveryPlacesService.listDeliveryPlaces();
-    this.setState({ deliveryPlaces: deliveryPlaces });
   }
 
   /**
    * Load contract data
    */
-  private loadContractManagementData = () => {
-    if (!this.state.contract) {
+  private loadContractManagementData = async () => {
+    if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
 
-    const contract: Contract = this.state.contract;
-    const proposedDeliveryPlace: DeliveryPlace = this.state.deliveryPlaces.find((deliveryPlace) => deliveryPlace.id == contract.proposedDeliveryPlaceId) || {};
-    const deliveryPlace: DeliveryPlace = this.state.deliveryPlaces.find((deliveryPlace) => deliveryPlace.id == contract.deliveryPlaceId) || {};
-    const deliveryPlaceId: string = deliveryPlace.id || ""
-    const itemGroup: ItemGroup = this.state.itemGroups.find((itemGroup) => itemGroup.id == contract.itemGroupId) || {};
-    const contact: Contact = this.state.contacts.find((contact) => contact.id == contract.contactId) || {};
+    const contractId: string = this.props.match.params.contractId;
+    const contractsService = await Api.getContractsService(this.props.keycloak.token);
+    const contract: Contract = await contractsService.findContract(contractId, "application/json");
+    const deliveryPlacesService = await Api.getDeliveryPlacesService(this.props.keycloak.token);
+    const deliveryPlaces = await deliveryPlacesService.listDeliveryPlaces();
+    const deliveryPlace = deliveryPlaces.find(deliveryPlace => deliveryPlace.id === contract.deliveryPlaceId) || {};
+    const deliveryPlaceId = deliveryPlace.id || "";
+    const proposedDeliveryPlace = contract.proposedDeliveryPlaceId ? deliveryPlaces.find(deliveryPlace => deliveryPlace.id === contract.proposedDeliveryPlaceId) : undefined;
+    const itemGroupsService = await Api.getItemGroupsService(this.props.keycloak.token);
+    const itemGroup = await itemGroupsService.findItemGroup(contract.itemGroupId);
+    const contactsService = await Api.getContactsService(this.props.keycloak.token);
+    const contact = contract.contactId ? await contactsService.findContact(contract.contactId) : undefined;
     const deliveryPlaceComment: string = contract.deliveryPlaceComment || "";
     const quantityComment: string = contract.quantityComment || "";
     const sapComment: string = contract.remarks || "";
     const sapId: string = contract.sapId || "";
     const quantity: number = contract.contractQuantity || 0;
-    const status: Contract.StatusEnum = contract.status || "";
+    const status: Contract.StatusEnum = contract.status;
 
     this.setState({
+      contract,
       quantityComment,
       deliveryPlaceComment,
       sapComment,
@@ -186,7 +126,8 @@ class EditContract extends React.Component<Props, State> {
       contact,
       deliveryPlace,
       deliveryPlaceId,
-      proposedDeliveryPlace
+      proposedDeliveryPlace,
+      deliveryPlaces
     });
   }
 
@@ -249,20 +190,20 @@ class EditContract extends React.Component<Props, State> {
    * Handle form edit
    */
   private handleFormEdit = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.contract || !this.state.contract.id) {
+    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.contract || !this.state.contract.id || !this.state.itemGroup.id) {
       return;
     }
 
     this.setState({ buttonLoading: true });
 
     const contractUpdate: Contract = {
-      areaDetails: this.state.contract ? this.state.contract.areaDetails : [],
-      itemGroupId: this.state.itemGroup.id!,
+      areaDetails: this.state.contract.areaDetails,
+      itemGroupId: this.state.itemGroup.id,
       sapId: this.state.sapId,
       status: this.state.status,
       quantityComment: this.state.quantityComment,
       contractQuantity: this.state.quantity,
-      proposedQuantity: this.state.contract ? this.state.contract.proposedQuantity : 0,
+      proposedQuantity: this.state.contract.proposedQuantity,
       deliveryPlaceId: this.state.deliveryPlaceId,
       deliveryPlaceComment: this.state.deliveryPlaceComment,
       remarks: this.state.sapComment,
@@ -344,7 +285,7 @@ class EditContract extends React.Component<Props, State> {
         <Form>
           <Form.Field>
             <Header>
-              {`${this.state.contact.companyName || strings.contactNotFound} - ${this.state.itemGroup.name || strings.itemGroupNotFound}`}
+              {this.state.contact ? `${this.state.contact.displayName} sopimus` : "Kontaktia ei löytynyt"}
             </Header>
           </Form.Field>
           <Form.Field>
@@ -365,7 +306,7 @@ class EditContract extends React.Component<Props, State> {
             {this.renderTextArea(this.state.quantityComment, (value: string) => { this.setState({ quantityComment: value }) }, strings.quantityComment)}
           </Form.Field>
           <Form.Field>
-            <p>{strings.deliveryPalceProposed} <strong>{this.state.proposedDeliveryPlace.name || "-"}</strong></p>
+            {this.state.proposedDeliveryPlace && <p>{strings.deliveryPalceProposed} <strong>{this.state.proposedDeliveryPlace.name}</strong></p>}
             <label>{strings.deliveryPlace}</label>
             {this.renderDropDown(deliveryPlaceOptions, this.state.deliveryPlaceId, (value: string) => { this.setState({ deliveryPlaceId: value }) }, strings.deliveryPlace)}
           </Form.Field>
