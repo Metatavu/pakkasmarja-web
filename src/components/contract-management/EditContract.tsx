@@ -285,7 +285,7 @@ class EditContract extends React.Component<Props, State> {
         <Form>
           <Form.Field>
             <Header>
-              {this.state.contact ? `${this.state.contact.firstName} ${this.state.contact.lastName} sopimus` : "Kontaktia ei löytynyt"}
+              {this.state.contact ? `${this.state.contact.displayName} sopimus` : "Kontaktia ei löytynyt"}
             </Header>
           </Form.Field>
           <Form.Field>

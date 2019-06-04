@@ -565,7 +565,7 @@ class ContractManagementList extends React.Component<Props, State> {
                       { contract.year }
                     </Table.Cell>
                     <Table.Cell>
-                      { contact ? `${contact.firstName} ${contact.lastName}` : "-" }
+                      { contact ? `${contact.displayName}` : "-" }
                     </Table.Cell>
                     <Table.Cell>
                       { this.getStatusText(contract.status) }
