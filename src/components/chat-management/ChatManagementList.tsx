@@ -9,6 +9,7 @@ import "../../styles/common.css";
 import { Header, Dimmer, Loader, Grid, Tab, TabPaneProps, TabProps, Confirm, Button } from "semantic-ui-react";
 import { Redirect } from "react-router-dom";
 import strings from "src/localization/strings";
+import FileUtils from "src/utils/FileUtils";
 
 type TabType = "CHAT" | "QUESTION";
 
@@ -197,13 +198,7 @@ class ChatManagementList extends React.Component<Props, State> {
       method: "GET"
     });
     const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = "summary-report.xlsx";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+    FileUtils.downloadBlob(blob, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "summary-report.xlsx");
   }
 
   /**

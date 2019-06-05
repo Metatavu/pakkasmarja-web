@@ -9,6 +9,7 @@ import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import * as actions from "../../actions/";
 import { PDFService } from "src/api/pdf.service";
+import FileUtils from "src/utils/FileUtils";
 
 /**
  * Interface for component State
@@ -118,15 +119,7 @@ class ContractItem extends React.Component<Props, State> {
   private downloadPdfBlob = (pdfData: Response, downloadTitle: string, contractId: string) => {
 
     pdfData.blob().then((blob: Blob) => {
-      const pdfBlob = new Blob([blob], { type: "application/pdf" });
-      const data = window.URL.createObjectURL(pdfBlob);
-      const link = document.createElement("a");
-      link.href = data;
-      link.download = `${downloadTitle} - ${contractId}.pdf`;
-      link.click();
-      setTimeout(function () {
-        window.URL.revokeObjectURL(data);
-      }, 100);
+      FileUtils.downloadBlob(blob, "application/pdf", `${downloadTitle} - ${contractId}.pdf`);
     });
   }
 
