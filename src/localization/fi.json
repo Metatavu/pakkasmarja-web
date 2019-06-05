@@ -181,7 +181,7 @@
   "showContract" : "Näytä sopimus",
   "missingInfo" : "Tarvittavia tietoja puuttuu",
   "contractTerminated" : "Sopimus päättynyt",
-  "contractsOnDraft" : "Vedossa olevat sopimukset",
+  "contractsOnDraft" : "Keskeneräiset sopimukset",
   "contractsOnActive" : "Aktiiviset sopimukset",
   "contractsOnTerminated" : "Aiemmat sopimukset",
   "downloadPdf" : "Lataa pdf",

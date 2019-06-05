@@ -116,7 +116,7 @@ class ContractView extends React.Component<Props, State> {
       this.updateContractData("quantityComment", contract.quantityComment || "");
       this.updateContractData("deliveryPlaceComment", contract.deliveryPlaceComment || "");
       this.updateContractData("deliveryPlaceId", contract.deliveryPlaceId || "");
-      this.updateContractData("deliverAllChecked", contract.proposedDeliverAll !== undefined ? contract.proposedDeliverAll : contract.deliverAll);
+      this.updateContractData("deliverAllChecked", contract.deliverAll);
       this.updateContractData("rejectComment", contract.rejectComment || "");
       this.updateContractData("proposedQuantity", contract.proposedQuantity || contract.contractQuantity || "");
       this.updateContractData("areaDetailValues", contract.areaDetails || []);
