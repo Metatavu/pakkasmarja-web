@@ -8,11 +8,12 @@ import "../../styles/common.css";
 import "./styles.css";
 import ErrorMessage from "../generic/ErrorMessage";
 import Api, { Contact, ItemGroup, Contract, DeliveryPlace } from "pakkasmarja-client";
-import { Form, Button, Dropdown, Input, TextArea, Header, Dimmer, Loader } from "semantic-ui-react";
+import { Form, Button, Dropdown, Input, TextArea, Header, Dimmer, Loader, Checkbox } from "semantic-ui-react";
 import * as moment from "moment";
 import { Redirect } from "react-router";
 import { Link } from "react-router-dom";
 import strings from "src/localization/strings";
+import AppConfig, { AppConfigItemGroupOptions } from "src/utils/AppConfig";
 
 /**
  * Interface for component props
@@ -44,6 +45,9 @@ interface State {
   redirect: boolean;
   contractEditLoading: boolean;
   buttonLoading: boolean;
+  allowDeliveryAll: boolean;
+  deliverAllChecked: boolean;
+  proposedDeliveryAll?: boolean;
 }
 
 /**
@@ -59,6 +63,8 @@ class EditContract extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
+      allowDeliveryAll: false,
+      deliverAllChecked: false,
       deliveryPlaces: [],
       deliveryPlace: {},
       deliveryPlaceId: "",
@@ -114,6 +120,14 @@ class EditContract extends React.Component<Props, State> {
     const quantity: number = contract.contractQuantity || 0;
     const status: Contract.StatusEnum = contract.status;
 
+    const appConfig = await AppConfig.getAppConfig();
+    if (appConfig && contract.itemGroupId) {
+      const configItemGroups = appConfig["item-groups"];
+      const configItemGroup: AppConfigItemGroupOptions = configItemGroups[contract.itemGroupId];
+      const allowDeliveryAll = configItemGroup && configItemGroup["allow-delivery-all"] ? true : false;
+      this.setState({ allowDeliveryAll });
+    }
+
     this.setState({
       contract,
       quantityComment,
@@ -127,7 +141,9 @@ class EditContract extends React.Component<Props, State> {
       deliveryPlace,
       deliveryPlaceId,
       proposedDeliveryPlace,
-      deliveryPlaces
+      deliveryPlaces,
+      proposedDeliveryAll: contract.proposedDeliverAll,
+      deliverAllChecked: contract.deliverAll
     });
   }
 
@@ -207,8 +223,8 @@ class EditContract extends React.Component<Props, State> {
       deliveryPlaceId: this.state.deliveryPlaceId,
       deliveryPlaceComment: this.state.deliveryPlaceComment,
       remarks: this.state.sapComment,
-      deliverAll: false,
-      proposedDeliverAll: false,
+      deliverAll: this.state.deliverAllChecked,
+      proposedDeliverAll: this.state.deliverAllChecked,
       year: moment().year(),
       proposedDeliveryPlaceId: this.state.contract.proposedDeliveryPlaceId
     };
@@ -300,8 +316,31 @@ class EditContract extends React.Component<Props, State> {
             <label>{strings.contractAmount}</label>
             {this.renderTextInput(this.state.quantity, (value: string) => { this.setState({ quantity: parseInt(value) }) }, "0", false)}
           </Form.Field>
+          <p>{strings.amountProposed} <strong>{this.state.contract && this.state.contract.proposedQuantity || "0"}</strong></p>
+          {
+            this.state.allowDeliveryAll &&
+            <Form.Field>
+              <Checkbox
+                checked={this.state.deliverAllChecked}
+                onChange={(event: any) => {
+                  this.setState({ deliverAllChecked: !this.state.deliverAllChecked });
+                }}
+                label="Haluaisin toimittaa kaiken tilallani viljeltävän sadon tästä marjasta Pakkasmarjalle pakastettavaksi ja tuorekauppaan"
+              />
+            </Form.Field>
+          }
+          {
+            this.state.allowDeliveryAll &&
+            <React.Fragment>
+              {
+                this.state.proposedDeliveryAll ?
+                  <p>Viljelijä haluaa toimittaa kaiken tilalla viljeltävän sadon tästä marjasta Pakkasmarjalle pakastettavaksi ja tuorekauppaan</p>
+                  :
+                  <p>Viljelijä <strong> EI </strong> halua toimittaa kaiken tilalla viljeltävän sadon tästä marjasta Pakkasmarjalle pakastettavaksi ja tuorekauppaan</p>
+              }
+            </React.Fragment>
+          }
           <Form.Field>
-            <p>{strings.amountProposed} <strong>{this.state.contract && this.state.contract.proposedQuantity || "0"}</strong></p>
             <label>{strings.quantityComment}</label>
             {this.renderTextArea(this.state.quantityComment, (value: string) => { this.setState({ quantityComment: value }) }, strings.quantityComment)}
           </Form.Field>

@@ -8,12 +8,13 @@ import "../../styles/common.css";
 import "./styles.css";
 import ErrorMessage from "../generic/ErrorMessage";
 import Api, { Contact, ItemGroup, Contract, DeliveryPlace } from "pakkasmarja-client";
-import { Form, Button, Dropdown, Input, TextArea } from "semantic-ui-react";
+import { Form, Button, Dropdown, Input, TextArea, Checkbox } from "semantic-ui-react";
 import * as moment from "moment";
 import { Redirect } from "react-router";
 import Select from "react-select/lib/Async";
 import { Link } from "react-router-dom";
 import strings from "src/localization/strings";
+import AppConfig, { AppConfigItemGroupOptions, AppConfigOptions } from "src/utils/AppConfig";
 
 /**
  * Interface for component props
@@ -44,6 +45,9 @@ interface State {
   sapComment: string;
   redirect: boolean;
   buttonLoading: boolean;
+  allowDeliveryAll: boolean;
+  deliverAllChecked: boolean;
+  appConfig?: AppConfigOptions;
 }
 
 /**
@@ -59,6 +63,8 @@ class CreateContract extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
+      allowDeliveryAll: false,
+      deliverAllChecked: false,
       selectedOption: { value: "", label: "" },
       contacts: [],
       itemGroups: [],
@@ -75,7 +81,7 @@ class CreateContract extends React.Component<Props, State> {
       buttonLoading: false
     };
   }
-  
+
   /**
    * Get options as promise
    * 
@@ -98,7 +104,7 @@ class CreateContract extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
-    
+
     const contactsService = Api.getContactsService(this.props.keycloak.token);
     const contacts = await contactsService.listContacts(value);
     this.setState({ contacts: contacts });
@@ -124,6 +130,8 @@ class CreateContract extends React.Component<Props, State> {
     await this.loadContacts();
     await this.loadItemGroups();
     await this.loadDeliveryPlaces();
+    const appConfig = await AppConfig.getAppConfig();
+    this.setState({ appConfig });
   }
 
   /**
@@ -217,6 +225,12 @@ class CreateContract extends React.Component<Props, State> {
    * @param value value
    */
   private handleItemGroupChange = (value: string) => {
+    if (this.state.appConfig) {
+      const configItemGroups = this.state.appConfig["item-groups"];
+      const configItemGroup: AppConfigItemGroupOptions = configItemGroups[value];
+      const allowDeliveryAll = configItemGroup && configItemGroup["allow-delivery-all"] ? true : false;
+      this.setState({ allowDeliveryAll });
+    }
     this.setState({ itemGroupId: value });
   }
 
@@ -277,7 +291,7 @@ class CreateContract extends React.Component<Props, State> {
       deliveryPlaceId: this.state.deliveryPlaceId,
       deliveryPlaceComment: this.state.deliveryPlaceComment,
       remarks: this.state.sapComment,
-      deliverAll: false,
+      deliverAll: this.state.deliverAllChecked,
       proposedDeliverAll: false,
       year: moment().year()
     };
@@ -372,6 +386,18 @@ class CreateContract extends React.Component<Props, State> {
             <label>{strings.quantity}</label>
             {this.renderTextInput(this.state.quantity, (value: string) => { this.setState({ quantity: parseInt(value) || 0 }) }, "0", false)}
           </Form.Field>
+          {
+            this.state.allowDeliveryAll &&
+            <Form.Field>
+              <Checkbox
+                checked={this.state.deliverAllChecked}
+                onChange={(event: any) => {
+                  this.setState({ deliverAllChecked: !this.state.deliverAllChecked });
+                }}
+                label="Haluaisin toimittaa kaiken tilallani viljeltävän sadon tästä marjasta Pakkasmarjalle pakastettavaksi ja tuorekauppaan"
+              />
+            </Form.Field>
+          }
           <Form.Field>
             <label>{strings.deliveryPlace}</label>
             {this.renderDropDown(deliveryPlaceOptions, this.state.deliveryPlaceId, (value: string) => { this.setState({ deliveryPlaceId: value }) }, "Valitse toimituspaikka")}

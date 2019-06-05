@@ -96,6 +96,13 @@ class MenuContainer extends React.Component<Props, State> {
                 <Dropdown.Menu>
                   <Dropdown.Item to="/manageContact" as={Link}><Icon name='user' color="red" />Yhteystiedot</Dropdown.Item>
                   <Dropdown.Item onClick={this.onAccountItemClick}><Icon name='setting' color="red" />{strings.menuBarManageAccountText}</Dropdown.Item>
+                 {
+                   this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTACTS) &&
+                    <Dropdown.Item href={"https://tunnistus-pakkasmarja.metatavu.io/auth/admin/Pakkasmarja/console"} target="_blank">
+                      <Icon name='users' flipped="horizontally" color="red" />
+                      Käyttäjähallinta
+                    </Dropdown.Item>
+                  }
                   <Dropdown.Item onClick={this.onLogoutItemClick}><Icon name='log out' flipped="horizontally" color="red" />{strings.menuBarLogoutText}</Dropdown.Item>
                 </Dropdown.Menu>
               </Dropdown>

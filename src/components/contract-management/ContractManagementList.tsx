@@ -11,7 +11,6 @@ import { ItemGroup } from "pakkasmarja-client";
 import { Header, Button, Dropdown, Form, List, Dimmer, Loader, Grid, Icon } from "semantic-ui-react";
 import ErrorMessage from "../generic/ErrorMessage";
 import { Table } from 'semantic-ui-react';
-import Moment from 'react-moment';
 import { Link } from "react-router-dom";
 import * as moment from 'moment';
 import TableBasicLayout from "../contract-management/TableBasicLayout";
@@ -545,9 +544,6 @@ class ContractManagementList extends React.Component<Props, State> {
                 {strings.remarkField}
               </Table.HeaderCell>
               <Table.HeaderCell width={2}>
-                {strings.dates}
-              </Table.HeaderCell>
-              <Table.HeaderCell width={2}>
                 <Button as={Link} to="createContract" color="red" style={{ width: "100%" }}>{strings.newContract}</Button>
               </Table.HeaderCell>
             </Table.Row>
@@ -584,66 +580,6 @@ class ContractManagementList extends React.Component<Props, State> {
                     </Table.Cell>
                     <Table.Cell  >
                       <div className="handleOverflow">{ contract.remarks }</div>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <List>
-                        <List.Item>
-                          <List.Content>
-                            {"Viljelijän allekirjoituspäivä: "}
-                            {
-                              contract.signDate
-                                ?
-                                <Moment format="DD.MM.YYYY">
-                                  { contract.signDate }
-                                </Moment>
-                                :
-                                "  -"
-                            }
-                          </List.Content>
-                        </List.Item>
-                        <List.Item>
-                          <List.Content>
-                            {"Aloituspäivä: "}
-                            {
-                              contract.startDate
-                                ?
-                                <Moment format="DD.MM.YYYY">
-                                  { contract.startDate }
-                                </Moment>
-                                :
-                                "  -"
-                            }
-                          </List.Content>
-                        </List.Item>
-                        <List.Item>
-                          <List.Content>
-                            {"Loppupäivä: "}
-                            {
-                              contract.endDate
-                                ?
-                                <Moment format="DD.MM.YYYY">
-                                  { contract.endDate }
-                                </Moment>
-                                :
-                                "  -"
-                            }
-                          </List.Content>
-                        </List.Item>
-                        <List.Item>
-                          <List.Content>
-                            {"Pakkasmarjan hyväksyntäpäivä: "}
-                            {
-                              contract.termDate
-                                ?
-                                <Moment format="DD.MM.YYYY">
-                                  { contract.termDate }
-                                </Moment>
-                                :
-                                " -"
-                            }
-                          </List.Content>
-                        </List.Item>
-                      </List>
                     </Table.Cell>
                     <Table.Cell >
                       <List>
