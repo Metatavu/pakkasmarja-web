@@ -11,6 +11,7 @@ import { PDFService } from "src/api/pdf.service";
 import "./styles.css";
 import { Link } from "react-router-dom";
 import strings from "src/localization/strings";
+import FileUtils from "src/utils/FileUtils";
 
 /**
  * Interface for component props
@@ -115,15 +116,7 @@ class ContractTerms extends React.Component<Props, State> {
    */
   private downloadPdfBlob = (pdfData: any) => {
     pdfData.blob().then((blob: any) => {
-      const pdfBlob = new Blob([blob], { type: "application/pdf" });
-      const data = window.URL.createObjectURL(pdfBlob);
-      const link = document.createElement("a");
-      link.href = data;
-      link.download = `${new Date().toLocaleDateString()}.pdf`;
-      link.click();
-      setTimeout(function () {
-        window.URL.revokeObjectURL(data);
-      }, 100);
+      FileUtils.downloadBlob(blob, "application/pdf", `${new Date().toLocaleDateString()}.pdf`);
     });
   }
 

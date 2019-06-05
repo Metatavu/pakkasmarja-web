@@ -17,6 +17,7 @@ import TableBasicLayout from "../contract-management/TableBasicLayout";
 import BasicLayout from "../generic/BasicLayout";
 import strings from "src/localization/strings";
 import { PDFService } from "src/api/pdf.service";
+import FileUtils from "src/utils/FileUtils";
 
 /**
  * Interface for component props
@@ -330,14 +331,7 @@ class ContractManagementList extends React.Component<Props, State> {
 
     const blob = await response.blob();
 
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = "contracts.xlsx";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-
+    FileUtils.downloadBlob(blob, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "contracts.xlsx");
     this.setState({ 
       contractsLoading: false
     });
@@ -385,19 +379,7 @@ class ContractManagementList extends React.Component<Props, State> {
    */
   private downloadPdfBlob = async (pdfData: Response, downloadTitle: string, contract: Contract) => {
     const blob = await pdfData.blob();  
-    const pdfBlob = new Blob([blob], { type: "application/pdf" });
-    const data = window.URL.createObjectURL(pdfBlob);
-    const link = document.createElement("a");
-    document.body.appendChild(link);
-
-    link.href = data;
-    link.download = `${contract.id}-${downloadTitle}.pdf`;
-    link.click();
-    link.remove();
-    
-    setTimeout(function () {
-      window.URL.revokeObjectURL(data);
-    }, 100);
+    FileUtils.downloadBlob(blob, "application/pdf", `${contract.id}-${downloadTitle}.pdf`);
   }
 
   /**

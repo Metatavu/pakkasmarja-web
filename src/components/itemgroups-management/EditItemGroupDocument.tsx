@@ -7,10 +7,8 @@ import { connect } from "react-redux";
 import "../../styles/common.css";
 import "./styles.css";
 import Api, { ItemGroupDocumentTemplate, ItemGroup } from "pakkasmarja-client";
-import { Button, Header, Divider, Dimmer, Loader } from "semantic-ui-react";
+import { Button, Header, Divider, Dimmer, Loader, TextArea } from "semantic-ui-react";
 import { Redirect } from "react-router";
-import CKEditor from '@ckeditor/ckeditor5-react';
-import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import { Link } from "react-router-dom";
 
 /**
@@ -173,11 +171,10 @@ class EditContractDocument extends React.Component<Props, State> {
         </Divider>
         <Header as="h4">Ylätunniste</Header>
         <div>
-          <CKEditor
-            editor={ClassicEditor}
-            data={this.state.headerContent}
-            onChange={(e: any, editor: any) => {
-              const headerContent = editor.getData();
+          <TextArea 
+            value={this.state.headerContent}
+            onChange = {(e, data) => {
+              const headerContent = data.value as string;
               this.setState({ headerContent });
             }}
           />
@@ -185,11 +182,10 @@ class EditContractDocument extends React.Component<Props, State> {
         <Divider />
         <Header as="h4">Sisältö</Header>
         <div>
-          <CKEditor
-            editor={ClassicEditor}
-            data={this.state.content}
-            onChange={(e: any, editor: any) => {
-              const content = editor.getData();
+          <TextArea 
+            value={this.state.content}
+            onChange = {(e, data) => {
+              const content = data.value as string;
               this.setState({ content });
             }}
           />
@@ -197,11 +193,10 @@ class EditContractDocument extends React.Component<Props, State> {
         <Divider />
         <Header as="h4">Alatunniste</Header>
         <div>
-          <CKEditor
-            editor={ClassicEditor}
-            data={this.state.footerContent}
-            onChange={(e: any, editor: any) => {
-              const footerContent = editor.getData();
+          <TextArea 
+            value={this.state.footerContent}
+            onChange = {(e, data) => {
+              const footerContent = data.value as string;
               this.setState({ footerContent });
             }}
           />
