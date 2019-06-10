@@ -164,7 +164,7 @@ class ContractTerms extends React.Component<Props, State> {
     if (contractSignRequest && contractSignRequest.redirectUrl) {
       const content = strings.signingContinuesOnNewTab;
       this.setState({ modalOpen: true, modalText: content });
-      window.open(contractSignRequest.redirectUrl, "_blank");
+      window.location.href = contractSignRequest.redirectUrl;
     } else {
       const content = strings.signingWentWrong;
       this.setState({ modalText: content, modalOpen: true });

@@ -8,7 +8,7 @@ import strings from "src/localization/strings";
 import { Item, Loader, Label } from "semantic-ui-react";
 import AVATAR_PLACEHOLDER from "../../gfx/avatar.png";
 import { FileService } from "src/api/file.service";
-import * as moment from "moment";
+import * as _ from "lodash";
 
 /**
  * Component properties
@@ -73,9 +73,10 @@ class ChatGroupList extends React.Component<Props, State> {
       const chatGroupsService = await Api.getChatGroupsService(this.props.keycloak.token);
       const chatGroups = await chatGroupsService.listChatGroups(this.props.type);
       const conversationListItemPromises = chatGroups.map((chatGroup: ChatGroup) => this.loadConversationItem(chatGroup));
-
+      const conversationListItems = await Promise.all(conversationListItemPromises);
+      const sortedListItems = _.sortBy( conversationListItems, (group) => this.hasUnreadThreads(group.id!)).reverse(); 
       this.setState({
-        conversationListItems: await Promise.all(conversationListItemPromises),
+        conversationListItems: sortedListItems,
         loading: false
       });
     } catch (e) {
@@ -97,7 +98,6 @@ class ChatGroupList extends React.Component<Props, State> {
           <Item.Content>
             { this.renderChatHeader(conversationListItem) }
             <Item.Meta>{conversationListItem.subtitle}</Item.Meta>
-            <Item.Extra>{moment(conversationListItem.date).format("DD.mm.YYYY HH:mm:ss")}</Item.Extra>
           </Item.Content>
         </Item>
       )
@@ -143,6 +143,21 @@ class ChatGroupList extends React.Component<Props, State> {
     return this.props.unreads.filter((unread: Unread) => {
       return (unread.path || "").startsWith(`chat-${groupId}-`);
     }).length;
+  }
+
+  /**
+   * Check if unread
+   * 
+   * @param groupId groupId
+   * @returns returns true if group has unreads
+   */
+  private hasUnreadThreads = (groupId: number) => {
+    if(!this.props.unreads){
+      return false;
+    }
+    return !!this.props.unreads.find((unread: Unread) => {
+      return (unread.path || "").startsWith(`chat-${groupId}-`);
+    });
   }
 
   /**

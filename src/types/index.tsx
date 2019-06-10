@@ -38,7 +38,7 @@ export interface ContractData {
 /**
  * Type for contract data key
  */
-export type ContractDataKey = "rejectComment" | "proposedQuantity" | "deliverAllChecked" | "quantityComment" | "areaDetailValues" | "deliveryPlaceId" | "deliveryPlaceComment";
+export type ContractDataKey = "rejectComment" | "proposedQuantity" | "deliverAllChecked" | "quantityComment" | "areaDetailValues" | "deliveryPlaceId" | "deliveryPlaceComment" | "never";
 
 /**
  * Interface for http response if something is not right
