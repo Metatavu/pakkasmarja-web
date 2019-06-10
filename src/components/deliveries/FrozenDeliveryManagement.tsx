@@ -399,6 +399,8 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
         return "Ehdotus";
       case "REJECTED":
         return "Hylätty";
+      case "NOT_ACCEPTED":
+        return "Toimitus hylättiin pakkasmarjan toimesta";
     }
   }
 
@@ -447,6 +449,7 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
       case "PLANNED":
         return { color: "#aaa", paddingLeft: "20px" };
       case "REJECTED":
+      case "NOT_ACCEPTED":
         return { color: "#ff0000", paddingLeft: "20px" };
     }
   }

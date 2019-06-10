@@ -940,6 +940,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
         return "Ehdotus";
       case "REJECTED":
         return "Hylätty";
+      case "NOT_ACCEPTED":
+        return "Toimitus hylättiin pakkasmarjan toimesta";
     }
   }
 
@@ -994,6 +996,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       case "PLANNED":
         return { color: "#aaa" };
       case "REJECTED":
+      case "NOT_ACCEPTED":
         return { color: "#ff0000" };
     }
   }

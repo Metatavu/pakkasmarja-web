@@ -541,6 +541,8 @@ class ManageDeliveryModal extends React.Component<Props, State> {
         return "Ehdotus";
       case "REJECTED":
         return "Hylätty";
+      case "NOT_ACCEPTED":
+        return "Toimitus hylättiin pakkasmarjan toimesta";
     }
   }
 

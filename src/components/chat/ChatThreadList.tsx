@@ -208,7 +208,7 @@ class ChatThreadList extends React.Component<Props, State> {
     }
 
     const chatMessagesService = await Api.getChatMessagesService(this.props.keycloak.token);
-    const latestMessage = await chatMessagesService.listChatMessages(chatThread.id!, undefined, undefined, 0, 1);
+    const latestMessage = await chatMessagesService.listChatMessages(chatThread.id!, undefined, undefined, undefined, 0, 1);
     if (latestMessage[0]) {
       conversationItem.date = latestMessage[0].updatedAt,
       conversationItem.subtitle = latestMessage[0].contents || ""
