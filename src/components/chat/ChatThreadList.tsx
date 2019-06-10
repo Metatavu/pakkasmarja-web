@@ -9,6 +9,7 @@ import { Item, Loader, Label } from "semantic-ui-react";
 import AVATAR_PLACEHOLDER from "../../gfx/avatar.png";
 import { FileService } from "src/api/file.service";
 import * as moment from "moment";
+import * as _ from "lodash";
 
 /**
  * Component properties
@@ -99,9 +100,10 @@ class ChatThreadList extends React.Component<Props, State> {
       const chatThreadsService = await Api.getChatThreadsService(this.props.keycloak.token);
       const chatThreads = await chatThreadsService.listChatThreads(this.props.groupId, this.props.type);
       const conversationListItemPromises = chatThreads.map((chatThread: ChatThread) => this.loadConversationItem(chatThread));
-
+      const conversationListItems = await Promise.all(conversationListItemPromises);
+      const sortedListItems = _.sortBy( conversationListItems, (thread) => this.hasUnreadMessages( thread.groupId , thread.id! )).reverse();;
       this.setState({
-        conversationListItems: await Promise.all(conversationListItemPromises),
+        conversationListItems: sortedListItems,
         loading: false
       });
     } catch (e) {
@@ -169,6 +171,21 @@ class ChatThreadList extends React.Component<Props, State> {
     return this.props.unreads.filter((unread: Unread) => {
       return (unread.path || "").startsWith(`chat-${groupId}-${threadId}-`);
     }).length;
+  }
+
+  /**
+   * Check if unread
+   * 
+   * @param groupId groupId
+   * @param threadId threadId
+   */
+  private hasUnreadMessages = (groupId: number, threadId: number) => {
+    if(!this.props.unreads){
+      return false;
+    }
+    return !!this.props.unreads.find((unread: Unread) => {
+      return (unread.path || "").startsWith(`chat-${groupId}-${threadId}-`);
+    });
   }
 
   /**
