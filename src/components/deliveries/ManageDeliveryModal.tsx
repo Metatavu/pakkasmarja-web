@@ -342,6 +342,43 @@ class ManageDeliveryModal extends React.Component<Props, State> {
   }
 
   /**
+   * Handle delivery reject
+   */
+  private handleDeliveryReject = async () => {
+    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.selectedPlaceId || !this.state.selectedProductId || !this.state.date || !this.state.deliveryId) {
+      return;
+    }
+
+    try {
+      const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
+      const delivery: Delivery = {
+        productId: this.state.selectedProductId,
+        userId: this.state.userId || "",
+        time: new Date(),
+        status: "NOT_ACCEPTED",
+        amount: this.state.amount,
+        price: "0",
+        deliveryPlaceId: this.state.selectedPlaceId,
+        qualityId: this.state.selectedQualityId
+      }
+
+      const response = await deliveryService.updateDelivery(delivery, this.state.deliveryId);
+      if (this.isHttpErrorResponse(response)) {
+        const errorResopnse: HttpErrorResponse = response;
+        this.props.onError && this.props.onError(errorResopnse.message);
+        return;
+      }
+
+      this.props.onUpdate();
+    } catch (e) {
+      this.props.onError && this.props.onError(strings.errorCommunicatingWithServer);
+      this.setState({
+        loading: false
+      })
+    }
+  }
+
+  /**
    * Render method
    */
   public render() {
@@ -583,10 +620,22 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     }
 
     if (this.props.delivery.status == "PROPOSAL") {
-      return <Button disabled={!this.isValid()} floated="right" color="green" onClick={this.handleDeliverySave} type='submit'>Muokkaa ehdotusta</Button>;
+      return <Button.Group floated="right">
+              <Button disabled={!this.isValid()} color="black" onClick={this.handleDeliveryReject} type='submit'>Hylkää ehdotus</Button>
+              <Button disabled={!this.isValid()} color="green" onClick={this.handleDeliverySave} type='submit'>Muokkaa ehdotusta</Button>
+            </Button.Group>;
     }
 
-    return <Button disabled={!this.isValid()} floated="right" color="red" onClick={this.handleDeliveryAccept} type='submit'>Hyväksy toimitus</Button>;
+    if (this.props.delivery.status == "NOT_ACCEPTED") {
+      return <Button.Group floated="right">
+              <Button disabled={!this.isValid()} color="red" onClick={this.handleDeliveryAccept} type='submit'>Hyväksy toimitus</Button>
+            </Button.Group>;
+    }
+
+    return <Button.Group floated="right">
+            <Button disabled={!this.isValid()} color="black" onClick={this.handleDeliveryReject} type='submit'>Hylkää toimitus</Button>
+            <Button disabled={!this.isValid()} color="red" onClick={this.handleDeliveryAccept} type='submit'>Hyväksy toimitus</Button>
+          </Button.Group>;
   }
 
   /**
@@ -604,7 +653,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     if (this.props.delivery.status == "PROPOSAL") {
       return <React.Fragment>Muokkaa ehdotusta</React.Fragment>
     }
-    
+
     return <React.Fragment>Hyväksy toimitus</React.Fragment>
   }
 

@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as actions from "../../actions";
 import { StoreState, Options, DeliveryDataValue, deliveryNoteImg64 } from "src/types";
-import Api, { Product, Delivery, DeliveryNote, Contact, DeliveryPlace } from "pakkasmarja-client";
+import Api, { Product, Delivery, DeliveryNote, Contact, DeliveryPlace, DeliveryStatus, DeliveryQuality } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
@@ -46,6 +46,9 @@ interface State {
   deliveryTimeValue?: number;
   deliveryNoteImgs64: deliveryNoteImg64[];
   openImage?: string;
+  selectedDeliveryStatus: DeliveryStatus;
+  deliveryQualities: DeliveryQuality[];
+  selectedQualityId?: string;
 }
 
 /**
@@ -61,13 +64,15 @@ class CreateDeliveryModal extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
+      deliveryQualities: [],
       amount: 0,
       modalOpen: false,
       deliveryNotes: [],
       contactsLoading: false,
       contacts: [],
       deliveryNoteImgs64: [],
-      selectedDeliveryPlaceId: props.deliveryPlaceId
+      selectedDeliveryPlaceId: props.deliveryPlaceId,
+      selectedDeliveryStatus: "PROPOSAL"
     };
 
     registerLocale('fi', fi);
@@ -80,7 +85,6 @@ class CreateDeliveryModal extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
-
 
   }
 
@@ -95,8 +99,23 @@ class CreateDeliveryModal extends React.Component<Props, State> {
     if (key === "selectedProductId") {
       const productId = value as string;
       const selectedProduct = this.props.products.find((product) => product.id === productId);
+      this.getDeliveryQualities(selectedProduct!);
       this.setState({ selectedProduct });
     }
+  }
+
+  /**
+   * Get delivery qualities
+   */
+  private getDeliveryQualities = async ( product : Product ) => {
+    if (!this.props.keycloak || !this.props.keycloak.token) {
+      return;
+    }
+    const itemGroupService = await Api.getItemGroupsService(this.props.keycloak.token);
+    const itemGroup = await itemGroupService.findItemGroup(product.itemGroupId);
+    const deliveryQualitiesService = await Api.getDeliveryQualitiesService(this.props.keycloak.token);
+    const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(itemGroup.category);
+    this.setState({ deliveryQualities });
   }
 
   /**
@@ -125,6 +144,34 @@ class CreateDeliveryModal extends React.Component<Props, State> {
         }
       />
     );
+  }
+
+  /**
+   * Returns whether form is valid or not
+   * 
+   * @return whether form is valid or not
+   */
+  private isValid = () => {
+    if(this.state.selectedDeliveryStatus === "DONE"){
+      return !!(
+        this.state.selectedDeliveryStatus 
+        && this.state.selectedDeliveryPlaceId 
+        && this.state.selectedProductId
+        && this.state.selectedContactId
+        && this.state.amount
+        && this.state.deliveryTimeValue
+        && this.state.selectedQualityId
+        );
+    }else{
+      return !!(
+        this.state.selectedDeliveryStatus 
+        && this.state.selectedDeliveryPlaceId 
+        && this.state.selectedProductId
+        && this.state.selectedContactId
+        && this.state.amount
+        && this.state.deliveryTimeValue
+        );
+    }
   }
 
   /**
@@ -181,10 +228,11 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       productId: this.state.selectedProductId,
       userId: this.state.selectedContactId,
       time: time,
-      status: "PROPOSAL",
+      status: this.state.selectedDeliveryStatus,
       amount: this.state.amount,
       price: "0",
-      deliveryPlaceId: this.state.selectedDeliveryPlaceId
+      deliveryPlaceId: this.state.selectedDeliveryPlaceId,
+      qualityId: this.state.selectedDeliveryStatus === "DONE" ? this.state.selectedQualityId : ""
     }
 
     const createdDelivery = await deliveryService.createDelivery(delivery);
@@ -235,6 +283,27 @@ class CreateDeliveryModal extends React.Component<Props, State> {
   }
 
   /**
+   * Renders quality field
+   */
+  private renderQualityField() {
+
+    const deliveryQualityOptions = this.state.deliveryQualities.map((deliveryQuality) => {
+      return {
+        key: deliveryQuality.id,
+        text: deliveryQuality.name,
+        value: deliveryQuality.id
+      };
+    });
+
+    return (
+      <Form.Field>
+        <label>Laatu</label>
+        {this.renderDropDown(deliveryQualityOptions, "Laatu", "selectedQualityId")}
+      </Form.Field>
+    );
+  }
+
+  /**
    * Render method
    */
   public render() {
@@ -264,6 +333,16 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       value: 17
     }];
 
+    const deliveryStatusOptions: Options[] = [{
+      key: "proposal",
+      text: "Ehdotus",
+      value: "PROPOSAL"
+    }, {
+      key: "done",
+      text: "Valmis toimitus",
+      value: "DONE"
+    }];
+
     const deliveryPlaces: Options[] = this.props.deliveryPlaces.map((deliveryPlace) => {
       return {
         key: deliveryPlace.id,
@@ -274,14 +353,18 @@ class CreateDeliveryModal extends React.Component<Props, State> {
 
     return (
       <Modal onClose={() => this.props.onClose()} open={this.props.open}>
-        <Modal.Header>Uusi toimitusehdotus</Modal.Header>
+        <Modal.Header>Uusi toimitus/ehdotus</Modal.Header>
         <Modal.Content>
           <Form>
             <Form.Field>
               <p><b>Päivämäärä: </b> {this.props.date && moment(this.props.date).format("DD.MM.YYYY")}</p>
             </Form.Field>
             <Form.Field>
-              <label>{strings.product}</label>
+              <label>Tila</label>
+              { this.renderDropDown(deliveryStatusOptions, "Tila", "selectedDeliveryStatus") }
+            </Form.Field>
+            <Form.Field>
+              <label>Toimituspaikka</label>
               { this.renderDropDown(deliveryPlaces, "Toimituspaikka", "selectedDeliveryPlaceId") }
             </Form.Field>
             <Form.Field>
@@ -293,6 +376,11 @@ class CreateDeliveryModal extends React.Component<Props, State> {
                 <PriceChart showLatestPrice productId={this.state.selectedProductId} />
               }
             </Form.Field>
+            {this.state.selectedDeliveryStatus === "DONE" && this.state.selectedProduct &&
+            <Form.Field>
+              { this.renderQualityField() }
+            </Form.Field>
+            }
             <Form.Field>
               <label>Viljelijä</label>
               <Dropdown
@@ -310,6 +398,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
             <Form.Field>
               <label>{strings.amount}</label>
               <Input
+                type="number"
                 placeholder={strings.amount}
                 value={this.state.amount}
                 onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
@@ -348,7 +437,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
               }) : <Divider />
             }
             <Button color="red" inverted onClick={() => this.setState({ modalOpen: true })}>{`${strings.addNote}`}</Button>
-            <Button color="red" floated="right" onClick={this.handleDeliverySubmit} type='submit'>
+            <Button color="red" disabled={ !this.isValid() } floated="right" onClick={this.handleDeliverySubmit} type='submit'>
               Tallenna
             </Button>
           </Form>

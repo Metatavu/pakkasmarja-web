@@ -171,7 +171,7 @@ class CreateDelivery extends React.Component<Props, State> {
    * Handles delivery submit
    */
   private handleDeliverySubmit = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.selectedPlaceId || !this.state.selectedProductId || !this.state.date) {
+    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.selectedPlaceId || !this.state.selectedProductId || !this.state.date || !this.props.keycloak.subject) {
       return;
     }
     const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
@@ -181,7 +181,7 @@ class CreateDelivery extends React.Component<Props, State> {
 
     const delivery: Delivery = {
       productId: this.state.selectedProductId,
-      userId: this.props.keycloak.subject || "",
+      userId: this.props.keycloak.subject,
       time: time,
       status: "PLANNED",
       amount: this.state.amount,

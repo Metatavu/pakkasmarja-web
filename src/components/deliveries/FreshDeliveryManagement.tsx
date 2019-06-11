@@ -182,7 +182,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     tableRows.push(this.getTableSummaryRow("now", "#44c336", deliveries, "Varastossa nyt", true));
 
     return (
-      <TableBasicLayout topBarButtonText={"+ Uusi ehdotus viljelijälle"} onTopBarButtonClick={() => this.setState({ newDeliveryModalOpen: true })} error={this.state.error} onErrorClose={() => this.setState({ error: undefined })} pageTitle="Päiväennuste, tuoreet">
+      <TableBasicLayout topBarButtonText={"+ Uusi toimitus/ehdotus viljelijälle"} onTopBarButtonClick={() => this.setState({ newDeliveryModalOpen: true })} error={this.state.error} onErrorClose={() => this.setState({ error: undefined })} pageTitle="Päiväennuste, tuoreet">
         <div style={{ display: "flex", flex: 1, flexDirection: "column" }}>
           <div style={{ display: "flex", flex: 1, justifyContent: "center", padding: 10, fontSize: "1.5em" }}><p>Valitse päivämäärä</p></div>
           <div style={{ display: "flex", flex: 1, flexDirection: "row" }}>
@@ -244,7 +244,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
         {
           this.state.proposalContactId && this.state.proposalProduct && this.state.proposalTime &&
           <Modal size="tiny" open={true} onClose={() => this.setState({ proposalContactId: undefined, proposalProduct: undefined })}>
-            <Modal.Header>Luo toimitusehdotus</Modal.Header>
+            <Modal.Header>Luo toimitus/ehdotus</Modal.Header>
             <Modal.Content>
               <p>Syötä ehdotettava määrä</p>
               <Input value={this.state.proposalAmount} type="number" onChange={(e, data) => { this.setState({ proposalAmount: parseInt(data.value, 10) }) }} />
