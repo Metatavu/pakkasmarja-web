@@ -185,6 +185,7 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
                       });
                     }}
                     selected={this.state.selectedDate}
+                    dateFormat="dd.MM.yyyy"
                     locale="fi"
                   />
                 </Form.Field>

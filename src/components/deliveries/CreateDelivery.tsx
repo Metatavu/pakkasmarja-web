@@ -334,6 +334,7 @@ class CreateDelivery extends React.Component<Props, State> {
                   this.handleInputChange("date", date)
                 }}
                 selected={this.state.date}
+                dateFormat="dd.MM.yyyy"
                 locale="fi"
               />
             </Form.Field>

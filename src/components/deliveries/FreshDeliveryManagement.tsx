@@ -191,13 +191,14 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
               <Form>
                 <Form.Field>
                   <DatePicker
+                    dateFormat="dd.MM.yyyy"
+                    locale="fi"
                     onChange={(date: Date) => {
                       this.setState({
                         selectedDate: date
                       });
                     }}
                     selected={this.state.selectedDate}
-                    locale="fi"
                   />
                 </Form.Field>
               </Form>
