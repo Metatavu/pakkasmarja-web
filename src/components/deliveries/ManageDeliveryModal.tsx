@@ -52,11 +52,12 @@ interface State {
   openImage?: string,
   deliveryId?: string,
   modalOpen: boolean,
-  userId: string
-  redBoxesLoaned: number
-  redBoxesReturned: number
-  grayBoxesLoaned: number
-  grayBoxesReturned: number
+  userId: string,
+  redBoxesLoaned: number,
+  redBoxesReturned: number,
+  grayBoxesLoaned: number,
+  grayBoxesReturned: number,
+  warehouseCode?: string
 }
 
 /**
@@ -525,6 +526,10 @@ class ManageDeliveryModal extends React.Component<Props, State> {
               <label>{strings.deliveryPlace}</label>
               {this.renderDropDown(deliveryPlaceOptions, "selectedPlaceId")}
             </Form.Field>
+            <Form.Field>
+              <label>Varasto</label>
+              {this.renderWarehouseDropdown()}
+            </Form.Field>
             {this.state.deliveryNotesWithImgBase64[0] ?
               this.state.deliveryNotesWithImgBase64.map((deliveryNote, i) => {
                 return (
@@ -582,6 +587,51 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       case "NOT_ACCEPTED":
         return "Toimitus hylättiin pakkasmarjan toimesta";
     }
+  }
+
+  /**
+   * Render warehouse dropdown
+   */
+  private renderWarehouseDropdown = () => {
+    const warehouseOptions = [
+      { key: "01", value: "01", text: "PAKKASMARJA OY, PÄÄVARASTO" },
+      { key: "02", value: "02", text: "PAKKASMARJA OY, HALLI 3, TUORETUOTTEET JA - TARVIKKEET" },
+      { key: "03", value: "03", text: "PAKKASMARJA OY, LINTIKKO" },
+      { key: "05", value: "05", text: "TORIPIHA OY, VESANTO" },
+      { key: "06", value: "06", text: "MARJA CARELIA, HEINÄVAARA" },
+      { key: "07", value: "07", text: "KYLMÄSÄILÖ OY, TURKU" },
+      { key: "09", value: "09", text: "JÄÄSAUKKO OY, PUUMALA" },
+      { key: "10", value: "10", text: "TAURÉN" },
+      { key: "100", value: "100", text: "LAATIKKOVARASTO" },
+      { key: "11", value: "11", text: "RIITAN HERKKU OY, MUSTASAARI / VAASA" },
+      { key: "12", value: "12", text: "KIMO, MARJA BOTHNIA BERRIES OY LTD" },
+      { key: "14", value: "14", text: "PYHÄJÄRVI" },
+      { key: "15", value: "15", text: "JÄÄSAUKKO OY, LEMPÄÄLÄ" },
+      { key: "17", value: "17", text: "TIKKI" },
+      { key: "18", value: "18", text: "PUREE" },
+      { key: "19", value: "19", text: "SALAATTI" },
+      { key: "20", value: "20", text: "KAINUUN TUOTE OY, HYRYNSALMI" },
+      { key: "22", value: "22", text: "KIANTAMA OY" },
+      { key: "23", value: "23", text: "PAKKASMARJA OY, KELLONIEMI" },
+      { key: "24", value: "24", text: "ATEN MARJA OY" },
+      { key: "25", value: "25", text: "SIISKOSEN LEIPOMO" },
+      { key: "26", value: "26", text: "KORVATUNTURIN MARJA OY, SAVUKOSKI" },
+      { key: "27", value: "27", text: "KIITOLINJA VÄHÄLÄ, VAAJAKOSKI" }
+    ]
+
+    return (
+      <Dropdown
+        selection
+        fluid
+        placeholder={"Valitse varasto"}
+        value={this.state.warehouseCode}
+        options={warehouseOptions}
+        onChange={(event, data) => {
+          this.setState({ warehouseCode: data.value as string });
+        }
+        }
+      />
+    );
   }
 
   /**
@@ -669,6 +719,10 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     }
 
     if (!this.state.selectedProductId) {
+      return false;
+    }
+
+    if (!this.state.warehouseCode) {
       return false;
     }
 
