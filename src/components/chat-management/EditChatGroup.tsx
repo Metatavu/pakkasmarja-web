@@ -326,6 +326,8 @@ class EditChatGroup extends React.Component<Props, State> {
   private renderDatePicker = () => {
     return (
       <DatePicker
+        dateFormat="dd.MM.yyyy"
+        locale="fi"
         onChange={(date: Date) => {
           this.setState({ date });
         }}

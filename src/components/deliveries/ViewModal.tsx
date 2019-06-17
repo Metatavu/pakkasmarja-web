@@ -112,6 +112,7 @@ class ViewModal extends React.Component<Props, State> {
     if (!deliveryProduct || !deliveryProduct.product) {
       return <React.Fragment></React.Fragment>;
     }
+    const { status } = deliveryProduct.delivery;
     const kilograms = (deliveryProduct.delivery.amount * (deliveryProduct.product.units * deliveryProduct.product.unitSize)).toFixed(2);
     return (
       <Modal style={{ minHeight: "200px" }} size="small" open={this.props.modalOpen} onClose={this.closeModal} closeIcon>
@@ -148,11 +149,16 @@ class ViewModal extends React.Component<Props, State> {
               </div>
               <div style={{ display: "flex", flex: 1 }}>
                 <div style={{ flex: 0.4 }}>
-                  <h4>Toimituspäivä</h4>
+                  {
+                    status === "DONE" || status === "NOT_ACCEPTED" ?
+                      <h4>{status === "DONE" ? "Hyväksytty" : "Hylätty"}</h4>
+                      :
+                      <h4>Toimituspäivä</h4>
+                  }
                 </div>
                 <div style={{ flex: 1 }}>
                   {
-                    deliveryProduct.delivery.status === "DONE" ?
+                    status === "DONE" || status === "NOT_ACCEPTED" ?
                       <p>{`${moment(deliveryProduct.delivery.time).format("DD.MM.YYYY HH:mm")}`}</p>
                       :
                       <p>{`${moment(deliveryProduct.delivery.time).format("DD.MM.YYYY")} - ${Number(moment(deliveryProduct.delivery.time).utc().format("HH")) > 12 ? "Jälkeen kello 12" : "Ennen kello 12"}`}</p>

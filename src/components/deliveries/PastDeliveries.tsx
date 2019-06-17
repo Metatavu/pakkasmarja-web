@@ -3,7 +3,7 @@ import * as actions from "../../actions/";
 import { StoreState, DeliveriesState, DeliveryProduct, SortedDeliveryProduct } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import { Item, Grid, Loader } from "semantic-ui-react";
+import { Item, Grid, Loader, Menu } from "semantic-ui-react";
 import "../../styles/common.css";
 import ViewModal from "./ViewModal";
 import strings from "src/localization/strings";
@@ -27,7 +27,7 @@ interface Props {
  */
 interface State {
   keycloak?: Keycloak.KeycloakInstance;
-  sortedDeliveriesByTime?: ArrayLike<SortedDeliveryProduct>;
+  sortedDeliveriesToGroups?: SortedDeliveryProduct[];
   deliveryId?: string;
   viewModal: boolean;
   pageTitle?: string;
@@ -36,6 +36,7 @@ interface State {
   deliveryQuality?: DeliveryQuality;
   loading: boolean;
   deliveryProduct?: DeliveryProduct;
+  tabActiveItem: "DONE" | "NOT_ACCEPTED";
 }
 
 /**
@@ -52,7 +53,8 @@ class PastDeliveries extends React.Component<Props, State> {
     super(props);
     this.state = {
       viewModal: false,
-      loading: false
+      loading: false,
+      tabActiveItem: "DONE"
     };
   }
 
@@ -60,6 +62,26 @@ class PastDeliveries extends React.Component<Props, State> {
    * Component did mount life-sycle event
    */
   public async componentDidMount() {
+
+    this.loadData();
+
+  }
+
+  /**
+   * Component did update life-sycle event
+   */
+  public async componentDidUpdate(prevProps : Props, prevState : State) {
+
+    if(prevState.tabActiveItem !== this.state.tabActiveItem){
+      this.loadData();
+    }
+
+  }
+
+  /**
+   * Load data
+   */
+  private loadData = async () => {
     if (!this.props.keycloak || !this.props.keycloak.token || !this.props.deliveries) {
       return;
     }
@@ -68,18 +90,18 @@ class PastDeliveries extends React.Component<Props, State> {
     const category = this.props.location.state ? this.props.location.state.category : "";
     if (category === "FRESH") {
       const freshDeliveryData: DeliveryProduct[] = this.props.deliveries.freshDeliveryData;
-      const freshPastDeliveries: DeliveryProduct[] = freshDeliveryData.filter(deliveryData => deliveryData.delivery.status === "DONE");
-      const sortedDeliveriesByTime = this.sortDeliveryProducts(freshPastDeliveries);
+      const freshPastDeliveries: DeliveryProduct[] = freshDeliveryData.filter(deliveryData => deliveryData.delivery.status === this.state.tabActiveItem);
+      const sortedDeliveriesToGroups = Array.from(this.sortDeliveryProducts(freshPastDeliveries));
       const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(category);
 
-      this.setState({ sortedDeliveriesByTime, pageTitle: strings.pastFreshDeliveries, category, deliveryQualities, loading: false });
+      this.setState({ sortedDeliveriesToGroups, pageTitle: strings.pastFreshDeliveries, category, deliveryQualities, loading: false });
     }
     if (category === "FROZEN") {
       const frozenDeliveryData: DeliveryProduct[] = this.props.deliveries.frozenDeliveryData;
-      const frozenPastDeliveries: DeliveryProduct[] = frozenDeliveryData.filter(deliveryData => deliveryData.delivery.status === "DONE");
-      const sortedDeliveriesByTime = this.sortDeliveryProducts(frozenPastDeliveries);
+      const frozenPastDeliveries: DeliveryProduct[] = frozenDeliveryData.filter(deliveryData => deliveryData.delivery.status === this.state.tabActiveItem);
+      const sortedDeliveriesToGroups = Array.from(this.sortDeliveryProducts(frozenPastDeliveries));
       const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(category);
-      this.setState({ sortedDeliveriesByTime, pageTitle: strings.pastFrozenDeliveries, category, deliveryQualities, loading: false });
+      this.setState({ sortedDeliveriesToGroups, pageTitle: strings.pastFrozenDeliveries, category, deliveryQualities, loading: false });
     }
   }
 
@@ -131,9 +153,20 @@ class PastDeliveries extends React.Component<Props, State> {
    * Render method
    */
   public render() {
-    const { sortedDeliveriesByTime } = this.state;
+    const { sortedDeliveriesToGroups } = this.state;
+    const { tabActiveItem } = this.state;
     return (
       <BasicLayout pageTitle={this.state.pageTitle}>
+        <Grid>
+          <Grid.Column width={4}></Grid.Column>
+          <Grid.Column width={8}>
+            <Menu color="red" pointing secondary widths={2}>
+              <Menu.Item name={strings.pastDeliveries} active={tabActiveItem === 'DONE'} onClick={() => this.setState({ tabActiveItem: "DONE" })} />
+              <Menu.Item content="Hylätyt toimitukset" active={tabActiveItem === 'NOT_ACCEPTED'} onClick={() => this.setState({ tabActiveItem: "NOT_ACCEPTED" })} />
+            </Menu>
+          </Grid.Column>
+          <Grid.Column width={4}></Grid.Column>
+        </Grid>
         {this.state.loading ? <Loader size="medium" content={strings.loading} active /> :
           <Grid verticalAlign='middle'>
             <Grid.Row>
@@ -141,7 +174,7 @@ class PastDeliveries extends React.Component<Props, State> {
               </Grid.Column>
               <Grid.Column width={8}>
                 {
-                  sortedDeliveriesByTime && Array.from(sortedDeliveriesByTime).map((obj) => {
+                  sortedDeliveriesToGroups && sortedDeliveriesToGroups.map((obj) => {
                     return (
                       <React.Fragment key={obj.deliveryProducts[0].delivery.id}>
                         <div className="delivery-sort-time-container"><h3>Päivämäärä {obj.time}</h3></div>

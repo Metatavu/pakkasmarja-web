@@ -108,7 +108,7 @@ class Chat extends React.Component<Props, State> {
     try {
       const thread = await Api.getChatThreadsService(keycloak.token).findChatThread(threadId);
       const maxResult = thread.answerType === "POLL" ? 1 : 30;
-      const chatMessages = await Api.getChatMessagesService(keycloak.token).listChatMessages(threadId, undefined, undefined, 0, maxResult);
+      const chatMessages = await Api.getChatMessagesService(keycloak.token).listChatMessages(threadId, undefined, undefined, undefined, 0, maxResult);
       thread.answerType === "TEXT" && mqttConnection.subscribe("chatmessages", this.onMessage);
       const messages = await this.translateMessages(chatMessages);
       const user = await Api.getContactsService(keycloak.token).findContact(keycloak.subject || "");
@@ -443,7 +443,7 @@ class Chat extends React.Component<Props, State> {
       if (!keycloak || !keycloak.token || !threadId) {
         return;
       }
-      const chatMessages = await Api.getChatMessagesService(keycloak.token).listChatMessages(threadId, earliestMessage.toDate(), undefined, 0, 20);
+      const chatMessages = await Api.getChatMessagesService(keycloak.token).listChatMessages(threadId, earliestMessage.toDate(), undefined, undefined, 0, 20);
       const messages = await this.translateMessages(chatMessages);
       const reversedMessages = messages.reverse();
       const existingMessages = this.state.messages;

@@ -52,11 +52,12 @@ interface State {
   openImage?: string,
   deliveryId?: string,
   modalOpen: boolean,
-  userId: string
-  redBoxesLoaned: number
-  redBoxesReturned: number
-  grayBoxesLoaned: number
-  grayBoxesReturned: number
+  userId: string,
+  redBoxesLoaned: number,
+  redBoxesReturned: number,
+  grayBoxesLoaned: number,
+  grayBoxesReturned: number,
+  warehouseCode?: string
 }
 
 /**
@@ -342,6 +343,43 @@ class ManageDeliveryModal extends React.Component<Props, State> {
   }
 
   /**
+   * Handle delivery reject
+   */
+  private handleDeliveryReject = async () => {
+    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.selectedPlaceId || !this.state.selectedProductId || !this.state.date || !this.state.deliveryId) {
+      return;
+    }
+
+    try {
+      const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
+      const delivery: Delivery = {
+        productId: this.state.selectedProductId,
+        userId: this.state.userId || "",
+        time: new Date(),
+        status: "NOT_ACCEPTED",
+        amount: this.state.amount,
+        price: "0",
+        deliveryPlaceId: this.state.selectedPlaceId,
+        qualityId: this.state.selectedQualityId
+      }
+
+      const response = await deliveryService.updateDelivery(delivery, this.state.deliveryId);
+      if (this.isHttpErrorResponse(response)) {
+        const errorResopnse: HttpErrorResponse = response;
+        this.props.onError && this.props.onError(errorResopnse.message);
+        return;
+      }
+
+      this.props.onUpdate();
+    } catch (e) {
+      this.props.onError && this.props.onError(strings.errorCommunicatingWithServer);
+      this.setState({
+        loading: false
+      })
+    }
+  }
+
+  /**
    * Render method
    */
   public render() {
@@ -476,6 +514,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
                   this.handleInputChange("date", date)
                 }}
                 selected={new Date(this.state.date)}
+                dateFormat="dd.MM.yyyy"
                 locale="fi"
               />
             </Form.Field>
@@ -486,6 +525,10 @@ class ManageDeliveryModal extends React.Component<Props, State> {
             <Form.Field style={{ marginTop: 20 }}>
               <label>{strings.deliveryPlace}</label>
               {this.renderDropDown(deliveryPlaceOptions, "selectedPlaceId")}
+            </Form.Field>
+            <Form.Field>
+              <label>Varasto</label>
+              {this.renderWarehouseDropdown()}
             </Form.Field>
             {this.state.deliveryNotesWithImgBase64[0] ?
               this.state.deliveryNotesWithImgBase64.map((deliveryNote, i) => {
@@ -541,7 +584,54 @@ class ManageDeliveryModal extends React.Component<Props, State> {
         return "Ehdotus";
       case "REJECTED":
         return "Hylätty";
+      case "NOT_ACCEPTED":
+        return "Toimitus hylättiin pakkasmarjan toimesta";
     }
+  }
+
+  /**
+   * Render warehouse dropdown
+   */
+  private renderWarehouseDropdown = () => {
+    const warehouseOptions = [
+      { key: "01", value: "01", text: "PAKKASMARJA OY, PÄÄVARASTO" },
+      { key: "02", value: "02", text: "PAKKASMARJA OY, HALLI 3, TUORETUOTTEET JA - TARVIKKEET" },
+      { key: "03", value: "03", text: "PAKKASMARJA OY, LINTIKKO" },
+      { key: "05", value: "05", text: "TORIPIHA OY, VESANTO" },
+      { key: "06", value: "06", text: "MARJA CARELIA, HEINÄVAARA" },
+      { key: "07", value: "07", text: "KYLMÄSÄILÖ OY, TURKU" },
+      { key: "09", value: "09", text: "JÄÄSAUKKO OY, PUUMALA" },
+      { key: "10", value: "10", text: "TAURÉN" },
+      { key: "100", value: "100", text: "LAATIKKOVARASTO" },
+      { key: "11", value: "11", text: "RIITAN HERKKU OY, MUSTASAARI / VAASA" },
+      { key: "12", value: "12", text: "KIMO, MARJA BOTHNIA BERRIES OY LTD" },
+      { key: "14", value: "14", text: "PYHÄJÄRVI" },
+      { key: "15", value: "15", text: "JÄÄSAUKKO OY, LEMPÄÄLÄ" },
+      { key: "17", value: "17", text: "TIKKI" },
+      { key: "18", value: "18", text: "PUREE" },
+      { key: "19", value: "19", text: "SALAATTI" },
+      { key: "20", value: "20", text: "KAINUUN TUOTE OY, HYRYNSALMI" },
+      { key: "22", value: "22", text: "KIANTAMA OY" },
+      { key: "23", value: "23", text: "PAKKASMARJA OY, KELLONIEMI" },
+      { key: "24", value: "24", text: "ATEN MARJA OY" },
+      { key: "25", value: "25", text: "SIISKOSEN LEIPOMO" },
+      { key: "26", value: "26", text: "KORVATUNTURIN MARJA OY, SAVUKOSKI" },
+      { key: "27", value: "27", text: "KIITOLINJA VÄHÄLÄ, VAAJAKOSKI" }
+    ]
+
+    return (
+      <Dropdown
+        selection
+        fluid
+        placeholder={"Valitse varasto"}
+        value={this.state.warehouseCode}
+        options={warehouseOptions}
+        onChange={(event, data) => {
+          this.setState({ warehouseCode: data.value as string });
+        }
+        }
+      />
+    );
   }
 
   /**
@@ -581,10 +671,22 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     }
 
     if (this.props.delivery.status == "PROPOSAL") {
-      return <Button disabled={!this.isValid()} floated="right" color="green" onClick={this.handleDeliverySave} type='submit'>Muokkaa ehdotusta</Button>;
+      return <Button.Group floated="right">
+              <Button disabled={!this.isValid()} color="black" onClick={this.handleDeliveryReject} type='submit'>Hylkää ehdotus</Button>
+              <Button disabled={!this.isValid()} color="green" onClick={this.handleDeliverySave} type='submit'>Muokkaa ehdotusta</Button>
+            </Button.Group>;
     }
 
-    return <Button disabled={!this.isValid()} floated="right" color="red" onClick={this.handleDeliveryAccept} type='submit'>Hyväksy toimitus</Button>;
+    if (this.props.delivery.status == "NOT_ACCEPTED") {
+      return <Button.Group floated="right">
+              <Button disabled={!this.isValid()} color="red" onClick={this.handleDeliveryAccept} type='submit'>Hyväksy toimitus</Button>
+            </Button.Group>;
+    }
+
+    return <Button.Group floated="right">
+            <Button disabled={!this.isValid()} color="black" onClick={this.handleDeliveryReject} type='submit'>Hylkää toimitus</Button>
+            <Button disabled={!this.isValid()} color="red" onClick={this.handleDeliveryAccept} type='submit'>Hyväksy toimitus</Button>
+          </Button.Group>;
   }
 
   /**
@@ -602,7 +704,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     if (this.props.delivery.status == "PROPOSAL") {
       return <React.Fragment>Muokkaa ehdotusta</React.Fragment>
     }
-    
+
     return <React.Fragment>Hyväksy toimitus</React.Fragment>
   }
 
@@ -617,6 +719,10 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     }
 
     if (!this.state.selectedProductId) {
+      return false;
+    }
+
+    if (!this.state.warehouseCode) {
       return false;
     }
 

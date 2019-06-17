@@ -161,7 +161,7 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
     tableRows.push(this.getTableSummaryRow(deliveries, "Klo 17 mennessä yht."))
 
     return (
-      <TableBasicLayout topBarButtonText={this.state.selectedDeliveryPlaceId ? "+ Uusi ehdotus viljelijälle" : undefined} onTopBarButtonClick={this.state.selectedDeliveryPlaceId ? () => this.setState({ newDeliveryModalOpen: true }) : undefined} error={this.state.error} onErrorClose={() => this.setState({ error: undefined })} pageTitle="Päiväennuste, pakasteet">
+      <TableBasicLayout topBarButtonText={this.state.selectedDeliveryPlaceId ? "+ Uusi toimitus/ehdotus viljelijälle" : undefined} onTopBarButtonClick={this.state.selectedDeliveryPlaceId ? () => this.setState({ newDeliveryModalOpen: true }) : undefined} error={this.state.error} onErrorClose={() => this.setState({ error: undefined })} pageTitle="Päiväennuste, pakasteet">
         <div style={{ display: "flex", flex: 1, flexDirection: "column" }}>
           <div style={{ display: "flex", flex: 1, justifyContent: "center", padding: 10, fontSize: "1.5em" }}><p>Valitse toimituspaikka ja päivämäärä</p></div>
           <div style={{ display: "flex", flex: 1, flexDirection: "row" }}>
@@ -185,6 +185,7 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
                       });
                     }}
                     selected={this.state.selectedDate}
+                    dateFormat="dd.MM.yyyy"
                     locale="fi"
                   />
                 </Form.Field>
@@ -217,7 +218,7 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
         }
         {this.state.proposalContactId && this.state.proposalProduct &&
           <Modal size="tiny" open={true} onClose={() => this.setState({ proposalContactId: undefined, proposalProduct: undefined })}>
-            <Modal.Header>Luo toimitusehdotus</Modal.Header>
+            <Modal.Header>Luo toimitus/ehdotus</Modal.Header>
             <Modal.Content>
               <p>Syötä ehdotettava määrä</p>
               <Input value={this.state.proposalAmount} type="number" onChange={(e, data) => { this.setState({ proposalAmount: parseInt(data.value, 10) }) }} />
@@ -399,6 +400,8 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
         return "Ehdotus";
       case "REJECTED":
         return "Hylätty";
+      case "NOT_ACCEPTED":
+        return "Toimitus hylättiin pakkasmarjan toimesta";
     }
   }
 
@@ -447,6 +450,7 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
       case "PLANNED":
         return { color: "#aaa", paddingLeft: "20px" };
       case "REJECTED":
+      case "NOT_ACCEPTED":
         return { color: "#ff0000", paddingLeft: "20px" };
     }
   }

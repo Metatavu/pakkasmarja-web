@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as actions from "../../actions";
 import { StoreState, Options, DeliveryDataValue, deliveryNoteImg64 } from "src/types";
-import Api, { Product, Delivery, DeliveryNote, Contact, DeliveryPlace } from "pakkasmarja-client";
+import Api, { Product, Delivery, DeliveryNote, Contact, DeliveryPlace, DeliveryStatus, DeliveryQuality } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
@@ -46,6 +46,10 @@ interface State {
   deliveryTimeValue?: number;
   deliveryNoteImgs64: deliveryNoteImg64[];
   openImage?: string;
+  selectedDeliveryStatus: DeliveryStatus;
+  deliveryQualities: DeliveryQuality[];
+  selectedQualityId?: string;
+  warehouseCode?: string;
 }
 
 /**
@@ -61,13 +65,15 @@ class CreateDeliveryModal extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
+      deliveryQualities: [],
       amount: 0,
       modalOpen: false,
       deliveryNotes: [],
       contactsLoading: false,
       contacts: [],
       deliveryNoteImgs64: [],
-      selectedDeliveryPlaceId: props.deliveryPlaceId
+      selectedDeliveryPlaceId: props.deliveryPlaceId,
+      selectedDeliveryStatus: "PROPOSAL"
     };
 
     registerLocale('fi', fi);
@@ -80,7 +86,6 @@ class CreateDeliveryModal extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
-
 
   }
 
@@ -95,8 +100,23 @@ class CreateDeliveryModal extends React.Component<Props, State> {
     if (key === "selectedProductId") {
       const productId = value as string;
       const selectedProduct = this.props.products.find((product) => product.id === productId);
+      this.getDeliveryQualities(selectedProduct!);
       this.setState({ selectedProduct });
     }
+  }
+
+  /**
+   * Get delivery qualities
+   */
+  private getDeliveryQualities = async ( product : Product ) => {
+    if (!this.props.keycloak || !this.props.keycloak.token) {
+      return;
+    }
+    const itemGroupService = await Api.getItemGroupsService(this.props.keycloak.token);
+    const itemGroup = await itemGroupService.findItemGroup(product.itemGroupId);
+    const deliveryQualitiesService = await Api.getDeliveryQualitiesService(this.props.keycloak.token);
+    const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(itemGroup.category);
+    this.setState({ deliveryQualities });
   }
 
   /**
@@ -125,6 +145,34 @@ class CreateDeliveryModal extends React.Component<Props, State> {
         }
       />
     );
+  }
+
+  /**
+   * Returns whether form is valid or not
+   * 
+   * @return whether form is valid or not
+   */
+  private isValid = () => {
+    if(this.state.selectedDeliveryStatus === "DONE"){
+      return !!(
+        this.state.selectedDeliveryStatus 
+        && this.state.selectedDeliveryPlaceId 
+        && this.state.selectedProductId
+        && this.state.selectedContactId
+        && this.state.amount
+        && this.state.selectedQualityId
+        && this.state.warehouseCode
+        );
+    }else{
+      return !!(
+        this.state.selectedDeliveryStatus 
+        && this.state.selectedDeliveryPlaceId 
+        && this.state.selectedProductId
+        && this.state.selectedContactId
+        && this.state.amount
+        && this.state.deliveryTimeValue
+        );
+    }
   }
 
   /**
@@ -180,11 +228,13 @@ class CreateDeliveryModal extends React.Component<Props, State> {
     const delivery: Delivery = {
       productId: this.state.selectedProductId,
       userId: this.state.selectedContactId,
-      time: time,
-      status: "PROPOSAL",
+      time: this.state.selectedDeliveryStatus === "DONE" ? new Date() : time,
+      status: this.state.selectedDeliveryStatus,
       amount: this.state.amount,
       price: "0",
-      deliveryPlaceId: this.state.selectedDeliveryPlaceId
+      deliveryPlaceId: this.state.selectedDeliveryPlaceId,
+      qualityId: this.state.selectedDeliveryStatus === "DONE" ? this.state.selectedQualityId : undefined,
+      warehouseCode: this.state.warehouseCode
     }
 
     const createdDelivery = await deliveryService.createDelivery(delivery);
@@ -235,6 +285,72 @@ class CreateDeliveryModal extends React.Component<Props, State> {
   }
 
   /**
+   * Render warehouse dropdown
+   */
+  private renderWarehouseDropdown = () => {
+    const warehouseOptions = [
+      { key: "01", value: "01", text: "PAKKASMARJA OY, PÄÄVARASTO" },
+      { key: "02", value: "02", text: "PAKKASMARJA OY, HALLI 3, TUORETUOTTEET JA - TARVIKKEET" },
+      { key: "03", value: "03", text: "PAKKASMARJA OY, LINTIKKO" },
+      { key: "05", value: "05", text: "TORIPIHA OY, VESANTO" },
+      { key: "06", value: "06", text: "MARJA CARELIA, HEINÄVAARA" },
+      { key: "07", value: "07", text: "KYLMÄSÄILÖ OY, TURKU" },
+      { key: "09", value: "09", text: "JÄÄSAUKKO OY, PUUMALA" },
+      { key: "10", value: "10", text: "TAURÉN" },
+      { key: "100", value: "100", text: "LAATIKKOVARASTO" },
+      { key: "11", value: "11", text: "RIITAN HERKKU OY, MUSTASAARI / VAASA" },
+      { key: "12", value: "12", text: "KIMO, MARJA BOTHNIA BERRIES OY LTD" },
+      { key: "14", value: "14", text: "PYHÄJÄRVI" },
+      { key: "15", value: "15", text: "JÄÄSAUKKO OY, LEMPÄÄLÄ" },
+      { key: "17", value: "17", text: "TIKKI" },
+      { key: "18", value: "18", text: "PUREE" },
+      { key: "19", value: "19", text: "SALAATTI" },
+      { key: "20", value: "20", text: "KAINUUN TUOTE OY, HYRYNSALMI" },
+      { key: "22", value: "22", text: "KIANTAMA OY" },
+      { key: "23", value: "23", text: "PAKKASMARJA OY, KELLONIEMI" },
+      { key: "24", value: "24", text: "ATEN MARJA OY" },
+      { key: "25", value: "25", text: "SIISKOSEN LEIPOMO" },
+      { key: "26", value: "26", text: "KORVATUNTURIN MARJA OY, SAVUKOSKI" },
+      { key: "27", value: "27", text: "KIITOLINJA VÄHÄLÄ, VAAJAKOSKI" }
+    ]
+
+    return (
+      <Dropdown
+        selection
+        fluid
+        placeholder={"Valitse varasto"}
+        value={this.state.warehouseCode}
+        options={warehouseOptions}
+        onChange={(event, data) => {
+          this.setState({ warehouseCode: data.value as string });
+        }
+        }
+      />
+    );
+  }
+
+  /**
+   * Renders quality field
+   */
+  private renderQualityField() {
+
+    const deliveryQualityOptions = this.state.deliveryQualities.map((deliveryQuality) => {
+      return {
+        key: deliveryQuality.id,
+        text: deliveryQuality.name,
+        value: deliveryQuality.id
+      };
+    });
+
+    return (
+      <Form.Field>
+        <label>Laatu</label>
+        {this.renderDropDown(deliveryQualityOptions, "Laatu", "selectedQualityId")}
+      </Form.Field>
+    );
+  }
+
+  /**
    * Render method
    */
   public render() {
@@ -264,6 +380,16 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       value: 17
     }];
 
+    const deliveryStatusOptions: Options[] = [{
+      key: "proposal",
+      text: "Ehdotus",
+      value: "PROPOSAL"
+    }, {
+      key: "done",
+      text: "Valmis toimitus",
+      value: "DONE"
+    }];
+
     const deliveryPlaces: Options[] = this.props.deliveryPlaces.map((deliveryPlace) => {
       return {
         key: deliveryPlace.id,
@@ -274,16 +400,27 @@ class CreateDeliveryModal extends React.Component<Props, State> {
 
     return (
       <Modal onClose={() => this.props.onClose()} open={this.props.open}>
-        <Modal.Header>Uusi toimitusehdotus</Modal.Header>
+        <Modal.Header>Uusi toimitus/ehdotus</Modal.Header>
         <Modal.Content>
           <Form>
             <Form.Field>
               <p><b>Päivämäärä: </b> {this.props.date && moment(this.props.date).format("DD.MM.YYYY")}</p>
             </Form.Field>
             <Form.Field>
-              <label>{strings.product}</label>
+              <label>Tila</label>
+              { this.renderDropDown(deliveryStatusOptions, "Tila", "selectedDeliveryStatus") }
+            </Form.Field>
+            <Form.Field>
+              <label>Toimituspaikka</label>
               { this.renderDropDown(deliveryPlaces, "Toimituspaikka", "selectedDeliveryPlaceId") }
             </Form.Field>
+            {
+            this.state.selectedDeliveryStatus === "DONE"  &&
+            <Form.Field>
+              <label>Varasto</label>
+              { this.renderWarehouseDropdown() }
+            </Form.Field>
+            }
             <Form.Field>
               <label>{strings.product}</label>
               {this.renderDropDown(productOptions, strings.product, "selectedProductId")}
@@ -293,6 +430,11 @@ class CreateDeliveryModal extends React.Component<Props, State> {
                 <PriceChart showLatestPrice productId={this.state.selectedProductId} />
               }
             </Form.Field>
+            {this.state.selectedDeliveryStatus === "DONE" && this.state.selectedProduct &&
+            <Form.Field>
+              { this.renderQualityField() }
+            </Form.Field>
+            }
             <Form.Field>
               <label>Viljelijä</label>
               <Dropdown
@@ -310,6 +452,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
             <Form.Field>
               <label>{strings.amount}</label>
               <Input
+                type="number"
                 placeholder={strings.amount}
                 value={this.state.amount}
                 onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
@@ -323,10 +466,12 @@ class CreateDeliveryModal extends React.Component<Props, State> {
               </Form.Field>
               : null
             }
+            {
+            this.state.selectedDeliveryStatus === "PROPOSAL" &&
             <Form.Field>
               <label>{"Ajankohta"}</label>
               {this.renderDropDown(deliveryTimeValue, "Valitse ajankohta", "deliveryTimeValue")}
-            </Form.Field>
+            </Form.Field>}
             {this.state.deliveryNoteImgs64[0] ?
               this.state.deliveryNoteImgs64.map((deliveryNote, i) => {
                 return (
@@ -348,7 +493,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
               }) : <Divider />
             }
             <Button color="red" inverted onClick={() => this.setState({ modalOpen: true })}>{`${strings.addNote}`}</Button>
-            <Button color="red" floated="right" onClick={this.handleDeliverySubmit} type='submit'>
+            <Button color="red" disabled={ !this.isValid() } floated="right" onClick={this.handleDeliverySubmit} type='submit'>
               Tallenna
             </Button>
           </Form>

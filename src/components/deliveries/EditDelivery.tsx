@@ -405,6 +405,7 @@ class EditDelivery extends React.Component<Props, State> {
                   this.handleInputChange("date", date)
                 }}
                 selected={new Date(this.state.date)}
+                dateFormat="dd.MM.yyyy"
                 locale="fi"
               />
             </Form.Field>

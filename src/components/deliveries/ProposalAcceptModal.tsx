@@ -5,7 +5,7 @@ import { StoreState, DeliveryProduct, DeliveriesState, deliveryNoteImg64 } from 
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import { Modal, Header, Button, Divider, Image, Dimmer, Loader } from "semantic-ui-react";
-import Api, { Delivery } from "pakkasmarja-client";
+import Api, { Delivery, DeliveryPlace } from "pakkasmarja-client";
 import strings from "src/localization/strings";
 import Lightbox from "react-image-lightbox";
 import * as moment from "moment";
@@ -35,6 +35,7 @@ interface State {
   loading: boolean;
   openImage?: string;
   deliveryNotesWithImgBase64: deliveryNoteImg64[];
+  deliveryPlace?: DeliveryPlace;
 };
 
 /**
@@ -69,7 +70,8 @@ class ProposalAcceptModal extends React.Component<Props, State> {
       const deliveryId: string = await this.props.deliveryId;
       const deliveryProduct = this.props.deliveryProduct;
       await this.getNotes(deliveryId);
-      this.setState({ deliveryProduct, loading: false });
+      const deliveryPlace = await Api.getDeliveryPlacesService(this.props.keycloak.token).findDeliveryPlace(deliveryProduct!.delivery.deliveryPlaceId);
+      this.setState({ deliveryProduct, deliveryPlace, loading: false });
     }
   }
 
@@ -241,6 +243,16 @@ class ProposalAcceptModal extends React.Component<Props, State> {
                   <p>{`${moment(deliveryProduct.delivery.time).format("DD.MM.YYYY")} - ${Number(moment(deliveryProduct.delivery.time).utc().format("HH")) > 12 ? "Jälkeen kello 12" : "Ennen kello 12"}`}</p>
                 </div>
               </div>
+              {
+              this.state.deliveryPlace &&
+              <div style={{ display: "flex", flex: 1 }}>
+                <div style={{ flex: 0.4 }}>
+                  <h4>Toimituspaikka</h4>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p>{this.state.deliveryPlace.name}</p>
+                </div>
+              </div>}
               {deliveryProduct.delivery.price ?
                 <div style={{ display: "flex", flex: 1 }}>
                   <div style={{ flex: 0.4 }}>
