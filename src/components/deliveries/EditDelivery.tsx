@@ -99,7 +99,7 @@ class EditDelivery extends React.Component<Props, State> {
     const deliveriesService = await Api.getDeliveriesService(this.props.keycloak.token);
     const delivery = await deliveriesService.findDelivery(deliveryId);
     const deliveryPlaces = await deliveryPlacesService.listDeliveryPlaces();
-    const products: Product[] = await productsService.listProducts(undefined, category, undefined, undefined, 100);
+    const products: Product[] = await productsService.listProducts(undefined, category, this.props.keycloak.subject, undefined, 100);
     const selectedProduct = products.find(product => product.id === delivery.productId);
     const deliveryTimeValue = Number(moment(delivery.time).utc().format("HH"));
     await this.setState({
@@ -327,6 +327,20 @@ class EditDelivery extends React.Component<Props, State> {
   }
 
   /**
+   * Returns whether form is valid or not
+   * 
+   * @return whether form is valid or not
+   */
+  private isValid = () => {
+    return !!(
+      this.state.selectedProductId
+      && this.state.selectedPlaceId
+      && this.state.amount
+      && this.state.deliveryTimeValue
+    );
+  }
+
+  /**
    * Render method
    */
   public render() {
@@ -373,7 +387,12 @@ class EditDelivery extends React.Component<Props, State> {
           <Form>
             <Form.Field>
               <label>{strings.product}</label>
-              {this.renderDropDown(productOptions, "selectedProductId")}
+              {
+                this.state.products.length > 0 ?
+                  this.renderDropDown(productOptions, "selectedProductId")
+                  :
+                  <p>Ei voimassa olevaa sopimusta. Jos näin ei pitäisi olla, ole yhteydessä Pakkasmarjaan.</p>
+              }
             </Form.Field>
             {this.state.selectedProductId &&
               <Form.Field>
@@ -445,7 +464,7 @@ class EditDelivery extends React.Component<Props, State> {
                 inverted
                 color="red">{strings.back}</Button>
               <Button.Or text="" />
-              <Button color="red" onClick={this.handleDeliverySubmit} type='submit'>{strings.save}</Button>
+              <Button disabled={!this.isValid()} color="red" onClick={this.handleDeliverySubmit} type='submit'>{strings.save}</Button>
             </Button.Group>
           </Form>}
         {this.state.openImage &&
