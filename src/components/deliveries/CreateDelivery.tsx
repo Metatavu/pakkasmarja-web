@@ -91,8 +91,7 @@ class CreateDelivery extends React.Component<Props, State> {
     const productsService = await Api.getProductsService(this.props.keycloak.token);
     const deliveryPlacesService = await Api.getDeliveryPlacesService(this.props.keycloak.token);
     const deliveryPlaces = await deliveryPlacesService.listDeliveryPlaces();
-    const products: Product[] = await productsService.listProducts(undefined, category, undefined, undefined, 100);
-
+    const products: Product[] = await productsService.listProducts(undefined, category, this.props.keycloak.subject, undefined, 100);
     this.setState({
       products,
       deliveryPlaces,
@@ -141,6 +140,20 @@ class CreateDelivery extends React.Component<Props, State> {
         }
       />
     );
+  }
+
+  /**
+   * Returns whether form is valid or not
+   * 
+   * @return whether form is valid or not
+   */
+  private isValid = () => {
+      return !!(
+        this.state.selectedProductId 
+        && this.state.selectedPlaceId
+        && this.state.amount
+        && this.state.deliveryTimeValue
+        );
   }
 
   /**
@@ -266,7 +279,7 @@ class CreateDelivery extends React.Component<Props, State> {
       }} />;
     }
 
-    const productOptions: Options[] = this.state.products.map((product) => {
+    const productOptions: Options[] = this.state.products && this.state.products.map((product) => {
       return {
         key: product.id,
         text: product.name,
@@ -302,7 +315,12 @@ class CreateDelivery extends React.Component<Props, State> {
           <Form>
             <Form.Field>
               <label>{strings.product}</label>
-              {this.renderDropDown(productOptions, strings.product, "selectedProductId")}
+              {
+                this.state.products.length > 0 ?
+                this.renderDropDown(productOptions, strings.product, "selectedProductId")
+                :
+                <p>Ei voimassa olevaa sopimusta. Jos näin ei pitäisi olla, ole yhteydessä Pakkasmarjaan.</p>
+              }
             </Form.Field>
             {this.state.selectedProductId &&
               <Form.Field>
@@ -374,7 +392,7 @@ class CreateDelivery extends React.Component<Props, State> {
                 inverted
                 color="red">{strings.back}</Button>
               <Button.Or text="" />
-              <Button color="red" onClick={this.handleDeliverySubmit} type='submit'>
+              <Button disabled={!this.isValid()} color="red" onClick={this.handleDeliverySubmit} type='submit'>
                 {this.state.category === "FRESH" ? strings.newFreshDelivery : strings.newFrozenDelivery}
               </Button>
             </Button.Group>
