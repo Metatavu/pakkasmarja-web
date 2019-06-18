@@ -148,12 +148,12 @@ class CreateDelivery extends React.Component<Props, State> {
    * @return whether form is valid or not
    */
   private isValid = () => {
-      return !!(
-        this.state.selectedProductId 
-        && this.state.selectedPlaceId
-        && this.state.amount
-        && this.state.deliveryTimeValue
-        );
+    return !!(
+      this.state.selectedProductId
+      && this.state.selectedPlaceId
+      && this.state.amount
+      && this.state.deliveryTimeValue
+    );
   }
 
   /**
@@ -317,9 +317,9 @@ class CreateDelivery extends React.Component<Props, State> {
               <label>{strings.product}</label>
               {
                 this.state.products.length > 0 ?
-                this.renderDropDown(productOptions, strings.product, "selectedProductId")
-                :
-                <p>Ei voimassa olevaa sopimusta. Jos näin ei pitäisi olla, ole yhteydessä Pakkasmarjaan.</p>
+                  this.renderDropDown(productOptions, strings.product, "selectedProductId")
+                  :
+                  <p>Ei voimassa olevaa sopimusta. Jos näin ei pitäisi olla, ole yhteydessä Pakkasmarjaan.</p>
               }
             </Form.Field>
             {this.state.selectedProductId &&
