@@ -44,7 +44,7 @@ interface State {
   contacts: Contact[]
   deliveryQualities: { [key: string]: DeliveryQuality },
   newDeliveryModalOpen: boolean,
-  error?: string
+  error?: string 
 }
 
 /**
@@ -83,11 +83,21 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
     if (!keycloak || !keycloak.token) {
       return;
     }
-
+    const tokenParsed = keycloak.tokenParsed as any;
+    const receiveFromPlaceCode = tokenParsed.receiveFromPlaceCode;
     this.setState({ loading: true });
-    const deliveryPlaces = await Api.getDeliveryPlacesService(keycloak.token).listDeliveryPlaces();
+    let deliveryPlaces = await Api.getDeliveryPlacesService(keycloak.token).listDeliveryPlaces();
     const products = await Api.getProductsService(keycloak.token).listProducts(undefined, "FROZEN", undefined, 0, 999);
     const deliveryQualities = await Api.getDeliveryQualitiesService(keycloak.token).listDeliveryQualities("FROZEN");
+
+    if(receiveFromPlaceCode){
+      deliveryPlaces= deliveryPlaces.filter( deliveryPlace => deliveryPlace.id === receiveFromPlaceCode);
+
+      if(deliveryPlaces.length === 1){
+        this.setState({ selectedDeliveryPlaceId : receiveFromPlaceCode});
+      }
+      
+    }
 
     this.setState({
       loading: false,
