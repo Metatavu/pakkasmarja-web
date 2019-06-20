@@ -8,6 +8,7 @@ import "../../styles/common.css";
 import Api, { Product } from "pakkasmarja-client";
 import { Button, Confirm, Table, Header, List, Dimmer, Loader } from "semantic-ui-react";
 import { Link } from "react-router-dom";
+import PriceChart from "../generic/PriceChart";
 
 /**
  * Interface for component props
@@ -109,17 +110,20 @@ class ProductsList extends React.Component<Props, State> {
         <Table celled fixed unstackable>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell width={4}>
+              <Table.HeaderCell width={3}>
                 Nimi
               </Table.HeaderCell>
-              <Table.HeaderCell width={3}>
+              <Table.HeaderCell width={2}>
                 Yksikkönimi
               </Table.HeaderCell>
-              <Table.HeaderCell width={3}>
+              <Table.HeaderCell width={2}>
                 Yksikkömäärä
               </Table.HeaderCell>
-              <Table.HeaderCell width={3}>
+              <Table.HeaderCell width={2}>
                 Yksikkökoko
+              </Table.HeaderCell>
+              <Table.HeaderCell width={5}>
+                Hinta
               </Table.HeaderCell>
               <Table.HeaderCell width={3}>
                 <Button as={Link} to="/createProduct" color="red" style={{ width: "100%" }}>
@@ -146,61 +150,64 @@ class ProductsList extends React.Component<Props, State> {
                       {product.unitSize}
                     </Table.Cell>
                     <Table.Cell>
-                      <List>
-                        <List.Item>
-                          <List.Content
-                            as={Link}
-                            to={`editProduct/${product.id}`}
-                          >
-                            <p className="plink">
-                              Muokkaa tuotetta
-                                    </p>
-                          </List.Content>
-                        </List.Item>
-                        <List.Item>
-                          <List.Content as={Link} to={`/productPrices/${product.id}`}>
-                            <p className="plink">Muokkaa tuotteen hintoja</p>
-                          </List.Content>
-                        </List.Item>
-                        <List.Item>
-                          <List.Content>
-                            <p onClick={() => this.setState({ open: true, productId: product.id || "", productName: product.name })} className="plink">Poista tuote</p>
-                          </List.Content>
-                        </List.Item>
-                      </List>
+                      <PriceChart width={300} height={50} productId={product.id || ""} showLatestPriceSimple={true}/>
                     </Table.Cell>
+                      <Table.Cell>
+                        <List>
+                          <List.Item>
+                            <List.Content
+                              as={Link}
+                              to={`editProduct/${product.id}`}
+                            >
+                              <p className="plink">
+                                Muokkaa tuotetta
+                                    </p>
+                            </List.Content>
+                          </List.Item>
+                          <List.Item>
+                            <List.Content as={Link} to={`/productPrices/${product.id}`}>
+                              <p className="plink">Muokkaa tuotteen hintoja</p>
+                            </List.Content>
+                          </List.Item>
+                          <List.Item>
+                            <List.Content>
+                              <p onClick={() => this.setState({ open: true, productId: product.id || "", productName: product.name })} className="plink">Poista tuote</p>
+                            </List.Content>
+                          </List.Item>
+                        </List>
+                      </Table.Cell>
                   </Table.Row>
-                );
-              })
-            }
+                    );
+                  })
+                }
           </Table.Body>
         </Table>
         <Confirm open={this.state.open} size={"small"} content={"Haluatko varmasti poistaa tuotteen: " + this.state.productName} onCancel={() => this.setState({ open: false })} onConfirm={this.handleDelete} />
       </BasicLayout>
-    );
-  }
-}
-
-/**
- * Redux mapper for mapping store state to component props
- * 
- * @param state store state
- */
+          );
+        }
+      }
+      
+      /**
+       * Redux mapper for mapping store state to component props
+       *
+       * @param state store state
+       */
 export function mapStateToProps(state: StoreState) {
   return {
-    authenticated: state.authenticated,
-    keycloak: state.keycloak
-  }
-}
-
-/**
- * Redux mapper for mapping component dispatches 
- * 
- * @param dispatch dispatch method
- */
+            authenticated: state.authenticated,
+          keycloak: state.keycloak
+        }
+      }
+      
+      /**
+       * Redux mapper for mapping component dispatches
+       *
+       * @param dispatch dispatch method
+       */
 export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
   return {
-  };
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(ProductsList);
+            };
+          }
+          
+          export default connect(mapStateToProps, mapDispatchToProps)(ProductsList);

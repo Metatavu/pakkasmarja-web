@@ -44,7 +44,7 @@ interface State {
   contacts: Contact[]
   deliveryQualities: { [key: string]: DeliveryQuality },
   newDeliveryModalOpen: boolean,
-  error?: string 
+  error?: string
 }
 
 /**

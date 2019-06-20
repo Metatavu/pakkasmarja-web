@@ -54,7 +54,7 @@ interface State {
   error?: string,
   storageDataSheet?: DataSheet,
   morningSalesForecastDataSheet?: DataSheet,
-  eveningSalesForecastDataSheet?: DataSheet,
+  eveningSalesForecastDataSheet?: DataSheet
 }
 
 /**

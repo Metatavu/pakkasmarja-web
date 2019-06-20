@@ -14,11 +14,12 @@ import { Loader, Icon } from "semantic-ui-react";
 interface Props {
   authenticated: boolean;
   keycloak?: Keycloak.KeycloakInstance;
-  showAxis?: boolean
+  showAxis?: boolean,
   productId: string,
-  maxValues?: number
-  showLatestPrice?: boolean
-  width?: number
+  maxValues?: number,
+  showLatestPrice?: boolean,
+  showLatestPriceSimple?: boolean,
+  width?: number,
   height?: number
 }
 
@@ -57,14 +58,35 @@ class PriceChart extends React.Component<Props, State> {
       return;
     }
 
-    this.setState({loading: true});
-    const maxResults = maxValues || 20;
+    this.setState({ loading: true });
+    const maxResults = maxValues || 20;
 
-    const productPrices = await Api.getProductPricesService(keycloak.token).listProductPrices(productId, "CREATED_AT_DESC" , undefined, maxResults);
+    const productPrices = await Api.getProductPricesService(keycloak.token).listProductPrices(productId, "CREATED_AT_DESC", undefined, maxResults);
     this.setState({
       prices: productPrices,
       loading: false
     });
+  }
+
+  /**
+   * Component did update life-cycle event
+   */
+  public async componentDidUpdate(prevProps: Props) {
+    if(prevProps.productId !== this.props.productId){
+      const { keycloak, productId, maxValues } = this.props;
+      if (!keycloak || !keycloak.token) {
+        return;
+      }
+  
+      this.setState({ loading: true });
+      const maxResults = maxValues || 20;
+      const productPrices = await Api.getProductPricesService(keycloak.token).listProductPrices(productId, "CREATED_AT_DESC", undefined, maxResults);
+      this.setState({
+        prices: productPrices,
+        loading: false
+      });
+      
+    }
   }
 
   /**
@@ -74,7 +96,7 @@ class PriceChart extends React.Component<Props, State> {
     if (this.state.loading) {
       return <Loader active inline />;
     }
-    
+
     const prices = this.state.prices;
     const latestPrice = this.state.prices.length > 0 ? this.state.prices[0] : undefined;
     const data = prices.reverse().map((productPrice) => {
@@ -86,17 +108,22 @@ class PriceChart extends React.Component<Props, State> {
 
     return (
       <div>
-        <LineChart data={data} width={this.props.width || 300} height={this.props.height || 100}>
-          {this.props.showAxis && 
-            <YAxis/>
+        <LineChart data={data} width={this.props.width || 300} height={this.props.height || 100}>
+          {this.props.showAxis &&
+            <YAxis />
           }
-          {this.props.showAxis && 
-            <XAxis tickFormatter={(value: any) => moment(value).format("DD.MM.YYYY")} dataKey="time"/>
+          {this.props.showAxis &&
+            <XAxis />
           }
           <Line type="monotone" dataKey="price" stroke="#e51d2a" strokeWidth={2} />
         </LineChart>
-        {this.props.showLatestPrice && latestPrice && 
+        {this.props.showLatestPrice && latestPrice &&
           <p style={{ paddingTop: 10 }}><Icon name="info circle" size="large" color="red" />Tämän hetkinen hinta on {latestPrice.price} € / {latestPrice.unit.toUpperCase()} ALV 0% (päivitetty {moment(latestPrice.updatedAt).format("DD.MM.YYYY HH:mm")})</p>
+        }
+        {this.props.showLatestPriceSimple && latestPrice &&
+          <p style={{ padding: 0, margin: 0, fontSize: 13 }}><strong>Hinta:</strong> {latestPrice.price} € / {latestPrice.unit.toUpperCase()} ALV 0%
+          <br />
+            <strong>Päivitetty:</strong> {moment(latestPrice.updatedAt).format("DD.MM.YYYY HH:mm")}</p>
         }
       </div>
     );
