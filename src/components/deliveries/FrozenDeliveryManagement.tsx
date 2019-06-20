@@ -5,7 +5,7 @@ import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
-import Api, { DeliveryPlace, Product, Contact, Delivery, DeliveryQuality } from "pakkasmarja-client";
+import Api, { DeliveryPlace, Product, Contact, Delivery, DeliveryQuality, ProductPrice } from "pakkasmarja-client";
 import { Dimmer, Loader, Dropdown, DropdownProps, Modal, Button, Input, Image, Icon, Popup, Form } from "semantic-ui-react";
 import { Table } from 'semantic-ui-react';
 import BasicLayout from "../generic/BasicLayout";
@@ -44,7 +44,8 @@ interface State {
   contacts: Contact[]
   deliveryQualities: { [key: string]: DeliveryQuality },
   newDeliveryModalOpen: boolean,
-  error?: string 
+  error?: string,
+  productPrices?: ProductPrice[][]
 }
 
 /**
@@ -89,6 +90,10 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
     let deliveryPlaces = await Api.getDeliveryPlacesService(keycloak.token).listDeliveryPlaces();
     const products = await Api.getProductsService(keycloak.token).listProducts(undefined, "FROZEN", undefined, 0, 999);
     const deliveryQualities = await Api.getDeliveryQualitiesService(keycloak.token).listDeliveryQualities("FROZEN");
+    const productIds = products.map(product => product.id);
+    const productPricesService = await Api.getProductPricesService(keycloak.token);
+    const productPricePromises = productIds.map(productId => productPricesService.listProductPrices(productId || "", "CREATED_AT_DESC", 0, 1));
+    const productPrices = await Promise.all(productPricePromises);
 
     if(receiveFromPlaceCode){
       deliveryPlaces= deliveryPlaces.filter( deliveryPlace => deliveryPlace.id === receiveFromPlaceCode);
@@ -103,7 +108,8 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
       loading: false,
       deliveryPlaces: deliveryPlaces,
       products: products,
-      deliveryQualities: _.keyBy(deliveryQualities, "id")
+      deliveryQualities: _.keyBy(deliveryQualities, "id"),
+      productPrices
     });
 
     this.pollInterval = setInterval(() => {
@@ -157,7 +163,7 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
 
     const productHeaderCells = products.map((product) => {
       return (
-        <Table.HeaderCell key={product.id}>{product.name}</Table.HeaderCell>
+        <Table.HeaderCell key={product.id}>{product.name} {product.id ? this.renderProductPrice(product.id) : ""}</Table.HeaderCell>
       );
     });
 
@@ -255,6 +261,25 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
           />
         }
       </TableBasicLayout>
+    );
+  }
+
+  /**
+   * Product price
+   */
+  private renderProductPrice = (productId: string) => {
+    const productPrice = this.state.productPrices && this.state.productPrices.find(productPrice => productPrice[0] ? productPrice[0].productId === productId : false);
+    if (!productPrice || !productPrice[0]) {
+      return;
+    }
+
+    return (
+      <React.Fragment>
+        <hr />
+        <p style={{margin: 0, padding: 0, fontSize:10}}>{`Hinta ${productPrice[0].price} € / ${productPrice[0].unit}`}</p>
+        <hr />
+        <p style={{margin: 0, padding: 0, fontSize:10}}>{`Hinta päivitetty ${moment(productPrice[0].updatedAt).format("DD.MM.YYYY HH:mm")}`}</p>
+      </React.Fragment>
     );
   }
 

@@ -5,7 +5,7 @@ import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
-import Api, { DeliveryPlace, Product, Contact, Delivery, DeliveryQuality, DataSheet } from "pakkasmarja-client";
+import Api, { DeliveryPlace, Product, Contact, Delivery, DeliveryQuality, DataSheet, ProductPrice } from "pakkasmarja-client";
 import { Dimmer, Loader, Modal, Button, Input, Image, Icon, Popup, Form } from "semantic-ui-react";
 import { Table } from 'semantic-ui-react';
 import BasicLayout from "../generic/BasicLayout";
@@ -55,6 +55,7 @@ interface State {
   storageDataSheet?: DataSheet,
   morningSalesForecastDataSheet?: DataSheet,
   eveningSalesForecastDataSheet?: DataSheet,
+  productPrices?: ProductPrice[][]
 }
 
 /**
@@ -108,6 +109,10 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     const products = await Api.getProductsService(keycloak.token).listProducts(undefined, "FRESH", undefined, 0, 999);
     const deliveryQualities = await Api.getDeliveryQualitiesService(keycloak.token).listDeliveryQualities("FRESH");
     const deliveryPlaces = await Api.getDeliveryPlacesService(keycloak.token).listDeliveryPlaces();
+    const productIds = products.map(product => product.id);
+    const productPricesService = await Api.getProductPricesService(keycloak.token);
+    const productPricePromises = productIds.map(productId => productPricesService.listProductPrices(productId || "", "CREATED_AT_DESC", 0, 1));
+    const productPrices = await Promise.all(productPricePromises);
 
     this.loadDataSheets();
     this.updateTableData();
@@ -119,7 +124,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       products: products,
       deliveryQualities: _.keyBy(deliveryQualities, "id"),
       deliveryQualitiesArray: deliveryQualities,
-      deliveryPlaceId: deliveryPlaceId
+      deliveryPlaceId: deliveryPlaceId,
+      productPrices
     });
 
     this.pollInterval = setInterval(() => {
@@ -167,7 +173,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
 
     const productHeaderCells = products.map((product) => {
       return (
-        <Table.HeaderCell style={{ "width": `${cellWidth}%` }} key={product.id}>{product.name}</Table.HeaderCell>
+        <Table.HeaderCell style={{ "width": `${cellWidth}%` }} key={product.id}>{product.name} {product.id ? this.renderProductPrice(product.id) : ""}</Table.HeaderCell>
       );
     });
 
@@ -274,6 +280,26 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       </TableBasicLayout >
     );
   }
+
+  /**
+   * Render product price
+   */
+  private renderProductPrice = (productId: string) => {
+    const productPrice = this.state.productPrices && this.state.productPrices.find(productPrice => productPrice[0] ? productPrice[0].productId === productId : false);
+    if (!productPrice || !productPrice[0]) {
+      return;
+    }
+
+    return (
+      <React.Fragment>
+        <hr />
+        <p style={{margin: 0, padding: 0, fontSize:10}}>{`Hinta ${productPrice[0].price} € / ${productPrice[0].unit}`}</p>
+        <hr />
+        <p style={{margin: 0, padding: 0, fontSize:10}}>{`Hinta päivitetty ${moment(productPrice[0].updatedAt).format("DD.MM.YYYY HH:mm")}`}</p>
+      </React.Fragment>
+    );
+  }
+
 
   /**
    * Loads data sheets

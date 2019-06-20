@@ -115,6 +115,9 @@ class ProductPricesList extends React.Component<Props, State> {
 
     return (
       <BasicLayout>
+        <Header as="h2">
+          {this.state.product ? this.state.product.name : ""}
+        </Header>
         <Header floated='left' className="contracts-header">
           <p>Tuote hinnat</p>
         </Header>
@@ -155,10 +158,10 @@ class ProductPricesList extends React.Component<Props, State> {
                       {productPrice.unit}
                     </Table.Cell>
                     <Table.Cell >
-                      {moment(productPrice.createdAt).format("DD.MM.YYYY")}
+                      {moment(productPrice.createdAt).format("DD.MM.YYYY HH:mm")}
                     </Table.Cell>
                     <Table.Cell >
-                      {moment(productPrice.updatedAt).format("DD.MM.YYYY")}
+                      {moment(productPrice.updatedAt).format("DD.MM.YYYY HH:mm")}
                     </Table.Cell>
                     <Table.Cell >
                       <List>
