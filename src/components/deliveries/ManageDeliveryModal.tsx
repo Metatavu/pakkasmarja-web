@@ -427,13 +427,16 @@ class ManageDeliveryModal extends React.Component<Props, State> {
             <Form.Field>
               Tila: {this.getStatusText()}
             </Form.Field>
-            <Form.Field>
-              <label>Hinta</label>
-              {
-                this.state.selectedProductId &&
-                <PriceChart showLatestPrice productId={this.state.selectedProductId} />
-              }
-            </Form.Field>
+            {
+              this.props.category === "FRESH" &&
+              <Form.Field>
+                <label>Hinta</label>
+                {
+                  this.state.selectedProductId &&
+                  <PriceChart showLatestPrice productId={this.state.selectedProductId} />
+                }
+              </Form.Field>
+            }
             <Form.Field>
               <label>{strings.product}</label>
               {this.renderDropDown(productOptions, "selectedProductId")}
@@ -488,9 +491,6 @@ class ManageDeliveryModal extends React.Component<Props, State> {
                           grayBoxesLoaned: parseInt(data.value)
                         })
                       }} />
-                  </Form.Field>
-                  <Form.Field>
-                    Yhteensä: {this.getStatusText()}
                   </Form.Field>
                 </React.Fragment>
                 : null
@@ -622,21 +622,21 @@ class ManageDeliveryModal extends React.Component<Props, State> {
 
     if (this.props.delivery.status == "PROPOSAL") {
       return <Button.Group floated="right">
-              <Button disabled={!this.isValid()} color="black" onClick={this.handleDeliveryReject} type='submit'>Hylkää ehdotus</Button>
-              <Button disabled={!this.isValid()} color="green" onClick={this.handleDeliverySave} type='submit'>Muokkaa ehdotusta</Button>
-            </Button.Group>;
+        <Button disabled={!this.isValid()} color="black" onClick={this.handleDeliveryReject} type='submit'>Hylkää ehdotus</Button>
+        <Button disabled={!this.isValid()} color="green" onClick={this.handleDeliverySave} type='submit'>Muokkaa ehdotusta</Button>
+      </Button.Group>;
     }
 
     if (this.props.delivery.status == "NOT_ACCEPTED") {
       return <Button.Group floated="right">
-              <Button disabled={!this.isValid()} color="red" onClick={this.handleDeliveryAccept} type='submit'>Hyväksy toimitus</Button>
-            </Button.Group>;
+        <Button disabled={!this.isValid()} color="red" onClick={this.handleDeliveryAccept} type='submit'>Hyväksy toimitus</Button>
+      </Button.Group>;
     }
 
     return <Button.Group floated="right">
-            <Button disabled={!this.isValid()} color="black" onClick={this.handleDeliveryReject} type='submit'>Hylkää toimitus</Button>
-            <Button disabled={!this.isValid()} color="red" onClick={this.handleDeliveryAccept} type='submit'>Hyväksy toimitus</Button>
-          </Button.Group>;
+      <Button disabled={!this.isValid()} color="black" onClick={this.handleDeliveryReject} type='submit'>Hylkää toimitus</Button>
+      <Button disabled={!this.isValid()} color="red" onClick={this.handleDeliveryAccept} type='submit'>Hyväksy toimitus</Button>
+    </Button.Group>;
   }
 
   /**

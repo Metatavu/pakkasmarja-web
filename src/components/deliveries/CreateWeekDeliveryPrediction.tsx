@@ -97,7 +97,7 @@ class CreateWeekDeliveryPrediction extends React.Component<Props, State> {
 
     const category: ItemGroupCategory = this.props.match.params.category;
     const itemGroupsService = await Api.getItemGroupsService(this.props.keycloak.token);
-    const itemGroups = await itemGroupsService.listItemGroups();
+    const itemGroups = await itemGroupsService.listItemGroups(this.props.keycloak.subject);
     const filteredItemGroups: ItemGroup[] = itemGroups.filter((item) => item.category == category);
     this.setState({ filteredItemGroups, category });
   }
@@ -243,6 +243,25 @@ class CreateWeekDeliveryPrediction extends React.Component<Props, State> {
   }
 
   /**
+   * Returns whether form is valid or not
+   * 
+   * @return whether form is valid or not
+   */
+  private isValid = () => {
+    return !!(
+      this.state.selectedItemGroupId
+      && this.state.amount
+      && this.state.weekdays.monday 
+      || this.state.weekdays.tuesday
+      || this.state.weekdays.wednesday
+      || this.state.weekdays.thursday
+      || this.state.weekdays.friday
+      || this.state.weekdays.saturday
+      || this.state.weekdays.sunday
+    );
+  }
+
+  /**
    * Render method
    */
   public render() {
@@ -282,7 +301,12 @@ class CreateWeekDeliveryPrediction extends React.Component<Props, State> {
         <Form>
           <Form.Field>
             <label>{strings.product}</label>
-            {this.renderDropDown(itemGroupOptions, strings.product, "selectedItemGroupId")}
+            {
+              this.state.filteredItemGroups.length > 0 ?
+                this.renderDropDown(itemGroupOptions, strings.product, "selectedItemGroupId")
+                :
+                <p>Ei voimassa olevaa sopimusta. Jos näin ei pitäisi olla, ole yhteydessä Pakkasmarjaan.</p>
+            }
           </Form.Field>
           <Form.Field>
             <Header as="h4">{strings.nextWeekPrediction}</Header>
@@ -318,7 +342,7 @@ class CreateWeekDeliveryPrediction extends React.Component<Props, State> {
               inverted
               color="red">{strings.back}</Button>
             <Button.Or text="" />
-            <Button onClick={this.handleSubmit} color="red">
+            <Button disabled={!this.isValid()} onClick={this.handleSubmit} color="red">
               {this.state.category === "FRESH" ? strings.newFreshWeekDeliveryPrediction : strings.newFrozenWeekDeliveryPrediction}
             </Button>
           </Button.Group>
