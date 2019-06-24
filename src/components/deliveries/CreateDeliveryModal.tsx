@@ -407,7 +407,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
             </Form.Field>
             {this.state.amount && this.state.selectedProduct ?
               <Form.Field>
-                <p>= <b>{this.state.amount * (this.state.selectedProduct.units * this.state.selectedProduct.unitSize)} KG</b></p>
+                <p>= <b>{this.state.amount * this.state.selectedProduct.units * this.state.selectedProduct.unitSize} KG</b></p>
               </Form.Field>
               : null
             }

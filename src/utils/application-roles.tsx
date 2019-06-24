@@ -206,4 +206,18 @@ export default class ApplicationRoles {
     return "list-other-deliveries";
   }
 
+  /**
+   * Role that allows receiving fresh berries
+   */
+  static get RECEIVE_FRESH_BERRIES() {
+    return "receive_fresh_berries";
+  }
+
+  /**
+   * Role that allows receiving frozen berries
+   */
+  static get RECEIVE_FROZEN_BERRIES() {
+    return "receive_frozen_berries";
+  }
+
 }

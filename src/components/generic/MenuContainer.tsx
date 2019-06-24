@@ -84,8 +84,8 @@ class MenuContainer extends React.Component<Props, State> {
             <Menu.Menu>
               <Dropdown item simple text="Vastaanotto">
                 <Dropdown.Menu>
-                  <Dropdown.Item to="/manageFreshDeliveries" as={Link}>Tuore toimitukset</Dropdown.Item>
-                  <Dropdown.Item to="/manageFrozenDeliveries" as={Link}>Pakaste toimitukset</Dropdown.Item>
+                  {this.props.keycloak.hasRealmRole(ApplicationRoles.RECEIVE_FRESH_BERRIES) && <Dropdown.Item to="/manageFreshDeliveries" as={Link}>Tuore toimitukset</Dropdown.Item>}
+                  {this.props.keycloak.hasRealmRole(ApplicationRoles.RECEIVE_FROZEN_BERRIES) && <Dropdown.Item to="/manageFrozenDeliveries" as={Link}>Pakaste toimitukset</Dropdown.Item>}
                 </Dropdown.Menu>
               </Dropdown>
             </Menu.Menu>
