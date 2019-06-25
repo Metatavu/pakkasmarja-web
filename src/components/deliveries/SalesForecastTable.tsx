@@ -68,13 +68,13 @@ export default class SalesForecastDataTable extends React.Component<Props, State
               {
                 products.map((product) => {
                   return (
-                    <Table.HeaderCell style={{ "width": `${cellWidth}%` }}> { product.name } </Table.HeaderCell>
+                    <Table.HeaderCell key={product.id} style={{ "width": `${cellWidth}%` }}>{ product.name }</Table.HeaderCell>
                   )
                 }) 
               }
             </Table.Row>
           </Table.Header>
-          <Table.Body> { rows } </Table.Body>
+          <Table.Body>{ rows }</Table.Body>
           <Table.Footer>
             { this.renderTableFooter() }
           </Table.Footer>
@@ -109,7 +109,7 @@ export default class SalesForecastDataTable extends React.Component<Props, State
 
             return (
               <Table.Cell style={{ background: "#fadde1", color: "#000", textAlign: "center", "width": `${cellWidth}%`, padding: 0 }} key={ `${this.props.name}-cell-${rowIndex}-${product.id}` } onClick={ () => this.onCellClick(rowIndex!, product.id!, value) }>
-                { this.state.editRowIndex == rowIndex && this.state.editProductId == product.id ? this.renderCellEditor(rowIndex!, product.id!) : <span style={{ }}> { value } </span> }
+                { this.state.editRowIndex == rowIndex && this.state.editProductId == product.id ? this.renderCellEditor(rowIndex!, product.id!) : <span style={{ }}>{ value }</span> }
               </Table.Cell>
             )
           }) 
@@ -134,7 +134,7 @@ export default class SalesForecastDataTable extends React.Component<Props, State
 
       return (
         <Table.Cell style={ cellStyle } key={ `${this.props.name}-footer-${product.id}` }>
-          <b> { total } </b>
+          <b>{ total }</b>
         </Table.Cell>
       )
     });

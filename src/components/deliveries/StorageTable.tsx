@@ -55,7 +55,7 @@ export default class StorageDataTable extends React.Component<Props, State> {
             {
               products.map((product) => {
                 return (
-                  <Table.HeaderCell style={{ "width": `${cellWidth}%` }}> {product.name} </Table.HeaderCell>
+                  <Table.HeaderCell key={product.id} style={{ "width": `${cellWidth}%` }}>{ product.name }</Table.HeaderCell>
                 )
               })
             }
@@ -83,7 +83,7 @@ export default class StorageDataTable extends React.Component<Props, State> {
     return (
       <React.Fragment>
         <Table.Row>
-          <Table.Cell > Yhteensä</Table.Cell>
+          <Table.Cell >Yhteensä</Table.Cell>
           {
             products.map((product) => {
               const values = validQualities.map((quality) => {
@@ -91,8 +91,8 @@ export default class StorageDataTable extends React.Component<Props, State> {
               })
               const value = _.sumBy(values);
               return (
-                <Table.Cell style={{ textAlign: "center", "width": `${cellWidth}%`, padding: 0, background: "#fff" }} >
-                  {<span> {value} </span>}
+                <Table.Cell key={product.id} style={{ textAlign: "center", "width": `${cellWidth}%`, padding: 0, background: "#fff" }} >
+                  {<span>{ value }</span>}
                 </Table.Cell>
               )
             })
@@ -114,15 +114,15 @@ export default class StorageDataTable extends React.Component<Props, State> {
     const products = this.props.products;
     const cellWidth = 100 / (products.length + 1);
     return (
-      <React.Fragment>
+      <React.Fragment key={`storage-fragment-${quality.id}`}>
         <Table.Row key={`storage-row-${quality.id}`}>
-          <Table.Cell key={`storage-cell-header-${quality.id}`}> {this.renderQualityIcon(quality)} {quality.name} </Table.Cell>
+          <Table.Cell key={`storage-cell-header-${quality.id}`}>{this.renderQualityIcon(quality)} {quality.name}</Table.Cell>
           {
             products.map((product) => {
               const value = this.props.getCellValue(product.id!, quality.id!);
               return (
                 <Table.Cell style={{ textAlign: "center", "width": `${cellWidth}%`, padding: 0, background: value ? quality.color + "55" : "#fff" }} key={`storage-cell-${quality.id}-${product.id}`} onClick={() => this.onCellClick(quality.id!, product.id!, value)}>
-                  {this.state.editQualityId == quality.id && this.state.editProductId == product.id ? this.renderCellEditor(quality.id!, product.id!) : <span> {value} </span>}
+                  {this.state.editQualityId == quality.id && this.state.editProductId == product.id ? this.renderCellEditor(quality.id!, product.id!) : <span>{ value }</span>}
                 </Table.Cell>
               )
             })
@@ -138,7 +138,7 @@ export default class StorageDataTable extends React.Component<Props, State> {
    * @param quality quality
    */
   private renderQualityIcon = (quality: DeliveryQuality) => {
-    return <div key={`storage-cell-quality-icon-${quality.id}`} style={{ background: quality.color, marginRight: "10px", color: "#fff", width: "20px", display: "inline-block", borderRadius: "10px", textAlign: "center", height: "20px", lineHeight: "20px", fontSize: "12px", fontWeight: "bold" }}> {quality.name.charAt(0)} </div>
+    return <div key={`storage-cell-quality-icon-${quality.id}`} style={{ background: quality.color, marginRight: "10px", color: "#fff", width: "20px", display: "inline-block", borderRadius: "10px", textAlign: "center", height: "20px", lineHeight: "20px", fontSize: "12px", fontWeight: "bold" }}>{quality.name.charAt(0)}</div>
   }
 
   /**

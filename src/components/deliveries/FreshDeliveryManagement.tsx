@@ -613,42 +613,44 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
 
     return (
       <Table>
-        <Table.Row key={"morning-summary-row"}>
-          <Table.Cell style={{ color: "#fff", background: "#e01e36", fontWeight: "bold" }} key={"morning-summary-header"}> Aamuauton tilanne </Table.Cell>
-          {
-            products.map((product) => {
-              return (
-                <Table.Cell style={{ textAlign: "center", "width": `${cellWidth}%`, color: "#fff", background: "#e01e36" }} key={`morning-summary-cell-${product.id}`}>
-                  {this.getMorningDeliveryBalance(product)}
-                </Table.Cell>
-              )
-            })
-          }
-        </Table.Row>
-        <Table.Row key={"evening-summary-row"}>
-          <Table.Cell style={{ color: "#fff", background: "#e01e36", fontWeight: "bold" }} key={"evening-summary-header"}> Iltauton tilanne </Table.Cell>
-          {
-            products.map((product) => {
-              return (
-                <Table.Cell style={{ textAlign: "center", "width": `${cellWidth}%`, color: "#fff", background: "#e01e36" }} key={`evening-summary-cell-${product.id}`}>
-                  {this.getEveningDeliveryBalance(product)}
-                </Table.Cell>
-              )
-            })
-          }
-        </Table.Row>
-        <Table.Row key={"daily-summary-row"}>
-          <Table.Cell style={{ color: "#fff", background: "#e01e36", fontWeight: "bold" }} key={"daily-summary-header"}> Varastoon jäävä ennuste </Table.Cell>
-          {
-            products.map((product) => {
-              return (
-                <Table.Cell style={{ textAlign: "center", "width": `${cellWidth}%`, color: "#fff", background: "#e01e36" }} key={`daily-summary-cell-${product.id}`}>
-                  {this.getMorningDeliveryBalance(product) + this.getEveningDeliveryBalance(product)}
-                </Table.Cell>
-              )
-            })
-          }
-        </Table.Row>
+        <Table.Body>
+          <Table.Row key={"morning-summary-row"}>
+            <Table.Cell style={{ color: "#fff", background: "#e01e36", fontWeight: "bold" }} key={"morning-summary-header"}> Aamuauton tilanne </Table.Cell>
+            {
+              products.map((product) => {
+                return (
+                  <Table.Cell style={{ textAlign: "center", "width": `${cellWidth}%`, color: "#fff", background: "#e01e36" }} key={`morning-summary-cell-${product.id}`}>
+                    {this.getMorningDeliveryBalance(product)}
+                  </Table.Cell>
+                )
+              })
+            }
+          </Table.Row>
+          <Table.Row key={"evening-summary-row"}>
+            <Table.Cell style={{ color: "#fff", background: "#e01e36", fontWeight: "bold" }} key={"evening-summary-header"}> Iltauton tilanne </Table.Cell>
+            {
+              products.map((product) => {
+                return (
+                  <Table.Cell style={{ textAlign: "center", "width": `${cellWidth}%`, color: "#fff", background: "#e01e36" }} key={`evening-summary-cell-${product.id}`}>
+                    {this.getEveningDeliveryBalance(product)}
+                  </Table.Cell>
+                )
+              })
+            }
+          </Table.Row>
+          <Table.Row key={"daily-summary-row"}>
+            <Table.Cell style={{ color: "#fff", background: "#e01e36", fontWeight: "bold" }} key={"daily-summary-header"}> Varastoon jäävä ennuste </Table.Cell>
+            {
+              products.map((product) => {
+                return (
+                  <Table.Cell style={{ textAlign: "center", "width": `${cellWidth}%`, color: "#fff", background: "#e01e36" }} key={`daily-summary-cell-${product.id}`}>
+                    {this.getMorningDeliveryBalance(product) + this.getEveningDeliveryBalance(product)}
+                  </Table.Cell>
+                )
+              })
+            }
+          </Table.Row>
+        </Table.Body>
       </Table>
     );
   }
@@ -768,9 +770,6 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   private getTableRows(morning: boolean, deliveries: Delivery[], initialIndex?: number) {
 
     const { products } = this.state;
-    const otherDeliveryPlace = !!deliveries.find((delivery) => {
-      return delivery.deliveryPlaceId !== this.state.deliveryPlaceId;
-    });
 
     const tableRows: JSX.Element[] = [];
     let index = initialIndex || 0;
@@ -780,7 +779,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       let tableCells: JSX.Element[] = [];
       let contactId = contactIds[i];
       let contact = this.getContact(contactId);
-      tableCells.push(<Table.Cell key={`${index}-${contactId}`}>{contact ? <span> {contact.displayName} {otherDeliveryPlace ? <Icon style={{ float: "right" }} name="map marker alternate" color="red" /> : null} </span> : <Loader size="mini" inline />}</Table.Cell>);
+      tableCells.push(<Table.Cell key={`${index}-${contactId}`}>{contact ? <span>{contact.displayName} {this.hasDeliveriesToOtherLocation(contactId, deliveries) ? <Icon style={{ float: "right" }} name="map marker alternate" color="red" /> : null}</span> : <Loader size="mini" inline />}</Table.Cell>);
       for (let j = 0; j < products.length; j++) {
         let product = products[j];
         const productDeliveries = this.listContactDeliveries(contactId, product, deliveries);
@@ -845,7 +844,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   private countDeliveryAmountByProduct(deliveries: Delivery[], product: Product, onlyDelivered?: boolean) {
     let count = !onlyDelivered ? 0 : product.id ? this.countQualityAmountByProduct(product.id) : 0;
 
-    deliveries.forEach((delivery) => {
+    const validDeliveries = deliveries.filter(delivery => delivery.status !== "REJECTED" && delivery.status !== "NOT_ACCEPTED");
+    validDeliveries.forEach((delivery) => {
       if (delivery.productId === product.id) {
         if (onlyDelivered) {
           if (delivery.status === "DONE") {
@@ -1010,6 +1010,20 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
    */
   private listContactDeliveries(contactId: string, product: Product, deliveries: Delivery[]): Delivery[] {
     return (deliveries || []).filter((delivery) => delivery.productId == product.id && delivery.userId == contactId);
+  }
+
+  
+  /**
+   * Has deliveries to other location
+   * 
+   * @param contactId contactId
+   * @param deliveries deliveries
+   */
+  private hasDeliveriesToOtherLocation(contactId: string, deliveries: Delivery[]): boolean {
+    const contactDeliveries = (deliveries || []).filter((delivery) => delivery.userId == contactId);
+    return !!contactDeliveries.find((delivery) => {
+      return delivery.deliveryPlaceId !== this.state.deliveryPlaceId;
+    });
   }
 
   /**

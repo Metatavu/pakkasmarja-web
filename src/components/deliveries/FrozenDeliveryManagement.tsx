@@ -336,7 +336,8 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
   private countDeliveryAmountByProduct(deliveries: Delivery[], product: Product, onlyDelivered?: boolean) {
     let count = 0;
 
-    deliveries.forEach((delivery) => {
+    const validDeliveries = deliveries.filter( delivery => delivery.status !== "REJECTED" && delivery.status !== "NOT_ACCEPTED");
+    validDeliveries.forEach((delivery) => {
       if (delivery.productId === product.id) {
         if (onlyDelivered) {
           if (delivery.status === "DONE") {
