@@ -252,6 +252,7 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
             products={this.state.products}
             date={this.state.selectedDate}
             deliveryPlaceId={this.state.selectedDeliveryPlaceId}
+            category={"FROZEN"}
           />
         }
       </TableBasicLayout>
@@ -320,7 +321,7 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
 
     const { products } = this.state;
     let tableCells: JSX.Element[] = [];
-    tableCells.push(<Table.Cell>{headerText}</Table.Cell>);
+    tableCells.push(<Table.Cell key={headerText}>{headerText}</Table.Cell>);
     for (let j = 0; j < products.length; j++) {
       let product = products[j];
       tableCells.push(

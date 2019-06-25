@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as actions from "../../actions";
 import { StoreState, Options, DeliveryDataValue, deliveryNoteImg64 } from "src/types";
-import Api, { Product, Delivery, DeliveryNote, Contact, DeliveryPlace, DeliveryStatus, DeliveryQuality } from "pakkasmarja-client";
+import Api, { Product, Delivery, DeliveryNote, Contact, DeliveryPlace, DeliveryStatus, DeliveryQuality, ItemGroupCategory } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
@@ -28,6 +28,7 @@ interface Props {
   onClose: (created?: boolean) => void,
   open: boolean,
   deliveryPlaces: DeliveryPlace[] 
+  category?: ItemGroupCategory;
 }
 
 /**
@@ -371,7 +372,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
               {this.renderDropDown(productOptions, strings.product, "selectedProductId")}
             </Form.Field>
             <Form.Field>
-              {this.state.selectedProductId &&
+              { this.state.selectedProductId && this.props.category != "FROZEN" &&
                 <PriceChart showLatestPrice productId={this.state.selectedProductId} />
               }
             </Form.Field>
