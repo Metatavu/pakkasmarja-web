@@ -135,7 +135,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       selectedProductId: delivery.productId,
       selectedPlaceId: delivery.deliveryPlaceId,
       selectedQualityId: delivery.qualityId,
-      date: delivery.time,
+      date: new Date(),
       deliveryTimeValue: deliveryTime,
       deliveryQualities: deliveryQualities,
       loading: false
@@ -272,7 +272,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       const delivery: Delivery = {
         productId: this.state.selectedProductId,
         userId: this.state.userId || "",
-        time: new Date(),
+        time: this.state.date,
         status: "DONE",
         amount: this.state.amount,
         price: undefined,
@@ -433,7 +433,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
                 <label>Hinta</label>
                 {
                   this.state.selectedProductId &&
-                  <PriceChart showLatestPrice productId={this.state.selectedProductId} />
+                  <PriceChart showLatestPrice time={this.state.date} productId={this.state.selectedProductId} />
                 }
               </Form.Field>
             }
@@ -512,8 +512,12 @@ class ManageDeliveryModal extends React.Component<Props, State> {
                 onChange={(date: Date) => {
                   this.handleInputChange("date", date)
                 }}
+                showTimeSelect
+                timeFormat="HH:mm"
+                timeIntervals={15}
+                timeCaption="aika"
                 selected={new Date(this.state.date)}
-                dateFormat="dd.MM.yyyy"
+                dateFormat="dd.MM.yyyy HH:mm"
                 locale="fi"
               />
             </Form.Field>
