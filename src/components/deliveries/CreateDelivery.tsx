@@ -151,7 +151,6 @@ class CreateDelivery extends React.Component<Props, State> {
     return !!(
       this.state.selectedProductId
       && this.state.selectedPlaceId
-      && this.state.amount
       && this.state.deliveryTimeValue
     );
   }
