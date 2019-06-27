@@ -159,7 +159,6 @@ class CreateDeliveryModal extends React.Component<Props, State> {
         && this.state.selectedDeliveryPlaceId 
         && this.state.selectedProductId
         && this.state.selectedContactId
-        && this.state.amount
         && this.state.selectedQualityId
         );
     }else{
@@ -168,7 +167,6 @@ class CreateDeliveryModal extends React.Component<Props, State> {
         && this.state.selectedDeliveryPlaceId 
         && this.state.selectedProductId
         && this.state.selectedContactId
-        && this.state.amount
         && this.state.deliveryTimeValue
         );
     }

@@ -93,7 +93,7 @@ class ProductPricesList extends React.Component<Props, State> {
     }
     this.setState({ productsLoading: true });
     const productPricesService = await Api.getProductPricesService(this.props.keycloak.token);
-    const productPrices: ProductPrice[] = await productPricesService.listProductPrices(this.state.productId, "CREATED_AT_DESC", undefined, 50);
+    const productPrices: ProductPrice[] = await productPricesService.listProductPrices(this.state.productId, "CREATED_AT_DESC", undefined, undefined, 50);
     this.setState({ productPrices, productsLoading: false });
   }
 

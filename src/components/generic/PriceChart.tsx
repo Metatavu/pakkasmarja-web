@@ -16,6 +16,7 @@ interface Props {
   keycloak?: Keycloak.KeycloakInstance;
   showAxis?: boolean,
   productId: string,
+  time?: Date,
   maxValues?: number,
   showLatestPrice?: boolean,
   showLatestPriceSimple?: boolean,
@@ -53,15 +54,16 @@ class PriceChart extends React.Component<Props, State> {
    * Component did mount life-cycle event
    */
   public async componentDidMount() {
-    const { keycloak, productId, maxValues } = this.props;
+    const { keycloak, productId, maxValues, time } = this.props;
     if (!keycloak || !keycloak.token) {
       return;
     }
 
     this.setState({ loading: true });
     const maxResults = maxValues || 20;
+    const date = time ? moment(time).toDate() : undefined;
 
-    const productPrices = await Api.getProductPricesService(keycloak.token).listProductPrices(productId, "CREATED_AT_DESC", undefined, maxResults);
+    const productPrices = await Api.getProductPricesService(keycloak.token).listProductPrices(productId, "CREATED_AT_DESC", date, undefined, maxResults);
     this.setState({
       prices: productPrices,
       loading: false
@@ -72,15 +74,17 @@ class PriceChart extends React.Component<Props, State> {
    * Component did update life-cycle event
    */
   public async componentDidUpdate(prevProps: Props) {
-    if(prevProps.productId !== this.props.productId){
-      const { keycloak, productId, maxValues } = this.props;
+    if(prevProps.productId !== this.props.productId || prevProps.time !== this.props.time){
+      const { keycloak, productId, maxValues, time } = this.props;
       if (!keycloak || !keycloak.token) {
         return;
       }
   
       this.setState({ loading: true });
       const maxResults = maxValues || 20;
-      const productPrices = await Api.getProductPricesService(keycloak.token).listProductPrices(productId, "CREATED_AT_DESC", undefined, maxResults);
+      const date = time ? moment(time).toDate() : undefined;
+
+      const productPrices = await Api.getProductPricesService(keycloak.token).listProductPrices(productId, "CREATED_AT_DESC", date, undefined, maxResults);
       this.setState({
         prices: productPrices,
         loading: false
