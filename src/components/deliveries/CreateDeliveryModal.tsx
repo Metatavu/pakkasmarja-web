@@ -7,7 +7,6 @@ import { connect } from "react-redux";
 import "../../styles/common.scss";
 import { Dropdown, Form, Input, Button, Divider, Modal, Image } from "semantic-ui-react";
 import DeliveryNoteModal from "./DeliveryNoteModal";
-import { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import fi from 'date-fns/esm/locale/fi';
 import strings from "src/localization/strings";
@@ -15,6 +14,7 @@ import PriceChart from "../generic/PriceChart";
 import * as moment from "moment";
 import { FileService } from "src/api/file.service";
 import Lightbox from "react-image-lightbox";
+import DatePicker, { registerLocale } from "react-datepicker";
 
 /**
  * Interface for component props
@@ -23,11 +23,10 @@ interface Props {
   authenticated: boolean;
   keycloak?: Keycloak.KeycloakInstance;
   products: Product[],
-  date: Date,
   deliveryPlaceId: string,
   onClose: (created?: boolean) => void,
   open: boolean,
-  deliveryPlaces: DeliveryPlace[] 
+  deliveryPlaces: DeliveryPlace[]
   category?: ItemGroupCategory;
 }
 
@@ -50,6 +49,11 @@ interface State {
   selectedDeliveryStatus: DeliveryStatus;
   deliveryQualities: DeliveryQuality[];
   selectedQualityId?: string;
+  selectedDate: Date;
+  redBoxesLoaned: number;
+  redBoxesReturned: number;
+  grayBoxesLoaned: number;
+  grayBoxesReturned: number;
 }
 
 /**
@@ -73,21 +77,17 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       contacts: [],
       deliveryNoteImgs64: [],
       selectedDeliveryPlaceId: props.deliveryPlaceId,
-      selectedDeliveryStatus: "PROPOSAL"
+      selectedDeliveryStatus: "PROPOSAL",
+      selectedDate: new Date(),
+      redBoxesLoaned: 0,
+      redBoxesReturned: 0,
+      grayBoxesLoaned: 0,
+      grayBoxesReturned: 0,
     };
 
     registerLocale('fi', fi);
   }
 
-  /**
-   * Component did mount life-cycle event
-   */
-  public componentDidMount = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token) {
-      return;
-    }
-
-  }
 
   /**
    * Handle inputchange
@@ -108,7 +108,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
   /**
    * Get delivery qualities
    */
-  private getDeliveryQualities = async ( product : Product ) => {
+  private getDeliveryQualities = async (product: Product) => {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
@@ -153,22 +153,22 @@ class CreateDeliveryModal extends React.Component<Props, State> {
    * @return whether form is valid or not
    */
   private isValid = () => {
-    if(this.state.selectedDeliveryStatus === "DONE"){
+    if (this.state.selectedDeliveryStatus === "DONE") {
       return !!(
-        this.state.selectedDeliveryStatus 
-        && this.state.selectedDeliveryPlaceId 
+        this.state.selectedDeliveryStatus
+        && this.state.selectedDeliveryPlaceId
         && this.state.selectedProductId
         && this.state.selectedContactId
         && this.state.selectedQualityId
-        );
-    }else{
+      );
+    } else {
       return !!(
-        this.state.selectedDeliveryStatus 
-        && this.state.selectedDeliveryPlaceId 
+        this.state.selectedDeliveryStatus
+        && this.state.selectedDeliveryPlaceId
         && this.state.selectedProductId
         && this.state.selectedContactId
         && this.state.deliveryTimeValue
-        );
+      );
     }
   }
 
@@ -218,19 +218,24 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       return;
     }
     const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
-    let time: string | Date = moment(this.props.date).format("YYYY-MM-DD");
+    let time: string | Date = moment(this.state.selectedDate).format("YYYY-MM-DD");
     time = `${time} ${this.state.deliveryTimeValue}:00 +0000`
     time = moment(time, "YYYY-MM-DD HH:mm Z").toDate();
 
     const delivery: Delivery = {
       productId: this.state.selectedProductId,
       userId: this.state.selectedContactId,
-      time: this.state.selectedDeliveryStatus === "DONE" ? new Date() : time,
+      time: this.state.selectedDeliveryStatus === "DONE" ? this.state.selectedDate : time,
       status: this.state.selectedDeliveryStatus,
       amount: this.state.amount,
       price: "0",
       deliveryPlaceId: this.state.selectedDeliveryPlaceId,
-      qualityId: this.state.selectedDeliveryStatus === "DONE" ? this.state.selectedQualityId : undefined
+      qualityId: this.state.selectedDeliveryStatus === "DONE" ? this.state.selectedQualityId : undefined,
+      loans: this.state.selectedDeliveryStatus === "DONE" 
+      ? [
+        { item: "RED_BOX", loaned: this.state.redBoxesLoaned, returned: this.state.redBoxesReturned },
+        { item: "GRAY_BOX", loaned: this.state.grayBoxesLoaned, returned: this.state.grayBoxesReturned }]
+      : []
     }
 
     const createdDelivery = await deliveryService.createDelivery(delivery);
@@ -355,29 +360,61 @@ class CreateDeliveryModal extends React.Component<Props, State> {
         <Modal.Content>
           <Form>
             <Form.Field>
-              <p><b>Päivämäärä: </b> {this.props.date && moment(this.props.date).format("DD.MM.YYYY")}</p>
-            </Form.Field>
-            <Form.Field>
               <label>Tila</label>
-              { this.renderDropDown(deliveryStatusOptions, "Tila", "selectedDeliveryStatus") }
+              {this.renderDropDown(deliveryStatusOptions, "Tila", "selectedDeliveryStatus")}
             </Form.Field>
             <Form.Field>
               <label>Toimituspaikka</label>
-              { this.renderDropDown(deliveryPlaces, "Toimituspaikka", "selectedDeliveryPlaceId") }
+              {this.renderDropDown(deliveryPlaces, "Toimituspaikka", "selectedDeliveryPlaceId")}
             </Form.Field>
             <Form.Field>
               <label>{strings.product}</label>
               {this.renderDropDown(productOptions, strings.product, "selectedProductId")}
             </Form.Field>
             <Form.Field>
-              { this.state.selectedProductId && this.props.category != "FROZEN" &&
-                <PriceChart showLatestPrice productId={this.state.selectedProductId} />
+              {this.state.selectedProductId && this.props.category != "FROZEN" &&
+                <PriceChart showLatestPrice time={this.state.selectedDate} productId={this.state.selectedProductId} />
               }
             </Form.Field>
+            {this.state.selectedDeliveryStatus !== "PROPOSAL" ?
+              <Form.Field>
+                <label>{strings.deliveyDate}</label>
+                <DatePicker
+                  onChange={(date: Date) => {
+                    this.setState({ selectedDate : date })
+                  }}
+                  showTimeSelect
+                  timeFormat="HH:mm"
+                  timeIntervals={15}
+                  timeCaption="aika"
+                  selected={new Date(this.state.selectedDate)}
+                  dateFormat="dd.MM.yyyy HH:mm"
+                  locale="fi"
+                />
+              </Form.Field>
+              :
+              <React.Fragment>
+                <Form.Field>
+                  <label>{strings.deliveyDate}</label>
+                  <DatePicker
+                    onChange={(date: Date) => {
+                      this.setState({ selectedDate : date })
+                    }}
+                    selected={new Date(this.state.selectedDate)}
+                    dateFormat="dd.MM.yyyy"
+                    locale="fi"
+                  />
+                </Form.Field>
+                <Form.Field>
+                  <label>{"Ajankohta"}</label>
+                  {this.renderDropDown(deliveryTimeValue, "Valitse ajankohta", "deliveryTimeValue")}
+                </Form.Field>
+              </React.Fragment>
+            }
             {this.state.selectedDeliveryStatus === "DONE" && this.state.selectedProduct &&
-            <Form.Field>
-              { this.renderQualityField() }
-            </Form.Field>
+              <Form.Field>
+                {this.renderQualityField()}
+              </Form.Field>
             }
             <Form.Field>
               <label>Viljelijä</label>
@@ -394,7 +431,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
               />
             </Form.Field>
             <Form.Field>
-              <label>{strings.amount}</label>
+              <label>{`${strings.amount} ${this.state.selectedProduct ? `(${this.state.selectedProduct.unitName})` : "" }`}</label>
               <Input
                 type="number"
                 placeholder={strings.amount}
@@ -411,11 +448,58 @@ class CreateDeliveryModal extends React.Component<Props, State> {
               : null
             }
             {
-            this.state.selectedDeliveryStatus === "PROPOSAL" &&
-            <Form.Field>
-              <label>{"Ajankohta"}</label>
-              {this.renderDropDown(deliveryTimeValue, "Valitse ajankohta", "deliveryTimeValue")}
-            </Form.Field>}
+              this.state.selectedDeliveryStatus === "DONE" && this.props.category === "FROZEN" &&
+              <React.Fragment>
+                  <Form.Field>
+                    <label>{strings.redBoxesReturned}</label>
+                    <Input
+                      type="number"
+                      placeholder="Palautettu"
+                      value={this.state.redBoxesReturned}
+                      onChange={(e, data) => {
+                        this.setState({
+                          redBoxesReturned: parseInt(data.value)
+                        })
+                      }} />
+                  </Form.Field>
+                  <Form.Field>
+                    <label>{strings.redBoxesLoaned}</label>
+                    <Input
+                      type="number"
+                      placeholder="Lainattu"
+                      value={this.state.redBoxesLoaned}
+                      onChange={(e, data) => {
+                        this.setState({
+                          redBoxesLoaned: parseInt(data.value)
+                        })
+                      }} />
+                  </Form.Field>
+                  <Form.Field>
+                    <label>{strings.grayBoxesReturned}</label>
+                    <Input
+                      type="number"
+                      placeholder="Palautettu"
+                      value={this.state.grayBoxesReturned}
+                      onChange={(e, data) => {
+                        this.setState({
+                          grayBoxesReturned: parseInt(data.value)
+                        })
+                      }} />
+                  </Form.Field>
+                  <Form.Field>
+                    <label>{strings.grayBoxesLoaned}</label>
+                    <Input
+                      type="number"
+                      placeholder="Lainattu"
+                      value={this.state.grayBoxesLoaned}
+                      onChange={(e, data) => {
+                        this.setState({
+                          grayBoxesLoaned: parseInt(data.value)
+                        })
+                      }} />
+                  </Form.Field>
+                </React.Fragment>
+            }
             {this.state.deliveryNoteImgs64[0] ?
               this.state.deliveryNoteImgs64.map((deliveryNote, i) => {
                 return (
@@ -437,7 +521,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
               }) : <Divider />
             }
             <Button color="red" inverted onClick={() => this.setState({ modalOpen: true })}>{`${strings.addNote}`}</Button>
-            <Button color="red" disabled={ !this.isValid() } floated="right" onClick={this.handleDeliverySubmit} type='submit'>
+            <Button color="red" disabled={!this.isValid()} floated="right" onClick={this.handleDeliverySubmit} type='submit'>
               Tallenna
             </Button>
           </Form>
