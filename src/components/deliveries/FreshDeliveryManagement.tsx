@@ -267,7 +267,6 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
               }
             }}
             products={this.state.products}
-            date={this.state.selectedDate}
             deliveryPlaceId={this.state.deliveryPlaceId}
           />
         }

@@ -135,7 +135,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       selectedProductId: delivery.productId,
       selectedPlaceId: delivery.deliveryPlaceId,
       selectedQualityId: delivery.qualityId,
-      date: new Date(),
+      date: this.props.delivery.status === "PROPOSAL" || this.props.delivery.status === "DONE" ? new Date(this.props.delivery.time) : new Date(),
       deliveryTimeValue: deliveryTime,
       deliveryQualities: deliveryQualities,
       loading: false
@@ -442,7 +442,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
               {this.renderDropDown(productOptions, "selectedProductId")}
             </Form.Field>
             {
-              this.props.category === "FROZEN" ?
+              this.props.category === "FROZEN" && (this.props.delivery.status === "DELIVERY" || this.props.delivery.status === "PLANNED") ?
                 <React.Fragment>
                   <Form.Field>
                     <label>{strings.redBoxesReturned}</label>
@@ -497,7 +497,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
             }
             {this.renderQualityField()}
             <Form.Field>
-              <label>{strings.amount}</label>
+              <label>{`${strings.amount} (${this.renderProductUnitName()})`}</label>
               <Input
                 placeholder={strings.amount}
                 value={this.state.amount}
@@ -508,23 +508,37 @@ class ManageDeliveryModal extends React.Component<Props, State> {
             </Form.Field>
             <Form.Field>
               <label>{strings.deliveyDate}</label>
-              <DatePicker
-                onChange={(date: Date) => {
-                  this.handleInputChange("date", date)
-                }}
-                showTimeSelect
-                timeFormat="HH:mm"
-                timeIntervals={15}
-                timeCaption="aika"
-                selected={new Date(this.state.date)}
-                dateFormat="dd.MM.yyyy HH:mm"
-                locale="fi"
-              />
+              {this.props.delivery.status !== "PROPOSAL" ?
+                <DatePicker
+                  onChange={(date: Date) => {
+                    this.handleInputChange("date", date)
+                  }}
+                  showTimeSelect
+                  timeFormat="HH:mm"
+                  timeIntervals={15}
+                  timeCaption="aika"
+                  selected={new Date(this.state.date)}
+                  dateFormat="dd.MM.yyyy HH:mm"
+                  locale="fi"
+                />
+                :
+                <DatePicker
+                  onChange={(date: Date) => {
+                    this.handleInputChange("date", date)
+                  }}
+                  selected={new Date(this.state.date)}
+                  dateFormat="dd.MM.yyyy"
+                  locale="fi"
+                />
+              }
             </Form.Field>
-            <Form.Field>
-              <label>{"Ajankohta"}</label>
-              {this.renderDropDown(deliveryTimeValue, "deliveryTimeValue")}
-            </Form.Field>
+            {
+              this.props.delivery.status === "PROPOSAL" &&
+              <Form.Field>
+                <label>{"Ajankohta"}</label>
+                {this.renderDropDown(deliveryTimeValue, "deliveryTimeValue")}
+              </Form.Field>
+            }
             <Form.Field style={{ marginTop: 20 }}>
               <label>{strings.deliveryPlace}</label>
               {this.renderDropDown(deliveryPlaceOptions, "selectedPlaceId")}
@@ -586,6 +600,15 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       case "NOT_ACCEPTED":
         return "Toimitus hylättiin pakkasmarjan toimesta";
     }
+  }
+
+  /**
+   * Render product unit name
+   */
+  private renderProductUnitName = () => {
+    const { products, selectedProductId } = this.state;
+    const product = products.find(product => product.id === selectedProductId);
+    return product ? product.unitName : "";
   }
 
   /**
