@@ -135,7 +135,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       selectedProductId: delivery.productId,
       selectedPlaceId: delivery.deliveryPlaceId,
       selectedQualityId: delivery.qualityId,
-      date: this.props.delivery.status === "PROPOSAL" || this.props.delivery.status === "DONE" ? new Date(this.props.delivery.time) : new Date(),
+      date: this.props.delivery.status === "DONE" ? new Date(this.props.delivery.time) : new Date(),
       deliveryTimeValue: deliveryTime,
       deliveryQualities: deliveryQualities,
       loading: false
@@ -322,7 +322,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
         amount: this.state.amount,
         price: "0",
         deliveryPlaceId: this.state.selectedPlaceId,
-        qualityId: this.state.selectedQualityId
+        qualityId: undefined
       }
 
       const response = await deliveryService.updateDelivery(delivery, this.state.deliveryId);
@@ -508,7 +508,6 @@ class ManageDeliveryModal extends React.Component<Props, State> {
             </Form.Field>
             <Form.Field>
               <label>{strings.deliveyDate}</label>
-              {this.props.delivery.status !== "PROPOSAL" ?
                 <DatePicker
                   onChange={(date: Date) => {
                     this.handleInputChange("date", date)
@@ -521,16 +520,6 @@ class ManageDeliveryModal extends React.Component<Props, State> {
                   dateFormat="dd.MM.yyyy HH:mm"
                   locale="fi"
                 />
-                :
-                <DatePicker
-                  onChange={(date: Date) => {
-                    this.handleInputChange("date", date)
-                  }}
-                  selected={new Date(this.state.date)}
-                  dateFormat="dd.MM.yyyy"
-                  locale="fi"
-                />
-              }
             </Form.Field>
             {
               this.props.delivery.status === "PROPOSAL" &&
@@ -615,9 +604,6 @@ class ManageDeliveryModal extends React.Component<Props, State> {
    * Renders quality field
    */
   private renderQualityField() {
-    if (this.props.delivery.status == "PROPOSAL") {
-      return null;
-    }
 
     const deliveryQualityOptions = this.state.deliveryQualities.map((deliveryQuality) => {
       return {
@@ -651,6 +637,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       return <Button.Group floated="right">
         <Button disabled={!this.isValid()} color="black" onClick={this.handleDeliveryReject} type='submit'>Hylkää ehdotus</Button>
         <Button disabled={!this.isValid()} color="green" onClick={this.handleDeliverySave} type='submit'>Muokkaa ehdotusta</Button>
+        <Button disabled={!this.isValid()} color="red" onClick={this.handleDeliveryAccept} type='submit'>Hyväksy toimitus</Button>
       </Button.Group>;
     }
 
