@@ -45,7 +45,9 @@ interface State {
   activeTab: Tab,
   redirectTo?: string,
   deleteChatGroupConfirmOpen: boolean,
-  deleteQuestionGroupConfirmOpen: boolean
+  deleteQuestionGroupConfirmOpen: boolean,
+  queryChatGroupToBeDeleted?: ChatGroup,
+  chatChatGroupToBeDeleted?: ChatGroup
 }
 
 /**
@@ -94,7 +96,7 @@ class ChatManagementList extends React.Component<Props, State> {
     const queryChatGroups = await chatGroupsService.listChatGroups("QUESTION");
     const chatThreadsService = await Api.getChatThreadsService(this.props.keycloak.token);
     const chatThreads = await chatThreadsService.listChatThreads(undefined, "CHAT");
-
+    
     this.setState({
       chatChatGroups: chatChatGroups,
       queryChatGroups: queryChatGroups,
@@ -167,13 +169,13 @@ class ChatManagementList extends React.Component<Props, State> {
                   {chatChatGroup.title}
                 </Grid.Column>
                 <Grid.Column width={8} style={{ textAlign: "right" }}>
-                  <Confirm onConfirm={() => this.deleteChatGroup(chatChatGroup)} open={this.state.deleteChatGroupConfirmOpen} size={"mini"} content={"Haluatko varmasti poistaa ryhmän?"} onCancel={() => { this.setState({ deleteChatGroupConfirmOpen: false }); }} />
+                  <Confirm onConfirm={() => this.deleteChatGroup()} open={this.state.deleteChatGroupConfirmOpen} size={"mini"} content={"Haluatko varmasti poistaa ryhmän?"} onCancel={() => { this.setState({ deleteChatGroupConfirmOpen: false }); }} />
                   {
                     thread && thread.answerType === "POLL" &&
                     <Button inverted color="red" onClick={() => this.downloadVoteResults(thread && thread.id)}> {strings.voteResults} </Button>
                   }
                   <Button onClick={() => this.setState({ redirectTo: `/editChatGroup/${chatChatGroup.id}` })}> {strings.edit} </Button>
-                  <Button onClick={() => this.setState({ deleteChatGroupConfirmOpen: true })} negative>{strings.delete}</Button>
+                  <Button onClick={() => this.setState({ deleteChatGroupConfirmOpen: true, chatChatGroupToBeDeleted: chatChatGroup })} negative>{strings.delete}</Button>
                 </Grid.Column>
               </Grid.Row>
             );
@@ -216,9 +218,9 @@ class ChatManagementList extends React.Component<Props, State> {
                   {queryChatGroup.title}
                 </Grid.Column>
                 <Grid.Column width={4} style={{ textAlign: "right" }}>
-                  <Confirm onConfirm={() => this.deleteQuestionGroup(queryChatGroup)} open={this.state.deleteQuestionGroupConfirmOpen} size={"mini"} content={"Haluatko varmasti poistaa ryhmän?"} onCancel={() => { this.setState({ deleteQuestionGroupConfirmOpen: false }); }} />
+                  <Confirm onConfirm={() => this.deleteQuestionGroup()} open={this.state.deleteQuestionGroupConfirmOpen} size={"mini"} content={"Haluatko varmasti poistaa ryhmän?"} onCancel={() => { this.setState({ deleteQuestionGroupConfirmOpen: false }); }} />
                   <Button onClick={() => this.setState({ redirectTo: `/editQuestionGroup/${queryChatGroup.id}` })}> {strings.edit} </Button>
-                  <Button onClick={() => this.setState({ deleteQuestionGroupConfirmOpen: true })} negative>{strings.delete}</Button>
+                  <Button onClick={() => this.setState({ deleteQuestionGroupConfirmOpen: true, queryChatGroupToBeDeleted: queryChatGroup })} negative>{strings.delete}</Button>
                 </Grid.Column>
               </Grid.Row>
             );
@@ -291,8 +293,9 @@ class ChatManagementList extends React.Component<Props, State> {
   /**
    * Deletes a chat group
    */
-  private deleteQuestionGroup = async (chatGroup: ChatGroup) => {
-    if (!this.props.keycloak || !this.props.keycloak.token) {
+  private deleteQuestionGroup = async () => {
+    const { queryChatGroupToBeDeleted } = this.state;
+    if (!this.props.keycloak || !this.props.keycloak.token || !queryChatGroupToBeDeleted) {
       return;
     }
 
@@ -303,16 +306,23 @@ class ChatManagementList extends React.Component<Props, State> {
 
     const chatGroupsService = await Api.getChatGroupsService(this.props.keycloak.token);
     const chatThreadsService = await Api.getChatThreadsService(this.props.keycloak.token);
+    const chatMessagesService = await Api.getChatMessagesService(this.props.keycloak.token);
 
-    const chatThreads = await chatThreadsService.listChatThreads(chatGroup.id!);
+    const chatThreads = await chatThreadsService.listChatThreads(queryChatGroupToBeDeleted.id!);
     for (let i = 0; i < chatThreads.length; i++) {
+      const messages = await chatMessagesService.listChatMessages(chatThreads[i].id!, undefined, undefined, undefined, 0, 999);
+
+      for (let j = 0; j < messages.length; j++) {
+        await chatMessagesService.deleteChatMessage(chatThreads[i].id!, messages[j].id!);
+      }
+
       await chatThreadsService.deleteChatThread(chatThreads[i].id!);
     }
 
-    await chatGroupsService.deleteChatGroup(chatGroup.id!);
+    await chatGroupsService.deleteChatGroup(queryChatGroupToBeDeleted.id!);
 
     const chatGroups = this.state.chatChatGroups.filter((chatChatGroup) => {
-      return chatChatGroup.id !== chatGroup.id;
+      return chatChatGroup.id !== queryChatGroupToBeDeleted.id;
     });
 
     this.setState({
@@ -324,8 +334,9 @@ class ChatManagementList extends React.Component<Props, State> {
   /**
    * Deletes a chat group
    */
-  private deleteChatGroup = async (chatGroup: ChatGroup) => {
-    if (!this.props.keycloak || !this.props.keycloak.token) {
+  private deleteChatGroup = async () => {
+    const { chatChatGroupToBeDeleted } = this.state;
+    if (!this.props.keycloak || !this.props.keycloak.token || !chatChatGroupToBeDeleted) {
       return;
     }
 
@@ -336,16 +347,24 @@ class ChatManagementList extends React.Component<Props, State> {
 
     const chatGroupsService = await Api.getChatGroupsService(this.props.keycloak.token);
     const chatThreadsService = await Api.getChatThreadsService(this.props.keycloak.token);
+    const chatMessagesService = await Api.getChatMessagesService(this.props.keycloak.token);
 
-    const chatThreads = await chatThreadsService.listChatThreads(chatGroup.id!);
+    const chatThreads = await chatThreadsService.listChatThreads(chatChatGroupToBeDeleted.id!);
+    
     for (let i = 0; i < chatThreads.length; i++) {
+      const messages = await chatMessagesService.listChatMessages(chatThreads[i].id!, undefined, undefined, undefined, 0, 999);
+
+      for (let j = 0; j < messages.length; j++) {
+        await chatMessagesService.deleteChatMessage(chatThreads[i].id!, messages[j].id!);
+      }
+
       await chatThreadsService.deleteChatThread(chatThreads[i].id!);
     }
 
-    await chatGroupsService.deleteChatGroup(chatGroup.id!);
+    await chatGroupsService.deleteChatGroup(chatChatGroupToBeDeleted.id!);
 
     const chatGroups = this.state.chatChatGroups.filter((chatChatGroup) => {
-      return chatChatGroup.id !== chatGroup.id;
+      return chatChatGroup.id !== chatChatGroupToBeDeleted.id;
     });
 
     this.setState({

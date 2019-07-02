@@ -216,12 +216,7 @@ class EditChatGroup extends React.Component<Props, State> {
               </Form.Field>
             </React.Fragment>
           }
-          <Form.Field>
-            <Header as="h3"> {strings.groupPermissions} </Header>
-          </Form.Field>
-          <Form.Field>
-            {this.renderUserGroups()}
-          </Form.Field>
+          {this.renderUserGroups()}
           <Form.Field>
             <Button.Group floated="right">
               <Button inverted color="red" as={Link} to={"/chatManagement"}> {strings.back} </Button>
@@ -305,18 +300,23 @@ class EditChatGroup extends React.Component<Props, State> {
     }];
 
     return (
-      <div>
-        {
-          this.state.userGroups.map((userGroup, index) => {
-            return (
-              <div key={userGroup.id} style={{ clear: "both", height: "40px" }}>
-                <div style={{ float: "left" }}>{userGroup.name}</div>
-                <div style={{ float: "right" }}><Select value={this.getUserGroupRoleValue(userGroup)} options={roleOptions} onChange={(event: React.SyntheticEvent<HTMLElement>, data: DropdownProps) => this.onChangeRole(userGroup.id!, data.value as string)} /></div>
-              </div>
-            );
-          })
+      <Form.Field>
+        {this.state.userGroups.length > 0 &&
+          <React.Fragment>
+            <Header as="h3"> {strings.groupPermissions} </Header>
+            {
+              this.state.userGroups.map((userGroup, index) => {
+                return (
+                  <div key={userGroup.id} style={{ clear: "both", height: "40px" }}>
+                    <div style={{ float: "left" }}>{userGroup.name}</div>
+                    <div style={{ float: "right" }}><Select value={this.getUserGroupRoleValue(userGroup)} options={roleOptions} onChange={(event: React.SyntheticEvent<HTMLElement>, data: DropdownProps) => this.onChangeRole(userGroup.id!, data.value as string)} /></div>
+                  </div>
+                );
+              })
+            }
+          </React.Fragment>
         }
-      </div>
+      </Form.Field>
     );
   }
 
@@ -513,7 +513,7 @@ class EditChatGroup extends React.Component<Props, State> {
       description: this.state.answerType === "POLL" ? this.state.description || "" : "",
       pollPredefinedTexts: this.state.answerType === "POLL" ? pollPredefinedTexts : undefined
     }
-    
+
     await chatThreadsService.updateChatThread(bodyload, chatThreadId);
     this.setState({
       saving: false
