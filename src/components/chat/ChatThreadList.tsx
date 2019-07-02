@@ -99,7 +99,13 @@ class ChatThreadList extends React.Component<Props, State> {
     try {
       const chatThreadsService = await Api.getChatThreadsService(this.props.keycloak.token);
       const chatThreads = await chatThreadsService.listChatThreads(this.props.groupId, this.props.type);
-      const conversationListItemPromises = chatThreads.map((chatThread: ChatThread) => this.loadConversationItem(chatThread));
+      const validChatThreads = chatThreads.filter( (thread) => {
+        if ( thread.expiresAt ){
+         return moment(moment().format("YYYY-MM-DDTHH:mm:ss.SSSSZ")).isBefore( moment(thread.expiresAt) );
+        }
+        return true;
+      });
+      const conversationListItemPromises = validChatThreads.map((chatThread: ChatThread) => this.loadConversationItem(chatThread));
       const conversationListItems = await Promise.all(conversationListItemPromises);
       const sortedListItems = _.sortBy( conversationListItems, (thread) => this.hasUnreadMessages( thread.groupId , thread.id! )).reverse();;
       this.setState({
