@@ -268,13 +268,14 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     }
 
     try {
+      const amount =  Number(Number(this.state.amount).toFixed(3));
       const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
       const delivery: Delivery = {
         productId: this.state.selectedProductId,
         userId: this.state.userId || "",
         time: this.state.date,
         status: "DONE",
-        amount: this.state.amount,
+        amount: amount,
         price: undefined,
         deliveryPlaceId: this.state.selectedPlaceId,
         qualityId: this.state.selectedQualityId,
@@ -499,6 +500,8 @@ class ManageDeliveryModal extends React.Component<Props, State> {
             <Form.Field>
               <label>{`${strings.amount} (${this.renderProductUnitName()})`}</label>
               <Input
+                type="number"
+                min={0}
                 placeholder={strings.amount}
                 value={this.state.amount}
                 onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {

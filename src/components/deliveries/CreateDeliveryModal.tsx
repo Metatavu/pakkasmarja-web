@@ -221,13 +221,14 @@ class CreateDeliveryModal extends React.Component<Props, State> {
     let time: string | Date = moment(this.state.selectedDate).format("YYYY-MM-DD");
     time = `${time} ${this.state.deliveryTimeValue}:00 +0000`
     time = moment(time, "YYYY-MM-DD HH:mm Z").toDate();
+    const amount =  Number(Number(this.state.amount).toFixed(3));
 
     const delivery: Delivery = {
       productId: this.state.selectedProductId,
       userId: this.state.selectedContactId,
       time: this.state.selectedDeliveryStatus === "DONE" ? this.state.selectedDate : time,
       status: this.state.selectedDeliveryStatus,
-      amount: this.state.amount,
+      amount: amount,
       price: "0",
       deliveryPlaceId: this.state.selectedDeliveryPlaceId,
       qualityId: this.state.selectedDeliveryStatus === "DONE" ? this.state.selectedQualityId : undefined,
@@ -434,6 +435,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
               <label>{`${strings.amount} ${this.state.selectedProduct ? `(${this.state.selectedProduct.unitName})` : "" }`}</label>
               <Input
                 type="number"
+                min={0}
                 placeholder={strings.amount}
                 value={this.state.amount}
                 onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {

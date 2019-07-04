@@ -173,6 +173,7 @@ class ManageDelivery extends React.Component<Props, State> {
       return;
     }
 
+    const amount =  Number(Number(this.state.amount).toFixed(3));
     const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
     const delivery: Delivery = {
       id: "",
@@ -180,7 +181,7 @@ class ManageDelivery extends React.Component<Props, State> {
       userId: this.state.userId || "",
       time: this.state.date,
       status: "DONE",
-      amount: this.state.amount,
+      amount: amount,
       price: "0",
       deliveryPlaceId: this.state.selectedPlaceId,
       qualityId: this.state.selectedQualityId

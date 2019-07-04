@@ -224,13 +224,15 @@ class EditDelivery extends React.Component<Props, State> {
     let time: string | Date = moment(this.state.date).format("YYYY-MM-DD");
     time = `${time} ${this.state.deliveryTimeValue}:00 +0000`
     time = moment(time, "YYYY-MM-DD HH:mm Z").toDate();
+    const amount =  Number(Number(this.state.amount).toFixed(3));
+
     const delivery: Delivery = {
       id: this.state.deliveryId,
       productId: this.state.selectedProductId,
       userId: this.props.keycloak.subject,
       time: time,
       status: "PLANNED",
-      amount: this.state.amount,
+      amount: amount,
       price: "0",
       deliveryPlaceId: this.state.selectedPlaceId
     }
