@@ -135,7 +135,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       selectedProductId: delivery.productId,
       selectedPlaceId: delivery.deliveryPlaceId,
       selectedQualityId: delivery.qualityId,
-      date: this.props.delivery.status === "DONE" ? new Date(this.props.delivery.time) : new Date(),
+      date: this.props.delivery.status === "DONE" || this.props.delivery.status === "NOT_ACCEPTED" ? new Date(this.props.delivery.time) : new Date(),
       deliveryTimeValue: deliveryTime,
       deliveryQualities: deliveryQualities,
       loading: false
@@ -354,7 +354,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       const delivery: Delivery = {
         productId: this.state.selectedProductId,
         userId: this.state.userId || "",
-        time: new Date(),
+        time: this.state.date,
         status: "NOT_ACCEPTED",
         amount: this.state.amount,
         price: "0",
@@ -626,7 +626,10 @@ class ManageDeliveryModal extends React.Component<Props, State> {
    */
   private renderSubmitButton() {
     if (this.props.delivery.status == "DONE") {
-      return <Button disabled floated="right" color="grey" type='submit'>Toimitus on jo hyväksytty</Button>;
+      return <Button.Group floated="right">
+        <Button disabled={!this.isValid()} color="black" onClick={this.handleDeliveryReject} type='submit'>Hylkää toimitus</Button>
+        <Button disabled floated="right" color="grey" type='submit'>Toimitus on jo hyväksytty</Button>;
+      </Button.Group>
     }
 
     if (this.props.delivery.status == "REJECTED") {
