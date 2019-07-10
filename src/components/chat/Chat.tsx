@@ -585,7 +585,7 @@ class Chat extends React.Component<Props, State> {
       return Promise.reject();
     }
 
-    contact = await Api.getContactsService(keycloak.token).findContact(chatMessage.userId!);
+    contact = await Api.getContactsService(keycloak.token).findBasicContact(chatMessage.userId!);
     this.userLookup.set(chatMessage.userId!, contact);
     return contact;
   }
