@@ -27,8 +27,6 @@ import CreateItemGroup from "../itemgroups-management/CreateItemGroup";
 import EditItemGroupDocument from "../itemgroups-management/EditItemGroupDocument";
 import ItemGroupPricesList from "../itemgroups-management/ItemGroupPricesList";
 import CreateWeekDeliveryPrediction from "../deliveries/CreateWeekDeliveryPrediction";
-import ManageIncomingDeliveries from "../deliveries/ManageIncomingDeliveries";
-import ManageDelivery from "../deliveries/ManageDelivery";
 import DeliveriesScreen from "../deliveries/DeliveriesScreen";
 import WelcomePage from "./WelcomePage";
 import ProductsList from "../products-management/ProductsList";
@@ -126,8 +124,6 @@ class MainPage extends React.Component<Props, {}> {
         <Route exact path="/itemGroups/:itemGroupId/contractDocumentTemplate/:itemGroupDocumentTemplateId" component={EditItemGroupDocument} />
         <Route exact path="/createAndEditItemGroupPrices/:itemGroupId" component={ItemGroupPricesList} />
         <Route exact path="/createWeekDeliveryPrediction/:category" component={CreateWeekDeliveryPrediction} />
-        <Route exact path="/manageIncomingDeliveries" component={ManageIncomingDeliveries} />
-        <Route exact path="/manageIncomingDeliveries/:deliveryId" component={ManageDelivery} />
         <Route exact path="/productsManagement" component={ProductsList} />
         <Route exact path="/createProduct" component={CreateProduct} />
         <Route exact path="/editProduct/:productId" component={EditProduct} />
