@@ -266,8 +266,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
                 this.reloadDeliveries();
               }
             }}
-            products={this.state.products}
             deliveryPlaceId={this.state.deliveryPlaceId}
+            category={"FRESH"}
           />
         }
       </TableBasicLayout >

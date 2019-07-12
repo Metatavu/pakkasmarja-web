@@ -249,7 +249,6 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
                 this.reloadDeliveries();
               }
             }}
-            products={this.state.products}
             deliveryPlaceId={this.state.selectedDeliveryPlaceId}
             category={"FROZEN"}
           />
