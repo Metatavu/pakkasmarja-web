@@ -3,7 +3,7 @@ import * as actions from "../../actions";
 import * as _ from "lodash";
 import * as moment from "moment";
 import { StoreState, DeliveriesState, Options, DeliveryDataValue, HttpErrorResponse, deliveryNoteImg64 } from "../../types";
-import Api, { Product, DeliveryPlace, Delivery, DeliveryNote, DeliveryQuality } from "pakkasmarja-client";
+import Api, { Product, DeliveryPlace, Delivery, DeliveryNote, DeliveryQuality, ItemGroupCategory } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
@@ -29,7 +29,7 @@ interface Props {
   onError?: (errorMsg: string) => void,
   onClose: () => void,
   onUpdate: () => void,
-  category: string,
+  category: ItemGroupCategory,
 }
 
 /**
@@ -56,7 +56,8 @@ interface State {
   redBoxesLoaned: number,
   redBoxesReturned: number,
   grayBoxesLoaned: number,
-  grayBoxesReturned: number
+  grayBoxesReturned: number,
+  selectedProduct ?: Product
 }
 
 /**
@@ -105,11 +106,12 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     const productsService = await Api.getProductsService(this.props.keycloak.token);
     const deliveryPlacesService = await Api.getDeliveryPlacesService(this.props.keycloak.token);
     const deliveryQualitiesService = await Api.getDeliveryQualitiesService(this.props.keycloak.token);
-    const itemGroupsService = await Api.getItemGroupsService(this.props.keycloak.token);
 
+    const category = this.props.category;
     const delivery = this.props.delivery;
+    const userId = this.props.delivery.userId;
     const deliveryPlaces = await deliveryPlacesService.listDeliveryPlaces();
-    const products: Product[] = await productsService.listProducts(undefined, undefined, undefined, undefined, 100);
+    const products: Product[] = await productsService.listProducts(undefined, category, userId, undefined, 100);
     const deliveryProduct = products.find((product) => {
       return product.id == delivery.productId;
     });
@@ -118,17 +120,13 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       throw new Error("Could not find delivery product");
     }
 
-    const itemGroup = await itemGroupsService.findItemGroup(deliveryProduct.itemGroupId);
-    if (!itemGroup) {
-      throw new Error("Could not find item group");
-    }
-
-    const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(itemGroup.category);
+    const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(category);
     const deliveryTime = moment(delivery.time).utc().hour() <= 12 ? 11 : 17;
 
     this.setState({
       products,
       deliveryPlaces,
+      selectedProduct: deliveryProduct,
       userId: delivery.userId,
       deliveryId: delivery.id,
       amount: delivery.amount,
@@ -161,6 +159,11 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     state[key] = value;
 
     this.setState(state);
+
+    if( key === "selectedProductId"){
+        const selectedProduct = this.state.products.find( product => product.id === value );
+        this.setState({ selectedProduct });
+    }
   }
 
   /**
@@ -439,7 +442,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
             }
             <Form.Field>
               <label>{strings.product}</label>
-              {this.renderDropDown(productOptions, "selectedProductId")}
+              {productOptions.length > 0 ? this.renderDropDown(productOptions, "selectedProductId") : <p style={{ color: "red" }}>Viljelijällä ei ole voimassa olevaa sopimusta</p>}
             </Form.Field>
             {
               this.props.category === "FROZEN" && (this.props.delivery.status === "DELIVERY" || this.props.delivery.status === "PLANNED") ?
@@ -499,27 +502,36 @@ class ManageDeliveryModal extends React.Component<Props, State> {
             <Form.Field>
               <label>{`${strings.amount} (${this.renderProductUnitName()})`}</label>
               <Input
+                type="number"
                 placeholder={strings.amount}
                 value={this.state.amount}
+                min={0}
                 onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
-                  this.handleInputChange("amount", event.currentTarget.value)
+                  const value = event.currentTarget.value ? parseInt(event.currentTarget.value) : "";
+                  this.handleInputChange("amount", value);
                 }}
               />
             </Form.Field>
+            {this.props.category === "FRESH" && this.state.amount && this.state.selectedProduct ?
+              <Form.Field>
+                <p>= <b>{this.state.amount * this.state.selectedProduct.units * this.state.selectedProduct.unitSize} KG</b></p>
+              </Form.Field>
+              : null
+            }
             <Form.Field>
               <label>{strings.deliveyDate}</label>
-                <DatePicker
-                  onChange={(date: Date) => {
-                    this.handleInputChange("date", date)
-                  }}
-                  showTimeSelect
-                  timeFormat="HH:mm"
-                  timeIntervals={15}
-                  timeCaption="aika"
-                  selected={new Date(this.state.date)}
-                  dateFormat="dd.MM.yyyy HH:mm"
-                  locale="fi"
-                />
+              <DatePicker
+                onChange={(date: Date) => {
+                  this.handleInputChange("date", date)
+                }}
+                showTimeSelect
+                timeFormat="HH:mm"
+                timeIntervals={15}
+                timeCaption="aika"
+                selected={new Date(this.state.date)}
+                dateFormat="dd.MM.yyyy HH:mm"
+                locale="fi"
+              />
             </Form.Field>
             {
               this.props.delivery.status === "PROPOSAL" &&
@@ -532,7 +544,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
               <label>{strings.deliveryPlace}</label>
               {this.renderDropDown(deliveryPlaceOptions, "selectedPlaceId")}
             </Form.Field>
-            {this.state.deliveryNotesWithImgBase64[0] ?
+            {this.state.deliveryNotesWithImgBase64.length > 0 ?
               this.state.deliveryNotesWithImgBase64.map((deliveryNote, i) => {
                 return (
                   <React.Fragment key={`${deliveryNote.text} ${i}`}>
@@ -690,6 +702,10 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     }
 
     if (this.props.delivery.status != "PROPOSAL" && !this.state.selectedQualityId) {
+      return false;
+    }
+
+    if ( typeof this.state.amount !== 'number') {
       return false;
     }
 

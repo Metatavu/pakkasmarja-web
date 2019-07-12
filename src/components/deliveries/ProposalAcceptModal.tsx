@@ -263,7 +263,7 @@ class ProposalAcceptModal extends React.Component<Props, State> {
                   </div>
                 </div>
                 : null}
-              {this.state.deliveryNotesWithImgBase64[0] ?
+              {this.state.deliveryNotesWithImgBase64.length > 0  ?
                 this.state.deliveryNotesWithImgBase64.map((deliveryNote, i) => {
                   return (
                     <React.Fragment key={`${deliveryNote.text} ${i}`}>

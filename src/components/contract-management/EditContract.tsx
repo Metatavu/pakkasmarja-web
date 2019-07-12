@@ -48,6 +48,7 @@ interface State {
   allowDeliveryAll: boolean;
   deliverAllChecked: boolean;
   proposedDeliveryAll?: boolean;
+  deliveredQuantity?: number;
 }
 
 /**
@@ -116,6 +117,7 @@ class EditContract extends React.Component<Props, State> {
     const deliveryPlaceComment: string = contract.deliveryPlaceComment || "";
     const quantityComment: string = contract.quantityComment || "";
     const sapComment: string = contract.remarks || "";
+    const deliveredQuantity: number = contract.deliveredQuantity || 0;
     const sapId: string = contract.sapId || "";
     const quantity: number = contract.contractQuantity || 0;
     const status: Contract.StatusEnum = contract.status;
@@ -143,7 +145,8 @@ class EditContract extends React.Component<Props, State> {
       proposedDeliveryPlace,
       deliveryPlaces,
       proposedDeliveryAll: contract.proposedDeliverAll,
-      deliverAllChecked: contract.deliverAll
+      deliverAllChecked: contract.deliverAll,
+      deliveredQuantity
     });
   }
 
@@ -222,6 +225,7 @@ class EditContract extends React.Component<Props, State> {
       proposedQuantity: this.state.contract.proposedQuantity,
       deliveryPlaceId: this.state.deliveryPlaceId,
       deliveryPlaceComment: this.state.deliveryPlaceComment,
+      deliveredQuantity: this.state.deliveredQuantity,
       remarks: this.state.sapComment,
       deliverAll: this.state.deliverAllChecked,
       proposedDeliverAll: this.state.deliverAllChecked,
