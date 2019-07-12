@@ -159,6 +159,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
         && this.state.selectedProductId
         && this.state.selectedContactId
         && this.state.selectedQualityId
+        && typeof this.state.amount === 'number'
       );
     } else {
       return !!(
@@ -167,6 +168,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
         && this.state.selectedProductId
         && this.state.selectedContactId
         && this.state.deliveryTimeValue
+        && typeof this.state.amount === 'number'
       );
     }
   }
@@ -445,16 +447,17 @@ class CreateDeliveryModal extends React.Component<Props, State> {
             <Form.Field>
               <label>{`${strings.amount} ${this.state.selectedProduct ? `(${this.state.selectedProduct.unitName})` : ""}`}</label>
               <Input
-                type="number"
-                min={0}
                 placeholder={strings.amount}
                 value={this.state.amount}
+                type="number"
+                min={0}
                 onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
-                  this.handleInputChange("amount", parseInt(event.currentTarget.value))
+                  const value = event.currentTarget.value ? parseInt(event.currentTarget.value) : "";
+                  this.handleInputChange("amount", value);
                 }}
               />
             </Form.Field>
-            {this.state.amount && this.state.selectedProduct ?
+            {this.props.category === "FRESH" && this.state.amount && this.state.selectedProduct ?
               <Form.Field>
                 <p>= <b>{this.state.amount * this.state.selectedProduct.units * this.state.selectedProduct.unitSize} KG</b></p>
               </Form.Field>

@@ -56,7 +56,8 @@ interface State {
   redBoxesLoaned: number,
   redBoxesReturned: number,
   grayBoxesLoaned: number,
-  grayBoxesReturned: number
+  grayBoxesReturned: number,
+  selectedProduct ?: Product
 }
 
 /**
@@ -125,6 +126,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     this.setState({
       products,
       deliveryPlaces,
+      selectedProduct: deliveryProduct,
       userId: delivery.userId,
       deliveryId: delivery.id,
       amount: delivery.amount,
@@ -157,6 +159,11 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     state[key] = value;
 
     this.setState(state);
+
+    if( key === "selectedProductId"){
+        const selectedProduct = this.state.products.find( product => product.id === value );
+        this.setState({ selectedProduct });
+    }
   }
 
   /**
@@ -500,10 +507,17 @@ class ManageDeliveryModal extends React.Component<Props, State> {
                 value={this.state.amount}
                 min={0}
                 onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
-                  this.handleInputChange("amount", parseInt(event.currentTarget.value))
+                  const value = event.currentTarget.value ? parseInt(event.currentTarget.value) : "";
+                  this.handleInputChange("amount", value);
                 }}
               />
             </Form.Field>
+            {this.props.category === "FRESH" && this.state.amount && this.state.selectedProduct ?
+              <Form.Field>
+                <p>= <b>{this.state.amount * this.state.selectedProduct.units * this.state.selectedProduct.unitSize} KG</b></p>
+              </Form.Field>
+              : null
+            }
             <Form.Field>
               <label>{strings.deliveyDate}</label>
               <DatePicker
@@ -688,6 +702,10 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     }
 
     if (this.props.delivery.status != "PROPOSAL" && !this.state.selectedQualityId) {
+      return false;
+    }
+
+    if ( typeof this.state.amount !== 'number') {
       return false;
     }
 

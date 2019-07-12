@@ -103,7 +103,7 @@ class CreateDelivery extends React.Component<Props, State> {
   /**
    * Handle inputchange
    */
-  private handleInputChange = (key: string, value: DeliveryDataValue) => {
+  private handleInputChange = (key: string, value: DeliveryDataValue ) => {
     if (key === "selectedProductId") {
       const selectedProductId = value && value.toString() || "";
       const selectedProduct = this.state.products.find(product => product.id === selectedProductId);
@@ -152,6 +152,7 @@ class CreateDelivery extends React.Component<Props, State> {
       this.state.selectedProductId
       && this.state.selectedPlaceId
       && this.state.deliveryTimeValue
+      && typeof this.state.amount === "number"
     );
   }
 
@@ -334,7 +335,8 @@ class CreateDelivery extends React.Component<Props, State> {
                 type="number"
                 min={0}
                 onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
-                    this.handleInputChange("amount", parseInt(event.currentTarget.value))
+                    const value = event.currentTarget.value ? parseInt(event.currentTarget.value) : "";
+                    this.handleInputChange("amount", value);
                 }}
               />
             </Form.Field>

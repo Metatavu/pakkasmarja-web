@@ -336,6 +336,7 @@ class EditDelivery extends React.Component<Props, State> {
       this.state.selectedProductId
       && this.state.selectedPlaceId
       && this.state.deliveryTimeValue
+      && typeof this.state.amount === 'number'
     );
   }
 
@@ -406,7 +407,8 @@ class EditDelivery extends React.Component<Props, State> {
                 placeholder={strings.amount}
                 value={this.state.amount}
                 onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
-                  this.handleInputChange("amount", parseInt(event.currentTarget.value))
+                  const value = event.currentTarget.value ? parseInt(event.currentTarget.value) : "";
+                  this.handleInputChange("amount", value);
                 }}
               />
             </Form.Field>
