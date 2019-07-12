@@ -406,7 +406,7 @@ class EditDelivery extends React.Component<Props, State> {
                 placeholder={strings.amount}
                 value={this.state.amount}
                 onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
-                  this.handleInputChange("amount", event.currentTarget.value)
+                  this.handleInputChange("amount", parseInt(event.currentTarget.value))
                 }}
               />
             </Form.Field>
@@ -435,7 +435,7 @@ class EditDelivery extends React.Component<Props, State> {
               <label>{strings.deliveryPlace}</label>
               {this.renderDropDown(deliveryPlaceOptions, "selectedPlaceId")}
             </Form.Field>
-            {this.state.deliveryNotesWithImgBase64[0] ?
+            {this.state.deliveryNotesWithImgBase64.length > 0  ?
               this.state.deliveryNotesWithImgBase64.map((deliveryNote, i) => {
                 return (
                   <React.Fragment key={`${deliveryNote.text} ${i}`}>

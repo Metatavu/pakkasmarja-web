@@ -334,7 +334,7 @@ class CreateDelivery extends React.Component<Props, State> {
                 type="number"
                 min={0}
                 onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
-                  this.handleInputChange("amount", event.currentTarget.value)
+                    this.handleInputChange("amount", parseInt(event.currentTarget.value))
                 }}
               />
             </Form.Field>
@@ -363,7 +363,7 @@ class CreateDelivery extends React.Component<Props, State> {
               <label>{strings.deliveryPlace}</label>
               {this.renderDropDown(deliveryPlaceOptions, strings.deliveryPlace, "selectedPlaceId")}
             </Form.Field>
-            {this.state.deliveryNotesWithImgBase64[0] ?
+            {this.state.deliveryNotesWithImgBase64.length > 0 ?
               this.state.deliveryNotesWithImgBase64.map((deliveryNote, i) => {
                 return (
                   <React.Fragment key={`${deliveryNote.text} ${i}`}>
