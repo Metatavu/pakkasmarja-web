@@ -33,6 +33,7 @@ interface State {
   loading: boolean;
   deliveryNotesWithImgBase64: deliveryNoteImg64[];
   openImage?: string;
+  alvAmount: number;
 };
 
 /**
@@ -52,6 +53,7 @@ class ViewModal extends React.Component<Props, State> {
       redirect: false,
       loading: false,
       deliveryNotesWithImgBase64: [],
+      alvAmount: 1.14
     };
   }
 
@@ -168,10 +170,10 @@ class ViewModal extends React.Component<Props, State> {
               {deliveryProduct.delivery.price ?
                 <div style={{ display: "flex", flex: 1 }}>
                   <div style={{ flex: 0.4 }}>
-                    <h4>Yksikköhinta</h4>
+                    <h4>Kilohinta</h4>
                   </div>
                   <div style={{ flex: 1 }}>
-                    <p>{`${deliveryProduct.delivery.price} € / ${deliveryProduct.product.unitName.toLocaleUpperCase()} ALV 0%`}</p>
+                    <p>{`${Number(deliveryProduct.delivery.price) * this.state.alvAmount} € / ${deliveryProduct.product.unitName.toLocaleUpperCase()} ALV 14%`}</p>
                   </div>
                 </div>
                 : null}
