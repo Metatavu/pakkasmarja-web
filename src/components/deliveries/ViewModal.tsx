@@ -33,6 +33,7 @@ interface State {
   loading: boolean;
   deliveryNotesWithImgBase64: deliveryNoteImg64[];
   openImage?: string;
+  alvAmount: number;
 };
 
 /**
@@ -52,6 +53,7 @@ class ViewModal extends React.Component<Props, State> {
       redirect: false,
       loading: false,
       deliveryNotesWithImgBase64: [],
+      alvAmount: 1.14
     };
   }
 
@@ -166,14 +168,24 @@ class ViewModal extends React.Component<Props, State> {
                 </div>
               </div>
               {deliveryProduct.delivery.price ?
-                <div style={{ display: "flex", flex: 1 }}>
-                  <div style={{ flex: 0.4 }}>
-                    <h4>Yksikköhinta</h4>
+                <React.Fragment>
+                  <div style={{ display: "flex", flex: 1 }}>
+                    <div style={{ flex: 0.4 }}>
+                      <h4>Yksikköhinta ALV 0%</h4>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <p>{`${deliveryProduct.delivery.price} € / ${deliveryProduct.product.unitName.toLocaleUpperCase()}`}</p>
+                    </div>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <p>{`${deliveryProduct.delivery.price} € / ${deliveryProduct.product.unitName.toLocaleUpperCase()} ALV 0%`}</p>
+                  <div style={{ display: "flex", flex: 1 }}>
+                    <div style={{ flex: 0.4 }}>
+                      <h4>Yksikköhinta ALV 14%</h4>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <p>{`${(Number(deliveryProduct.delivery.price) * this.state.alvAmount).toFixed(3)} € / ${deliveryProduct.product.unitName.toLocaleUpperCase()}`}</p>
+                    </div>
                   </div>
-                </div>
+                </React.Fragment>
                 : null}
               {this.props.deliveryQuality ?
                 <div style={{ display: "flex", alignItems: "center", marginTop: 10, marginBottom: 10, flex: 1 }}>
@@ -190,7 +202,7 @@ class ViewModal extends React.Component<Props, State> {
                   </div>
                 </div>
                 : null}
-              {this.state.deliveryNotesWithImgBase64.length > 0  ?
+              {this.state.deliveryNotesWithImgBase64.length > 0 ?
                 this.state.deliveryNotesWithImgBase64.map((deliveryNote, i) => {
                   return (
                     <React.Fragment key={`${deliveryNote.text} ${i}`}>
