@@ -135,7 +135,7 @@ class PastDeliveries extends React.Component<Props, State> {
     return quality &&
       <div style={{ display: "flex", justifyContent:"flex-start", alignContent:"flex-start" }}>
         <div className="delivery-quality-container" style={{ backgroundColor: quality.color || "grey" }}>
-          <p style={{ fontWeight: "bold" }}>{quality.displayName.slice(0, 1)}</p>
+          <p style={{ fontWeight: "bold" }}>{quality.displayName.slice(0, 1).toLocaleUpperCase()}</p>
         </div>
         <h4 style={{ margin: "auto", color: quality.color || "black" }} >{quality.displayName}</h4>
       </div>;

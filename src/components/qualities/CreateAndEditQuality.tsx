@@ -293,7 +293,6 @@ class CreateAndEditQuality extends React.Component<Props, State> {
    */
   private isValid = () => {
     return !!(this.state.name 
-      && this.state.priceBonus 
       && this.state.color 
       && this.state.displayName 
       && this.state.itemGroupCategory);
