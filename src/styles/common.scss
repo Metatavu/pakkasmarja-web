@@ -29,6 +29,12 @@
   }
 }
 
+.permission-table-element {
+  &:hover {
+    cursor: pointer;
+  }
+}
+
 .contract-blue-container {
   background-color: #DAE7FA;
   padding: 15px;
