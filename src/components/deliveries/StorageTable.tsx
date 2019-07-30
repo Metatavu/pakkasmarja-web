@@ -138,7 +138,7 @@ export default class StorageDataTable extends React.Component<Props, State> {
    * @param quality quality
    */
   private renderQualityIcon = (quality: DeliveryQuality) => {
-    return <div key={`storage-cell-quality-icon-${quality.id}`} style={{ background: quality.color, marginRight: "10px", color: "#fff", width: "20px", display: "inline-block", borderRadius: "10px", textAlign: "center", height: "20px", lineHeight: "20px", fontSize: "12px", fontWeight: "bold" }}>{quality.name.charAt(0)}</div>
+    return <div key={`storage-cell-quality-icon-${quality.id}`} style={{ background: quality.color, marginRight: "10px", color: "#fff", width: "20px", display: "inline-block", borderRadius: "10px", textAlign: "center", height: "20px", lineHeight: "20px", fontSize: "12px", fontWeight: "bold" }}>{quality.name.charAt(0).toLocaleUpperCase()}</div>
   }
 
   /**
