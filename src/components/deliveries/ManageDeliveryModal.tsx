@@ -120,7 +120,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       throw new Error("Could not find delivery product");
     }
 
-    const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(category);
+    const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(category, delivery.productId);
     const deliveryTime = moment(delivery.time).utc().hour() <= 12 ? 11 : 17;
 
     this.setState({
@@ -139,6 +139,19 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       loading: false
     }, () => this.getNotes());
 
+  }
+
+  /**
+   * Load delivery qualities
+   */
+  private loadDeliveryQualities = async () => {
+    if (!this.props.keycloak || !this.props.keycloak.token) {
+      return;
+    }
+    
+    const deliveryQualitiesService = await Api.getDeliveryQualitiesService(this.props.keycloak.token);
+    const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(this.props.category, this.state.selectedProductId);
+    this.setState({ deliveryQualities, selectedQualityId : "" });
   }
 
   /**
@@ -162,6 +175,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
 
     if( key === "selectedProductId"){
         const selectedProduct = this.state.products.find( product => product.id === value );
+        this.loadDeliveryQualities();
         this.setState({ selectedProduct });
     }
   }
@@ -628,7 +642,10 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     return (
       <Form.Field>
         <label>Laatu</label>
-        {this.renderDropDown(deliveryQualityOptions, "selectedQualityId")}
+        {deliveryQualityOptions.length > 0 ?
+         this.renderDropDown(deliveryQualityOptions, "selectedQualityId") :
+         <p style={{ color: "red" }}>Valitulla tuotteella ei ole laatuluokkia</p>
+        }
       </Form.Field>
     );
   }
