@@ -47,6 +47,8 @@ import PastDeliveries from "../deliveries/PastDeliveries";
 import WeekPredictionsManagement from "../deliveries/WeekPredictionsManagement";
 import Api, { Unread } from "pakkasmarja-client";
 import ManageContact from "../contact/ManageContact";
+import ManageQualities from "../qualities/ManageQualities";
+import CreateAndEditQuality from "../qualities/CreateAndEditQuality";
 
 /**
  * Interface for component props
@@ -141,6 +143,8 @@ class MainPage extends React.Component<Props, {}> {
         <Route exact path="/incomingDeliveries" component={IncomingDeliveries} />
         <Route exact path="/pastDeliveries" component={PastDeliveries} />
         <Route exact path="/manageContact" component={ManageContact} />
+        <Route exact path="/manageQualities" component={ManageQualities} />
+        <Route exact path="/quality/:deliveryQualityId" component={CreateAndEditQuality} />
       </div>
     );
   }
