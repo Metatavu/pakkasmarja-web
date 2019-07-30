@@ -7,7 +7,7 @@ import Api, { Product, DeliveryPlace, Delivery, DeliveryNote, DeliveryQuality, I
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
-import { Dropdown, Form, Input, Button, Modal, Segment, Image } from "semantic-ui-react";
+import { Dropdown, Form, Input, Button, Modal, Segment, Image, Loader } from "semantic-ui-react";
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import fi from 'date-fns/esm/locale/fi';
@@ -57,7 +57,8 @@ interface State {
   redBoxesReturned: number,
   grayBoxesLoaned: number,
   grayBoxesReturned: number,
-  selectedProduct ?: Product
+  selectedProduct?: Product,
+  productLoader: boolean
 }
 
 /**
@@ -87,7 +88,8 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       redBoxesReturned: 0,
       grayBoxesLoaned: 0,
       grayBoxesReturned: 0,
-      modalOpen: false
+      modalOpen: false,
+      productLoader: false
     };
     registerLocale('fi', fi);
   }
@@ -148,10 +150,10 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
-    
+    this.setState({ productLoader: true });
     const deliveryQualitiesService = await Api.getDeliveryQualitiesService(this.props.keycloak.token);
     const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(this.props.category, this.state.selectedProductId);
-    this.setState({ deliveryQualities, selectedQualityId : "" });
+    this.setState({ deliveryQualities, productLoader: false, selectedQualityId: "" });
   }
 
   /**
@@ -456,7 +458,12 @@ class ManageDeliveryModal extends React.Component<Props, State> {
             }
             <Form.Field>
               <label>{strings.product}</label>
-              {productOptions.length > 0 ? this.renderDropDown(productOptions, "selectedProductId") : <p style={{ color: "red" }}>Viljelijällä ei ole voimassa olevaa sopimusta</p>}
+              {
+                this.state.productLoader ? 
+                <Loader active inline='centered' size='mini'>ladataan tuotteita...</Loader> 
+                :
+                productOptions.length > 0 ? this.renderDropDown(productOptions, "selectedProductId") : <p style={{ color: "red" }}>Viljelijällä ei ole voimassa olevaa sopimusta</p>
+              }
             </Form.Field>
             {
               this.props.category === "FROZEN" && (this.props.delivery.status === "DELIVERY" || this.props.delivery.status === "PLANNED") ?
