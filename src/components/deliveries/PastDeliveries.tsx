@@ -70,9 +70,9 @@ class PastDeliveries extends React.Component<Props, State> {
   /**
    * Component did update life-sycle event
    */
-  public async componentDidUpdate(prevProps : Props, prevState : State) {
+  public async componentDidUpdate(prevProps: Props, prevState: State) {
 
-    if(prevState.tabActiveItem !== this.state.tabActiveItem){
+    if (prevState.tabActiveItem !== this.state.tabActiveItem) {
       this.loadData();
     }
 
@@ -133,12 +133,12 @@ class PastDeliveries extends React.Component<Props, State> {
     }
     const quality: DeliveryQuality | undefined = this.state.deliveryQualities.find(quality => quality.id === qualityId);
     return quality &&
-      <React.Fragment>
+      <div style={{ display: "flex", justifyContent:"flex-start", alignContent:"flex-start" }}>
         <div className="delivery-quality-container" style={{ backgroundColor: quality.color || "grey" }}>
-          <p style={{ fontWeight: "bold" }}>{quality.name.slice(0, 1)}</p>
+          <p style={{ fontWeight: "bold" }}>{quality.displayName.slice(0, 1).toLocaleUpperCase()}</p>
         </div>
-        <h4 style={{ margin: "auto", color: quality.color || "black", width: "15%" }} >{quality.name}</h4>
-      </React.Fragment >;
+        <h4 style={{ margin: "auto", color: quality.color || "black" }} >{quality.displayName}</h4>
+      </div>;
   }
 
   /**
@@ -185,7 +185,7 @@ class PastDeliveries extends React.Component<Props, State> {
                             }
                             return (
                               <Item className="open-modal-element" key={deliveryProduct.delivery.id} onClick={() => this.handleItemClick(deliveryProduct)}>
-                                <Item.Content>
+                                <Item.Content style={{ maxWidth: "65%" }}>
                                   <Item.Header style={{ fontWeight: 500 }}>{`${deliveryProduct.product.name} ${deliveryProduct.delivery.amount} x ${deliveryProduct.product.units} ${deliveryProduct.product.unitName} `}</Item.Header>
                                   <Item.Description>
                                     {`Toimitettu ${moment(deliveryProduct.delivery.time).format("DD.MM.YYYY HH:mm")}`}

@@ -7,7 +7,7 @@ import Api, { Product, DeliveryPlace, Delivery, DeliveryNote, DeliveryQuality, I
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
-import { Dropdown, Form, Input, Button, Modal, Segment, Image } from "semantic-ui-react";
+import { Dropdown, Form, Input, Button, Modal, Segment, Image, Loader } from "semantic-ui-react";
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import fi from 'date-fns/esm/locale/fi';
@@ -57,7 +57,8 @@ interface State {
   redBoxesReturned: number,
   grayBoxesLoaned: number,
   grayBoxesReturned: number,
-  selectedProduct ?: Product
+  selectedProduct?: Product,
+  productLoader: boolean
 }
 
 /**
@@ -87,7 +88,8 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       redBoxesReturned: 0,
       grayBoxesLoaned: 0,
       grayBoxesReturned: 0,
-      modalOpen: false
+      modalOpen: false,
+      productLoader: false
     };
     registerLocale('fi', fi);
   }
@@ -120,7 +122,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       throw new Error("Could not find delivery product");
     }
 
-    const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(category);
+    const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(category, delivery.productId);
     const deliveryTime = moment(delivery.time).utc().hour() <= 12 ? 11 : 17;
 
     this.setState({
@@ -139,6 +141,19 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       loading: false
     }, () => this.getNotes());
 
+  }
+
+  /**
+   * Load delivery qualities
+   */
+  private loadDeliveryQualities = async () => {
+    if (!this.props.keycloak || !this.props.keycloak.token) {
+      return;
+    }
+    this.setState({ productLoader: true });
+    const deliveryQualitiesService = await Api.getDeliveryQualitiesService(this.props.keycloak.token);
+    const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(this.props.category, this.state.selectedProductId);
+    this.setState({ deliveryQualities, productLoader: false, selectedQualityId: "" });
   }
 
   /**
@@ -162,6 +177,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
 
     if( key === "selectedProductId"){
         const selectedProduct = this.state.products.find( product => product.id === value );
+        this.loadDeliveryQualities();
         this.setState({ selectedProduct });
     }
   }
@@ -442,7 +458,12 @@ class ManageDeliveryModal extends React.Component<Props, State> {
             }
             <Form.Field>
               <label>{strings.product}</label>
-              {productOptions.length > 0 ? this.renderDropDown(productOptions, "selectedProductId") : <p style={{ color: "red" }}>Viljelijällä ei ole voimassa olevaa sopimusta</p>}
+              {
+                this.state.productLoader ? 
+                <Loader active inline='centered' size='mini'>ladataan tuotteita...</Loader> 
+                :
+                productOptions.length > 0 ? this.renderDropDown(productOptions, "selectedProductId") : <p style={{ color: "red" }}>Viljelijällä ei ole voimassa olevaa sopimusta</p>
+              }
             </Form.Field>
             {
               this.props.category === "FROZEN" && (this.props.delivery.status === "DELIVERY" || this.props.delivery.status === "PLANNED") ?
@@ -628,7 +649,10 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     return (
       <Form.Field>
         <label>Laatu</label>
-        {this.renderDropDown(deliveryQualityOptions, "selectedQualityId")}
+        {deliveryQualityOptions.length > 0 ?
+         this.renderDropDown(deliveryQualityOptions, "selectedQualityId") :
+         <p style={{ color: "red" }}>Valitulla tuotteella ei ole laatuluokkia</p>
+        }
       </Form.Field>
     );
   }

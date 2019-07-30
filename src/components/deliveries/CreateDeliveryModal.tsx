@@ -101,21 +101,22 @@ class CreateDeliveryModal extends React.Component<Props, State> {
     if (key === "selectedProductId") {
       const productId = value as string;
       const selectedProduct = this.state.products.find((product) => product.id === productId);
-      this.getDeliveryQualities(selectedProduct!);
+      this.loadDeliveryQualities();
       this.setState({ selectedProduct });
     }
   }
 
   /**
-   * Get delivery qualities
+   * Load delivery qualities
    */
-  private getDeliveryQualities = async (product: Product) => {
+  private loadDeliveryQualities = async () => {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
+
     const deliveryQualitiesService = await Api.getDeliveryQualitiesService(this.props.keycloak.token);
-    const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(this.props.category);
-    this.setState({ deliveryQualities });
+    const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(this.props.category, this.state.selectedProductId);
+    this.setState({ deliveryQualities, selectedQualityId: "" });
   }
 
   /**
@@ -302,7 +303,10 @@ class CreateDeliveryModal extends React.Component<Props, State> {
     return (
       <Form.Field>
         <label>Laatu</label>
-        {this.renderDropDown(deliveryQualityOptions, "Laatu", "selectedQualityId")}
+        {deliveryQualityOptions.length > 0 ?
+          this.renderDropDown(deliveryQualityOptions, "Laatu", "selectedQualityId") :
+          <p style={{ color: "red" }}>Valitulla tuotteella ei ole laatuluokkia</p>
+        }
       </Form.Field>
     );
   }
@@ -314,7 +318,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token || !this.state.selectedContactId) {
       return;
     }
-    
+
     const productsService = await Api.getProductsService(this.props.keycloak.token);
     const products = await productsService.listProducts(undefined, this.props.category, this.state.selectedContactId, undefined, 999);
     this.setState({ products });

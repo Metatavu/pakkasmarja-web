@@ -194,10 +194,10 @@ class ViewModal extends React.Component<Props, State> {
                   </div>
                   <div style={{ display: "flex", alignItems: "center", flex: 1 }}>
                     <div className="delivery-quality-container" style={{ backgroundColor: this.props.deliveryQuality.color || "grey" }}>
-                      <p style={{ fontWeight: "bold" }}>{this.props.deliveryQuality.name.slice(0, 1)}</p>
+                      <p style={{ fontWeight: "bold" }}>{this.props.deliveryQuality.displayName.slice(0, 1).toLocaleUpperCase()}</p>
                     </div>
                     <div style={{ flex: 1 }}>
-                      <h4 style={{ color: this.props.deliveryQuality.color || "black", width: "15%" }} >{this.props.deliveryQuality.name}</h4>
+                      <h4 style={{ color: this.props.deliveryQuality.color || "black"}} >{this.props.deliveryQuality.displayName}</h4>
                     </div>
                   </div>
                 </div>
