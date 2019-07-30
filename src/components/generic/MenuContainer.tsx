@@ -50,42 +50,26 @@ class MenuContainer extends React.Component<Props, State> {
           <Menu.Item as="div">
             <Link to="/contracts">{strings.contracts}</Link>
           </Menu.Item>
-          { this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_OPERATIONS) &&
-          <Menu.Item as="div">
-            <Link to="/operationsManagement">{strings.operations}</Link>
-          </Menu.Item>
-          }
-          { this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTRACTS) &&
-            <Menu.Item as="div">
-              <Link to="/contractManagement">{strings.contractManagement}</Link>
-            </Menu.Item>
-          }
-          { this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_ITEM_GROUPS) &&
-            <Menu.Item as="div">
-              <Link to="/itemGroupsManagement">{strings.itemGroupsManagement}</Link>
-            </Menu.Item>
-          }
-          { this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_PRODUCTS) &&
-            <Menu.Item as="div">
-              <Link to="/productsManagement">{strings.productsManagement}</Link>
-            </Menu.Item>
-          }
-          { this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_CHAT_GROUPS) &&
-            <Menu.Item as="div">
-              <Link to="/chatManagement">{strings.chatManagement}</Link>
-            </Menu.Item>
-          }
-          { this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.LIST_ALL_WEEK_DELIVERY_PREDICTION) &&
-            <Menu.Item as="div">
-              <Link to="/manageWeekPredictions">Viikkoennusteet</Link>
-            </Menu.Item>
-          }
-          { this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_DELIVERIES) &&
+            { this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_DELIVERIES) &&
+              <Menu.Menu>
+                <Dropdown item simple text="Vastaanotto">
+                  <Dropdown.Menu>
+                    {this.props.keycloak.hasRealmRole(ApplicationRoles.RECEIVE_FRESH_BERRIES) && <Dropdown.Item to="/manageFreshDeliveries" as={Link}>Tuore toimitukset</Dropdown.Item>}
+                    {this.props.keycloak.hasRealmRole(ApplicationRoles.RECEIVE_FROZEN_BERRIES) && <Dropdown.Item to="/manageFrozenDeliveries" as={Link}>Pakaste toimitukset</Dropdown.Item>}
+                  </Dropdown.Menu>
+                </Dropdown>
+              </Menu.Menu>
+            }
+            { this.props.authenticated && this.props.keycloak && this.showManagement(this.props.keycloak) &&
             <Menu.Menu>
-              <Dropdown item simple text="Vastaanotto">
+              <Dropdown item simple text="Hallinta">
                 <Dropdown.Menu>
-                  {this.props.keycloak.hasRealmRole(ApplicationRoles.RECEIVE_FRESH_BERRIES) && <Dropdown.Item to="/manageFreshDeliveries" as={Link}>Tuore toimitukset</Dropdown.Item>}
-                  {this.props.keycloak.hasRealmRole(ApplicationRoles.RECEIVE_FROZEN_BERRIES) && <Dropdown.Item to="/manageFrozenDeliveries" as={Link}>Pakaste toimitukset</Dropdown.Item>}
+                  {this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_CHAT_GROUPS) && <Dropdown.Item to="/chatManagement" as={Link}>{strings.chatManagement}</Dropdown.Item>}
+                  {this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_PRODUCTS) && <Dropdown.Item to="/productsManagement" as={Link}>{strings.productsManagement}</Dropdown.Item>}
+                  {this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_ITEM_GROUPS) && <Dropdown.Item to="/itemGroupsManagement" as={Link}>{strings.itemGroupsManagement}</Dropdown.Item>}
+                  {this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTRACTS) && <Dropdown.Item to="/contractManagement" as={Link}>{strings.contractManagement}</Dropdown.Item>}
+                  {this.props.keycloak.hasRealmRole(ApplicationRoles.MANAGE_DELIVERY_QUALITIES) && <Dropdown.Item to="/manageQualities" as={Link}>Laatu hallinta</Dropdown.Item>}
+                  {this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_OPERATIONS) && <Dropdown.Item to="/operationsManagement" as={Link}>{strings.operations}</Dropdown.Item>}
                 </Dropdown.Menu>
               </Dropdown>
             </Menu.Menu>
@@ -111,6 +95,22 @@ class MenuContainer extends React.Component<Props, State> {
         </Menu>
       </Container>
     );
+  }
+
+  /**
+   * Checks if management is visible
+   */
+  private showManagement = (keycloak: KeycloakInstance) => {
+    if(keycloak.hasRealmRole(ApplicationRoles.CREATE_CHAT_GROUPS)  
+    || keycloak.hasRealmRole(ApplicationRoles.CREATE_PRODUCTS)
+    || keycloak.hasRealmRole(ApplicationRoles.CREATE_ITEM_GROUPS)
+    || keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTRACTS)
+    || keycloak.hasRealmRole(ApplicationRoles.MANAGE_DELIVERY_QUALITIES)
+    || keycloak.hasRealmRole(ApplicationRoles.CREATE_OPERATIONS)){
+      return true;
+    } else {
+      return false;
+    }
   }
   
   private onAccountItemClick = () =>  {
