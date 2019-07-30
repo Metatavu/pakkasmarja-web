@@ -9,6 +9,7 @@ import Api, { Product } from "pakkasmarja-client";
 import { Button, Confirm, Table, Header, List, Dimmer, Loader } from "semantic-ui-react";
 import { Link } from "react-router-dom";
 import PriceChart from "../generic/PriceChart";
+import * as _ from "lodash";
 
 /**
  * Interface for component props
@@ -134,7 +135,7 @@ class ProductsList extends React.Component<Props, State> {
           </Table.Header>
           <Table.Body>
             {
-              this.state.products.map((product: Product) => {
+              _.sortBy(this.state.products, product => product.sapItemCode).map((product: Product) => {
                 return (
                   <Table.Row key={product.id}>
                     <Table.Cell>
