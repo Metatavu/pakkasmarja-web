@@ -70,7 +70,7 @@ class CreateAndEditQuality extends React.Component<Props, State> {
 
     const selectedDeliveryQualityId = this.props.match.params.deliveryQualityId;
     const productsService = await Api.getProductsService(this.props.keycloak.token);
-    const products = await productsService.listProducts();
+    const products = await productsService.listProducts(undefined, undefined, undefined, undefined, 999);
     this.setState({ selectedDeliveryQualityId, products });
 
     if (selectedDeliveryQualityId !== "new") {
