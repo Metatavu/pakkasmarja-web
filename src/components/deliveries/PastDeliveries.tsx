@@ -3,14 +3,18 @@ import * as actions from "../../actions/";
 import { StoreState, DeliveriesState, DeliveryProduct, SortedDeliveryProduct } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import { Item, Grid, Loader, Menu } from "semantic-ui-react";
+import { Item, Grid, Loader, Menu, Button, Modal, Form, Dropdown, DropdownProps, Icon } from "semantic-ui-react";
 import "../../styles/common.css";
 import ViewModal from "./ViewModal";
 import strings from "src/localization/strings";
 import BasicLayout from "../generic/BasicLayout";
-import Api, { DeliveryQuality } from "pakkasmarja-client";
+import Api, { DeliveryQuality, Product } from "pakkasmarja-client";
 import * as _ from "lodash";
 import * as moment from "moment";
+import DatePicker, { registerLocale } from "react-datepicker";
+import fi from 'date-fns/esm/locale/fi';
+import FileUtils from "src/utils/FileUtils";
+import { PDFService } from "src/api/pdf.service";
 
 /**
  * Interface for component props
@@ -37,6 +41,11 @@ interface State {
   loading: boolean;
   deliveryProduct?: DeliveryProduct;
   tabActiveItem: "DONE" | "NOT_ACCEPTED";
+  raportModal: boolean;
+  startDate?: Date,
+  endDate?: Date,
+  raportProductIds: string[],
+  products: Product[]
 }
 
 /**
@@ -54,8 +63,13 @@ class PastDeliveries extends React.Component<Props, State> {
     this.state = {
       viewModal: false,
       loading: false,
-      tabActiveItem: "DONE"
+      tabActiveItem: "DONE",
+      raportModal: false,
+      products: [],
+      raportProductIds: []
     };
+
+    registerLocale('fi', fi);
   }
 
   /**
@@ -87,7 +101,10 @@ class PastDeliveries extends React.Component<Props, State> {
     }
     this.setState({ loading: true });
     const deliveryQualitiesService = await Api.getDeliveryQualitiesService(this.props.keycloak.token);
+    const productsSerivce = await Api.getProductsService(this.props.keycloak.token);
+    const products = await productsSerivce.listProducts(undefined, undefined, this.props.keycloak.subject, undefined, 999);
     const category = this.props.location.state ? this.props.location.state.category : "";
+    this.setState({ products });
     if (category === "FRESH") {
       const freshDeliveryData: DeliveryProduct[] = this.props.deliveries.freshDeliveryData;
       const freshPastDeliveries: DeliveryProduct[] = freshDeliveryData.filter(deliveryData => deliveryData.delivery.status === this.state.tabActiveItem);
@@ -133,7 +150,7 @@ class PastDeliveries extends React.Component<Props, State> {
     }
     const quality: DeliveryQuality | undefined = this.state.deliveryQualities.find(quality => quality.id === qualityId);
     return quality &&
-      <div style={{ display: "flex", justifyContent:"flex-start", alignContent:"flex-start" }}>
+      <div style={{ display: "flex", justifyContent: "flex-start", alignContent: "flex-start" }}>
         <div className="delivery-quality-container" style={{ backgroundColor: quality.color || "grey" }}>
           <p style={{ fontWeight: "bold" }}>{quality.displayName.slice(0, 1).toLocaleUpperCase()}</p>
         </div>
@@ -147,6 +164,90 @@ class PastDeliveries extends React.Component<Props, State> {
   private handleItemClick = (deliveryProduct: DeliveryProduct) => {
     const deliveryQuality = this.state.deliveryQualities!.find((quality) => quality.id === deliveryProduct.delivery.qualityId);
     this.setState({ deliveryId: deliveryProduct.delivery.id, deliveryQuality, deliveryProduct, viewModal: true });
+  }
+
+  /**
+   * Renders raport modal
+   */
+  private renderRaportModal = () => {
+    return (
+      <Modal size="tiny" open={this.state.raportModal} onClose={() => this.setState({ raportModal: false })}>
+        <Modal.Header>Lataa yhteenveto raportti tehdyistä toimituksista</Modal.Header>
+        <Modal.Content>
+          <Form >
+            <div style={{ display: "flex", justifyContent: "space-evenly" }}>
+              <Form.Field>{this.renderDatePicker("startDate", "Aloituspäivämäärä")}</Form.Field>
+              <Form.Field>{this.renderDatePicker("endDate", "Päättymispäivä")}</Form.Field>
+            </div>
+            <Form.Field>{this.renderMultiSelect()}</Form.Field>
+          </Form>
+        </Modal.Content>
+        <Modal.Actions>
+          <Button color="red" inverted onClick={() => this.setState({ raportModal: false })}>
+            <Icon name='remove' />
+            Sulje
+            </Button>
+          <Button color="green" disabled={!this.isValid()} onClick={this.downloadDeliveriesReport} >
+            <Icon name='checkmark' />
+            Lataa raportti
+          </Button>
+        </Modal.Actions>
+      </Modal>
+    );
+  }
+
+  /**
+   * Download deliveries report
+   */
+  private downloadDeliveriesReport = async () => {
+    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.startDate || !this.state.endDate) {
+      return;
+    }
+    const pdfService = new PDFService(process.env.REACT_APP_API_URL || "", this.props.keycloak.token);
+
+    const startDate = `${moment(this.state.startDate).format("YYYY-MM-DD")}T00:00.000Z`
+    const endDate = `${moment(this.state.endDate).format("YYYY-MM-DD")}T23:00.000Z`
+    const pdfData: Response = await pdfService.getDeliveryPdf("deliveriesReport", startDate, endDate, this.state.raportProductIds);
+    const blob = await pdfData.blob();
+    FileUtils.downloadBlob(blob, "application/pdf", `toimitukset.pdf`);
+
+  }
+
+  /**
+   * Renders date picker
+   */
+  private renderDatePicker = (key: "startDate" | "endDate", label: string) => {
+    return (
+      <React.Fragment>
+        <label>{label}<p style={{ display:"inline", color: "red" }}> *</p></label>
+        <DatePicker
+          dateFormat="dd.MM.yyyy"
+          locale="fi"
+          onChange={(date: Date) => {
+            const state: State = this.state;
+            state[key] = date;
+            this.setState(state);
+          }}
+          selected={this.state[key]}
+        />
+      </React.Fragment>
+    );
+  }
+
+  /**
+   * Renders multi select
+   */
+  private renderMultiSelect = () => {
+    const options = this.state.products.map(product => {
+      return { key: product.id, text: product.name, value: product.id };
+    });
+
+    return (
+      <div style={{ width: "78%", margin: "auto" }}>
+        <label style={{ fontWeight: 700 }}>Valitse tuotteet</label>
+        <Dropdown onChange={(e, data: DropdownProps) => this.setState({ raportProductIds: data.value as string[] })} placeholder='Valitse tuotteet' fluid multiple selection options={options} />
+      </div>
+    );
   }
 
   /**
@@ -169,10 +270,11 @@ class PastDeliveries extends React.Component<Props, State> {
         </Grid>
         {this.state.loading ? <Loader size="medium" content={strings.loading} active /> :
           <Grid verticalAlign='middle'>
-            <Grid.Row>
+            <Grid.Row style={{ padding: "0" }}>
               <Grid.Column width={4}>
               </Grid.Column>
               <Grid.Column width={8}>
+                <Button onClick={() => this.setState({ raportModal: true })} color="red" inverted fluid style={{ marginBottom: "14px" }}>Lataa raportti</Button>
                 {
                   sortedDeliveriesToGroups && sortedDeliveriesToGroups.map((obj) => {
                     return (
@@ -214,7 +316,20 @@ class PastDeliveries extends React.Component<Props, State> {
           deliveryQuality={this.state.deliveryQuality}
           deliveryProduct={this.state.deliveryProduct}
         />
+        {this.renderRaportModal()}
       </BasicLayout>
+    );
+  }
+
+  /**
+   * Returns whether form is valid or not
+   * 
+   * @return whether form is valid or not
+   */
+  private isValid = () => {
+    return !!(
+      this.state.startDate
+      && this.state.endDate
     );
   }
 }

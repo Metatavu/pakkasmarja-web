@@ -54,4 +54,25 @@ export class PDFService {
 
     return response; 
   }
+
+  /**
+   * Get pdf
+   * 
+   * @param reportType reportType
+   * @param startDate startDate
+   * @param endDate endDate
+   * @param productIds productIds
+   * @return pdf blob
+   */
+  public getDeliveryPdf = async (reportType: string, startDate: string, endDate: string, productIds: string[]) => {
+    const url = `${this.basePath}/rest/v1/reports/${reportType}/?format=PDF&startDate=${startDate}&endDate=${endDate}&productIds=${productIds}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${this.token}`
+      }
+    });
+
+    return response; 
+  }
 }
