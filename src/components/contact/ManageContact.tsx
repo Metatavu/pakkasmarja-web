@@ -421,8 +421,7 @@ class ManageContact extends React.Component<Props, State> {
     const farmPostAddress = originalContact.addresses && originalContact.addresses[1] ? originalContact.addresses[1].streetAddress || "" : "";
     const farmCity = originalContact.addresses && originalContact.addresses[1] ? originalContact.addresses[1].city || "" : "";
 
-    if (
-      this.state.firstName === firstName &&
+    return (this.state.firstName === firstName &&
       this.state.lastName === lastName &&
       this.state.companyName === companyName &&
       this.state.email === email &&
@@ -440,12 +439,7 @@ class ManageContact extends React.Component<Props, State> {
       this.state.city === city &&
       this.state.farmPostNumber === farmPostNumber &&
       this.state.farmPostAddress === farmPostAddress &&
-      this.state.farmCity === farmCity
-    ) {
-      return true;
-    } else {
-      return false;
-    }
+      this.state.farmCity === farmCity);
   }
 }
 
