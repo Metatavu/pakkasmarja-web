@@ -6,7 +6,7 @@ import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
 import Api, { Product } from "pakkasmarja-client";
-import { Button, Confirm, Table, Header, List, Dimmer, Loader } from "semantic-ui-react";
+import { Button, Confirm, Table, Header, List, Dimmer, Loader, Icon } from "semantic-ui-react";
 import { Link } from "react-router-dom";
 import PriceChart from "../generic/PriceChart";
 import * as _ from "lodash";
@@ -112,6 +112,9 @@ class ProductsList extends React.Component<Props, State> {
           <Table.Header>
             <Table.Row>
               <Table.HeaderCell width={3}>
+                Aktiivinen
+              </Table.HeaderCell>
+              <Table.HeaderCell width={3}>
                 Nimi
               </Table.HeaderCell>
               <Table.HeaderCell width={2}>
@@ -138,6 +141,9 @@ class ProductsList extends React.Component<Props, State> {
               _.sortBy(this.state.products, product => product.sapItemCode).map((product: Product) => {
                 return (
                   <Table.Row key={product.id}>
+                    <Table.Cell textAlign="center">
+                      {product.active ? <Icon name="check" color="green" size="big" /> : <Icon name="close" color="red" /> }
+                    </Table.Cell>
                     <Table.Cell>
                       {product.name}
                     </Table.Cell>

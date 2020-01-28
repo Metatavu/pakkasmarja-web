@@ -99,7 +99,8 @@ class EditDelivery extends React.Component<Props, State> {
     const deliveriesService = await Api.getDeliveriesService(this.props.keycloak.token);
     const delivery = await deliveriesService.findDelivery(deliveryId);
     const deliveryPlaces = await deliveryPlacesService.listDeliveryPlaces();
-    const products: Product[] = await productsService.listProducts(undefined, category, this.props.keycloak.subject, undefined, 100);
+    const unfilteredProducts: Product[] = await productsService.listProducts(undefined, category, this.props.keycloak.subject, undefined, 100);
+    const products: Product[] = unfilteredProducts.filter(product => product.active === true);
     const selectedProduct = products.find(product => product.id === delivery.productId);
     const deliveryTimeValue = Number(moment(delivery.time).utc().format("HH"));
     await this.setState({
