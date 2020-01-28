@@ -5,7 +5,7 @@ import Api, { Product, ItemGroup } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
-import { Header, Dropdown, Form, Input, Button, Divider } from "semantic-ui-react";
+import { Header, Dropdown, Form, Input, Button, Divider, Checkbox } from "semantic-ui-react";
 import BasicLayout from "../generic/BasicLayout";
 import { Redirect } from "react-router";
 import "react-datepicker/dist/react-datepicker.css";
@@ -30,7 +30,8 @@ interface State {
   unitName: string,
   unitSize: number,
   name: string,
-  sapItemCode: string
+  sapItemCode: string,
+  active: boolean
 }
 
 /**
@@ -53,7 +54,8 @@ class CreateProduct extends React.Component<Props, State> {
       unitName: "",
       unitSize: 0,
       name: "",
-      sapItemCode: ""
+      sapItemCode: "",
+      active: true
     };
   }
 
@@ -77,7 +79,11 @@ class CreateProduct extends React.Component<Props, State> {
    */
   private handleInputChange = (key: string, value: DeliveryDataValue) => {
     const state: State = this.state;
-    state[key] = value;
+    if (key == "active") {
+      state["active"] = !this.state.active;
+    } else {
+      state[key] = value;
+    }
     this.setState(state);
   }
 
@@ -124,7 +130,8 @@ class CreateProduct extends React.Component<Props, State> {
       units: this.state.units,
       unitName: this.state.unitName,
       unitSize: this.state.unitSize,
-      sapItemCode: this.state.sapItemCode
+      sapItemCode: this.state.sapItemCode,
+      active: this.state.active
     }
 
     await productService.createProduct(product);
@@ -212,6 +219,15 @@ class CreateProduct extends React.Component<Props, State> {
               }}
             />
           </Form.Field>
+          <Form.Field>
+            <Checkbox
+              label="Aktiivinen"
+              checked={ this.state.active }
+              onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
+                this.handleInputChange("active", event.currentTarget.value)
+              }}
+            />
+          </Form.Field>
           <Divider />
           <Button.Group floated="right" >
             <Button
@@ -233,7 +249,7 @@ class CreateProduct extends React.Component<Props, State> {
    * @return whether form is valid or not
    */
   private isValid = () => {
-    return !!(this.state.selectedItemGroupId && this.state.name && this.state.units && this.state.unitSize && this.state.unitName && this.state.sapItemCode);
+    return !!(this.state.selectedItemGroupId && this.state.name && this.state.units && this.state.unitSize && this.state.unitName && this.state.sapItemCode && this.state.active);
   }
 }
 

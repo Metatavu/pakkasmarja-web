@@ -115,7 +115,8 @@ class DeliveriesScreen extends React.Component<Props, State> {
 
     const freshDeliveries: Delivery[] = await deliveriesService.listDeliveries(userId, undefined, "FRESH", undefined, undefined, undefined, undefined, undefined, 0, 200);
     const frozenDeliveries: Delivery[] = await deliveriesService.listDeliveries(userId, undefined, "FROZEN", undefined, undefined, undefined, undefined, undefined, 0, 200);
-    const products: Product[] = await productsService.listProducts(undefined, undefined, undefined, undefined, 100);
+    const unfilteredProducts = await productsService.listProducts(undefined, undefined, undefined, undefined, 100);
+    const products: Product[] = unfilteredProducts.filter(product => product.active === true);
 
     const freshDeliveriesAndProducts: DeliveryProduct[] = freshDeliveries.map((delivery) => {
       return {
