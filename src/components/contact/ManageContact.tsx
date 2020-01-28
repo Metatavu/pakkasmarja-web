@@ -46,6 +46,7 @@ interface State {
   farmPostNumber: string;
   farmPostAddress: string;
   farmCity: string;
+  originalContact: Contact;
 }
 
 /**
@@ -81,7 +82,8 @@ class ManageContact extends React.Component<Props, State> {
       city: '',
       farmPostNumber: '',
       farmPostAddress: '',
-      farmCity: ''
+      farmCity: '',
+      originalContact: {}
     };
   }
 
@@ -107,7 +109,8 @@ class ManageContact extends React.Component<Props, State> {
       IBAN: usersContact.IBAN || '',
       taxCode: usersContact.taxCode || '',
       alv: usersContact.taxCode || '',
-      vatLiable: usersContact.vatLiable || undefined
+      vatLiable: usersContact.vatLiable || undefined,
+      originalContact: usersContact
     });
     if (usersContact.phoneNumbers) {
       if (usersContact.phoneNumbers[0]) {
@@ -295,7 +298,7 @@ class ManageContact extends React.Component<Props, State> {
           </Accordion.Content>
         </Accordion>
         <Divider hidden />
-        <Button color="red" floated="right" onClick={this.handleSave}>Tallenna</Button>
+        <Button color="red" floated="right" onClick={this.handleSave} disabled={ this.detectChanges() }>Tallenna</Button>
         <Modal size="tiny" open={this.state.openModal} onClose={() => this.setState({ openModal: false })}>
           <Modal.Content>
             <p>{this.state.modalText}</p>
@@ -392,6 +395,57 @@ class ManageContact extends React.Component<Props, State> {
       this.setState({ openModal: true, modalText: "Tietojen tallentamisessa tapahtui virhe, yritä myöhemmin uudelleen." })
     });
 
+  }
+
+  /**
+   * Detects changes in users profile information
+   */
+  private detectChanges = (): boolean => {
+    const originalContact = this.state.originalContact;
+    const firstName = originalContact.firstName || "";
+    const lastName = originalContact.lastName || "";
+    const companyName = originalContact.companyName || "";
+    const email = originalContact.email || "";
+    const audit = originalContact.audit || "";
+    const sapId = originalContact.sapId || "";
+    const BIC = originalContact.BIC || "";
+    const IBAN = originalContact.IBAN || "";
+    const taxCode = originalContact.taxCode || "";
+    const vatLiable = originalContact.vatLiable || undefined;
+    const phoneNumber1 = originalContact.phoneNumbers && originalContact.phoneNumbers[0] ? originalContact.phoneNumbers[0] || "" : "";
+    const phoneNumber2 = originalContact.phoneNumbers && originalContact.phoneNumbers[1] ? originalContact.phoneNumbers[1] || "" : "";
+    const postNumber = originalContact.addresses && originalContact.addresses[0] ? originalContact.addresses[0].postalCode || "" : "";
+    const postAddress = originalContact.addresses && originalContact.addresses[0] ? originalContact.addresses[0].streetAddress || "" : "";
+    const city = originalContact.addresses && originalContact.addresses[0] ? originalContact.addresses[0].city || "" : "";
+    const farmPostNumber = originalContact.addresses && originalContact.addresses[1] ? originalContact.addresses[0].postalCode || "" : "";
+    const farmPostAddress = originalContact.addresses && originalContact.addresses[1] ? originalContact.addresses[1].streetAddress || "" : "";
+    const farmCity = originalContact.addresses && originalContact.addresses[1] ? originalContact.addresses[1].city || "" : "";
+
+    if (
+      this.state.firstName === firstName &&
+      this.state.lastName === lastName &&
+      this.state.companyName === companyName &&
+      this.state.email === email &&
+      this.state.audit === audit &&
+      this.state.sapId === sapId &&
+      this.state.BIC === BIC &&
+      this.state.IBAN === IBAN &&
+      this.state.taxCode === taxCode &&
+      this.state.alv === taxCode &&
+      this.state.vatLiable === vatLiable &&
+      this.state.phoneNumber1 === phoneNumber1 &&
+      this.state.phoneNumber2 === phoneNumber2 &&
+      this.state.postNumber === postNumber &&
+      this.state.postAddress === postAddress &&
+      this.state.city === city &&
+      this.state.farmPostNumber === farmPostNumber &&
+      this.state.farmPostAddress === farmPostAddress &&
+      this.state.farmCity === farmCity
+    ) {
+      return true;
+    } else {
+      return false;
+    }
   }
 }
 
