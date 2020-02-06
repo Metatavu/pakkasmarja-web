@@ -6,7 +6,7 @@ import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
 import BasicLayout from "../generic/BasicLayout";
-import { Form, Button, Header, Input, Divider, Dropdown, Dimmer, Loader } from "semantic-ui-react";
+import { Form, Button, Header, Input, Divider, Dropdown, Dimmer, Loader, Checkbox } from "semantic-ui-react";
 import Api, { Product, ItemGroup } from "pakkasmarja-client";
 import { Redirect } from "react-router";
 import { Link } from "react-router-dom";
@@ -35,6 +35,7 @@ interface State {
   productLoading: boolean,
   title: string,
   sapItemCode: string,
+  active: boolean
 }
 
 /**
@@ -55,7 +56,8 @@ class EditProduct extends React.Component<Props, State> {
       productId: "",
       productLoading: false,
       title: "",
-      sapItemCode: ""
+      sapItemCode: "",
+      active: true
     };
   }
 
@@ -82,7 +84,8 @@ class EditProduct extends React.Component<Props, State> {
       unitSize: product.unitSize,
       itemGroups,
       title : product.name,
-      sapItemCode: product.sapItemCode
+      sapItemCode: product.sapItemCode,
+      active: product.active
     });
 
     this.setState({ productLoading: false });
@@ -96,7 +99,11 @@ class EditProduct extends React.Component<Props, State> {
    */
   private handleInputChange = (key: string, value: DeliveryDataValue) => {
     const state: State = this.state;
-    state[key] = value;
+    if (key == "active") {
+      state.active = !this.state.active;
+    } else {
+      state[key] = value;
+    }
     this.setState(state);
   }
 
@@ -145,7 +152,8 @@ class EditProduct extends React.Component<Props, State> {
       units: this.state.units,
       unitName: this.state.unitName,
       unitSize: this.state.unitSize,
-      sapItemCode: this.state.sapItemCode
+      sapItemCode: this.state.sapItemCode,
+      active: this.state.active
     }
 
     await productService.updateProduct(product, this.state.productId);
@@ -244,6 +252,15 @@ class EditProduct extends React.Component<Props, State> {
               value={this.state.sapItemCode}
               onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
                 this.handleInputChange("sapItemCode", event.currentTarget.value)
+              }}
+            />
+          </Form.Field>
+          <Form.Field>
+            <Checkbox
+              label="Aktiivinen"
+              checked={ this.state.active }
+              onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
+                this.handleInputChange("active", event.currentTarget.value)
               }}
             />
           </Form.Field>

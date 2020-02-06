@@ -259,6 +259,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
         {
           <CreateDeliveryModal
             deliveryPlaces={this.state.deliveryPlaces}
+            selectedDate={this.state.selectedDate}
             open={this.state.newDeliveryModalOpen}
             onClose={(created?: boolean) => {
               this.setState({ newDeliveryModalOpen: false });

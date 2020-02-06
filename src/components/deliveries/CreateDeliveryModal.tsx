@@ -25,8 +25,9 @@ interface Props {
   deliveryPlaceId: string,
   onClose: (created?: boolean) => void,
   open: boolean,
-  deliveryPlaces: DeliveryPlace[]
-  category: ItemGroupCategory;
+  deliveryPlaces: DeliveryPlace[],
+  selectedDate?: Date,
+  category: ItemGroupCategory
 }
 
 /**
@@ -78,7 +79,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       deliveryNoteImgs64: [],
       selectedDeliveryPlaceId: props.deliveryPlaceId,
       selectedDeliveryStatus: "PROPOSAL",
-      selectedDate: new Date(),
+      selectedDate: this.props.selectedDate || new Date(),
       redBoxesLoaned: 0,
       redBoxesReturned: 0,
       grayBoxesLoaned: 0,
@@ -320,7 +321,8 @@ class CreateDeliveryModal extends React.Component<Props, State> {
     }
 
     const productsService = await Api.getProductsService(this.props.keycloak.token);
-    const products = await productsService.listProducts(undefined, this.props.category, this.state.selectedContactId, undefined, 999);
+    const unfilteredProducts = await productsService.listProducts(undefined, this.props.category, this.props.keycloak.subject, undefined, 100);
+    const products: Product[] = unfilteredProducts.filter(product => product.active === true);
     this.setState({ products });
   }
 
