@@ -223,6 +223,8 @@ export interface IStrings extends LocalizedStringsMethods {
   redBoxesReturned: string
   grayBoxesLoaned: string
   grayBoxesReturned: string
+  frozenCategory: string;
+  freshCategory: string;
 }
 
 const strings: IStrings = new LocalizedStrings({
