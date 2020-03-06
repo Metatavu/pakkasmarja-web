@@ -56,7 +56,7 @@ class DeliveriesScreen extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      pageTitle: "toimitukset",
+      pageTitle: "Toimitukset",
       redirect: false,
       loading: false
     };
@@ -177,7 +177,7 @@ class DeliveriesScreen extends React.Component<Props, State> {
 
     if (tabActiveItem === undefined) {
       return (
-        <BasicLayout pageTitle={`${this.state.pageTitle.toLowerCase()}`}>
+        <BasicLayout pageTitle={ this.state.pageTitle }>
           <Grid centered>
             <Grid.Row>
               <Grid.Column width={4}>
@@ -205,8 +205,14 @@ class DeliveriesScreen extends React.Component<Props, State> {
             <Grid.Column width={4}></Grid.Column>
             <Grid.Column width={8}>
               <Menu color="red" pointing secondary widths={2}>
-                <Menu.Item name={strings.freshCategory} active={tabActiveItem === 'FRESH'} onClick={() => this.setState({ tabActiveItem: "FRESH" })} />
-                <Menu.Item name={strings.frozenCategory} active={tabActiveItem === 'FROZEN'} onClick={() => this.setState({ tabActiveItem: "FROZEN" })} />
+                <Menu.Item name={strings.freshCategory} active={tabActiveItem === 'FRESH'} onClick={() => this.setState({ tabActiveItem: "FRESH" })}>
+                  <Image avatar src={ FreshIcon } style={{ marginRight: "5%" }} />
+                  { strings.freshCategory }
+                </Menu.Item>
+                <Menu.Item name={strings.frozenCategory} active={tabActiveItem === 'FROZEN'} onClick={() => this.setState({ tabActiveItem: "FROZEN" })}>
+                <Image avatar src={ FrozenIcon } style={{ marginRight: "5%" }} />
+                  { strings.frozenCategory }
+                </Menu.Item>
               </Menu>
             </Grid.Column>
             <Grid.Column width={4}></Grid.Column>
