@@ -69,9 +69,7 @@ class CreateAndEditQuality extends React.Component<Props, State> {
     }
 
     const selectedDeliveryQualityId = this.props.match.params.deliveryQualityId;
-    const productsService = await Api.getProductsService(this.props.keycloak.token);
-    const products = await productsService.listProducts(undefined, undefined, undefined, undefined, 999);
-    this.setState({ selectedDeliveryQualityId, products });
+    this.setState({ selectedDeliveryQualityId });
 
     if (selectedDeliveryQualityId !== "new") {
       this.loadDeliveryQuality(selectedDeliveryQualityId);
@@ -100,6 +98,19 @@ class CreateAndEditQuality extends React.Component<Props, State> {
       color: deliveryQuality.color
     });
 
+    this.loadProducts();
+  }
+
+  private loadProducts = async () => {
+    const { keycloak } = this.props;
+    if (!keycloak || !keycloak.token) {
+      return;
+    }
+
+    const productsService = await Api.getProductsService(keycloak.token);
+    const products = await productsService.listProducts(undefined, this.state.itemGroupCategory, undefined, undefined, 999);
+
+    this.setState({ products });
   }
 
   /**
@@ -345,9 +356,10 @@ class CreateAndEditQuality extends React.Component<Props, State> {
         placeholder={this.state.itemGroupCategory}
         value={this.state.itemGroupCategory}
         options={options}
-        onChange={(event: any, data: DropdownProps) =>
-          this.setState({ itemGroupCategory: data.value as ItemGroupCategory })
-        }
+        onChange={(event: any, data: DropdownProps) => {
+          this.setState({ itemGroupCategory: data.value as ItemGroupCategory });
+          this.loadProducts();
+        }}
       />
     );
   }
