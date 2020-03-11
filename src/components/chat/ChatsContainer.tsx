@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as actions from "../../actions";
-import { StoreState, ChatWindow } from "src/types";
+import { StoreState, ChatWindow, ConversationType } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "./styles.css";
@@ -48,7 +48,7 @@ class ChatsContainer extends React.Component<Props, State> {
     const chatWindows = this.props.chats.map((chatWindow, index) => {
       return (
         <div key={chatWindow.threadId} style={{ width: "350px", position: "fixed", bottom: "0", right: `${((index + 1) * 365)}px` }}>
-          <Chat onExit={() => this.closeChat(chatWindow.threadId)} threadId={chatWindow.threadId} answerType={chatWindow.answerType} />
+          <Chat onExit={() => this.closeChat(chatWindow.threadId)} threadId={chatWindow.threadId} answerType={chatWindow.answerType} conversationType={chatWindow.conversationType}/>
         </div>
       );
     });
@@ -56,8 +56,8 @@ class ChatsContainer extends React.Component<Props, State> {
     return (
       <div className="chat-container" style={{ position: "fixed", right: "10px", bottom: "0", width: "350px", zIndex: 999 }}>
         <Segment.Group stacked>
-          <Segment style={{ color: "#fff", background: "rgb(229, 29, 42)" }}>
-            <span onClick={this.toggleWindow}>
+          <Segment style={{ color: "#fff", background: "rgb(229, 29, 42)", cursor: "pointer" }} onClick={this.toggleWindow}>
+            <span>
               Keskustelu
               { this.state.open ? <Icon name="angle down" /> : <Icon name="angle up" /> }
               { this.renderUnreads() }
@@ -132,7 +132,7 @@ class ChatsContainer extends React.Component<Props, State> {
   /**
    * Thread select handler
    */
-  private onSelectThread = (chatThreadId: number, answerType: ChatThread.AnswerTypeEnum) => {
+  private onSelectThread = (chatThreadId: number, answerType: ChatThread.AnswerTypeEnum, conversationType: ConversationType) => {
     const { chats } = this.props;
     let found = false;
     chats.forEach((chatWindow) => {
@@ -146,7 +146,8 @@ class ChatsContainer extends React.Component<Props, State> {
       this.props.chatOpen({
         open: true,
         threadId: chatThreadId,
-        answerType
+        answerType,
+        conversationType: conversationType
       });
     }
   }

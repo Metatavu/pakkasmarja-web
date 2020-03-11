@@ -14,7 +14,9 @@ export interface MqttConfig {
   port: number,
   secure: boolean,
   topic: string,
-  topicPrefix: string
+  topicPrefix: string,
+  topicPostfix: string,
+  path?: string
 }
 
 interface PendingMessage {
@@ -40,10 +42,10 @@ export class MqttConnection {
     this.subscribers = new Map();
   }
 
-  public connect(config: MqttConfig) {
+  public connect = (config: MqttConfig) => {
     this.config = config;
 
-    const url = (config.secure ? "wss://" : "ws://") + config.host + ":" + config.port;
+    const url = (config.secure ? "wss://" : "ws://") + config.host + ":" + config.port + (config.path || "");
     const options: IClientOptions = { 
       username: config.username,
       password: config.password,
@@ -53,12 +55,12 @@ export class MqttConnection {
     };
 
     this.client = mqtt.connect(url, options);
-    this.client.subscribe(`${config.topicPrefix}${config.topic}/`);
-    this.client.on("connect", this.onClientConnect.bind(this));
-    this.client.on("close", this.onClientClose.bind(this));
-    this.client.on("offline", this.onClientOffline.bind(this));
-    this.client.on("error", this.onClientError.bind(this));
-    this.client.on("message", this.onClientMessage.bind(this));
+    this.client.subscribe(`${config.topicPrefix}${config.topic}${config.topicPostfix}`);
+    this.client.on("connect", () => this.onClientConnect());
+    this.client.on("close", () => this.onClientClose());
+    this.client.on("offline", () => this.onClientOffline());
+    this.client.on("error", (error) => this.onClientError(error));
+    this.client.on("message", (topic, payload, packet) => this.onClientMessage(topic, payload, packet));
   }
 
   /**
@@ -68,7 +70,7 @@ export class MqttConnection {
    * @param message message
    * @returns promise for sent package
    */
-  public publish(subtopic: string, message: any): Promise<mqtt.Packet> {
+  public publish = (subtopic: string, message: any): Promise<mqtt.Packet> => {
     return new Promise((resolve, reject) => {
       if (!this.client) {
         this.pending.push({
@@ -96,16 +98,31 @@ export class MqttConnection {
    * @param subtopic subtopic
    * @param onMessage message handler
    */
-  public subscribe(subtopic: string, onMessage: OnMessageCallback) {
+  public subscribe = (subtopic: string, onMessage: OnMessageCallback) => {
     const topicSubscribers = this.subscribers.get(subtopic) || [];
     topicSubscribers.push(onMessage);
     this.subscribers.set(subtopic, topicSubscribers);
   }
 
   /**
+   * Unsubscribes from given subtopic
+   * 
+   * @param subtopic subtopic
+   * @param onMessage message handler
+   */
+  public unsubscribe = (subtopic: string, onMessage: OnMessageCallback) => {
+    const topicSubscribers = this.subscribers.get(subtopic) || [];
+    const subscriberIndex = topicSubscribers.findIndex(subscriber => Object.is(subscriber, onMessage));
+    if (subscriberIndex > -1) {
+      topicSubscribers.splice(subscriberIndex, 1);
+      this.subscribers.set(subtopic, topicSubscribers);
+    }
+  }
+
+  /**
    * Disconnects from the server
    */
-  public disconnect() {
+  public disconnect = () => {
     if (this.client) {
       this.client.end();
     }
@@ -114,7 +131,7 @@ export class MqttConnection {
   /**
    * Handles client connect event
    */
-  private onClientConnect() {
+  private onClientConnect = () => {
     console.log("MQTT connection open");
 
     while (this.pending.length) {
@@ -126,30 +143,32 @@ export class MqttConnection {
   /**
    * Handles client close event
    */
-  private onClientClose() {
+  private onClientClose = () => {
     console.log("MQTT connection closed");
   }
 
   /**
    * Handles client offline event
    */
-  private onClientOffline() {
+  private onClientOffline = () => {
     console.log("MQTT connection offline");
   }
 
   /**
    * Handles client error event
    */
-  private onClientError(error: Error) {
+  private onClientError = (error: Error) => {
     console.error("MQTT connection error", error);
   }
 
   /**
    * Handles client message event
    */
-  private onClientMessage(topic: string, payload: Buffer, packet: mqtt.Packet) {
+  private onClientMessage = (topic: string, payload: Buffer, packet: mqtt.Packet) => {
+    const topicStripped = _.trim(topic, "/");
+    const subtopicIndex = topicStripped.lastIndexOf("/") + 1;
+    const subtopic = topicStripped.substr(subtopicIndex);
     const message = JSON.parse(payload.toString());
-    const subtopic = _.trim(topic.substr(this.config.topic.length), "/");
     const topicSubscribers = this.subscribers.get(subtopic) || [];
     topicSubscribers.forEach((topicSubscriber: OnMessageCallback) => {
       topicSubscriber(message);

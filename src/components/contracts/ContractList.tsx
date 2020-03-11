@@ -161,7 +161,8 @@ class ContractList extends React.Component<Props, State> {
     this.props.chatOpen({
       open: true,
       threadId: threadId,
-      answerType: "TEXT"
+      answerType: "TEXT",
+      conversationType: "QUESTION"
     });
 
     this.setState({
