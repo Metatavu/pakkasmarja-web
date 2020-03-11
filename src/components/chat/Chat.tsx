@@ -1,12 +1,12 @@
 import * as React from "react";
 import { connect } from "react-redux";
-import { StoreState } from "src/types";
+import { StoreState, ConversationType } from "src/types";
 import { Dispatch } from "redux";
 import * as actions from "../../actions/";
 import Api, { Contact, ChatMessage, ChatThread, Unread } from "pakkasmarja-client";
 import strings from "src/localization/strings";
 import * as moment from "moment";
-import { Segment, Comment, Icon, Button, Grid, Modal, Header, Divider, Loader } from "semantic-ui-react";
+import { Segment, Comment, Icon, Button, Grid, Modal, Header, Divider, Loader, Label } from "semantic-ui-react";
 import AVATAR_PLACEHOLDER from "../../gfx/avatar.png";
 import { FileService } from "src/api/file.service";
 import { mqttConnection } from "src/mqtt";
@@ -27,9 +27,11 @@ interface Props {
   threadId: number;
   onError?: (errorMsg: string) => void;
   onExit?: () => void;
+  conversationType: ConversationType,
   answerType: ChatThread.AnswerTypeEnum;
   unreads: Unread[],
   unreadRemoved: (unread: Unread) => void;
+  unreadsUpdate: (unreads: Unread[]) => void;
 };
 
 /**
@@ -37,12 +39,16 @@ interface Props {
  */
 interface State {
   messages: MessageItem[],
+  unreadsAmount: number,
   thread?: ChatThread,
+  threadPermission?: ChatThread.PermissionTypeEnum,
   user?: Contact,
   userAvatar: string
   loading: boolean,
   pollAnswerLoading: boolean,
   open: boolean,
+  read: boolean,
+  readAmount: number,
   pendingMessage: string
   pollAnswerMessage: string,
   openImage?: string
@@ -71,7 +77,8 @@ class Chat extends React.Component<Props, State> {
 
   private userLookup: Map<string, Contact>;
   private messagesEnd: any;
-  private messagePoller: any;
+  private messagePoller?: NodeJS.Timer;
+  private messageReadPoller?: NodeJS.Timer;
 
   /**
    * Constructor
@@ -84,12 +91,15 @@ class Chat extends React.Component<Props, State> {
     this.userLookup = new Map();
     this.state = {
       messages: [],
+      unreadsAmount: 0,
       pendingMessage: "",
       pollAnswerMessage: "",
       userAvatar: AVATAR_PLACEHOLDER,
       loading: false,
       pollAnswerLoading: false,
       open: true,
+      read: false,
+      readAmount: 0,
       addImageModalOpen: false,
       previousMessagesLoaded: false,
       pollAnswers: []
@@ -109,7 +119,7 @@ class Chat extends React.Component<Props, State> {
       const thread = await Api.getChatThreadsService(keycloak.token).findChatThread(threadId);
       const maxResult = thread.answerType === "POLL" ? 1 : 30;
       const chatMessages = await Api.getChatMessagesService(keycloak.token).listChatMessages(threadId, undefined, undefined, undefined, 0, maxResult);
-      thread.answerType === "TEXT" && mqttConnection.subscribe("chatmessages", this.onMessage);
+      thread.answerType === "TEXT" && mqttConnection.subscribe("chatmessages", this.onMqttMessage);
       const messages = await this.translateMessages(chatMessages);
       const user = await Api.getContactsService(keycloak.token).findContact(keycloak.subject || "");
       const userAvatar = user.avatarUrl && user.avatarUrl.indexOf("gravatar") > -1 ? user.avatarUrl : await this.loadImage(user.avatarUrl);
@@ -126,10 +136,11 @@ class Chat extends React.Component<Props, State> {
 
       await this.removeUnreads(thread);
 
-      await this.setState({
+      this.setState({
         messages: messages.reverse(),
         user: user,
         thread: thread,
+        threadPermission: thread.permissionType,
         userAvatar: userAvatar,
         loading: false,
         pollAnswers: thread.pollPredefinedTexts || []
@@ -147,6 +158,9 @@ class Chat extends React.Component<Props, State> {
     this.state.thread && this.state.thread.answerType === "TEXT" && this.startPolling();
   }
 
+  /**
+   * Component will unmount lifecycle method
+   */
   public componentWillUnmount = () => {
     this.stopPolling();
   }
@@ -156,7 +170,7 @@ class Chat extends React.Component<Props, State> {
    */
   public render() {
     if (!this.props.keycloak || !this.props.keycloak.token) {
-      this.props.onError && this.props.onError(strings.accessTokenExpired)
+      this.props.onError && this.props.onError(strings.accessTokenExpired);
       return null;
     }
 
@@ -165,14 +179,15 @@ class Chat extends React.Component<Props, State> {
         <Segment.Group stacked>
           <Segment style={{ color: "#fff", background: "rgb(229, 29, 42)", display: "flex" }}>
             <span style={{ cursor: "pointer", display: "flex", flex: "0.9" }} onClick={this.toggleWindow}>
-              {this.state.thread && this.state.thread.title ? this.state.thread.title : "Ladataan..."}
-              {this.state.open ? (
+              { this.state.thread && this.state.thread.title ? this.state.thread.title : "Ladataan..." }
+              { this.state.open ? (
                 <Icon name="angle down" />
-              ) : (
+                ) : (
                   <Icon name="angle up" />
-                )}
+                )
+              }
             </span>
-            <Icon style={{ cursor: "pointer", display: "flex", flex: "0.1", justifyContent: "center" }} onClick={() => this.props.onExit && this.props.onExit()} name="window close outline" />
+            <Icon style={{ cursor: "pointer", display: "flex", flex: "0.1", justifyContent: "center" }} onClick={() => this.exitChat()} name="window close outline" />
           </Segment>
           <Segment style={{
             display: this.state.open ? "block" : "none",
@@ -203,6 +218,9 @@ class Chat extends React.Component<Props, State> {
       <Segment.Group stacked>
         <Segment style={{ color: "#fff", background: "rgb(229, 29, 42)", display: "flex" }}>
           <span style={{ cursor: "pointer", display: "flex", flex: "0.9" }} onClick={this.toggleWindow}>
+            { this.state.unreadsAmount > 0 && !this.state.open &&
+              <Label color='black' circular size="mini" style={{ marginRight: "1rem" }}>{ this.state.unreadsAmount }</Label>
+            }
             {this.state.thread && this.state.thread.title ? this.state.thread.title : "Ladataan..."}
             {this.state.open ? (
               <Icon name="angle down" />
@@ -210,7 +228,7 @@ class Chat extends React.Component<Props, State> {
                 <Icon name="angle up" />
               )}
           </span>
-          <Icon style={{ cursor: "pointer", display: "flex", flex: "0.1", justifyContent: "center" }} onClick={() => this.props.onExit && this.props.onExit()} name="window close outline" />
+          <Icon style={{ cursor: "pointer", display: "flex", flex: "0.1", justifyContent: "center" }} onClick={() => this.exitChat()} name="window close outline" />
         </Segment>
         {
           this.state.thread && this.state.thread.answerType == "TEXT" &&
@@ -220,8 +238,9 @@ class Chat extends React.Component<Props, State> {
             minHeight: "300px",
             maxHeight: "400px"
           }} loading={this.state.loading}>
-            <Comment.Group>
+            <Comment.Group style={{ marginBottom: "0" }}>
               {messages}
+              { messages.length > 0 && this.renderMessagesReadSegment() }
             </Comment.Group>
             <div style={{ float: "left", clear: "both" }} ref={(el) => { this.messagesEnd = el; }}></div>
           </Segment>
@@ -318,19 +337,55 @@ class Chat extends React.Component<Props, State> {
   }
 
   /**
+   * Renders messages read segment to chat
+   */
+  private renderMessagesReadSegment = () => {
+    if (this.props.conversationType === "CHAT") {
+      return this.state.threadPermission === "MANAGE" ? (
+        <>
+          <Divider/>
+          <p style={{ color: "grey" }}>Keskustelun lukenut <Label color="blue" circular>{this.state.readAmount}</Label> henkilöä</p>
+        </>
+      ) : (
+        <></>
+      );
+    }
+
+    return this.state.read ? (
+      <>
+        <Divider/>
+        <p style={{ color: "grey" }}><Icon color="blue" name="check"/>Vastaanottaja on lukenut keskustelun</p>
+      </>
+    ) : (
+      <></>
+    );
+  }
+
+  /**
    * Starts failsafe message poller
    */
   private startPolling = () => {
     this.messagePoller = setInterval(() => {
       this.checkMessages();
     }, FAILSAFE_POLL_RATE);
+
+    if (this.props.conversationType == "QUESTION") {
+      this.checkThreadRead();
+      this.messageReadPoller = setInterval(() => {
+        this.checkThreadRead();
+      }, FAILSAFE_POLL_RATE);
+    } else if (this.state.threadPermission === "MANAGE") {
+      this.checkThreadReadAmount();
+      this.messageReadPoller = setInterval(() => {
+        this.checkThreadReadAmount();
+      }, FAILSAFE_POLL_RATE);
+    }
   }
 
   /**
-   * Counts unreads by group
+   * Removes unreads from thread
    * 
-   * @param group id
-   * @return unreads
+   * @param thread thread
    */
   private removeUnreads = async (thread: ChatThread) => {
     const { keycloak } = this.props;
@@ -346,12 +401,21 @@ class Chat extends React.Component<Props, State> {
         const path = (unread.path || "");
         return path.startsWith(`chat-${thread.groupId}-${thread.id}-`);
       });
+    
+    if (unreads.length > 0) {
+      await mqttConnection.publish("chatmessages", {
+        "operation": "READ",
+        "threadId": thread.id,
+        "groupId": thread.groupId
+      });
+    }
 
     await Promise.all(unreads.map(async (unread) => {
       this.props.unreadRemoved(unread);
       await unreadsService.deleteUnread(unread.id!)
     }));
 
+    this.setState({ unreadsAmount: 0 });
   }
 
   /**
@@ -374,11 +438,70 @@ class Chat extends React.Component<Props, State> {
   }
 
   /**
+   * Checks if thread has been read
+   */
+  private checkThreadRead = async () => {
+    const { messages } = this.state;
+    const { threadId, keycloak } = this.props;
+    if (!keycloak || !keycloak.token || !threadId) {
+      return;
+    }
+
+    const userId = keycloak.tokenParsed && keycloak.tokenParsed.sub || undefined;
+    if (!userId) {
+      return;
+    }
+
+    const lastOwnMessage = messages.filter(message => message.userId === userId).pop();
+    if (!lastOwnMessage) {
+      return;
+    }
+
+    const messagesService = await Api.getChatMessagesService(keycloak.token);
+    const threadRead = await messagesService.getMessageRead(threadId, lastOwnMessage.id);
+
+    this.setState({
+      read: threadRead
+    });
+  }
+
+  /**
+   * Checks how many have read this thread
+   */
+  private checkThreadReadAmount = async () => {
+    const { messages } = this.state;
+    const { threadId, keycloak } = this.props;
+    if (!keycloak || !keycloak.token || !threadId) {
+      return;
+    }
+
+    const userId = keycloak.tokenParsed && keycloak.tokenParsed.sub || undefined;
+    if (!userId) {
+      return;
+    }
+
+    const lastOwnMessage = messages.filter(message => message.userId === userId).pop();
+    if (!lastOwnMessage) {
+      return;
+    }
+
+    const messagesService = await Api.getChatMessagesService(keycloak.token);
+    const threadReadAmount = await messagesService.getMessageReadAmount(threadId, lastOwnMessage.id);
+
+    this.setState({
+      readAmount: parseInt(threadReadAmount)
+    });
+  }
+
+  /**
    * Stops failsafe message poller
    */
   private stopPolling = () => {
     if (this.messagePoller) {
       clearInterval(this.messagePoller);
+    }
+    if (this.messageReadPoller) {
+      clearInterval(this.messageReadPoller);
     }
   }
 
@@ -461,6 +584,11 @@ class Chat extends React.Component<Props, State> {
    */
   private toggleWindow = () => {
     const { open } = this.state;
+    if (!open) {
+      const { thread } = this.state;
+      thread && this.removeUnreads(thread);
+      this.scrollToBottom();
+    }
     this.setState({
       open: !open
     });
@@ -476,24 +604,58 @@ class Chat extends React.Component<Props, State> {
   /**
    * Callback for receiving message from mqtt
    */
-  private onMessage = async (mqttMessage: any) => {
+  private onMqttMessage = async (mqttMessage: any) => {
     try {
-      const data = JSON.parse(mqttMessage);
-      if (data.threadId && data.threadId == this.props.threadId) {
-        const latestMessage = this.getLatestMessage();
-        const { threadId, keycloak } = this.props;
-        if (!keycloak || !keycloak.token || !threadId) {
-          return;
-        }
-        const chatMessages = await Api.getChatMessagesService(keycloak.token).listChatMessages(threadId, undefined, latestMessage.toDate());
-        const messages = await this.translateMessages(chatMessages);
-        this.setState((prevState: State) => {
-          return {
-            loading: false,
-            messages: prevState.messages.concat(messages.reverse())
+      if (mqttMessage.threadId && mqttMessage.threadId == this.props.threadId) {
+        switch (mqttMessage.operation) {
+          case "CREATED": {
+            const { threadId, keycloak } = this.props;
+            const mqttMessageId = mqttMessage.messageId;
+            if (!keycloak || !keycloak.token || !threadId || !mqttMessageId) {
+              return;
+            }
+
+            const latestMessage = this.getLatestMessage();
+            const chatMessages = await Api.getChatMessagesService(keycloak.token).listChatMessages(threadId, undefined, latestMessage.toDate());
+            const messages = await this.translateMessages(chatMessages);
+
+            this.setState((prevState: State) => {
+              return {
+                loading: false,
+                messages: prevState.messages.concat(messages.reverse())
+              }
+            });
+
+            const unreadsService = Api.getUnreadsService(keycloak.token);
+            const updatedUnreads = await unreadsService.listUnreads();
+            this.props.unreadsUpdate && this.props.unreadsUpdate(updatedUnreads);
+            const { thread } = this.state;
+
+            if (this.state.open) {
+              thread && this.removeUnreads(thread);
+              this.scrollToBottom();
+              break;
+            }
+
+            const unreadsAmount = this.props.unreads
+              .filter((unread: Unread) => (unread.path || "").startsWith(`chat-${thread!.groupId}-${thread!.id}-`))
+              .length;
+            unreadsAmount > 0 && this.setState({ unreadsAmount });
+            
+            break;
           }
-        });
-        this.scrollToBottom();
+          case "READ": {
+            if (this.props.conversationType === "QUESTION") {
+              this.checkThreadRead();
+            } else if (this.state.threadPermission === "MANAGE") {
+              this.checkThreadReadAmount();
+            }
+            break;
+          }
+          default: {
+            break;
+          }
+        }
       }
     } catch (e) {
       console.warn(e);
@@ -613,11 +775,19 @@ class Chat extends React.Component<Props, State> {
       this.setState({
         pollAnswerMessage: "",
         pendingMessage: "",
+        read: false,
+        readAmount: 0
       });
     }
     this.setState({ loading: false });
     setTimeout(() => { this.setState({ pollAnswerLoading: false }) }, 4000);
     return message;
+  }
+
+  private exitChat = () => {
+    mqttConnection.unsubscribe("chatmessages", this.onMqttMessage);
+    this.stopPolling();
+    this.props.onExit && this.props.onExit();
   }
 }
 
@@ -641,7 +811,8 @@ function mapStateToProps(state: StoreState) {
  */
 function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
   return {
-    unreadRemoved: (unread: Unread) => dispatch(actions.unreadRemoved(unread))
+    unreadRemoved: (unread: Unread) => dispatch(actions.unreadRemoved(unread)),
+    unreadsUpdate: (unreads: Unread[]) => dispatch(actions.unreadsUpdate(unreads))
   };
 }
 

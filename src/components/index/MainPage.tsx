@@ -83,6 +83,12 @@ class MainPage extends React.Component<Props, {}> {
     this.intervalId = setInterval(this.checkUnreads, 1000 * 30);
   }
 
+  public componentDidUpdate = (prevProps: Props) => {
+    if (!prevProps.keycloak && this.props.keycloak) {
+      this.checkUnreads();
+    }
+  }
+
   /**
    * Component will unmount life cycle method
    */

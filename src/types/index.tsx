@@ -105,8 +105,14 @@ export interface deliveryNoteImg64 {
 export interface ChatWindow {
   open: boolean,
   threadId: number,
+  conversationType: ConversationType,
   answerType: ChatThread.AnswerTypeEnum
 }
+
+/**
+ * Type representing chat conversation type
+ */
+export type ConversationType = "CHAT" | "QUESTION";
 
 /**
  * Interface for sorted week delivery predictions
