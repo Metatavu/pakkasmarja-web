@@ -56,7 +56,7 @@ class ManageContact extends React.Component<Props, State> {
 
   /**
    * Constructor
-   * 
+   *
    * @param props props
    */
   constructor(props: Props) {
@@ -109,7 +109,7 @@ class ManageContact extends React.Component<Props, State> {
       IBAN: usersContact.IBAN || '',
       taxCode: usersContact.taxCode || '',
       alv: usersContact.taxCode || '',
-      vatLiable: usersContact.vatLiable || undefined,
+      vatLiable: usersContact.vatLiable || "true",
       originalContact: usersContact
     });
     if (usersContact.phoneNumbers) {
@@ -224,11 +224,7 @@ class ManageContact extends React.Component<Props, State> {
       }
     ];
 
-    const vatLiableOptions: { key: string, value: Contact.VatLiableEnum | undefined, text: string }[] = [{
-      key: "undefined",
-      value: undefined,
-      text: "Valitse..."
-    }, {
+    const vatLiableOptions: { key: string, value: Contact.VatLiableEnum, text: string }[] = [{
       key: "true",
       value: "true",
       text: "Kyllä"
@@ -236,10 +232,6 @@ class ManageContact extends React.Component<Props, State> {
       key: "false",
       value: "false",
       text: "Ei"
-    }, {
-      key: "Eu",
-      value: "EU",
-      text: "EU"
     }];
 
     const { activeIndex } = this.state;
@@ -284,12 +276,11 @@ class ManageContact extends React.Component<Props, State> {
                 })
               }
               <Form.Field>
-                <label>ALV. velvollisuus</label>
+                <label>ALV - velvollisuus</label>
                 <Dropdown
                   fluid
                   selection
                   options={vatLiableOptions}
-                  placeholder={"Valitse ..."}
                   value={this.state.vatLiable}
                   onChange={(e, data) => this.setState({ vatLiable: data.value as Contact.VatLiableEnum })}
                 />
@@ -322,7 +313,7 @@ class ManageContact extends React.Component<Props, State> {
 
   /**
    * Render input
-   * 
+   *
    * @param label inputs label
    * @param key needs to be the same key with state
    */
@@ -388,7 +379,7 @@ class ManageContact extends React.Component<Props, State> {
       vatLiable: vatLiable || undefined,
       addresses: addresses[0] || addresses[1] ? addresses : []
     };
-    
+
     contactService.updateContact(newContact, keycloak.subject).then((updatedData) => {
       this.setState({ openModal: true, modalText: "Tietojen päivittäminen onnistui." })
     }).catch((err) => {
@@ -445,7 +436,7 @@ class ManageContact extends React.Component<Props, State> {
 
 /**
  * Redux mapper for mapping store state to component props
- * 
+ *
  * @param state store state
  */
 export function mapStateToProps(state: StoreState) {
@@ -455,8 +446,8 @@ export function mapStateToProps(state: StoreState) {
 }
 
 /**
- * Redux mapper for mapping component dispatches 
- * 
+ * Redux mapper for mapping component dispatches
+ *
  * @param dispatch dispatch method
  */
 export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
