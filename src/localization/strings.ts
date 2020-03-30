@@ -225,6 +225,7 @@ export interface IStrings extends LocalizedStringsMethods {
   grayBoxesReturned: string
   frozenCategory: string;
   freshCategory: string;
+  databank: string;
 }
 
 const strings: IStrings = new LocalizedStrings({

@@ -219,5 +219,6 @@
   "grayBoxesLoaned": "Lainattu (Harmaat laatikot)",
   "grayBoxesReturned": "Palautettu (Harmaat laatikot)",
   "frozenCategory": "Pakastukseen",
-  "freshCategory": "Tuore"
+  "freshCategory": "Tuore",
+  "databank": "Tietopankki"
 }
