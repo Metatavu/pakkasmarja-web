@@ -26,7 +26,7 @@ interface State {
   /**
    * Example folder structure that will be rendered
    */
-  exampleFolderStructure: Array<{type:"file"|"folder"|"pdf"|"image", name:string}>; // This is just example type
+  exampleFolderStructure: Array<{ type:"file"|"folder"|"pdf"|"image", name:string }>; // This is just example type
 }
 
 /**
@@ -52,7 +52,7 @@ export default class Databank extends React.Component<Props, State> {
    */
   public componentDidMount() {
     // make api call here
-    const example:Array<{type:"file"|"folder"|"pdf"|"image", name:string}> = [ // This is just a temporary example
+    const example:Array<{ type:"file"|"folder"|"pdf"|"image", name:string }> = [ // This is just a temporary example
       {
         type: "folder",
         name: "example folder 1"
@@ -89,7 +89,7 @@ export default class Databank extends React.Component<Props, State> {
    * @param prevProps 
    * @param prevState 
    */
-  public componentDidUpdate(prevProps:Props, prevState:State) {
+  public componentDidUpdate(prevProps: Props, prevState: State) {
     const { path } = this.state;
     if (prevState.path !== path) {
       // make api call here
@@ -165,7 +165,7 @@ export default class Databank extends React.Component<Props, State> {
   private moveToLocation = (name: string) => {
     const { path } = this.state;
     this.setState({
-      path: path ? `${ path }/${name}` : name
+      path: path ? `${ path }/${ name }` : name
     });
   }
 
@@ -182,19 +182,19 @@ export default class Databank extends React.Component<Props, State> {
     });
   }
 
-  private getImage = (type:"file"|"folder"|"pdf"|"image") => {
+  private getImage = (type: "file"|"folder"|"pdf"|"image") => {
     switch(type) {
       case "file": {
-        return <img src={TiedostoIkoni} style={{ width: 35, marginRight: 13 }} />;
+        return <img src={ TiedostoIkoni } style={{ width: 35, marginRight: 13 }} />;
       }
       case "folder": {
         return <Icon name='folder' color="red" style={{ fontSize: 32, marginRight: 10 }} />;
       }
       case "pdf": {
-        return <img src={PdfIkoni} style={{ width: 35, marginRight: 13 }} />;
+        return <img src={ PdfIkoni } style={{ width: 35, marginRight: 13 }} />;
       }
       case "image": {
-        return <img src={KuvaTiedosto} style={{ width: 35, marginRight: 13 }} />;
+        return <img src={ KuvaTiedosto } style={{ width: 35, marginRight: 13 }} />;
       }
     }
   }
