@@ -3,6 +3,9 @@ import BasicLayout from "../generic/BasicLayout";
 import "../../styles/common.css";
 import { KeycloakInstance } from "keycloak-js";
 import { List, Breadcrumb, Button, Icon } from "semantic-ui-react"
+import TiedostoIkoni from "../../gfx/tiedostoikoni.svg";
+import KuvaTiedosto from "../../gfx/kuva.svg";
+import PdfIkoni from "../../gfx/pdfikoni.svg";
 
 /**
  * Component props
@@ -17,13 +20,13 @@ interface Props {
  */
 interface State {
   /**
-   * Location in the folder structure of databank
+   * Path to the current location in databank
    */
-  location: string;
+  path: string;
   /**
    * Example folder structure that will be rendered
    */
-  exampleFolderStructure:Array<{type:"file"|"folder", name:string}>; // This is just example type
+  exampleFolderStructure: Array<{type:"file"|"folder"|"pdf"|"image", name:string}>; // This is just example type
 }
 
 /**
@@ -39,7 +42,7 @@ export default class Databank extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      location: "",
+      path: "",
       exampleFolderStructure: []
     }
   }
@@ -49,7 +52,7 @@ export default class Databank extends React.Component<Props, State> {
    */
   public componentDidMount() {
     // make api call here
-    const example:Array<{type:"file"|"folder", name:string}> = [ // This is just a temporary example
+    const example:Array<{type:"file"|"folder"|"pdf"|"image", name:string}> = [ // This is just a temporary example
       {
         type: "folder",
         name: "example folder 1"
@@ -63,11 +66,11 @@ export default class Databank extends React.Component<Props, State> {
         name: "example folder 3"
       },
       {
-        type: "folder",
+        type: "pdf",
         name: "example folder 4"
       },
       {
-        type: "file",
+        type: "image",
         name: "example file 1"
       },
       {
@@ -87,12 +90,9 @@ export default class Databank extends React.Component<Props, State> {
    * @param prevState 
    */
   public componentDidUpdate(prevProps:Props, prevState:State) {
-    const { location } = this.state;
-    if (prevState.location !== location) {
+    const { path } = this.state;
+    if (prevState.path !== path) {
       // make api call here
-      this.setState({
-        
-      });
     }
   }
 
@@ -102,7 +102,7 @@ export default class Databank extends React.Component<Props, State> {
   public render() {
     return (
       <BasicLayout>
-        { this.state.location.length > 0 && <Button onClick={ this.previousFolder } icon={ <Icon name="arrow left" /> } style={{ marginRight: "25px" }} /> }
+        { this.state.path.length > 0 && <Button onClick={ this.previousFolder } icon={ <Icon name="arrow left" /> } style={{ marginRight: "25px" }} /> }
         <Breadcrumb>
           { this.renderBreadcrumb() }
         </Breadcrumb>
@@ -128,10 +128,10 @@ export default class Databank extends React.Component<Props, State> {
    * Sets location to parent folder
    */
   private previousFolder = () => {
-    const { location } = this.state;
-    const locations = location.split("/");
+    const { path } = this.state;
+    const locations = path.split("/");
     this.setState({
-      location: locations.slice(0, locations.length - 1).join("/")
+      path: locations.slice(0, locations.length - 1).join("/")
     });
   }
 
@@ -139,16 +139,16 @@ export default class Databank extends React.Component<Props, State> {
    * Renders breadcrumb
    */
   private renderBreadcrumb = () => {
-    const { location } = this.state;
-    const locations = location.split("/");
+    const { path } = this.state;
+    const locations = path.split("/");
     return (
       <>
         {
           locations.map((name, index) => {
             return (
               <div key={ index } style={{ userSelect: "none", display: "inline-block" }}>
-                <Breadcrumb.Section onClick={ () => { this.moveBackToLocation(index) } }><p style={{ fontSize: "1.8rem" }}>{ name }</p></Breadcrumb.Section>
                 <span style={{ marginLeft: "0.5rem", marginRight: "0.5rem", fontSize: "1.8rem" }}>/</span>
+                <Breadcrumb.Section onClick={ () => { this.moveBackToLocation(index) } }><p style={{ fontSize: "1.8rem" }}>{ name }</p></Breadcrumb.Section>
               </div>
             )
           })
@@ -163,11 +163,9 @@ export default class Databank extends React.Component<Props, State> {
    * @param name name of the folder
    */
   private moveToLocation = (name: string) => {
-    const { location } = this.state;
-    const locations = location.split("/");
-    locations.push(name);
+    const { path } = this.state;
     this.setState({
-      location: locations.join("/")
+      path: path ? `${ path }/${name}` : name
     });
   }
 
@@ -177,11 +175,28 @@ export default class Databank extends React.Component<Props, State> {
    * @param index index of the location
    */
   private moveBackToLocation = (index: number) => {
-    const { location } = this.state;
-    const locations = location.split("/");
+    const { path } = this.state;
+    const locations = path.split("/");
     this.setState({
-      location: locations.slice(0, index + 1).join("/")
+      path: locations.slice(0, index + 1).join("/")
     });
+  }
+
+  private getImage = (type:"file"|"folder"|"pdf"|"image") => {
+    switch(type) {
+      case "file": {
+        return <img src={TiedostoIkoni} style={{ width: 35 }} />;
+      }
+      case "folder": {
+        return <Icon name='folder' color="red" style={{ fontSize: 32, marginRight: 10 }} />;
+      }
+      case "pdf": {
+        return <img src={PdfIkoni} style={{ width: 35 }} />;
+      }
+      case "image": {
+        return <img src={KuvaTiedosto} style={{ width: 35 }} />;
+      }
+    }
   }
 
   /**
@@ -195,7 +210,7 @@ export default class Databank extends React.Component<Props, State> {
           <List.Content>
             <List.Header>
               <div style={{ cursor:"pointer", userSelect: "none", fontSize: "1.8rem" }}  onClick={ (item.type === "folder") ? () => { this.moveToLocation(item.name) } : this.downloadFile }>
-                <List.Icon name={ item.type } />
+                { this.getImage(item.type) }
                 <p style={{ display: "inline-block", marginLeft: "1rem" }}>{ item.name }</p>
               </div>
             </List.Header>
