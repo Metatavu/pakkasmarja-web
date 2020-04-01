@@ -185,16 +185,16 @@ export default class Databank extends React.Component<Props, State> {
   private getImage = (type:"file"|"folder"|"pdf"|"image") => {
     switch(type) {
       case "file": {
-        return <img src={TiedostoIkoni} style={{ width: 35 }} />;
+        return <img src={TiedostoIkoni} style={{ width: 35, marginRight: 13 }} />;
       }
       case "folder": {
         return <Icon name='folder' color="red" style={{ fontSize: 32, marginRight: 10 }} />;
       }
       case "pdf": {
-        return <img src={PdfIkoni} style={{ width: 35 }} />;
+        return <img src={PdfIkoni} style={{ width: 35, marginRight: 13 }} />;
       }
       case "image": {
-        return <img src={KuvaTiedosto} style={{ width: 35 }} />;
+        return <img src={KuvaTiedosto} style={{ width: 35, marginRight: 13 }} />;
       }
     }
   }
