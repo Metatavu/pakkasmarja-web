@@ -164,6 +164,10 @@ class Databank extends React.Component<Props, State> {
       try {
         await Api.getSharedFilesService(keycloak.token).uploadSharedFolder(`${newSharedFile.name}/`, path ? `${path}/` : undefined);
         this.updateSharedFiles();
+        this.setState({
+          addNewodalOpen: false,
+          newSharedFile: { name: undefined, type: undefined, file: undefined }
+        });
       } catch (error) {
         console.log(error);
       }
