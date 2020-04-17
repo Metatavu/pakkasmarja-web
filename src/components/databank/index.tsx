@@ -93,10 +93,12 @@ class Databank extends React.Component<Props, State> {
         <Breadcrumb>
           { this.renderBreadcrumb() }
         </Breadcrumb>
-        <div onClick={ this.addNewModalToggle } style={{ cursor:"pointer", userSelect: "none", fontSize: "1.8rem", marginTop: "1.5rem", fontWeight: 700 }}>
-          <Icon name='add square' color="red" style={{ fontSize: 27, marginRight: 10 }} />
-          <p style={{ display: "inline-block", marginLeft: "1rem" }}>{ strings.addNew }</p>
-        </div>
+        { this.props.keycloak && this.props.keycloak.hasRealmRole("manage-shared-files") &&
+          <div onClick={ this.addNewModalToggle } style={{ cursor:"pointer", userSelect: "none", fontSize: "1.8rem", marginTop: "1.5rem", fontWeight: 700 }}>
+            <Icon name='add square' color="red" style={{ fontSize: 27, marginRight: 10 }} />
+            <p style={{ display: "inline-block", marginLeft: "1rem" }}>{ strings.addNew }</p>
+          </div>
+        }
         <div style={{ marginTop: "1.5rem" }}>
           <List>
             { this.renderFolderStructure() }
@@ -135,31 +137,36 @@ class Databank extends React.Component<Props, State> {
    */
   private addNewSharedFile = async () => {
     const { keycloak } = this.props;
-    const { newSharedFile } = this.state;
-    console.log(newSharedFile.type)
+    const { newSharedFile, path } = this.state;
     if ((!keycloak || !keycloak.token) || !newSharedFile.name) {
       return;
     }
-    
     if (newSharedFile.type === "FILE" && newSharedFile.file) {
       const formData = new FormData();
       formData.append('file', newSharedFile.file);
       try {
-        const response = await fetch(`https://staging-api-pakkasmarja.metatavu.io/rest/v1/sharedFiles/upload/file?fileName=${newSharedFile.name}`, {
+        await fetch(`https://staging-api-pakkasmarja.metatavu.io/rest/v1/sharedFiles/upload/file?fileName=${ newSharedFile.name }${ path ? `&pathPrefix=${path}/` : "" }`, {
           method: "POST",
           headers: {
             'Authorization': `Bearer ${keycloak.token}`
           },
           body: formData
         });
-        if (response.status === 200) {
-          this.updateSharedFiles();
-        }
+        this.updateSharedFiles();
+        this.setState({
+          addNewodalOpen: false,
+          newSharedFile: { name: undefined, type: undefined, file: undefined }
+        });
       } catch (error) {
         console.log(error);
       }
     } else if (newSharedFile.type === "FOLDER") {
-      await Api.getSharedFilesService(keycloak.token).uploadSharedFolder(newSharedFile.name);
+      try {
+        await Api.getSharedFilesService(keycloak.token).uploadSharedFolder(`${newSharedFile.name}/`, path ? `${path}/` : undefined);
+        this.updateSharedFiles();
+      } catch (error) {
+        console.log(error);
+      }
     }
   }
 
@@ -168,12 +175,13 @@ class Databank extends React.Component<Props, State> {
    */
   private deleteSharedFile = async (sharedFile: SharedFile) => {
     const { keycloak } = this.props;
+    const { path } = this.state;
     if (!keycloak || !keycloak.token) {
       return;
     }
     try {
-      const response = await Api.getSharedFilesService(keycloak.token).deleteSharedFile(sharedFile.name);
-      if (response.status === 200) {
+      if (window.confirm(`Haluatko varmasti poistaa ${ sharedFile.fileType === "FOLDER" ? "kansion" : "tiedoston" } nimeltä "${ sharedFile.name }"?`)) {
+        await Api.getSharedFilesService(keycloak.token).deleteSharedFile(sharedFile.name, path ? `${path}/` : undefined);
         this.updateSharedFiles();
       }
     } catch (error) {
@@ -230,11 +238,17 @@ class Databank extends React.Component<Props, State> {
       return;
     }
     try {
-      const sharedFiles = await Api.getSharedFilesService(keycloak.token).listSharedFiles(path ? path + "/" : undefined);
+      const sharedFiles = await Api.getSharedFilesService(keycloak.token).listSharedFiles(path ? `${path}/` : undefined);
       if (Array.isArray(sharedFiles)) {
         this.setState({
           sharedFiles: sharedFiles.map((file) => {
             return {...file, name: file.name.replace(/\//g, "")}
+          })
+          .sort((a, b) => {
+            return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+          })
+          .sort((a, b) => {
+            return Number(b.fileType === "FOLDER") - Number(a.fileType === "FOLDER");
           })
         });
       }
@@ -250,10 +264,11 @@ class Databank extends React.Component<Props, State> {
    */
   private downloadFile = async (file: SharedFile) => {
     const { keycloak } = this.props;
+    const { path } = this.state;
     if (!keycloak || !keycloak.token) {
       return;
     }
-    await Api.getSharedFilesService(keycloak.token).getSharedFile(file.name);
+    await Api.getSharedFilesService(keycloak.token).getSharedFile(file.name, path ? `${path}/` : undefined);
   }
 
   /**
@@ -280,7 +295,7 @@ class Databank extends React.Component<Props, State> {
             return (
               <div key={ index } style={{ userSelect: "none", display: "inline-block" }}>
                 <span style={{ marginLeft: "0.5rem", marginRight: "0.5rem", fontSize: "1.8rem" }}>/</span>
-                <Breadcrumb.Section onClick={ () => { this.moveBackToLocation(index) } }><p style={{ fontSize: "1.8rem" }}>{ name }</p></Breadcrumb.Section>
+                <Breadcrumb.Section onClick={ () => { this.moveBackToLocation(index) } }><p style={{ fontSize: "1.8rem", textTransform: "capitalize" }}>{ name }</p></Breadcrumb.Section>
               </div>
             )
           })
@@ -344,7 +359,7 @@ class Databank extends React.Component<Props, State> {
               <div style={{ width: "100%", fontSize: "1.8rem" }}>
                 <div style={{ cursor:"pointer", userSelect: "none", fontSize: "1.8rem", width: "80%", display: "inline-block" }}  onClick={ (item.fileType === "FOLDER") ? () => { this.moveToLocation(item.name) } :  () => { this.downloadFile(item) } }>
                   { this.getImage(item.fileType) }
-                  <p style={{ display: "inline-block", marginLeft: "1rem", marginBottom: 0 }}>{ item.name }</p>
+                  <p style={{ display: "inline-block", marginLeft: "1rem", marginBottom: 0, textTransform: "capitalize" }}>{ item.name }</p>
                 </div>
                 <Icon name='trash' color="red" onClick={ () => { this.deleteSharedFile(item) } } style={{ display: "inline-block", float: "right", paddingTop: 10 }} />              
               </div>
