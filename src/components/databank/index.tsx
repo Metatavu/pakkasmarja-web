@@ -1,11 +1,17 @@
 import * as React from "react";
+import * as actions from "../../actions/";
 import BasicLayout from "../generic/BasicLayout";
 import "../../styles/common.css";
 import { KeycloakInstance } from "keycloak-js";
-import { List, Breadcrumb, Button, Icon } from "semantic-ui-react"
+import { List, Breadcrumb, Button, Icon, Modal, FormButton, Input, Select } from "semantic-ui-react"
 import TiedostoIkoni from "../../gfx/tiedostoikoni.svg";
 import KuvaTiedosto from "../../gfx/kuva.svg";
 import PdfIkoni from "../../gfx/pdfikoni.svg";
+import Api, { SharedFile, FileType } from "pakkasmarja-client";
+import { StoreState } from "src/types";
+import { Dispatch } from "redux";
+import { connect } from "react-redux";
+import strings from "src/localization/strings";
 
 /**
  * Component props
@@ -24,15 +30,23 @@ interface State {
    */
   path: string;
   /**
-   * Example folder structure that will be rendered
+   * Files and folders that will be rendered
    */
-  exampleFolderStructure: Array<{ type:"file"|"folder"|"pdf"|"image", name:string }>; // This is just example type
+  sharedFiles: SharedFile[];
+  /**
+   * Whether or not add new modal is open
+   */
+  addNewodalOpen: boolean;
+  /**
+   * Contains data of new shared file
+   */
+  newSharedFile: {name?:string,type?:string,file?:File};
 }
 
 /**
  * Class for databank component
  */
-export default class Databank extends React.Component<Props, State> {
+class Databank extends React.Component<Props, State> {
 
   /**
    * Component constructor
@@ -43,44 +57,17 @@ export default class Databank extends React.Component<Props, State> {
     super(props);
     this.state = {
       path: "",
-      exampleFolderStructure: []
+      sharedFiles: [],
+      addNewodalOpen: false,
+      newSharedFile: {}
     }
   }
 
   /**
    * Component did mount life-cycle handler
    */
-  public componentDidMount() {
-    // make api call here
-    const example:Array<{ type:"file"|"folder"|"pdf"|"image", name:string }> = [ // This is just a temporary example
-      {
-        type: "folder",
-        name: "example folder 1"
-      },
-      {
-        type: "folder",
-        name: "example folder 2"
-      },
-      {
-        type: "folder",
-        name: "example folder 3"
-      },
-      {
-        type: "pdf",
-        name: "example folder 4"
-      },
-      {
-        type: "image",
-        name: "example file 1"
-      },
-      {
-        type: "file",
-        name: "example file 2"
-      },
-    ]
-    this.setState({
-      exampleFolderStructure: example
-    });
+  public async componentDidMount() {
+    this.updateSharedFiles();
   }
 
   /**
@@ -92,7 +79,7 @@ export default class Databank extends React.Component<Props, State> {
   public componentDidUpdate(prevProps: Props, prevState: State) {
     const { path } = this.state;
     if (prevState.path !== path) {
-      // make api call here
+      this.updateSharedFiles();
     }
   }
 
@@ -106,13 +93,154 @@ export default class Databank extends React.Component<Props, State> {
         <Breadcrumb>
           { this.renderBreadcrumb() }
         </Breadcrumb>
+        <div onClick={ this.addNewModalToggle } style={{ cursor:"pointer", userSelect: "none", fontSize: "1.8rem", marginTop: "1.5rem", fontWeight: 700 }}>
+          <Icon name='add square' color="red" style={{ fontSize: 27, marginRight: 10 }} />
+          <p style={{ display: "inline-block", marginLeft: "1rem" }}>{ strings.addNew }</p>
+        </div>
         <div style={{ marginTop: "1.5rem" }}>
           <List>
             { this.renderFolderStructure() }
           </List>
         </div>
+        <Modal open={ this.state.addNewodalOpen } style={{ width: "25rem" }}>
+          <Modal.Header>
+            Lisää uusi kansio tai tiedosto
+          </Modal.Header>
+          <Modal.Content>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <div style={{ flex: 1, marginBottom: "1rem" }}>
+                <Input name="name"  type="text" placeholder="Nimi" onChange={ this.onChangeNewSharedFile } />
+              </div>
+              <div style={{ flex: 1, marginBottom: "1rem" }}>
+                <Select options={ [{ text: "Kansio", value:"FOLDER" }, { text: "Tiedosto", value: "FILE" }] } name="type" onChange={ this.onChangeNewSharedFile } />
+              </div>
+              { this.state.newSharedFile.type === "FILE" &&
+                <div style={{ flex: 1, marginBottom: "1rem" }}>
+                  <input name="file" type="file" onChange={ this.onChangeNewSharedFile } />
+                </div>
+              }
+            </div>
+            <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
+              <FormButton onClick={ this.addNewModalToggle }>Peruuta</FormButton>
+              <Button color="red" onClick={ this.addNewSharedFile }>Lisää</Button>
+            </div>
+          </Modal.Content>
+        </Modal>
       </BasicLayout>
     );
+  }
+
+  /**
+   * Handles creating new shared file
+   */
+  private addNewSharedFile = async () => {
+    const { keycloak } = this.props;
+    const { newSharedFile } = this.state;
+    console.log(newSharedFile.type)
+    if ((!keycloak || !keycloak.token) || !newSharedFile.name) {
+      return;
+    }
+    
+    if (newSharedFile.type === "FILE" && newSharedFile.file) {
+      const formData = new FormData();
+      formData.append('file', newSharedFile.file);
+      try {
+        const response = await fetch(`https://staging-api-pakkasmarja.metatavu.io/rest/v1/sharedFiles/upload/file?fileName=${newSharedFile.name}`, {
+          method: "POST",
+          headers: {
+            'Authorization': `Bearer ${keycloak.token}`
+          },
+          body: formData
+        });
+        if (response.status === 200) {
+          this.updateSharedFiles();
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    } else if (newSharedFile.type === "FOLDER") {
+      await Api.getSharedFilesService(keycloak.token).uploadSharedFolder(newSharedFile.name);
+    }
+  }
+
+  /**
+   * Handles deleting shared file
+   */
+  private deleteSharedFile = async (sharedFile: SharedFile) => {
+    const { keycloak } = this.props;
+    if (!keycloak || !keycloak.token) {
+      return;
+    }
+    try {
+      const response = await Api.getSharedFilesService(keycloak.token).deleteSharedFile(sharedFile.name);
+      if (response.status === 200) {
+        this.updateSharedFiles();
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  /**
+   * Handles changing new shared file data
+   */
+  private onChangeNewSharedFile = (event: any, data?:any) => {
+    const { newSharedFile } = this.state;
+    switch(event.target.name) {
+      case "name": {
+        newSharedFile.name = event.target.value;
+        break;
+      }
+      case "file": {
+        if (event.target.files.length) {
+          newSharedFile.file = event.target.files[0];
+        }
+        break;
+      }
+      default: {
+        if (data.value === "FOLDER") {
+          newSharedFile.file = undefined;
+        }
+        newSharedFile.type = data.value;
+        break;
+      }
+    }
+    this.setState({
+      newSharedFile: newSharedFile
+    });
+  }
+
+  /**
+   * Toggles on or off current add new modal state
+   */
+  private addNewModalToggle = () => {
+    const { addNewodalOpen } = this.state;
+    this.setState({
+      addNewodalOpen: !addNewodalOpen
+    });
+  }
+
+  /**
+   * Updates shared files
+   */
+  private updateSharedFiles = async () => {
+    const { keycloak } = this.props;
+    const { path } = this.state;
+    if (!keycloak || !keycloak.token) {
+      return;
+    }
+    try {
+      const sharedFiles = await Api.getSharedFilesService(keycloak.token).listSharedFiles(path ? path + "/" : undefined);
+      if (Array.isArray(sharedFiles)) {
+        this.setState({
+          sharedFiles: sharedFiles.map((file) => {
+            return {...file, name: file.name.replace(/\//g, "")}
+          })
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   /**
@@ -120,8 +248,12 @@ export default class Databank extends React.Component<Props, State> {
    * 
    * Functionality in-progress
    */
-  private downloadFile = () => {
-
+  private downloadFile = async (file: SharedFile) => {
+    const { keycloak } = this.props;
+    if (!keycloak || !keycloak.token) {
+      return;
+    }
+    await Api.getSharedFilesService(keycloak.token).getSharedFile(file.name);
   }
 
   /**
@@ -182,19 +314,19 @@ export default class Databank extends React.Component<Props, State> {
     });
   }
 
-  private getImage = (type: "file"|"folder"|"pdf"|"image") => {
+  private getImage = (type: FileType) => {
     switch(type) {
-      case "file": {
-        return <img src={ TiedostoIkoni } style={{ width: 35, marginRight: 13 }} />;
+      case "OTHER": {
+        return <img src={ TiedostoIkoni } style={{ width: 30, marginRight: 13 }} />;
       }
-      case "folder": {
-        return <Icon name='folder' color="red" style={{ fontSize: 32, marginRight: 10 }} />;
+      case "FOLDER": {
+        return <Icon name='folder' color="red" style={{ display: "inline-block", fontSize: 27, marginRight: 10, paddingTop: 10 }} />;
       }
-      case "pdf": {
-        return <img src={ PdfIkoni } style={{ width: 35, marginRight: 13 }} />;
+      case "PDF": {
+        return <img src={ PdfIkoni } style={{ width: 30, marginRight: 13 }} />;
       }
-      case "image": {
-        return <img src={ KuvaTiedosto } style={{ width: 35, marginRight: 13 }} />;
+      case "IMAGE": {
+        return <img src={ KuvaTiedosto } style={{ width: 30, marginRight: 13 }} />;
       }
     }
   }
@@ -203,15 +335,18 @@ export default class Databank extends React.Component<Props, State> {
    * Renders folder structure
    */
   private renderFolderStructure = () => {
-    const { exampleFolderStructure } = this.state;
-    return exampleFolderStructure.map((item, index) => {
+    const { sharedFiles } = this.state;
+    return sharedFiles.map((item, index) => {
       return (
         <List.Item key={ index }>
           <List.Content>
             <List.Header>
-              <div style={{ cursor:"pointer", userSelect: "none", fontSize: "1.8rem" }}  onClick={ (item.type === "folder") ? () => { this.moveToLocation(item.name) } : this.downloadFile }>
-                { this.getImage(item.type) }
-                <p style={{ display: "inline-block", marginLeft: "1rem" }}>{ item.name }</p>
+              <div style={{ width: "100%", fontSize: "1.8rem" }}>
+                <div style={{ cursor:"pointer", userSelect: "none", fontSize: "1.8rem", width: "80%", display: "inline-block" }}  onClick={ (item.fileType === "FOLDER") ? () => { this.moveToLocation(item.name) } :  () => { this.downloadFile(item) } }>
+                  { this.getImage(item.fileType) }
+                  <p style={{ display: "inline-block", marginLeft: "1rem", marginBottom: 0 }}>{ item.name }</p>
+                </div>
+                <Icon name='trash' color="red" onClick={ () => { this.deleteSharedFile(item) } } style={{ display: "inline-block", float: "right", paddingTop: 10 }} />              
               </div>
             </List.Header>
           </List.Content>
@@ -220,3 +355,26 @@ export default class Databank extends React.Component<Props, State> {
     });
   }
 }
+
+/**
+ * Redux mapper for mapping store state to component props
+ *
+ * @param state store state
+ */
+export function mapStateToProps(state: StoreState) {
+  return {
+    keycloak: state.keycloak
+  }
+}
+
+/**
+ * Redux mapper for mapping component dispatches
+ *
+ * @param dispatch dispatch method
+ */
+export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
+  return {
+  };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Databank);
