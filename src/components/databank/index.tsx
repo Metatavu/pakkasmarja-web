@@ -228,7 +228,8 @@ class Databank extends React.Component<Props, State> {
   private addNewModalToggle = () => {
     const { addNewodalOpen } = this.state;
     this.setState({
-      addNewodalOpen: !addNewodalOpen
+      addNewodalOpen: !addNewodalOpen,
+      newSharedFile: { name: undefined, type: undefined, file: undefined }
     });
   }
 
