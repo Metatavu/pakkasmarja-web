@@ -185,7 +185,10 @@ class Databank extends React.Component<Props, State> {
     }
     try {
       if (window.confirm(`Haluatko varmasti poistaa ${ sharedFile.fileType === "FOLDER" ? "kansion" : "tiedoston" } nimeltä "${ sharedFile.name }"?`)) {
-        await Api.getSharedFilesService(keycloak.token).deleteSharedFile(sharedFile.name, path ? `${path}/` : undefined);
+        const response = await Api.getSharedFilesService(keycloak.token).deleteSharedFile(sharedFile.fileType === "FOLDER" ? `${sharedFile.name}/` : sharedFile.name, path ? `${path}/` : undefined);
+        if (response.code === 403) {
+          alert(response.message);
+        }
         this.updateSharedFiles();
       }
     } catch (error) {
@@ -267,13 +270,59 @@ class Databank extends React.Component<Props, State> {
    * 
    * Functionality in-progress
    */
-  private downloadFile = async (file: SharedFile) => {
+  private downloadFile = async (file: SharedFile): Promise<any>  => {
     const { keycloak } = this.props;
-    const { path } = this.state;
     if (!keycloak || !keycloak.token) {
       return;
     }
-    await Api.getSharedFilesService(keycloak.token).getSharedFile(file.name, path ? `${path}/` : undefined);
+    try {
+      const response = await fetch(`https://staging-api-pakkasmarja.metatavu.io/rest/v1/sharedFiles/download?${file.pathPrefix ? "pathPrefix=" + file.pathPrefix.replace(/\//g, "%2F") + "&" : ""}fileName=${file.name}`, {
+        method: "GET",
+        headers: {
+          'Authorization': `Bearer ${keycloak.token}`
+        },
+      });
+      if (response.body) {
+        const body = await this.readStream(response.body);
+        if (body) {
+          const dataObj = window.URL.createObjectURL(new Blob([body]));
+          const link = document.createElement('a');
+          document.body.appendChild(link);
+          link.href = dataObj;
+          link.download=`${file.name}`;
+          link.click();
+          setTimeout(() => {
+            window.URL.revokeObjectURL(dataObj);
+          }, 100);
+        }
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  /**
+   * Reads stream and returns its value
+   * 
+   * @param stream readable stream
+   */
+  private readStream = async (stream: ReadableStream) => {
+    const reader = stream.getReader();
+    let result: Uint8Array = new Uint8Array();
+    let finished = false;
+    while (!finished) {
+      await reader.read().then(({ done, value }) => {
+        if (done) {
+          finished = true
+        } else {
+          const chunk = new Uint8Array(result.length + value.length);
+          chunk.set(result);
+          chunk.set(value, result.length);
+          result = chunk;
+        }
+      });
+    }
+    return result;
   }
 
   /**
