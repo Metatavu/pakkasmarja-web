@@ -138,7 +138,7 @@ class Databank extends React.Component<Props, State> {
   private addNewSharedFile = async () => {
     const { keycloak } = this.props;
     const { newSharedFile, path } = this.state;
-    if ((!keycloak || !keycloak.token) || !newSharedFile.name) {
+    if ((!keycloak || !keycloak.token) || !newSharedFile.name || (this.props.keycloak && !this.props.keycloak.hasRealmRole("manage-shared-files"))) {
       return;
     }
     if (newSharedFile.type === "FILE" && newSharedFile.file) {
@@ -268,7 +268,7 @@ class Databank extends React.Component<Props, State> {
   /**
    * Downloads a file
    * 
-   * Functionality in-progress
+   * @param file shared file
    */
   private downloadFile = async (file: SharedFile): Promise<any>  => {
     const { keycloak } = this.props;
@@ -415,7 +415,9 @@ class Databank extends React.Component<Props, State> {
                   { this.getImage(item.fileType) }
                   <p style={{ display: "inline-block", marginLeft: "1rem", marginBottom: 0, textTransform: "capitalize" }}>{ item.name }</p>
                 </div>
-                <Icon name='trash' color="red" onClick={ () => { this.deleteSharedFile(item) } } style={{ display: "inline-block", float: "right", paddingTop: 10 }} />              
+                { this.props.keycloak && this.props.keycloak.hasRealmRole("manage-shared-files") &&
+                  <Icon name='trash' color="red" onClick={ () => { this.deleteSharedFile(item) } } style={{ display: "inline-block", float: "right", paddingTop: 10 }} />
+                }              
               </div>
             </List.Header>
           </List.Content>
