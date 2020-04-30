@@ -139,6 +139,54 @@ class Databank extends React.Component<Props, State> {
   }
 
   /**
+   * Renders folder structure
+   */
+  private renderFolderStructure = () => {
+    const { sharedFiles } = this.state;
+    return sharedFiles.map((item, index) => {
+      return (
+        <List.Item key={ index }>
+          <List.Content>
+            <List.Header>
+              <div style={{ width: "100%", fontSize: "1.8rem" }}>
+                <div style={{ cursor:"pointer", userSelect: "none", fontSize: "1.8rem", width: "80%", display: "inline-block" }}  onClick={ (item.fileType === "FOLDER") ? () => { this.moveToLocation(item.name) } :  () => { this.downloadFile(item) } }>
+                  { this.getImage(item.fileType) }
+                  <p style={{ display: "inline-block", marginLeft: "1rem", marginBottom: 0 }}>{ item.name }</p>
+                </div>
+                { this.props.keycloak && this.props.keycloak.hasRealmRole("manage-shared-files") &&
+                  <Icon name='trash' color="red" onClick={ () => { this.deleteSharedFile(item) } } style={{ display: "inline-block", float: "right", paddingTop: 10, cursor: "pointer" }} />
+                }
+              </div>
+            </List.Header>
+          </List.Content>
+        </List.Item>
+      );
+    });
+  }
+
+  /**
+   * Renders breadcrumb
+   */
+  private renderBreadcrumb = () => {
+    const { path } = this.state;
+    const locations = path.split("/");
+    return (
+      <>
+        {
+          locations.map((name, index) => {
+            return (
+              <div key={ index } style={{ userSelect: "none", display: "inline-block" }}>
+                <span style={{ marginLeft: "0.5rem", marginRight: "0.5rem", fontSize: "1.8rem" }}>/</span>
+                <Breadcrumb.Section onClick={ () => { this.moveBackToLocation(index) } }><p style={{ fontSize: "1.8rem" }}>{ name }</p></Breadcrumb.Section>
+              </div>
+            )
+          })
+        }
+      </>
+    );
+  }
+
+  /**
    * Handles creating new shared file
    */
   private addNewSharedFile = async () => {
@@ -150,8 +198,12 @@ class Databank extends React.Component<Props, State> {
     if (newSharedFile.type === "FILE" && newSharedFile.file) {
       const formData = new FormData();
       formData.append('file', newSharedFile.file);
+      const requestUrl = `${process.env.REACT_APP_API_URL}/rest/v1/sharedFiles/upload/file`;
+      const ext = this.getFileExtension(newSharedFile.file.name);
+      const fileName = `fileName=${newSharedFile.name}${ext ? ext : ""}`;
+      const pathPrefix = path ? `pathPrefix=${path}/` : "";
       try {
-        await fetch(`${process.env.REACT_APP_API_URL}/rest/v1/sharedFiles/upload/file?fileName=${ newSharedFile.name }${ path ? `&pathPrefix=${path}/` : "" }`, {
+        await fetch(`${requestUrl}?${fileName}&${pathPrefix}`, {
           method: "POST",
           headers: {
             'Authorization': `Bearer ${keycloak.token}`
@@ -290,12 +342,13 @@ class Databank extends React.Component<Props, State> {
       });
       if (response.body) {
         const body = await this.readStream(response.body);
-        if (body) {
+        //const fileType = await filetype.fromBuffer(body);
+        if (body) { // && fileType
           const dataObj = window.URL.createObjectURL(new Blob([body]));
           const link = document.createElement('a');
           document.body.appendChild(link);
           link.href = dataObj;
-          link.download=`${file.name}`;
+          link.download=`${file.name}`; //.${fileType.ext}
           link.click();
           setTimeout(() => {
             window.URL.revokeObjectURL(dataObj);
@@ -343,28 +396,6 @@ class Databank extends React.Component<Props, State> {
   }
 
   /**
-   * Renders breadcrumb
-   */
-  private renderBreadcrumb = () => {
-    const { path } = this.state;
-    const locations = path.split("/");
-    return (
-      <>
-        {
-          locations.map((name, index) => {
-            return (
-              <div key={ index } style={{ userSelect: "none", display: "inline-block" }}>
-                <span style={{ marginLeft: "0.5rem", marginRight: "0.5rem", fontSize: "1.8rem" }}>/</span>
-                <Breadcrumb.Section onClick={ () => { this.moveBackToLocation(index) } }><p style={{ fontSize: "1.8rem", textTransform: "capitalize" }}>{ name }</p></Breadcrumb.Section>
-              </div>
-            )
-          })
-        }
-      </>
-    );
-  }
-
-  /**
    * Sets location to folder with the given name
    * 
    * @param name name of the folder
@@ -389,6 +420,11 @@ class Databank extends React.Component<Props, State> {
     });
   }
 
+  /**
+   * Checks file type and returns custom image JSX for it
+   * 
+   * @param type file type
+   */
   private getImage = (type: FileType) => {
     switch(type) {
       case "OTHER": {
@@ -407,29 +443,14 @@ class Databank extends React.Component<Props, State> {
   }
 
   /**
-   * Renders folder structure
+   * Get file extension from file name if available
+   * 
+   * @param fileName name of the file
+   * @returns file extension as string
    */
-  private renderFolderStructure = () => {
-    const { sharedFiles } = this.state;
-    return sharedFiles.map((item, index) => {
-      return (
-        <List.Item key={ index }>
-          <List.Content>
-            <List.Header>
-              <div style={{ width: "100%", fontSize: "1.8rem" }}>
-                <div style={{ cursor:"pointer", userSelect: "none", fontSize: "1.8rem", width: "80%", display: "inline-block" }}  onClick={ (item.fileType === "FOLDER") ? () => { this.moveToLocation(item.name) } :  () => { this.downloadFile(item) } }>
-                  { this.getImage(item.fileType) }
-                  <p style={{ display: "inline-block", marginLeft: "1rem", marginBottom: 0, textTransform: "capitalize" }}>{ item.name }</p>
-                </div>
-                { this.props.keycloak && this.props.keycloak.hasRealmRole("manage-shared-files") &&
-                  <Icon name='trash' color="red" onClick={ () => { this.deleteSharedFile(item) } } style={{ display: "inline-block", float: "right", paddingTop: 10, cursor: "pointer" }} />
-                }              
-              </div>
-            </List.Header>
-          </List.Content>
-        </List.Item>
-      );
-    });
+  private getFileExtension = (fileName: string): string => {
+    const resultArray = fileName.match(/\.\w{3,4}$/g);
+    return resultArray ? resultArray[0] : "";
   }
 }
 
