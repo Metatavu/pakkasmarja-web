@@ -49,6 +49,7 @@ import Api, { Unread } from "pakkasmarja-client";
 import ManageContact from "../contact/ManageContact";
 import ManageQualities from "../qualities/ManageQualities";
 import CreateAndEditQuality from "../qualities/CreateAndEditQuality";
+import Databank from "../databank";
 
 /**
  * Interface for component props
@@ -151,6 +152,7 @@ class MainPage extends React.Component<Props, {}> {
         <Route exact path="/manageContact" component={ManageContact} />
         <Route exact path="/manageQualities" component={ManageQualities} />
         <Route exact path="/quality/:deliveryQualityId" component={CreateAndEditQuality} />
+        <Route exact path="/databank" component={Databank} />
       </div>
     );
   }
