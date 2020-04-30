@@ -74,11 +74,9 @@ class MenuContainer extends React.Component<Props, State> {
               </Dropdown>
             </Menu.Menu>
           }
-          { this.props.authenticated && this.props.keycloak && this.showManagement(this.props.keycloak) &&
-            <Menu.Item as="div">
-              <Link to="/databank">{strings.databank}</Link>
-            </Menu.Item>
-          }
+          <Menu.Item as="div">
+            <Link to="/databank">{strings.databank}</Link>
+          </Menu.Item>
           { this.props.authenticated &&
             <Menu.Menu position="right">
               <Dropdown item simple text={strings.menuBarUserItemText}>
