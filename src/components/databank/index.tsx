@@ -40,7 +40,13 @@ interface State {
   /**
    * Contains data of new shared file
    */
-  newSharedFile: Partial<SharedFile>;
+  newSharedFile: newSharedFile;
+}
+
+interface newSharedFile {
+  name?: string;
+  type?: "FILE" | "FOLDER";
+  file?: File;
 }
 
 /**
