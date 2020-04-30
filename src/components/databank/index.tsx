@@ -151,7 +151,7 @@ class Databank extends React.Component<Props, State> {
       const formData = new FormData();
       formData.append('file', newSharedFile.file);
       try {
-        await fetch(`https://staging-api-pakkasmarja.metatavu.io/rest/v1/sharedFiles/upload/file?fileName=${ newSharedFile.name }${ path ? `&pathPrefix=${path}/` : "" }`, {
+        await fetch(`${process.env.REACT_APP_API_URL}/rest/v1/sharedFiles/upload/file?fileName=${ newSharedFile.name }${ path ? `&pathPrefix=${path}/` : "" }`, {
           method: "POST",
           headers: {
             'Authorization': `Bearer ${keycloak.token}`
@@ -282,7 +282,7 @@ class Databank extends React.Component<Props, State> {
       return;
     }
     try {
-      const response = await fetch(`https://staging-api-pakkasmarja.metatavu.io/rest/v1/sharedFiles/download?${file.pathPrefix ? "pathPrefix=" + file.pathPrefix.replace(/\//g, "%2F") + "&" : ""}fileName=${file.name}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/rest/v1/sharedFiles/download?${file.pathPrefix ? "pathPrefix=" + file.pathPrefix.replace(/\//g, "%2F") + "&" : ""}fileName=${file.name}`, {
         method: "GET",
         headers: {
           'Authorization': `Bearer ${keycloak.token}`
@@ -422,7 +422,7 @@ class Databank extends React.Component<Props, State> {
                   <p style={{ display: "inline-block", marginLeft: "1rem", marginBottom: 0, textTransform: "capitalize" }}>{ item.name }</p>
                 </div>
                 { this.props.keycloak && this.props.keycloak.hasRealmRole("manage-shared-files") &&
-                  <Icon name='trash' color="red" onClick={ () => { this.deleteSharedFile(item) } } style={{ display: "inline-block", float: "right", paddingTop: 10 }} />
+                  <Icon name='trash' color="red" onClick={ () => { this.deleteSharedFile(item) } } style={{ display: "inline-block", float: "right", paddingTop: 10, cursor: "pointer" }} />
                 }              
               </div>
             </List.Header>
