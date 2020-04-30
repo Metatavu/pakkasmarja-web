@@ -200,10 +200,10 @@ class Databank extends React.Component<Props, State> {
       formData.append('file', newSharedFile.file);
       const requestUrl = `${process.env.REACT_APP_API_URL}/rest/v1/sharedFiles/upload/file`;
       const ext = this.getFileExtension(newSharedFile.file.name);
-      const fileName = `fileName=${newSharedFile.name}${ext ? ext : ""}`;
-      const pathPrefix = path ? `pathPrefix=${path}/` : "";
+      const fileNameParam = `fileName=${newSharedFile.name}${ext}`;
+      const pathPrefixParam = path ? `pathPrefix=${path}/` : "";
       try {
-        await fetch(`${requestUrl}?${fileName}&${pathPrefix}`, {
+        await fetch(`${requestUrl}?${fileNameParam}&${pathPrefixParam}`, {
           method: "POST",
           headers: {
             'Authorization': `Bearer ${keycloak.token}`
