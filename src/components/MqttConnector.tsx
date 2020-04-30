@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as actions from "../actions";
-import { MqttConfig, MqttConnection } from "../mqtt";
+import { MqttConfig, MqttConnection, mqttConnection } from "../mqtt";
 import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
@@ -33,7 +33,7 @@ class MqttConnector extends React.Component<Props, State> {
    */
   constructor(props: Props) {
     super(props);
-    this.connection = new MqttConnection();
+    this.connection = mqttConnection;
     this.state = { };
   }
 

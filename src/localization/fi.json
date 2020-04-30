@@ -140,6 +140,7 @@
   "pastDeliveries": "Tehdyt toimitukset",
   "suggestions": "Ehdotukset",
   "image": "Kuva",
+  "addNew": "Lisää uusi",
   "addImage": "Lisää kuva pudottamalla tai klikkaamalla",
   "addImageShort": "Lisää kuva",
   "note": "Huomio",
@@ -217,5 +218,8 @@
   "redBoxesLoaned": "Lainattu (Punaiset laatikot)",
   "redBoxesReturned": "Palautettu (Punaiset laatikot)",
   "grayBoxesLoaned": "Lainattu (Harmaat laatikot)",
-  "grayBoxesReturned": "Palautettu (Harmaat laatikot)"
+  "grayBoxesReturned": "Palautettu (Harmaat laatikot)",
+  "frozenCategory": "Pakastukseen",
+  "freshCategory": "Tuore",
+  "databank": "Tietopankki"
 }

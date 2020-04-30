@@ -1,6 +1,6 @@
 import * as React from "react";
 import { connect } from "react-redux";
-import { StoreState } from "src/types";
+import { StoreState, ConversationType } from "src/types";
 import { Dispatch } from "redux";
 import * as actions from "../../actions/";
 import Api, { ChatThread, Unread } from "pakkasmarja-client";
@@ -18,9 +18,9 @@ interface Props {
   authenticated: boolean;
   keycloak?: Keycloak.KeycloakInstance;
   groupId?: number,
-  type: "CHAT" | "QUESTION",
+  type: ConversationType,
   unreads: Unread[],
-  onThreadSelected: (threadId: number, answerType: ChatThread.AnswerTypeEnum) => void
+  onThreadSelected: (threadId: number, answerType: ChatThread.AnswerTypeEnum, type: ConversationType) => void
   onBackClick?: () => void
   onError?: (errorMsg: string) => void
 };
@@ -126,7 +126,7 @@ class ChatThreadList extends React.Component<Props, State> {
   public render() {
     const conversations = this.state.conversationListItems.map((conversationListItem) => {
       return (
-        <Item key={conversationListItem.id} onClick={() => this.selectThread(conversationListItem.id, conversationListItem.answerType)}>
+        <Item key={conversationListItem.id} onClick={() => this.selectThread(conversationListItem.id, conversationListItem.answerType, this.props.type)} style={{ cursor: "pointer" }}>
           <Item.Image avatar style={{width:"45px"}} src={conversationListItem.avatar} />
           <Item.Content>
             { this.renderChatHeader(conversationListItem) }
@@ -160,10 +160,10 @@ class ChatThreadList extends React.Component<Props, State> {
     const text = (conversationListItem.title.length > 30 ? `${conversationListItem.title.substring(0, 30)}...` : conversationListItem.title);
 
     return (
-      <p className="chat-header"> 
+      <span className="chat-header">
         { text }
         { unreadCount ? <div style={{ float: "right", marginRight: "5px" }}> <Label color='black' circular size="mini"> { unreadCount } </Label> </div> : null }
-      </p>
+      </span>
     );
   }
 
@@ -239,8 +239,8 @@ class ChatThreadList extends React.Component<Props, State> {
   /**
    * Opens chat
    */
-  private selectThread = async (chatThreadId: number, answerType: ChatThread.AnswerTypeEnum) => {
-    this.props.onThreadSelected(chatThreadId, answerType);
+  private selectThread = async (chatThreadId: number, answerType: ChatThread.AnswerTypeEnum, conversationType: ConversationType) => {
+    this.props.onThreadSelected(chatThreadId, answerType, conversationType);
   }
 }
 

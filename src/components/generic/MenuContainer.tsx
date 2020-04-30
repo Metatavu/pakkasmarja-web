@@ -50,17 +50,17 @@ class MenuContainer extends React.Component<Props, State> {
           <Menu.Item as="div">
             <Link to="/contracts">{strings.contracts}</Link>
           </Menu.Item>
-            { this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_DELIVERIES) &&
-              <Menu.Menu>
-                <Dropdown item simple text="Vastaanotto">
-                  <Dropdown.Menu>
-                    {this.props.keycloak.hasRealmRole(ApplicationRoles.RECEIVE_FRESH_BERRIES) && <Dropdown.Item to="/manageFreshDeliveries" as={Link}>Tuore toimitukset</Dropdown.Item>}
-                    {this.props.keycloak.hasRealmRole(ApplicationRoles.RECEIVE_FROZEN_BERRIES) && <Dropdown.Item to="/manageFrozenDeliveries" as={Link}>Pakaste toimitukset</Dropdown.Item>}
-                  </Dropdown.Menu>
-                </Dropdown>
-              </Menu.Menu>
-            }
-            { this.props.authenticated && this.props.keycloak && this.showManagement(this.props.keycloak) &&
+          { this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_DELIVERIES) &&
+            <Menu.Menu>
+              <Dropdown item simple text="Vastaanotto">
+                <Dropdown.Menu>
+                  {this.props.keycloak.hasRealmRole(ApplicationRoles.RECEIVE_FRESH_BERRIES) && <Dropdown.Item to="/manageFreshDeliveries" as={Link}>Tuore toimitukset</Dropdown.Item>}
+                  {this.props.keycloak.hasRealmRole(ApplicationRoles.RECEIVE_FROZEN_BERRIES) && <Dropdown.Item to="/manageFrozenDeliveries" as={Link}>Pakaste toimitukset</Dropdown.Item>}
+                </Dropdown.Menu>
+              </Dropdown>
+            </Menu.Menu>
+          }
+          { this.props.authenticated && this.props.keycloak && this.showManagement(this.props.keycloak) &&
             <Menu.Menu>
               <Dropdown item simple text="Hallinta">
                 <Dropdown.Menu>
@@ -74,14 +74,17 @@ class MenuContainer extends React.Component<Props, State> {
               </Dropdown>
             </Menu.Menu>
           }
+          <Menu.Item as="div">
+            <Link to="/databank">{strings.databank}</Link>
+          </Menu.Item>
           { this.props.authenticated &&
             <Menu.Menu position="right">
               <Dropdown item simple text={strings.menuBarUserItemText}>
                 <Dropdown.Menu>
                   <Dropdown.Item to="/manageContact" as={Link}><Icon name='user' color="red" />Yhteystiedot</Dropdown.Item>
                   <Dropdown.Item onClick={this.onAccountItemClick}><Icon name='setting' color="red" />{strings.menuBarManageAccountText}</Dropdown.Item>
-                 {
-                   this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTACTS) &&
+                  {
+                    this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTACTS) &&
                     <Dropdown.Item href={"https://tunnistus-pakkasmarja.metatavu.io/auth/admin/Pakkasmarja/console"} target="_blank">
                       <Icon name='users' flipped="horizontally" color="red" />
                       Käyttäjähallinta

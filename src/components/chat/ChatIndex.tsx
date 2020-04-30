@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as actions from "../../actions/";
-import { StoreState } from "src/types";
+import { StoreState, ConversationType } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
@@ -15,7 +15,7 @@ import { ChatThread } from "pakkasmarja-client";
 interface Props {
   authenticated: boolean;
   keycloak?: Keycloak.KeycloakInstance;
-  onChatThreadSelected: (chatThreadId: number, answerType: ChatThread.AnswerTypeEnum) => void
+  onChatThreadSelected: (chatThreadId: number, answerType: ChatThread.AnswerTypeEnum, conversationType: ConversationType) => void
   onChatGroupSelected: (chatGroup: number) => void
   onResetChatGroupId: () => void;
   chatGroup?: number

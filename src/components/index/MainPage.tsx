@@ -49,6 +49,7 @@ import Api, { Unread } from "pakkasmarja-client";
 import ManageContact from "../contact/ManageContact";
 import ManageQualities from "../qualities/ManageQualities";
 import CreateAndEditQuality from "../qualities/CreateAndEditQuality";
+import Databank from "../databank";
 
 /**
  * Interface for component props
@@ -81,6 +82,12 @@ class MainPage extends React.Component<Props, {}> {
    */
   public componentDidMount = () => {
     this.intervalId = setInterval(this.checkUnreads, 1000 * 30);
+  }
+
+  public componentDidUpdate = (prevProps: Props) => {
+    if (!prevProps.keycloak && this.props.keycloak) {
+      this.checkUnreads();
+    }
   }
 
   /**
@@ -145,6 +152,7 @@ class MainPage extends React.Component<Props, {}> {
         <Route exact path="/manageContact" component={ManageContact} />
         <Route exact path="/manageQualities" component={ManageQualities} />
         <Route exact path="/quality/:deliveryQualityId" component={CreateAndEditQuality} />
+        <Route exact path="/databank" component={Databank} />
       </div>
     );
   }

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { connect } from "react-redux";
-import { StoreState } from "src/types";
+import { StoreState, ConversationType } from "src/types";
 import { Dispatch } from "redux";
 import * as actions from "../../actions/";
 import Api, { ChatGroup, Unread } from "pakkasmarja-client";
@@ -16,7 +16,7 @@ import * as _ from "lodash";
 interface Props {
   authenticated: boolean;
   keycloak?: Keycloak.KeycloakInstance;
-  type: "CHAT" | "QUESTION",
+  type: ConversationType,
   unreads: Unread[],
   onGroupSelected: (threadId: number) => void
   onError?: (errorMsg: string) => void
@@ -93,7 +93,7 @@ class ChatGroupList extends React.Component<Props, State> {
   public render() {
     const conversations = this.state.conversationListItems.map((conversationListItem) => {
       return (
-        <Item key={conversationListItem.id} onClick={() => this.selectGroup(conversationListItem.id)}>
+        <Item key={conversationListItem.id} onClick={() => this.selectGroup(conversationListItem.id)} style={{ cursor: "pointer" }}>
           <Item.Image avatar style={{width:"45px"}} src={conversationListItem.avatar} />
           <Item.Content>
             { this.renderChatHeader(conversationListItem) }
@@ -126,10 +126,10 @@ class ChatGroupList extends React.Component<Props, State> {
     const text = conversationListItem.title.length > 30 ? `${conversationListItem.title.substring(0, 30)}...` : conversationListItem.title;
 
     return (
-      <p className="chat-header"> 
+      <span className="chat-header">
         { text }
         { unreadCount ? <div style={{ float: "right", marginRight: "5px" }}> <Label color='black' circular size="mini"> { unreadCount } </Label> </div> : null }
-      </p>
+      </span>
     );
   }
 

@@ -5,13 +5,15 @@ import { StoreState, DeliveryProduct, DeliveriesState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
-import Api, { Product } from "pakkasmarja-client";
+import Api, { Product, ItemGroupCategory } from "pakkasmarja-client";
 import { ItemGroup } from "pakkasmarja-client";
-import { Grid, Header, Icon, SemanticICONS, Menu, Loader } from "semantic-ui-react";
+import { Grid, Header, Icon, Image, SemanticICONS, Menu, Loader, Button } from "semantic-ui-react";
 import { Delivery } from "pakkasmarja-client";
 import strings from "src/localization/strings";
 import { Redirect } from "react-router";
 import * as _ from "lodash";
+import FreshIcon from "../../gfx/fresh-icon.png";
+import FrozenIcon from "../../gfx/frozen-icon.png";
 
 /**
  * Interface for component props
@@ -30,7 +32,7 @@ interface State {
   keycloak?: Keycloak.KeycloakInstance;
   itemGroups?: ItemGroup[];
   activeItem?: string;
-  tabActiveItem: string;
+  tabActiveItem?: string;
   pageTitle: string;
   redirect: boolean;
   redirectTo?: string;
@@ -54,8 +56,7 @@ class DeliveriesScreen extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      pageTitle: "toimitukset",
-      tabActiveItem: "FRESH",
+      pageTitle: "Toimitukset",
       redirect: false,
       loading: false
     };
@@ -162,11 +163,6 @@ class DeliveriesScreen extends React.Component<Props, State> {
         count: this.state.proposalCount && this.state.proposalCount
       },
       {
-        value: "weekDeliveryPredictions",
-        pageTitle: "Viikkoennusteet",
-        src: "calendar alternate outline"
-      },
-      {
         value: "incomingDeliveries",
         pageTitle: "Tulevat toimitukset",
         src: "truck",
@@ -178,47 +174,79 @@ class DeliveriesScreen extends React.Component<Props, State> {
         src: "check circle outline"
       }
     ]
-    return (
-      <BasicLayout pageTitle={`${tabActiveItem === "FRESH" ? "Tuore, " : "Pakaste, "} ${this.state.pageTitle.toLowerCase()}`}>
-        <Grid>
-          <Grid.Column width={4}></Grid.Column>
-          <Grid.Column width={8}>
-            <Menu color="red" pointing secondary widths={2}>
-              <Menu.Item name={strings.fresh} active={tabActiveItem === 'FRESH'} onClick={() => this.setState({ tabActiveItem: "FRESH" })} />
-              <Menu.Item name={strings.frozen} active={tabActiveItem === 'FROZEN'} onClick={() => this.setState({ tabActiveItem: "FROZEN" })} />
-            </Menu>
-          </Grid.Column>
-          <Grid.Column width={4}></Grid.Column>
-        </Grid>
-        {this.state.loading ?
-          <Loader size="medium" content={strings.loading} active /> :
-          <Grid verticalAlign='middle'>
-            {
-              tabs.map((tab) => {
-                return (
-                  <Grid.Row key={tab.value}>
-                    <Grid.Column width={4}>
-                    </Grid.Column>
-                    <Grid.Column textAlign="right" width={2}>
-                      <Icon color="red" name={tab.src} size='huge' />
-                    </Grid.Column>
-                    <Grid.Column style={{ height: 40 }} width={6} className="open-modal-element" onClick={() => this.handleTabChange(tab.value)}>
-                      <Header style={{ display: "inline" }}>{tab.pageTitle}</Header>
-                      {
-                        tab.count ?
-                          <div className="delivery-count-container"><p>{tab.count}</p></div>
-                          : null
-                      }
-                    </Grid.Column>
-                    <Grid.Column width={4}>
-                    </Grid.Column>
-                  </Grid.Row>
-                );
-              })
-            }
-          </Grid>}
-      </BasicLayout>
-    );
+
+    if (tabActiveItem === undefined) {
+      return (
+        <BasicLayout pageTitle={ this.state.pageTitle }>
+          <Grid centered>
+            <Grid.Row>
+              <Grid.Column width={4}>
+                <Button basic fluid color="red" size="large" onClick={ () => this.onSelectCategory(ItemGroupCategory.FRESH) }>
+                  <Image avatar src={ FreshIcon } style={{ marginRight: "5%" }} />
+                  <span style={{ color: "black" }}>{ strings.freshCategory }</span>
+                </Button>
+              </Grid.Column>
+            </Grid.Row>
+            <Grid.Row>
+              <Grid.Column width={4}>
+                <Button basic fluid color="red" size="large" onClick={ () => this.onSelectCategory(ItemGroupCategory.FROZEN) }>
+                  <Image avatar src={ FrozenIcon } style={{ marginRight: "5%" }} />
+                  <span style={{ color: "black" }}>{ strings.frozenCategory }</span>
+                </Button>
+              </Grid.Column>
+            </Grid.Row>
+          </Grid>
+        </BasicLayout>
+      );
+    } else {
+      return (
+        <BasicLayout pageTitle={`${tabActiveItem === "FRESH" ? "Tuore, " : "Pakastukseen, "} ${this.state.pageTitle.toLowerCase()}`}>
+          <Grid>
+            <Grid.Column width={4}></Grid.Column>
+            <Grid.Column width={8}>
+              <Menu color="red" pointing secondary widths={2}>
+                <Menu.Item name={strings.freshCategory} active={tabActiveItem === 'FRESH'} onClick={() => this.setState({ tabActiveItem: "FRESH" })}>
+                  <Image avatar src={ FreshIcon } style={{ marginRight: "5%" }} />
+                  { strings.freshCategory }
+                </Menu.Item>
+                <Menu.Item name={strings.frozenCategory} active={tabActiveItem === 'FROZEN'} onClick={() => this.setState({ tabActiveItem: "FROZEN" })}>
+                <Image avatar src={ FrozenIcon } style={{ marginRight: "5%" }} />
+                  { strings.frozenCategory }
+                </Menu.Item>
+              </Menu>
+            </Grid.Column>
+            <Grid.Column width={4}></Grid.Column>
+          </Grid>
+          {this.state.loading ?
+            <Loader size="medium" content={strings.loading} active /> :
+            <Grid verticalAlign='middle'>
+              {
+                tabs.map((tab) => {
+                  return (
+                    <Grid.Row key={tab.value}>
+                      <Grid.Column width={4}>
+                      </Grid.Column>
+                      <Grid.Column textAlign="right" width={2}>
+                        <Icon color="red" name={tab.src} size='huge' />
+                      </Grid.Column>
+                      <Grid.Column style={{ height: 40 }} width={6} className="open-modal-element" onClick={() => this.handleTabChange(tab.value)}>
+                        <Header style={{ display: "inline" }}>{tab.pageTitle}</Header>
+                        {
+                          tab.count ?
+                            <div className="delivery-count-container"><p>{tab.count}</p></div>
+                            : null
+                        }
+                      </Grid.Column>
+                      <Grid.Column width={4}>
+                      </Grid.Column>
+                    </Grid.Row>
+                  );
+                })
+              }
+            </Grid>}
+        </BasicLayout>
+      );
+    }
   }
 
   /**
@@ -226,6 +254,10 @@ class DeliveriesScreen extends React.Component<Props, State> {
    */
   private handleTabChange = (value: string) => {
     this.setState({ redirectTo: value, redirect: true, redirectObj: { category: this.state.tabActiveItem } });
+  }
+
+  private onSelectCategory = (category: ItemGroupCategory) => {
+    this.setState({ tabActiveItem: category });
   }
 }
 
