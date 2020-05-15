@@ -11,9 +11,9 @@ import strings from "src/localization/strings";
 interface Props {
   itemGroup: ItemGroup;
   areaDetailValues: AreaDetail[];
+  totalAmount: number;
   isReadOnly: boolean;
   onUserInputChange: (key: any, value: any) => void;
-  onValidateContractMinimumAmount: (totalAmount: number) => void;
 }
 
 /**
@@ -172,10 +172,6 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
       areaDetails[index][key] = value;
       this.props.onUserInputChange("areaDetailValues", areaDetails);
     }
-
-    const minimumProfit = this.props.itemGroup.minimumProfitEstimation;
-    const totalProfits = this.calculateTotalProfits(areaDetails, minimumProfit);
-    this.props.onValidateContractMinimumAmount(totalProfits);
   }
 
   /**
@@ -190,7 +186,7 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
     const blocks = areaDetailValues.length;
     const minimumProfit = itemGroup.minimumProfitEstimation;
     const totalHectares = this.calculateTotalHectares(areaDetailValues);
-    const totalProfit = this.calculateTotalProfits(areaDetailValues, minimumProfit);
+    const totalProfit = this.props.totalAmount;
 
     if (minimumProfit) {
       return (
@@ -220,19 +216,6 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
     return areaDetailValues.reduce((total, areaDetailValue) => {
       const size = areaDetailValue.size ? areaDetailValue.size : 0;
       return total += parseInt(size.toString(), 10);
-    }, 0);
-  }
-
-  /**
-   * Returns total profits from area detail values
-   * @param areaDetailValues area detail values
-   * @param minimumProfit minimum profit, if predefined in contract
-   */
-  private calculateTotalProfits = (areaDetailValues: AreaDetail[], minimumProfit?: number): number => {
-    return areaDetailValues.reduce((total, areaDetailValue) => {
-      const estimation = minimumProfit || areaDetailValue.profitEstimation || 0;
-      const hectares = areaDetailValue.size ? areaDetailValue.size : 0;
-      return total += estimation * hectares;
     }, 0);
   }
 
