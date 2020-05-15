@@ -22,6 +22,7 @@ import { PDFService } from "src/api/pdf.service";
 import * as moment from "moment";
 import AppConfig, { AppConfigItemGroupOptions } from "../../utils/AppConfig";
 import FileUtils from "src/utils/FileUtils";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component State
@@ -55,6 +56,7 @@ interface State {
   navigateToTerms: boolean;
   pdfType: string;
   missingPrerequisiteContract: boolean;
+  insufficientContractAmount: boolean;
   missingAreaDetails: boolean;
   allowDeliveryAll: boolean;
   requireAreaDetails: boolean;
@@ -88,6 +90,7 @@ class ContractView extends React.Component<Props, State> {
       navigateToTerms: false,
       pdfType: "2020",
       missingPrerequisiteContract: false,
+      insufficientContractAmount: false,
       missingAreaDetails: false,
       contractData: {
         rejectComment: "",
@@ -151,18 +154,25 @@ class ContractView extends React.Component<Props, State> {
       const requireAreaDetails = configItemGroup && configItemGroup["require-area-details"] ? true : false;
       const allowDeliveryAll = configItemGroup && configItemGroup["allow-delivery-all"] ? true : false;
       const areaDetailValues = this.state.contractData.areaDetailValues;
+      const totalAmount = this.calculateTotalAmount(areaDetailValues, itemGroup.minimumProfitEstimation);
       if (areaDetailValues.length < 1 || !this.allFieldsFilled(areaDetailValues) && requireAreaDetails) {
-        this.setState({ 
+        this.setState({
           missingAreaDetails: true,
-          validationErrorText: "Täytä tuotannossa olevat hehtaarit taulukkoon"
+          validationErrorText: strings.fillAreaDetails
+        });
+      } else if (!this.isValidContractMinimumAmount(totalAmount)) {
+        this.setState({
+          insufficientContractAmount: true,
+          validationErrorText: strings.insufficientContractAmount
         });
       } else {
         this.setState({
           validationErrorText: "",
-          missingAreaDetails: false
+          missingAreaDetails: false,
+          insufficientContractAmount: false
         });
       }
-      
+
       this.setState({ requireAreaDetails, allowDeliveryAll });
     }
     this.checkIfCompanyApprovalNeeded();
@@ -329,24 +339,52 @@ class ContractView extends React.Component<Props, State> {
    * @param value value
    */
   private updateContractData = (key: ContractDataKey, value: boolean | string | number | AreaDetail[]) => {
-    const contractData = this.state.contractData;
+    const { contractData, itemGroup } = this.state;
+    const minimumProfitEstimation = itemGroup ? itemGroup.minimumProfitEstimation : undefined;
     contractData[key] = value;
     this.setState({ contractData: contractData });
     this.checkIfCompanyApprovalNeeded();
 
-    if (key === "areaDetailValues" && this.state.requireAreaDetails) {
-      if (this.state.contractData.areaDetailValues.length > 0 && this.allFieldsFilled(contractData.areaDetailValues)) {
-        this.setState({ 
-          validationErrorText: "",
-          missingAreaDetails: false
+    if (key === "proposedQuantity") {
+      const totalAmount = this.calculateTotalAmount(contractData.areaDetailValues, minimumProfitEstimation);
+      if (!this.isValidContractMinimumAmount(totalAmount)) {
+        this.setState({
+          insufficientContractAmount: true,
+          validationErrorText: strings.insufficientContractAmount
         });
       } else {
+        this.setState({
+          insufficientContractAmount: false,
+          validationErrorText: ""
+        });
+      }
+      return;
+    }
+
+    if (key === "areaDetailValues" && this.state.requireAreaDetails) {
+      if (this.state.contractData.areaDetailValues.length < 1 || !this.allFieldsFilled(contractData.areaDetailValues)) {
         const validationErrorText = "Täytä tuotannossa olevat hehtaarit taulukkoon"
         this.setState({
           validationErrorText,
           missingAreaDetails: true
         });
+        return;
       }
+
+      const totalAmount = this.calculateTotalAmount(contractData.areaDetailValues, minimumProfitEstimation);
+      if (!this.isValidContractMinimumAmount(totalAmount)) {
+        this.setState({
+          insufficientContractAmount: true,
+          validationErrorText: strings.insufficientContractAmount
+        });
+        return;
+      }
+
+      this.setState({ 
+        validationErrorText: "",
+        missingAreaDetails: false,
+        insufficientContractAmount: false
+      });
     }
   }
 
@@ -413,6 +451,29 @@ class ContractView extends React.Component<Props, State> {
   }
 
   /**
+   * Returns if contract proposed quantity is at least the total amount calculated from area details
+   * @param totalAmount total amount calculated from area details
+   */
+  private isValidContractMinimumAmount = (totalAmount: number): boolean => {
+    const { proposedQuantity } = this.state.contractData;
+    return proposedQuantity >= totalAmount;
+  }
+
+  /**
+   * Returns total amount from area detail values
+   * @param areaDetailValues area detail values
+   * @param minimumProfit minimum profit, if predefined in contract
+   */
+  private calculateTotalAmount = (areaDetailValues: AreaDetail[], minimumProfit?: number): number => {
+    const hasItems = areaDetailValues.length > 0;
+    return hasItems ? areaDetailValues.reduce((total, areaDetailValue) => {
+      const estimation = minimumProfit || areaDetailValue.profitEstimation || 0;
+      const hectares = areaDetailValue.size ? areaDetailValue.size : 0;
+      return total += estimation * hectares;
+    }, 0) : 0;
+  }
+
+  /**
    * Render method
    */
   public render() {
@@ -466,6 +527,7 @@ class ContractView extends React.Component<Props, State> {
             <ContractAreaDetails
               itemGroup={this.state.itemGroup}
               areaDetailValues={this.state.contractData.areaDetailValues}
+              totalAmount={ this.calculateTotalAmount(this.state.contractData.areaDetailValues, this.state.itemGroup.minimumProfitEstimation) }
               isReadOnly={this.state.contract.status !== "DRAFT"}
               onUserInputChange={this.updateContractData}
             />
@@ -482,8 +544,8 @@ class ContractView extends React.Component<Props, State> {
             contractId={this.state.contract && this.state.contract.id || ""}
           />
           <ContractFooter
-            canAccept={!this.state.missingPrerequisiteContract && !this.state.missingAreaDetails}
-            errorText={this.state.missingPrerequisiteContract ? "Sinulta puuttu hyväksytty sopimus pakastemarjasta. Tarkasta, muuta tarvittaessa ja hyväksy ensin sopimus pakastemarjasta" : undefined}
+            canAccept={!this.state.missingPrerequisiteContract && !this.state.missingAreaDetails && !this.state.insufficientContractAmount}
+            errorText={this.state.missingPrerequisiteContract ? strings.missingPrerequisiteContract : undefined}
             isActiveContract={this.state.contract ? this.state.contract.status === "APPROVED" : false}
             downloadContractPdf={this.downloadContractPdfClicked}
             acceptContract={this.acceptContractClicked}

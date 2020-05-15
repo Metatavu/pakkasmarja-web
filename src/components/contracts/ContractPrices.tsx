@@ -1,6 +1,6 @@
 import * as React from "react";
 import "../../styles/common.css";
-import { Grid, Header, List, Icon } from "semantic-ui-react";
+import { Grid, Header, Icon } from "semantic-ui-react";
 import { ItemGroup, ItemGroupPrice } from "pakkasmarja-client";
 import strings from "src/localization/strings";
 import * as _ from "lodash";
@@ -165,23 +165,7 @@ export default class ContractPrices extends React.Component<Props, State> {
     if (itemGroupCategory !== "FROZEN") {
       return (
         <div className="contract-white-container">
-          <List bulleted>
-            <List.Item>
-              {strings.contractDetailsListItem1}
-            </List.Item>
-            <List.Item>
-              {strings.contractDetailsListItem2}
-            </List.Item>
-            <List.Item>
-              {strings.contractDetailsListItem3}
-            </List.Item>
-            <List.Item>
-              {strings.contractDetailsListItem4}
-            </List.Item>
-            <List.Item>
-              {strings.contractDetailsListItem5}
-            </List.Item>
-          </List>
+          <p>{ strings.contractDetailsReadFromContract }</p>
         </div>
       );
     }
