@@ -465,11 +465,12 @@ class ContractView extends React.Component<Props, State> {
    * @param minimumProfit minimum profit, if predefined in contract
    */
   private calculateTotalAmount = (areaDetailValues: AreaDetail[], minimumProfit?: number): number => {
-    return areaDetailValues.reduce((total, areaDetailValue) => {
+    const hasItems = areaDetailValues.length > 0;
+    return hasItems ? areaDetailValues.reduce((total, areaDetailValue) => {
       const estimation = minimumProfit || areaDetailValue.profitEstimation || 0;
       const hectares = areaDetailValue.size ? areaDetailValue.size : 0;
       return total += estimation * hectares;
-    }, 0);
+    }, 0) : 0;
   }
 
   /**

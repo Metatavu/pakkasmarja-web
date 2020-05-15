@@ -7,11 +7,9 @@ import { connect } from "react-redux";
 import Api from "pakkasmarja-client";
 import BasicLayout from "../generic/BasicLayout";
 import { Checkbox, Input, Button, Dropdown, Container, Header, Divider, Form, Modal, Dimmer, Loader } from "semantic-ui-react";
-import { PDFService } from "src/api/pdf.service";
 import "./styles.css";
 import { Link } from "react-router-dom";
 import strings from "src/localization/strings";
-import FileUtils from "src/utils/FileUtils";
 
 /**
  * Interface for component props
@@ -94,30 +92,6 @@ class ContractTerms extends React.Component<Props, State> {
 
     const contractsService = await Api.getContractsService(this.props.keycloak.token);
     return await contractsService.findContract(id, "application/json");
-  }
-
-  /**
-   * Download contract as pdf
-   */
-  private downloadContractPdfClicked = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.contract || !this.state.contract.id) {
-      return;
-    }
-
-    const pdfService = new PDFService(process.env.REACT_APP_API_URL || "", this.props.keycloak.token);
-    const pdfData = await pdfService.getPdf(this.state.contract.id, this.state.pdfType);
-    this.downloadPdfBlob(pdfData);
-  }
-
-  /**
-   * Download pdf to users computer
-   * 
-   * @param pdfData pdf data
-   */
-  private downloadPdfBlob = (pdfData: any) => {
-    pdfData.blob().then((blob: any) => {
-      FileUtils.downloadBlob(blob, "application/pdf", `${new Date().toLocaleDateString()}.pdf`);
-    });
   }
 
   /**
@@ -240,8 +214,6 @@ class ContractTerms extends React.Component<Props, State> {
           </Form>
           <Button.Group floated="right" className="contract-button-group" >
             <Button onClick={this.signContractClicked} color="red">{strings.sign}</Button>
-            <Button.Or text="" />
-            <Button onClick={this.downloadContractPdfClicked} inverted color="red">{strings.downloadContractAsPDF}</Button>
             <Button.Or text="" />
             <Button as={Link} to={`/contracts/${this.state.contract ? this.state.contract.id : ""}`} color="black">{strings.back}</Button>
           </Button.Group>

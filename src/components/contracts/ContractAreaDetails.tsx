@@ -213,10 +213,11 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
    * @param areaDetailValues area detail values
    */
   private calculateTotalHectares = (areaDetailValues: AreaDetail[]): number => {
-    return areaDetailValues.reduce((total, areaDetailValue) => {
+    const hasItems = areaDetailValues.length > 0;
+    return hasItems ? areaDetailValues.reduce((total, areaDetailValue) => {
       const size = areaDetailValue.size ? areaDetailValue.size : 0;
       return total += parseInt(size.toString(), 10);
-    }, 0);
+    }, 0) : 0;
   }
 
   /**
