@@ -55,6 +55,7 @@ interface State {
   navigateToTerms: boolean;
   pdfType: string;
   missingPrerequisiteContract: boolean;
+  missingAreaDetails: boolean;
   allowDeliveryAll: boolean;
   requireAreaDetails: boolean;
   validationErrorText: string;
@@ -85,8 +86,9 @@ class ContractView extends React.Component<Props, State> {
       signAuthenticationServices: [],
       redirect: false,
       navigateToTerms: false,
-      pdfType: "2019",
+      pdfType: "2020",
       missingPrerequisiteContract: false,
+      missingAreaDetails: false,
       contractData: {
         rejectComment: "",
         proposedQuantity: 0,
@@ -148,7 +150,19 @@ class ContractView extends React.Component<Props, State> {
       const configItemGroup: AppConfigItemGroupOptions = configItemGroups[itemGroupId];
       const requireAreaDetails = configItemGroup && configItemGroup["require-area-details"] ? true : false;
       const allowDeliveryAll = configItemGroup && configItemGroup["allow-delivery-all"] ? true : false;
-      this.state.contractData.areaDetailValues.length <= 0 && requireAreaDetails ? this.setState({ validationErrorText: "Täytä tuotannossa olevat hehtaarit taulukkoon" }) : this.setState({ validationErrorText: "" });
+      const areaDetailValues = this.state.contractData.areaDetailValues;
+      if (areaDetailValues.length < 1 || !this.allFieldsFilled(areaDetailValues) && requireAreaDetails) {
+        this.setState({ 
+          missingAreaDetails: true,
+          validationErrorText: "Täytä tuotannossa olevat hehtaarit taulukkoon"
+        });
+      } else {
+        this.setState({
+          validationErrorText: "",
+          missingAreaDetails: false
+        });
+      }
+      
       this.setState({ requireAreaDetails, allowDeliveryAll });
     }
     this.checkIfCompanyApprovalNeeded();
@@ -321,11 +335,17 @@ class ContractView extends React.Component<Props, State> {
     this.checkIfCompanyApprovalNeeded();
 
     if (key === "areaDetailValues" && this.state.requireAreaDetails) {
-      if (this.state.contractData.areaDetailValues.length > 0) {
-        this.setState({ validationErrorText: "" });
+      if (this.state.contractData.areaDetailValues.length > 0 && this.allFieldsFilled(contractData.areaDetailValues)) {
+        this.setState({ 
+          validationErrorText: "",
+          missingAreaDetails: false
+        });
       } else {
         const validationErrorText = "Täytä tuotannossa olevat hehtaarit taulukkoon"
-        this.setState({ validationErrorText });
+        this.setState({
+          validationErrorText,
+          missingAreaDetails: true
+        });
       }
     }
   }
@@ -375,6 +395,21 @@ class ContractView extends React.Component<Props, State> {
     pdfData.blob().then((blob: any) => {
       FileUtils.downloadBlob(blob, "application/pdf", `${new Date().toLocaleDateString()}.pdf`);
     });
+  }
+
+  /**
+   * Returns true if all fields of area detail values are filled
+   * @param areaDetailValues area detail values
+   */
+  private allFieldsFilled = (areaDetailValues: AreaDetail[]): boolean => {
+    for (const areaDetail of areaDetailValues) {
+      const { name, size, species, profitEstimation } = areaDetail;
+      if (!name || !size || !species || !profitEstimation) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   /**
@@ -447,7 +482,7 @@ class ContractView extends React.Component<Props, State> {
             contractId={this.state.contract && this.state.contract.id || ""}
           />
           <ContractFooter
-            canAccept={!this.state.missingPrerequisiteContract}
+            canAccept={!this.state.missingPrerequisiteContract && !this.state.missingAreaDetails}
             errorText={this.state.missingPrerequisiteContract ? "Sinulta puuttu hyväksytty sopimus pakastemarjasta. Tarkasta, muuta tarvittaessa ja hyväksy ensin sopimus pakastemarjasta" : undefined}
             isActiveContract={this.state.contract ? this.state.contract.status === "APPROVED" : false}
             downloadContractPdf={this.downloadContractPdfClicked}
