@@ -22,6 +22,7 @@ import { PDFService } from "src/api/pdf.service";
 import * as moment from "moment";
 import AppConfig, { AppConfigItemGroupOptions } from "../../utils/AppConfig";
 import FileUtils from "src/utils/FileUtils";
+import strings from "src/localization/strings";
 
 /**
  * Interface for component State
@@ -55,6 +56,7 @@ interface State {
   navigateToTerms: boolean;
   pdfType: string;
   missingPrerequisiteContract: boolean;
+  insufficientContractAmount: boolean;
   missingAreaDetails: boolean;
   allowDeliveryAll: boolean;
   requireAreaDetails: boolean;
@@ -88,6 +90,7 @@ class ContractView extends React.Component<Props, State> {
       navigateToTerms: false,
       pdfType: "2020",
       missingPrerequisiteContract: false,
+      insufficientContractAmount: false,
       missingAreaDetails: false,
       contractData: {
         rejectComment: "",
@@ -413,6 +416,20 @@ class ContractView extends React.Component<Props, State> {
   }
 
   /**
+   * Validates that contract minimum amount is at least calculated amount from area details
+   * @param totalAmount total amount calculated from area details
+   */
+  private validateContractMinimumAmount = (totalAmount: number) => {
+    const { proposedQuantity } = this.state.contractData;
+    const insufficientContractAmount = totalAmount < proposedQuantity;
+    const validationErrorText = insufficientContractAmount ? strings.insufficientContractAmount : "";
+    this.setState({ 
+      insufficientContractAmount,
+      validationErrorText
+    });
+  }
+
+  /**
    * Render method
    */
   public render() {
@@ -468,6 +485,7 @@ class ContractView extends React.Component<Props, State> {
               areaDetailValues={this.state.contractData.areaDetailValues}
               isReadOnly={this.state.contract.status !== "DRAFT"}
               onUserInputChange={this.updateContractData}
+              onValidateContractMinimumAmount={this.validateContractMinimumAmount}
             />
           }
           <ContractDeliveryPlace
@@ -482,8 +500,8 @@ class ContractView extends React.Component<Props, State> {
             contractId={this.state.contract && this.state.contract.id || ""}
           />
           <ContractFooter
-            canAccept={!this.state.missingPrerequisiteContract && !this.state.missingAreaDetails}
-            errorText={this.state.missingPrerequisiteContract ? "Sinulta puuttu hyväksytty sopimus pakastemarjasta. Tarkasta, muuta tarvittaessa ja hyväksy ensin sopimus pakastemarjasta" : undefined}
+            canAccept={!this.state.missingPrerequisiteContract && !this.state.missingAreaDetails && !this.state.insufficientContractAmount}
+            errorText={this.state.missingPrerequisiteContract ? strings.missingPrerequisiteContract : undefined}
             isActiveContract={this.state.contract ? this.state.contract.status === "APPROVED" : false}
             downloadContractPdf={this.downloadContractPdfClicked}
             acceptContract={this.acceptContractClicked}

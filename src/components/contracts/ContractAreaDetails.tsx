@@ -13,6 +13,7 @@ interface Props {
   areaDetailValues: AreaDetail[];
   isReadOnly: boolean;
   onUserInputChange: (key: any, value: any) => void;
+  onValidateContractMinimumAmount: (totalAmount: number) => void;
 }
 
 /**
@@ -171,30 +172,25 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
       areaDetails[index][key] = value;
       this.props.onUserInputChange("areaDetailValues", areaDetails);
     }
+
+    const minimumProfit = this.props.itemGroup.minimumProfitEstimation;
+    const totalProfits = this.calculateTotalProfits(areaDetails, minimumProfit);
+    this.props.onValidateContractMinimumAmount(totalProfits);
   }
 
   /**
    * Render profit text
    */
   private renderProfitTextElements = () => {
-    if (!this.props.itemGroup || this.props.areaDetailValues.length <= 0) {
+    const { areaDetailValues, itemGroup } = this.props;
+    if (!this.props.itemGroup || areaDetailValues.length <= 0) {
       return;
     }
 
-    const blocks = this.props.areaDetailValues.length;
-    const minimumProfit = this.props.itemGroup.minimumProfitEstimation;
-
-    const totalHectares = this.props.areaDetailValues.reduce((total, areaDetailValue) => {
-      const size = areaDetailValue.size ? areaDetailValue.size : 0;
-      return total += parseInt(size.toString(), 10);
-    }, 0);
-
-    const totalProfit = this.props.areaDetailValues.reduce((total, areaDetailValue) => {
-      const estimation = minimumProfit || areaDetailValue.profitEstimation || 0;
-      const totalHectares = areaDetailValue.size ? areaDetailValue.size : 0;
-
-      return total += estimation * totalHectares;
-    }, 0);
+    const blocks = areaDetailValues.length;
+    const minimumProfit = itemGroup.minimumProfitEstimation;
+    const totalHectares = this.calculateTotalHectares(areaDetailValues);
+    const totalProfit = this.calculateTotalProfits(areaDetailValues, minimumProfit);
 
     if (minimumProfit) {
       return (
@@ -214,6 +210,30 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
         </p>
       );
     }
+  }
+
+  /**
+   * Returns total hectares from area detail values
+   * @param areaDetailValues area detail values
+   */
+  private calculateTotalHectares = (areaDetailValues: AreaDetail[]): number => {
+    return areaDetailValues.reduce((total, areaDetailValue) => {
+      const size = areaDetailValue.size ? areaDetailValue.size : 0;
+      return total += parseInt(size.toString(), 10);
+    }, 0);
+  }
+
+  /**
+   * Returns total profits from area detail values
+   * @param areaDetailValues area detail values
+   * @param minimumProfit minimum profit, if predefined in contract
+   */
+  private calculateTotalProfits = (areaDetailValues: AreaDetail[], minimumProfit?: number): number => {
+    return areaDetailValues.reduce((total, areaDetailValue) => {
+      const estimation = minimumProfit || areaDetailValue.profitEstimation || 0;
+      const hectares = areaDetailValue.size ? areaDetailValue.size : 0;
+      return total += estimation * hectares;
+    }, 0);
   }
 
   /**

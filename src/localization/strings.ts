@@ -106,6 +106,9 @@ export interface IStrings extends LocalizedStringsMethods {
   contractDetailsListItem3: string
   contractDetailsListItem4: string
   contractDetailsListItem5: string
+  contractDetailsReadFromContract: string
+  missingPrerequisiteContract: string
+  insufficientContractAmount: string
   hidePastPrices: string
   showPastPrices: string
   guaranteedPrices: string
