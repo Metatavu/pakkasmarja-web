@@ -64,7 +64,7 @@ class EditContractDocument extends React.Component<Props, State> {
       content: "",
       headerContent: "",
       footerContent: "",
-      type: "2019",
+      type: "2020",
       loading: false,
       buttonLoading: false
     };
