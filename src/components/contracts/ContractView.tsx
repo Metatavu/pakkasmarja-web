@@ -345,45 +345,38 @@ class ContractView extends React.Component<Props, State> {
     this.setState({ contractData: contractData });
     this.checkIfCompanyApprovalNeeded();
 
-    if (key === "proposedQuantity") {
-      const totalAmount = this.calculateTotalAmount(contractData.areaDetailValues, minimumProfitEstimation);
-      if (!this.isValidContractMinimumAmount(totalAmount)) {
+    if (this.state.requireAreaDetails) {
+      if (this.state.contractData.areaDetailValues.length < 1) {
         this.setState({
-          insufficientContractAmount: true,
-          validationErrorText: strings.insufficientContractAmount
-        });
-      } else {
-        this.setState({
-          insufficientContractAmount: false,
-          validationErrorText: ""
-        });
-      }
-      return;
-    }
-
-    if (key === "areaDetailValues" && this.state.requireAreaDetails) {
-      if (this.state.contractData.areaDetailValues.length < 1 || !this.allFieldsFilled(contractData.areaDetailValues)) {
-        const validationErrorText = "Täytä tuotannossa olevat hehtaarit taulukkoon"
-        this.setState({
-          validationErrorText,
+          validationErrorText: strings.fillAreaDetails,
           missingAreaDetails: true
         });
         return;
-      }
-
-      const totalAmount = this.calculateTotalAmount(contractData.areaDetailValues, minimumProfitEstimation);
-      if (!this.isValidContractMinimumAmount(totalAmount)) {
+      } else if (!this.allFieldsFilled(contractData.areaDetailValues)) {
         this.setState({
-          insufficientContractAmount: true,
-          validationErrorText: strings.insufficientContractAmount
+          validationErrorText: strings.fillAllAreaDetailFields,
+          missingAreaDetails: true
         });
         return;
+      } else {
+        this.setState({
+          validationErrorText: "",
+          missingAreaDetails: false
+        })
       }
+    }
 
-      this.setState({ 
-        validationErrorText: "",
-        missingAreaDetails: false,
-        insufficientContractAmount: false
+    const totalAmount = this.calculateTotalAmount(contractData.areaDetailValues, minimumProfitEstimation);
+    if (!this.isValidContractMinimumAmount(totalAmount)) {
+      this.setState({
+        insufficientContractAmount: true,
+        validationErrorText: strings.insufficientContractAmount
+      });
+      return;
+    } else {
+      this.setState({
+        insufficientContractAmount: false,
+        validationErrorText: ""
       });
     }
   }
