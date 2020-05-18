@@ -155,11 +155,18 @@ class ContractView extends React.Component<Props, State> {
       const allowDeliveryAll = configItemGroup && configItemGroup["allow-delivery-all"] ? true : false;
       const areaDetailValues = this.state.contractData.areaDetailValues;
       const totalAmount = this.calculateTotalAmount(areaDetailValues, itemGroup.minimumProfitEstimation);
-      if (areaDetailValues.length < 1 || !this.allFieldsFilled(areaDetailValues) && requireAreaDetails) {
-        this.setState({
-          missingAreaDetails: true,
-          validationErrorText: strings.fillAreaDetails
-        });
+      if (requireAreaDetails) {
+        if (areaDetailValues.length < 1) {
+          this.setState({
+            missingAreaDetails: true,
+            validationErrorText: strings.fillAreaDetails
+          });
+        } else if (!this.allFieldsFilled(areaDetailValues)) {
+          this.setState({
+            missingAreaDetails: true,
+            validationErrorText: strings.fillAllAreaDetailFields
+          });
+        }
       } else if (!this.isValidContractMinimumAmount(totalAmount)) {
         this.setState({
           insufficientContractAmount: true,
