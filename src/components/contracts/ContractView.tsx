@@ -369,7 +369,7 @@ class ContractView extends React.Component<Props, State> {
         this.setState({
           validationErrorText: "",
           missingAreaDetails: false
-        })
+        });
       }
     }
 
