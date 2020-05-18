@@ -104,6 +104,7 @@
   "missingPrerequisiteContract": "Sinulta puuttuu hyväksytty sopimus pakastemarjasta. Tarkasta, muuta tarvittaessa ja hyväksy ensin sopimus pakastemarjasta",
   "insufficientContractAmount": "Annettu sopimusmäärä on vähemmän kuin tuotannossa olevista hehtaareista arvioitu minimisopimusmäärä. Kasvata sopimusmäärää.",
   "fillAreaDetails": "Täytä tuotannossa olevat hehtaarit taulukkoon",
+  "fillAllAreaDetailFields": "Tuotannossa olevien hehtaarien taulukosta puuttuu tietoja. Täytä puuttuvat tiedot.",
   "hidePastPrices": "Piilota edellisvuosien hinnat",
   "showPastPrices": "Näytä myös edellisvuosien hinnat",
   "guaranteedPrices": "Takuuhinnat",
