@@ -155,11 +155,18 @@ class ContractView extends React.Component<Props, State> {
       const allowDeliveryAll = configItemGroup && configItemGroup["allow-delivery-all"] ? true : false;
       const areaDetailValues = this.state.contractData.areaDetailValues;
       const totalAmount = this.calculateTotalAmount(areaDetailValues, itemGroup.minimumProfitEstimation);
-      if (areaDetailValues.length < 1 || !this.allFieldsFilled(areaDetailValues) && requireAreaDetails) {
-        this.setState({
-          missingAreaDetails: true,
-          validationErrorText: strings.fillAreaDetails
-        });
+      if (requireAreaDetails) {
+        if (areaDetailValues.length < 1) {
+          this.setState({
+            missingAreaDetails: true,
+            validationErrorText: strings.fillAreaDetails
+          });
+        } else if (!this.allFieldsFilled(areaDetailValues)) {
+          this.setState({
+            missingAreaDetails: true,
+            validationErrorText: strings.fillAllAreaDetailFields
+          });
+        }
       } else if (!this.isValidContractMinimumAmount(totalAmount)) {
         this.setState({
           insufficientContractAmount: true,
@@ -345,45 +352,38 @@ class ContractView extends React.Component<Props, State> {
     this.setState({ contractData: contractData });
     this.checkIfCompanyApprovalNeeded();
 
-    if (key === "proposedQuantity") {
-      const totalAmount = this.calculateTotalAmount(contractData.areaDetailValues, minimumProfitEstimation);
-      if (!this.isValidContractMinimumAmount(totalAmount)) {
+    if (this.state.requireAreaDetails) {
+      if (this.state.contractData.areaDetailValues.length < 1) {
         this.setState({
-          insufficientContractAmount: true,
-          validationErrorText: strings.insufficientContractAmount
-        });
-      } else {
-        this.setState({
-          insufficientContractAmount: false,
-          validationErrorText: ""
-        });
-      }
-      return;
-    }
-
-    if (key === "areaDetailValues" && this.state.requireAreaDetails) {
-      if (this.state.contractData.areaDetailValues.length < 1 || !this.allFieldsFilled(contractData.areaDetailValues)) {
-        const validationErrorText = "Täytä tuotannossa olevat hehtaarit taulukkoon"
-        this.setState({
-          validationErrorText,
+          validationErrorText: strings.fillAreaDetails,
           missingAreaDetails: true
         });
         return;
-      }
-
-      const totalAmount = this.calculateTotalAmount(contractData.areaDetailValues, minimumProfitEstimation);
-      if (!this.isValidContractMinimumAmount(totalAmount)) {
+      } else if (!this.allFieldsFilled(contractData.areaDetailValues)) {
         this.setState({
-          insufficientContractAmount: true,
-          validationErrorText: strings.insufficientContractAmount
+          validationErrorText: strings.fillAllAreaDetailFields,
+          missingAreaDetails: true
         });
         return;
+      } else {
+        this.setState({
+          validationErrorText: "",
+          missingAreaDetails: false
+        });
       }
+    }
 
-      this.setState({ 
-        validationErrorText: "",
-        missingAreaDetails: false,
-        insufficientContractAmount: false
+    const totalAmount = this.calculateTotalAmount(contractData.areaDetailValues, minimumProfitEstimation);
+    if (!this.isValidContractMinimumAmount(totalAmount)) {
+      this.setState({
+        insufficientContractAmount: true,
+        validationErrorText: strings.insufficientContractAmount
+      });
+      return;
+    } else {
+      this.setState({
+        insufficientContractAmount: false,
+        validationErrorText: ""
       });
     }
   }

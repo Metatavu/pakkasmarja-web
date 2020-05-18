@@ -110,6 +110,7 @@ export interface IStrings extends LocalizedStringsMethods {
   missingPrerequisiteContract: string
   insufficientContractAmount: string
   fillAreaDetails: string
+  fillAllAreaDetailFields: string
   hidePastPrices: string
   showPastPrices: string
   guaranteedPrices: string
