@@ -148,6 +148,7 @@ export default class ContractAreaDetails extends React.Component<Props, State> {
         style={style}
         value={value}
         type={type}
+        step={type === "number" ? 0.1 : undefined }
         disabled={!editable}
         onChange={(e: any) => this.handleInputChange(index, key, e.target.value)}
       />
