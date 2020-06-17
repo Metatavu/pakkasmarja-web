@@ -226,5 +226,13 @@
   "grayBoxesReturned": "Palautettu (Harmaat laatikot)",
   "frozenCategory": "Pakastukseen",
   "freshCategory": "Tuore",
-  "databank": "Tietopankki"
+  "databank": "Tietopankki",
+  "openingHoursManagement": "Aukioloaikojen hallinta",
+  "qualityManagement": "Laatuhallinta",
+  "newOpeningHoursPeriod": "uusi aukioloaikalohko",
+  "editOpeningHours": "Muokkaa",
+  "previewOpeningHours": "Kalenteri",
+  "closed": "Suljettu",
+  "defaultPeriods": "Vakiojaksot",
+  "exceptionPeriods": "Poikkeusjaksot"
 }

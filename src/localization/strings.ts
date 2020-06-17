@@ -232,6 +232,14 @@ export interface IStrings extends LocalizedStringsMethods {
   frozenCategory: string;
   freshCategory: string;
   databank: string;
+  openingHoursManagement: string;
+  qualityManagement: string;
+  newOpeningHoursPeriod: string;
+  editOpeningHours: string;
+  previewOpeningHours: string;
+  closed: string;
+  defaultPeriods: string;
+  exceptionPeriods: string;
 }
 
 const strings: IStrings = new LocalizedStrings({
