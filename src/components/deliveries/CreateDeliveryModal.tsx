@@ -316,12 +316,14 @@ class CreateDeliveryModal extends React.Component<Props, State> {
    * Get products for contact
    */
   private getProducts = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.selectedContactId) {
+    const { keycloak, category } = this.props;
+    const { selectedContactId } = this.state;
+    if (!keycloak || !keycloak.token || !selectedContactId) {
       return;
     }
 
-    const productsService = await Api.getProductsService(this.props.keycloak.token);
-    const unfilteredProducts = await productsService.listProducts(undefined, this.props.category, this.props.keycloak.subject, undefined, 100);
+    const productsService = await Api.getProductsService(keycloak.token);
+    const unfilteredProducts = await productsService.listProducts(undefined, category, selectedContactId, undefined, 100);
     const products: Product[] = unfilteredProducts.filter(product => product.active === true);
     this.setState({ products });
   }
