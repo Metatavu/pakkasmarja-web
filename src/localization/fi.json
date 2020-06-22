@@ -228,11 +228,15 @@
   "freshCategory": "Tuore",
   "databank": "Tietopankki",
   "openingHoursManagement": "Aukioloaikojen hallinta",
+  "addNewHours": "Lisää uusi",
+  "deleteHours": "Poista",
   "qualityManagement": "Laatuhallinta",
   "newOpeningHoursPeriod": "uusi aukioloaikalohko",
+  "newExceptionHours": "uusi poikkeusjaksolohko",
   "editOpeningHours": "Muokkaa",
   "previewOpeningHours": "Kalenteri",
   "closed": "Suljettu",
   "defaultPeriods": "Vakiojaksot",
-  "exceptionPeriods": "Poikkeusjaksot"
+  "exceptionPeriods": "Poikkeusjaksot",
+  "deleteBlock": "Poista lohko"
 }
