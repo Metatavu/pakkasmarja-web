@@ -5,13 +5,14 @@ import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
-import { Loader, Tab, Card, Form, Grid, Checkbox, Header, Button, List, Icon, Modal } from "semantic-ui-react";
+import { Loader, Card, Form, Grid, Header, Button, List, Icon, Modal, Dropdown, DropdownProps } from "semantic-ui-react";
 import strings from "src/localization/strings";
 import ApplicationRoles from "src/utils/application-roles";
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import fi from 'date-fns/esm/locale/fi';
 import * as moment from "moment";
+import Api, { OpeningHourPeriod, DeliveryPlace, WeekdayType, OpeningHourWeekday, OpeningHourException, OpeningHourInterval } from "pakkasmarja-client";
 
 /**
  * Interface for component props
@@ -29,104 +30,42 @@ interface State {
   redirectTo?: string;
   manageOpeningHoursRole: boolean;
   exceptionHoursDialogOpen: boolean;
-  startDate: Date;
+  beginDate: Date;
   endDate: Date;
-  weeks: Week[];
-  exceptionDays: Weekday[];
-  range: TimeRange
+  deliveryPlaces: DeliveryPlace[];
+  deliveryPlaceId?: string;
+  openingHourPeriods: OpeningHourPeriod[];
+  openingHourExceptions: OpeningHourException[];
+  range: TimeRange;
 }
 
 interface TimeRange {
-  startDate: Date;
+  beginDate: Date;
   endDate: Date;
-}
-
-interface Week {
-  id: string;
-  startDate: Date;
-  endDate: Date;
-  weekDays: Weekday[]
-}
-
-/**
- * Interface describing weekday
- */
-interface Weekday {
-  id: string;
-  date: Date;
-  name: string;
-  hours: OpeningHours[];
-}
-
-interface OpeningHours {
-  opens: Date;
-  closes: Date;
 }
 
 class OpeningHoursScreen extends React.Component<Props, State> {
 
   constructor(props: Props) {
     super(props);
-    const hours = { opens: moment().toDate(), closes: moment().toDate() };
-    const today = new Date();
-    const lastMonday = new Date((today.getDay() < 1 ? -6 : 1 - today.getDay()) * 86400000 + today.getTime());
-    const nextSunday = new Date((today.getDay() < 1 ? 7 : 7 - today.getDay()) * 86400000 + today.getTime());
+    const beginDate = new Date();
+    beginDate.setMilliseconds(0);
+    beginDate.setMinutes(0);
+    const endDate = new Date();
+    endDate.setMilliseconds(0);
+    endDate.setMinutes(0);
     this.state = {
       loading: false,
       manageOpeningHoursRole: false,
       exceptionHoursDialogOpen: false,
-      startDate: moment().toDate(),
+      beginDate: moment().toDate(),
       endDate: moment().toDate(),
-      weeks: [
-        {
-          id: "1",
-          startDate: lastMonday,
-          endDate: nextSunday,
-          weekDays: [
-            { id: "4" , date: new Date() ,name: "maanantai", hours: [{ ...hours }] },
-            { id: "5" , date: new Date() ,name: "tiistai", hours: [{ ...hours }, { ...hours }, { ...hours }, { ...hours }] },
-            { id: "6" , date: new Date() ,name: "keskiviikko", hours: [{ ...hours }] },
-            { id: "7" , date: new Date() ,name: "torstai", hours: [{ ...hours }] },
-            { id: "8" , date: new Date() ,name: "perjantai", hours: [{ ...hours }] },
-            { id: "9" , date: new Date() ,name: "lauantai", hours: [{ ...hours }] },
-            { id: "10" , date: new Date() ,name: "sunnuntai", hours: [{ ...hours }] }
-          ]
-        },
-        {
-          id: "2",
-          startDate: lastMonday,
-          endDate: nextSunday,
-          weekDays: [
-            { id: "11" , date: new Date() ,name: "maanantai", hours: [{ ...hours }] },
-            { id: "12" , date: new Date() ,name: "tiistai", hours: [{ ...hours }] },
-            { id: "13" , date: new Date() ,name: "keskiviikko", hours: [{ ...hours }, { ...hours }, { ...hours }] },
-            { id: "14" , date: new Date() ,name: "torstai", hours: [{ ...hours }] },
-            { id: "15" , date: new Date() ,name: "perjantai", hours: [{ ...hours }] },
-            { id: "16" , date: new Date() ,name: "lauantai", hours: [{ ...hours }] },
-            { id: "17" , date: new Date() ,name: "sunnuntai", hours: [{ ...hours }, { ...hours }] }
-          ]
-        },
-        {
-          id: "3",
-          startDate: lastMonday,
-          endDate: nextSunday,
-          weekDays: [
-            { id: "18" , date: new Date() ,name: "maanantai", hours: [{ ...hours }] },
-            { id: "19" , date: new Date() ,name: "tiistai", hours: [{ ...hours }] },
-            { id: "20" , date: new Date() ,name: "keskiviikko", hours: [{ ...hours }] },
-            { id: "21" , date: new Date() ,name: "torstai", hours: [{ ...hours }] },
-            { id: "22" , date: new Date() ,name: "perjantai", hours: [{ ...hours }] },
-            { id: "23" , date: new Date() ,name: "lauantai", hours: [{ ...hours }] },
-            { id: "24" , date: new Date() ,name: "sunnuntai", hours: [{ ...hours }] }
-          ]
-        },
-      ],
-      exceptionDays: [
-        { id: "25", date: new Date(), name: "18.5.2020", hours: [{ ...hours }, { ...hours }, { ...hours }, { ...hours }, { ...hours }, { ...hours }] },
-      ],
+      deliveryPlaces: [],
+      openingHourPeriods: [],
+      openingHourExceptions: [],
       range: {
-        startDate: new Date(),
-        endDate: new Date()
+        beginDate: beginDate,
+        endDate: endDate
       }
     };
 
@@ -143,7 +82,16 @@ class OpeningHoursScreen extends React.Component<Props, State> {
 
     this.setState({ loading: true });
     const manageOpeningHoursRole = this.props.keycloak.hasRealmRole(ApplicationRoles.MANAGE_NEWS_ARTICLES);
-    // Some api calls in here
+    if (!manageOpeningHoursRole) {
+      this.setState({ loading: false });
+      return;
+    }
+    await this.fetchDeliveryPlaces();
+    const tokenParsed = this.props.keycloak.tokenParsed as any;
+    const receiveFromPlaceCode = tokenParsed.receiveFromPlaceCode;
+    if (receiveFromPlaceCode) {
+      await this.fetchOpeningHourData(receiveFromPlaceCode);
+    }
     this.setState({ loading: false, manageOpeningHoursRole });
   }
 
@@ -151,6 +99,10 @@ class OpeningHoursScreen extends React.Component<Props, State> {
    * Render
    */
   public render() {
+
+    if (!this.props.keycloak) {
+      return;
+    }
 
     if (this.state.loading) {
       return (
@@ -162,20 +114,8 @@ class OpeningHoursScreen extends React.Component<Props, State> {
       );
     }
 
-    const panes = [
-      {
-        menuItem: strings.editOpeningHours,
-        render: () => <Tab.Pane as="div" attached={ false }>
-          { this.renderEditTab() }
-        </Tab.Pane>
-      },
-      {
-        menuItem: strings.previewOpeningHours,
-        render: () => <Tab.Pane as="div" attached={ false }>
-          { this.renderPreviewTab() }
-        </Tab.Pane>
-      }
-    ];
+    const deliveryPlace = this.state.deliveryPlaces.find(place => place.id === this.state.deliveryPlaceId);
+    const text = deliveryPlace ? deliveryPlace.name : strings.selectDeliveryPlace;
 
     return (
       <React.Fragment>
@@ -185,15 +125,96 @@ class OpeningHoursScreen extends React.Component<Props, State> {
             redirectTo={ this.state.redirectTo }
             pageTitle={ strings.openingHoursManagement }
           >
-            <Tab
-              menu={{ secondary: true, pointing: true }}
-              panes={ panes }
-            />
-            { this.renderExceptionHoursDialog() }
+            { this.props.keycloak.hasRealmRole(ApplicationRoles.ADMINISTRATE_OPENING_HOURS) &&
+              <div style={{ display: "flex", justifyContent: "center", width: "100%", height: "100%" }}>
+                <Dropdown text={ text } options={ this.mapOptions() } onChange={ this.handleSelection } />
+              </div>
+            }
+            { this.state.deliveryPlaceId &&
+              <>
+                { this.renderEditTab() }
+                { this.renderExceptionHoursDialog() }
+              </>
+            }
           </BasicLayout>
         }
       </React.Fragment>
     );
+  }
+
+  /**
+   * Creates dropdown item options from delivery places
+   */
+  private mapOptions = () => {
+    const { deliveryPlaces } = this.state;
+    return deliveryPlaces.map(place => {
+      return {
+        text: place.name,
+        value: place.id
+      };
+    });
+  }
+
+  /**
+   * Fetches all delivery places
+   */
+  private fetchDeliveryPlaces = async () => {
+    const { keycloak } = this.props;
+    if (!keycloak) {
+      return;
+    }
+    const { token } = keycloak;
+    if (!token) {
+      return;
+    }
+    try {
+      const deliveryPlacesService = Api.getDeliveryPlacesService(token);
+      const deliveryPlaces = await deliveryPlacesService.listDeliveryPlaces();
+      this.setState({
+        deliveryPlaces: deliveryPlaces
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  /**
+   * Fetches opening hour data
+   */
+  private fetchOpeningHourData = async (deliveryPlaceId: string) => {
+    const { keycloak } = this.props;
+    if (!keycloak) {
+      return;
+    }
+    const { token } = keycloak;
+    if (!token) {
+      return;
+    }
+    try {
+      const openingHoursService = Api.getOpeningHoursService(token);
+      const openingHourPeriods = await openingHoursService.listOpeningHourPeriods(deliveryPlaceId);
+      const openingHourExceptions = await openingHoursService.listOpeningHourExceptions(deliveryPlaceId);
+      this.setState({
+        deliveryPlaceId: deliveryPlaceId,
+        openingHourPeriods: openingHourPeriods,
+        openingHourExceptions: openingHourExceptions
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  /**
+   * Handles selecting delivery place for opening hours management
+   * 
+   * @param event event object
+   * @param data dropdown props
+   */
+  private handleSelection = async (event: React.SyntheticEvent<HTMLElement>, data: DropdownProps) => {
+    const { value } = data;
+    if (value) {
+      await this.fetchOpeningHourData(value.toString());
+    }
   }
 
   /**
@@ -212,13 +233,13 @@ class OpeningHoursScreen extends React.Component<Props, State> {
             <Form.Group inline style={{ display: "flex", justifyContent: "center" }}>
               <Form.Field style={{ display: "flex", alignItems: "center" }}>
                 <DatePicker
-                  onChange={ this.setRange("startDate") }
-                  selected={ this.state.range.startDate }
+                  onChange={ this.setRange("beginDate") }
+                  selected={ this.state.range.beginDate }
                   dateFormat="dd.MM.yyyy"
                   locale="fi"
                   minDate={ new Date() }
                   selectsStart
-                  startDate={ range.startDate }
+                  startDate={ range.beginDate }
                   endDate={ range.endDate }
                 />
               </Form.Field>
@@ -231,7 +252,7 @@ class OpeningHoursScreen extends React.Component<Props, State> {
                   locale="fi"
                   minDate={ new Date() }
                   selectsEnd
-                  startDate={ range.startDate }
+                  startDate={ range.beginDate }
                   endDate={ range.endDate }
                 />
               </Form.Field>
@@ -252,17 +273,19 @@ class OpeningHoursScreen extends React.Component<Props, State> {
    * @param key start or end date key
    * @param date date object
    */
-  private setRange = (key: "startDate" | "endDate" ) => (date: Date) => {
+  private setRange = (key: "beginDate" | "endDate" ) => (date: Date) => {
     const { range } = this.state;
-    const updatedRange = range;
-    if (key === "startDate" && date.getTime() > range.endDate.getTime()) {
+    let updatedRange = range;
+    if (key === "beginDate" && date.getTime() > range.endDate.getTime()) {
       updatedRange.endDate = date;
     }
-    if (key === "endDate" && date.getTime() < range.startDate.getTime()) {
-      updatedRange.startDate = date;
+    if (key === "endDate" && date.getTime() < range.beginDate.getTime()) {
+      updatedRange.beginDate = date;
     }
+    updatedRange = {...updatedRange, [key]: date};
+
     this.setState({
-      range: {...updatedRange, [key]: date}
+      range: updatedRange
     });
   }
 
@@ -315,170 +338,133 @@ class OpeningHoursScreen extends React.Component<Props, State> {
   /**
    * Adds new opening hours block
    */
-  private addNewOpeningHoursBlock = () => {
-    const { weeks } = this.state;
+  private addNewOpeningHoursBlock = async () => {
+    const { openingHourPeriods, deliveryPlaceId } = this.state;
+    const { keycloak } = this.props;
+    if (!keycloak || !deliveryPlaceId) {
+      return;
+    }
+    const { token } = keycloak;
+    if (!token) {
+      return;
+    }
     const today = new Date();
     const lastMonday = new Date((today.getDay() < 1 ? -6 : 1 - today.getDay()) * 86400000 + today.getTime());
     const nextSunday = new Date((today.getDay() < 1 ? 7 : 7 - today.getDay()) * 86400000 + today.getTime());
-    const updatedWeeks = [
-      {
-        id: Math.random().toString(),
-        startDate: lastMonday,
-        endDate: nextSunday,
-        weekDays: [
-          {
-            id: Math.random().toString(),
-            date: new Date(),
-            name: "maanantai", hours: [
-              {
-                opens: new Date(),
-                closes: new Date()
-              }
-            ]
-          },
-          {
-            id: Math.random().toString(),
-            date: new Date(),
-            name: "tiistai", hours: [
-              {
-                opens: new Date(),
-                closes: new Date()
-              }
-            ]
-          },
-          {
-            id: Math.random().toString(),
-            date: new Date(),
-            name: "keskiviikko", hours: [
-              {
-                opens: new Date(),
-                closes: new Date()
-              }
-            ]
-          },
-          {
-            id: Math.random().toString(),
-            date: new Date(),
-            name: "torstai", hours: [
-              {
-                opens: new Date(),
-                closes: new Date()
-              }
-            ]
-          },
-          {
-            id: Math.random().toString(),
-            date: new Date(),
-            name: "perjantai", hours: [
-              {
-                opens: new Date(),
-                closes: new Date()
-              }
-            ]
-          },
-          {
-            id: Math.random().toString(),
-            date: new Date(),
-            name: "lauantai", hours: [
-              {
-                opens: new Date(),
-                closes: new Date()
-              }
-            ]
-          },
-          {
-            id: Math.random().toString(),
-            date: new Date(),
-            name: "sunnuntai", hours: [
-              {
-                opens: new Date(),
-                closes: new Date()
-              }
-            ]
-          },
-        ]
-      },
-      ...weeks
-    ];
+    const openingHourPeriodBody: OpeningHourPeriod = {
+      beginDate: lastMonday,
+      endDate: nextSunday,
+      weekdays: [
+        {
+          dayType: WeekdayType.MONDAY,
+          hours: []
+        },
+        {
+          dayType: WeekdayType.TUESDAY,
+          hours: []
+        },
+        {
+          dayType: WeekdayType.WEDNESDAY,
+          hours: []
+        },
+        {
+          dayType: WeekdayType.THURSDAY,
+          hours: []
+        },
+        {
+          dayType: WeekdayType.FRIDAY,
+          hours: []
+        },
+        {
+          dayType: WeekdayType.SATURDAY,
+          hours: []
+        },
+        {
+          dayType: WeekdayType.SUNDAY,
+          hours: []
+        }
+      ]
+    }
+    const openingHoursService = Api.getOpeningHoursService(token);
+    const openingHourPeriod = await openingHoursService.createOpeningHourPeriod(openingHourPeriodBody, deliveryPlaceId);
     this.setState({
-      weeks: updatedWeeks
+      openingHourPeriods: [openingHourPeriod, ...openingHourPeriods]
     });
   }
 
   /**
    * Maps dates between start and end date
    */
-  private mapDates = (startDate: Date, endDate: Date) => {
-    if (startDate.getTime() > endDate.getTime()) {
+  private mapDates = (beginDate: Date, endDate: Date) => {
+    if (beginDate.getTime() > endDate.getTime()) {
       return [];
     }
 
-    const dates = [startDate];
-    while (dates.findIndex(date => `${date.getDate()}.${date.getMonth()}.${date.getFullYear()}` === `${endDate.getDate()}.${endDate.getMonth()}.${endDate.getFullYear()}`) === -1) {
+    const dates = [beginDate];
+    while (dates.findIndex(date => `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}` === `${endDate.getDate()}.${endDate.getMonth() + 1}.${endDate.getFullYear()}`) === -1) {
       const nextDate = new Date(dates[dates.length - 1].getTime() + 86400000);
       dates.push(nextDate);
     }
-    return dates;
+    const datesAsString = dates.map(date => `${ date.getFullYear() }-${ date.getMonth() + 1 < 10 ? `0${ date.getMonth() + 1 }` : date.getMonth() + 1 }-${ date.getDate() < 10 ? `0${ date.getDate() }` : date.getDate() }`);
+    return datesAsString;
   }
 
   /**
    * Adds new exception hours block
    */
-  private addNewExceptionHoursBlock = () => {
-    const { exceptionDays, range } = this.state;
+  private addNewExceptionHoursBlock = async () => {
+    const { openingHourExceptions, deliveryPlaceId, range } = this.state;
+    const { keycloak } = this.props;
 
-    const dates = this.mapDates(range.startDate, range.endDate);
-    const updatedExceptionDays = [...dates.map(date => {
-      return {
-        id: Math.random().toString(),
-        name: `${date.getDate()}.${date.getMonth()}.${date.getFullYear()}`,
-        date: date,
-        hours: [
-          {
-            opens: new Date(),
-            closes: new Date()
-          }
-        ]
-      }
-    })
-    .filter(date => 
-      exceptionDays.find(exception => exception.name === date.name) === undefined
-    ), ...exceptionDays];
-    updatedExceptionDays.sort((a, b) => {
-      return a.date.getTime() - b.date.getTime();
+    if (!keycloak || !deliveryPlaceId) {
+      return;
+    }
+    const { token } = keycloak;
+    if (!token) {
+      return;
+    }
+
+    const openingHoursService = Api.getOpeningHoursService(token);
+    const dates = this.mapDates(range.beginDate, range.endDate).filter(date => openingHourExceptions.findIndex(exception => exception.exceptionDate === date) === -1);
+    const createOpeningHourExceptionPromises = dates.map(date => {
+      const openingHourExceptionBody: OpeningHourException = {
+        exceptionDate: date,
+        hours: []
+      };
+      return openingHoursService.createOpeningHourException(openingHourExceptionBody, deliveryPlaceId);
+    });
+    const newOpeningHourExceptions = await Promise.all(createOpeningHourExceptionPromises);
+    const updatedOpeningHourExceptions = [...openingHourExceptions, ...newOpeningHourExceptions];
+    updatedOpeningHourExceptions.sort((a, b) => {
+      const date1 = new Date(a.exceptionDate);
+      const date2 = new Date(b.exceptionDate);
+      return date1.getTime() - date2.getTime();
     });
     this.setState({
-      exceptionDays: updatedExceptionDays,
+      openingHourExceptions: updatedOpeningHourExceptions,
       exceptionHoursDialogOpen: false
     });
-  }
-
-  /**
-   * Renders preview tab
-   */
-  private renderPreviewTab = () => {
-    return null;
   }
 
   /**
    * Renders opening hours blocks
    */
   private renderOpeningHoursBlocks = () => {
-    const { weeks } = this.state;
-    return weeks.map(week => { return this.renderOpeningHoursBlock(week) });
+    return this.state.openingHourPeriods.map(openingHourPeriod => { return this.renderOpeningHoursBlock(openingHourPeriod) });
   }
 
   /**
    * Renders single opening hours block
    */
-  private renderOpeningHoursBlock = (week: Week) => {
-
-    const weekDays = week.weekDays;
-
-    const weekDaysRendered = weekDays.map((day: Weekday, index: number) => {
+  private renderOpeningHoursBlock = (openingHourPeriod: OpeningHourPeriod) => {
+    const weekdayOrder = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
+    const weekdaysSorted = openingHourPeriod.weekdays.sort((a, b) => {
+      return weekdayOrder.findIndex(day => day === a.dayType) - weekdayOrder.findIndex(day => day === b.dayType);
+    });
+    const openingHourWeekdaysRendered = weekdaysSorted.map((openingHourWeekday: OpeningHourWeekday, index: number) => {
       return (
         <div key={ index } style={{ display: "inline-block" }}>
-          { this.renderWeekday(day) }
+          { this.renderWeekday(openingHourWeekday, openingHourPeriod) }
         </div>
       )
     });
@@ -494,7 +480,7 @@ class OpeningHoursScreen extends React.Component<Props, State> {
           <Form>
             <Form.Group inline style={{ display: "flex", justifyContent: "center" }}>
               {
-                this.renderTimeRange(week)
+                this.renderTimeRange(openingHourPeriod)
               }
             </Form.Group>
           </Form>
@@ -505,7 +491,7 @@ class OpeningHoursScreen extends React.Component<Props, State> {
             centered
           >
             <Grid.Row style={{ justifyContent: "center" }}>
-              { weekDaysRendered }
+              { openingHourWeekdaysRendered }
             </Grid.Row>
           </Grid>
         </Card.Content>
@@ -516,44 +502,43 @@ class OpeningHoursScreen extends React.Component<Props, State> {
   /**
    * Renders time range
    */
-  private renderTimeRange = (week: Week) => {
+  private renderTimeRange = (openingHourPeriod: OpeningHourPeriod) => {
     const today = new Date();
     const lastMonday = new Date((today.getDay() < 1 ? -6 : 1 - today.getDay()) * 86400000 + today.getTime());
     const nextSunday = new Date((today.getDay() < 1 ? 7 : 7 - today.getDay()) * 86400000 + today.getTime());
-
     return (
       <>
         <Form.Field style={{ display: "flex", alignItems: "center" }}>
           <label>Aikavälillä</label>
           <DatePicker
-            onChange={ this.setTimeRange(week) }
-            selected={ week.startDate }
+            onChange={ this.setTimeRange(openingHourPeriod, openingHourPeriod.id) }
+            selected={ openingHourPeriod.beginDate }
             dateFormat="dd.MM.yyyy"
             locale="fi"
             minDate={ lastMonday }
             filterDate={ (date) => {
               return date.getDay() === 1;
             } }
-            startDate={ week.startDate }
-            endDate={ week.endDate }
+            startDate={ openingHourPeriod.beginDate }
+            endDate={ openingHourPeriod.endDate }
           />
         </Form.Field>
         <Form.Field style={{ display: "flex", alignItems: "center" }}>
           <label>-</label>
           <DatePicker
-            onChange={ this.setTimeRange(week) }
-            selected={ week.endDate }
+            onChange={ this.setTimeRange(openingHourPeriod, openingHourPeriod.id) }
+            selected={ openingHourPeriod.endDate }
             dateFormat="dd.MM.yyyy"
             locale="fi"
             minDate={ nextSunday }
             filterDate={ (date) => {
               return date.getDay() === 0;
             } }
-            startDate={ week.startDate }
-            endDate={ week.endDate }
+            startDate={ openingHourPeriod.beginDate }
+            endDate={ openingHourPeriod.endDate }
           />
         </Form.Field>
-        <Form.Field onClick={ this.deleteOpeningHoursBlock(week) } style={{ cursor: "pointer" }}>
+        <Form.Field onClick={ this.deleteOpeningHoursBlock(openingHourPeriod, openingHourPeriod.id) } style={{ cursor: "pointer" }}>
           <Icon name="trash" />
         </Form.Field>
       </>
@@ -563,82 +548,121 @@ class OpeningHoursScreen extends React.Component<Props, State> {
   /**
    * Sets opening hours block time range
    */
-  private setTimeRange = (week: Week) => (date: Date) => {
-    const { weeks } = this.state;
-    const key = date.getDay() === 1 ? "startDate" : "endDate";
-    const changedWeeks = weeks.map(item => {
-      if (item.id === week.id) {
-        if (key === "startDate" && date.getTime() > week.endDate.getTime()) {
-          const nextSunday = new Date((date.getDay() < 1 ? 7 : 7 - date.getDay()) * 86400000 + date.getTime());
-          return {
-            ...item,
-            [key]: date,
-            endDate: nextSunday
-          };
-        }
-        if (key === "endDate" && date.getTime() < week.startDate.getTime()) {
-          const lastMonday = new Date((date.getDay() < 1 ? -6 : 1 - date.getDay()) * 86400000 + date.getTime());
-          return {
-            ...item,
-            [key]: date,
-            startDate: lastMonday
-          };
-        }
-        return {
-          ...item,
-          [key]: date
-        };
+  private setTimeRange = (openingHourPeriod: OpeningHourPeriod, openingHourPeriodId?: string) => async (date: Date) => {
+    const { openingHourPeriods, deliveryPlaceId } = this.state;
+    const { keycloak } = this.props;
+    if (!keycloak || !deliveryPlaceId || !openingHourPeriodId) {
+      return;
+    }
+    const { token } = keycloak;
+    if (!token) {
+      return;
+    }
+    try {
+      const key = date.getDay() === 1 ? "beginDate" : "endDate";
+      const openingHourPeriodBody = {
+        ...openingHourPeriod
       }
-      return item;
-    });
-    this.setState({
-      weeks: changedWeeks
-    });
+
+      if (key === "beginDate" && date.getTime() > new Date(openingHourPeriod.endDate).getTime()) {
+        const nextSunday = new Date((date.getDay() < 1 ? 7 : 7 - date.getDay()) * 86400000 + date.getTime());
+        openingHourPeriodBody[key] = date;
+        openingHourPeriodBody["endDate"] = nextSunday;
+      } else if (key === "endDate" && date.getTime() < new Date(openingHourPeriod.beginDate).getTime()) {
+        const lastMonday = new Date((date.getDay() < 1 ? -6 : 1 - date.getDay()) * 86400000 + date.getTime());
+        openingHourPeriodBody[key] = date;
+        openingHourPeriodBody["beginDate"] = lastMonday;
+      } else {
+        openingHourPeriodBody[key] = date;
+      }
+
+      const openingHoursService = Api.getOpeningHoursService(token);
+      const updatedOpeningHourPeriod = await openingHoursService.updateOpeningHourPeriod(openingHourPeriodBody, deliveryPlaceId, openingHourPeriodId);
+      const updatedOpeningHourPeriods = openingHourPeriods.map(period => {
+        if (period.id === updatedOpeningHourPeriod.id) {
+          return openingHourPeriodBody;
+        }
+        return period;
+      });
+      this.setState({
+        openingHourPeriods: updatedOpeningHourPeriods
+      });
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   /**
    * Deletes opening hours block
    */
-  private deleteOpeningHoursBlock = (week: Week) => (event: any) => {
-    const { weeks } = this.state;
-    this.setState({
-      weeks: weeks.filter(item => item.id !== week.id)
-    });
+  private deleteOpeningHoursBlock = (openingHourPeriod: OpeningHourPeriod, openingHourExceptionId?: string) => async (event: any) => {
+    const { openingHourPeriods, deliveryPlaceId } = this.state;
+    const { keycloak } = this.props;
+    if (!keycloak || !deliveryPlaceId || !openingHourExceptionId) {
+      return;
+    }
+    const { token } = keycloak;
+    if (!token) {
+      return;
+    }
+    try {
+      const openingHoursService = Api.getOpeningHoursService(token);
+      await openingHoursService.deleteOpeningHourPeriod(deliveryPlaceId, openingHourExceptionId);
+      this.setState({
+        openingHourPeriods: openingHourPeriods.filter(item => item.id !== openingHourPeriod.id)
+      });
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   /**
    * Deletes exception hours block
    */
-  private deleteExceptionHoursBlock = (day: Weekday) => (event: any) => {
-    const { exceptionDays } = this.state;
-    this.setState({
-      exceptionDays: exceptionDays.filter(exception => exception.id !== day.id)
-    })
+  private deleteExceptionHoursBlock = (openingHourExceptionId?: string) => async (event: any) => {
+    const { openingHourExceptions, deliveryPlaceId } = this.state;
+    const { keycloak } = this.props;
+    if (!keycloak || !deliveryPlaceId || !openingHourExceptionId) {
+      return;
+    }
+    const { token } = keycloak;
+    if (!token) {
+      return;
+    }
+    try {
+      const openingHoursService = Api.getOpeningHoursService(token);
+      await openingHoursService.deleteOpeningHourException(deliveryPlaceId, openingHourExceptionId);
+      this.setState({
+        openingHourExceptions: openingHourExceptions.filter(exception => exception.id !== openingHourExceptionId)
+      });
+    } catch (error) {
+      alert(error);
+    }
   }
 
   /**
    * Renders exception hours block
    */
   private renderExceptionHoursBlock = () => {
-    const { exceptionDays } = this.state;
-    return exceptionDays.map((day: Weekday, index: number) => {
+    const { openingHourExceptions } = this.state;
+    return openingHourExceptions.map((openingHourException: OpeningHourException, index: number) => {
       return (
         <List.Item key={ index } style={{ marginBottom: "2rem" }}>
           <List.Content>
             <Form>
                 <Form.Field style={{ display: "flex", marginBottom: "2rem", marginRight: "1.5rem" }}>
-                  <Header style={{ marginRight: "1rem" }}>{ day.name }</Header>
-                  <Button style={{ fontSize: "0.8rem" }} color="red" onClick={ this.deleteExceptionHoursBlock(day) }>{ strings.deleteBlock }</Button>
+                  <Header style={{ marginRight: "1rem" }}>{ this.formatDate(openingHourException.exceptionDate) }</Header>
+                  <Button style={{ fontSize: "0.8rem" }} color="red" onClick={ this.deleteExceptionHoursBlock(openingHourException.id) }>{ strings.deleteBlock }</Button>
                 </Form.Field>
                 <Form.Field>
-                  <span style={{ cursor: "pointer" }} onClick={ this.deleteExceptionHours(day) }>{ strings.deleteHours }<Icon style={{ marginRight: "1rem", marginLeft: "1rem" }} name="trash" /></span>
-                  <span style={{ cursor: "pointer" }} onClick={ this.addExceptionHours(day) }>{ strings.addNewHours }<Icon style={{ marginRight: "1rem", marginLeft: "1rem" }} name="add circle" /></span>
+                  <span style={{ cursor: "pointer" }} onClick={ this.deleteExceptionHours(openingHourException, openingHourException.id) }>{ strings.deleteHours }<Icon style={{ marginRight: "1rem", marginLeft: "1rem" }} name="trash" /></span>
+                  <span style={{ cursor: "pointer" }} onClick={ this.addExceptionHours(openingHourException, openingHourException.id) }>{ strings.addNewHours }<Icon style={{ marginRight: "1rem", marginLeft: "1rem" }} name="add circle" /></span>
                 </Form.Field>
                 {
-                  day.hours.map((hour: OpeningHours, index: number) => {
+                  openingHourException.hours.map((hour: OpeningHourInterval, index: number) => {
                     return (
                       <Form.Group style={{ width: "15rem", marginRight: "1.5rem", display: "inline-block" }}>
-                        { this.renderHoursRow(day, index, hour, true) }
+                        { this.renderHoursRow(openingHourException, index, hour, true) }
                       </Form.Group>
                     );
                   })
@@ -651,26 +675,64 @@ class OpeningHoursScreen extends React.Component<Props, State> {
   }
 
   /**
-   * Adds exception hours to the row
-   * 
-   * @param weekDay week day
+   * Format date string from yyyy-mm-dd to dd.mm.yyyy
+   *
+   * @param dateString date string
    */
-  private addExceptionHours = (weekDay: Weekday) => (event: any) => {
-    const { exceptionDays } = this.state;
-    const index = exceptionDays.findIndex(exception => exception.id === weekDay.id);
-    if (index > -1) {
-      const updatedExceptionDay = exceptionDays[index];
-      updatedExceptionDay.hours = [
-        ...updatedExceptionDay.hours,
-        {
-          opens: new Date(),
-          closes: new Date()
+  private formatDate = (dateString: string) => {
+    const dateObject = new Date(Date.parse(dateString));
+    const date = dateObject.getDate() < 10 ? `0${dateObject.getDate()}` : dateObject.getDate();
+    const month = dateObject.getMonth() < 10 ? `0${dateObject.getMonth() + 1}` : dateObject.getMonth() + 1;
+    const year = dateObject.getFullYear();
+    const formattedDateString = `${ date }.${ month }.${ year }`;
+    return formattedDateString;
+  }
+
+  /**
+   * Adds exception hours to the row
+   *
+   * @param openingHourException opening hour exception
+   */
+  private addExceptionHours = (openingHourException: OpeningHourException, openingHourExceptionId?: string) => async (event: any) => {
+    const { keycloak } = this.props;
+    const { openingHourExceptions, deliveryPlaceId } = this.state;
+    if (!keycloak || !deliveryPlaceId || !openingHourExceptionId) {
+      return;
+    }
+    const { token } = keycloak;
+    if (!token) {
+      return;
+    }
+    try {
+      const openingHoursService = Api.getOpeningHoursService(token);
+      const opens = new Date();
+      opens.setMilliseconds(0);
+      opens.setMinutes(0);
+      const closes = new Date();
+      closes.setMilliseconds(0);
+      closes.setMinutes(0);
+      const openingHourExceptionBody = {
+        ...openingHourException,
+        hours: [
+          ...openingHourException.hours,
+          {
+            opens: opens,
+            closes: closes
+          }
+        ]
+      };
+      const updatedOpeningHourException = await openingHoursService.updateOpeningHourException(openingHourExceptionBody, deliveryPlaceId, openingHourExceptionId);
+      const updatedOpeningHourExceptions = openingHourExceptions.map(exception => {
+        if (exception.id === updatedOpeningHourException.id) {
+          return updatedOpeningHourException;
         }
-      ];
-      exceptionDays.splice(index, 1, updatedExceptionDay);
-      this.setState({
-        exceptionDays: exceptionDays
+        return exception;
       });
+      this.setState({
+        openingHourExceptions: updatedOpeningHourExceptions
+      });
+    } catch (error) {
+      console.log(error);
     }
   }
 
@@ -679,73 +741,131 @@ class OpeningHoursScreen extends React.Component<Props, State> {
    * 
    * @param weekDay week day
    */
-  private deleteExceptionHours = (weekDay: Weekday) => (event: any) => {
-    const { exceptionDays } = this.state;
-    const index = exceptionDays.findIndex(exception => exception.id === weekDay.id);
-    if (index > -1) {
-      const exceptionDay = exceptionDays[index];
-      exceptionDay.hours.pop();
-      exceptionDays[index] = exceptionDay;
-      this.setState({
-        exceptionDays: exceptionDays
+  private deleteExceptionHours = (openingHourException: OpeningHourException, openingHourExceptionId?: string) => async (event: any) => {
+    const { keycloak } = this.props;
+    const { openingHourExceptions, deliveryPlaceId } = this.state;
+    if (!keycloak || !deliveryPlaceId || !openingHourExceptionId) {
+      return;
+    }
+    const { token } = keycloak;
+    if (!token) {
+      return;
+    }
+    try {
+      const openingHoursService = Api.getOpeningHoursService(token);
+      const updatedHours = openingHourException.hours;
+      updatedHours.pop();
+      const openingHourExceptionBody = {
+        ...openingHourException,
+        hours: updatedHours
+      };
+      const updatedOpeningHourException = await openingHoursService.updateOpeningHourException(openingHourExceptionBody, deliveryPlaceId, openingHourExceptionId);
+      const updatedOpeningHourExceptions = openingHourExceptions.map(exception => {
+        if (exception.id === updatedOpeningHourException.id) {
+          return updatedOpeningHourException;
+        }
+        return exception;
       });
+      this.setState({
+        openingHourExceptions: updatedOpeningHourExceptions
+      });
+    } catch (error) {
+      console.log(error);
     }
   }
 
   /**
    * Adds opening hours to the item
    */
-  private addOpeningHours = (weekDay: Weekday) => (event: any) => {
-    const { weeks } = this.state;
-    const updatedWeeks = weeks.map(week => {
-      return {
-        ...week,
-        weekDays: week.weekDays.map(day => {
-          if (day.id === weekDay.id) {
-            return {
-              ...day,
-              hours: [
-                ...day.hours,
-                {
-                  opens: new Date(),
-                  closes: new Date()
-                }
-              ]
+  private addOpeningHours = (openingHourWeekday: OpeningHourWeekday, openingHourPeriod: OpeningHourPeriod) => async (event: any) => {
+    const { keycloak } = this.props;
+    const { openingHourPeriods, deliveryPlaceId } = this.state;
+    if (!keycloak || !deliveryPlaceId || !openingHourPeriod.id) {
+      return;
+    }
+    const { token } = keycloak;
+    if (!token) {
+      return;
+    }
+    try {
+      const { weekdays } = openingHourPeriod;
+      const opens = new Date();
+      opens.setMilliseconds(0);
+      opens.setMinutes(0);
+      const closes = new Date();
+      closes.setMilliseconds(0);
+      closes.setMinutes(0);
+      const updatedWeekdays = weekdays.map(day => {
+        if (day.id === openingHourWeekday.id) {
+          day.hours = [
+            ...day.hours,
+            {
+              opens: opens,
+              closes: closes
             }
-          }
-          return day;
-        })
-      }
-    });
-    this.setState({
-      weeks: updatedWeeks
-    });
+          ];
+        }
+        return day;
+      });
+      const openingHourPeriodBody = {
+        ...openingHourPeriod,
+        weekdays: updatedWeekdays
+      };
+      const openingHoursService = Api.getOpeningHoursService(token);
+      const updatedOpeningHourPeriod = await openingHoursService.updateOpeningHourPeriod(openingHourPeriodBody, deliveryPlaceId, openingHourPeriod.id);
+      const updatedOpeningHourPeriods = openingHourPeriods.map(period => {
+        if (period.id === updatedOpeningHourPeriod.id) {
+          return updatedOpeningHourPeriod;
+        }
+        return period;
+      });
+      this.setState({
+        openingHourPeriods: updatedOpeningHourPeriods
+      });
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   /**
    * Deletes opening hour from the row 
    */
-  private deleteOpeningHours = (weekDay: Weekday) => (event: any) => {
-    const { weeks } = this.state;
-    const updatedWeeks = weeks.map(week => {
-      return {
-        ...week,
-        weekDays: week.weekDays.map(day => {
-          if (day.id === weekDay.id) {
-            const hours = day.hours;
-            hours.pop();
-            return {
-              ...day,
-              hours: hours
-            }
-          }
-          return day;
-        })
-      }
-    });
-    this.setState({
-      weeks: updatedWeeks
-    });
+  private deleteOpeningHours = (openingHourWeekday: OpeningHourWeekday, openingHourPeriod: OpeningHourPeriod) => async (event: any) => {
+    const { keycloak } = this.props;
+    const { openingHourPeriods, deliveryPlaceId } = this.state;
+    if (!keycloak || !deliveryPlaceId || !openingHourPeriod.id) {
+      return;
+    }
+    const { token } = keycloak;
+    if (!token) {
+      return;
+    }
+    try {
+      const { weekdays } = openingHourPeriod;
+      const updatedWeekdays = weekdays.map(day => {
+        if (day.id === openingHourWeekday.id) {
+          day.hours.pop();
+        }
+        return day;
+      });
+      const openingHourPeriodBody = {
+        ...openingHourPeriod,
+        weekdays: updatedWeekdays
+      };
+      const openingHoursService = Api.getOpeningHoursService(token);
+      const updatedOpeningHourPeriod = await openingHoursService.updateOpeningHourPeriod(openingHourPeriodBody, deliveryPlaceId, openingHourPeriod.id);
+      const updatedOpeningHourPeriods = openingHourPeriods.map(period => {
+        if (period.id === updatedOpeningHourPeriod.id) {
+          return updatedOpeningHourPeriod;
+        }
+        return period;
+      });
+      this.setState({
+        openingHourPeriods: updatedOpeningHourPeriods
+      });
+    } catch (error) {
+      console.log(error);
+    }
   }
   
   /**
@@ -753,28 +873,23 @@ class OpeningHoursScreen extends React.Component<Props, State> {
    * 
    * @param day day
    */
-  private renderWeekday = (day: Weekday) => {
+  private renderWeekday = (openingHourWeekday: OpeningHourWeekday, openingHourPeriod: OpeningHourPeriod) => {
     return (
       <Card style={{ width: "18rem", marginLeft: "0.4rem", marginRight: "0.4rem" }}>
         <Card.Header
           textAlign="center"
           style={{ backgroundColor: "#E51D2A", color: "#fff", fontSize: 16, padding: 5 }}
         >
-          { day.name }
+          { openingHourWeekday.dayType }
         </Card.Header>
         <Card.Content>
           <Form>
-            <Form.Field>
-              <Checkbox
-                label={ strings.closed }
-              />
-            </Form.Field>
             {
-              day.hours.map((hours, index) => this.renderHoursRow(day, index, hours))
+              openingHourWeekday.hours.map((hours, index) => this.renderHoursRow(openingHourPeriod, index, hours, false, openingHourWeekday))
             }
             <Form.Field>
-              <span style={{ cursor: "pointer" }} onClick={ this.deleteOpeningHours(day) }>{ strings.deleteHours }<Icon style={{ marginRight: "1rem", marginLeft: "1rem" }} name="trash" /></span>
-              <span style={{ cursor: "pointer" }} onClick={ this.addOpeningHours(day) }>{ strings.addNewHours }<Icon style={{ marginRight: "1rem", marginLeft: "1rem" }} name="add circle" /></span>
+              <span style={{ cursor: "pointer" }} onClick={ this.deleteOpeningHours(openingHourWeekday, openingHourPeriod) }>{ strings.deleteHours }<Icon style={{ marginRight: "1rem", marginLeft: "1rem" }} name="trash" /></span>
+              <span style={{ cursor: "pointer" }} onClick={ this.addOpeningHours(openingHourWeekday, openingHourPeriod) }>{ strings.addNewHours }<Icon style={{ marginRight: "1rem", marginLeft: "1rem" }} name="add circle" /></span>
             </Form.Field>
           </Form>
         </Card.Content>
@@ -787,15 +902,21 @@ class OpeningHoursScreen extends React.Component<Props, State> {
    * 
    * @param day week day
    */
-  private renderHoursRow = (day: Weekday, index: number, hours: OpeningHours, isException?: boolean) => {
-    const openingHoursHandler = (openOrClose: "opens"|"closes") => (date: Date) => this.onChangeOpeningHours(day, index, openOrClose, date);
-    const exceptionHoursHandler = (openOrClose: "opens"|"closes") => (date: Date) => this.onChangeExceptionHours(day, index, openOrClose, date);
+  private renderHoursRow = (openingHour: OpeningHourPeriod | OpeningHourException, index: number, hours: OpeningHourInterval, isException?: boolean, openingHourday?: OpeningHourWeekday) => {
+    let hoursHandler;
+    if (isException && 'exceptionDate' in openingHour && 'exceptionDate') {
+      hoursHandler = (openOrClose: "opens"|"closes") => (date: Date) => this.onChangeExceptionHours(openingHour, index, openOrClose, date);
+    } else if ('beginDate' in openingHour && openingHourday) {
+      hoursHandler = (openOrClose: "opens"|"closes") => (date: Date) => this.onChangeOpeningHours(openingHour, openingHourday, index, openOrClose, date);
+    } else {
+      hoursHandler = (openOrClose: "opens"|"closes") => (date: Date) => null;
+    }
     return (
       <Form.Group inline style={{ width: "15rem" }}>
         <Form.Field>
           <DatePicker
             selected={ hours.opens }
-            onChange={ isException ? exceptionHoursHandler("opens") : openingHoursHandler("opens") }
+            onChange={ hoursHandler("opens") }
             showTimeSelect
             showTimeSelectOnly
             timeIntervals={ 15 }
@@ -809,7 +930,7 @@ class OpeningHoursScreen extends React.Component<Props, State> {
           <label>-</label>
           <DatePicker
             selected={ hours.closes }
-            onChange={ isException ? exceptionHoursHandler("closes") : openingHoursHandler("closes") }
+            onChange={ hoursHandler("closes") }
             showTimeSelect
             showTimeSelectOnly
             timeIntervals={ 15 }
@@ -825,56 +946,93 @@ class OpeningHoursScreen extends React.Component<Props, State> {
 
   /**
    * Event handler for change weekday data
+   * 
    */
-  private onChangeOpeningHours = (day: Weekday, hoursIndex: number, key: string, value: Date | null) => {
-    const { weeks } = this.state;
-    const changedWeeks = weeks.map(week => {
-      return {
-        ...week,
-        weekDays: week.weekDays.map(weekday => {
-          if (weekday.id === day.id) {
-            const hoursArray = weekday.hours;
-            const hoursToUpdate = weekday.hours[hoursIndex];
-            const updatedHoursRow = { ...hoursToUpdate, [key]: value !== null ? value : hoursToUpdate[key] };
-            hoursArray.splice(hoursIndex, 1, updatedHoursRow);
-            const updatedDay: Weekday = {
-              ...weekday,
-              hours: hoursArray
-            };
-            return updatedDay;
+  private onChangeOpeningHours = async (openingHour: OpeningHourPeriod, openingHourWeekday: OpeningHourWeekday, hoursIndex: number, key: string, value: Date | null) => {
+    const { openingHourPeriods, deliveryPlaceId } = this.state;
+    const { keycloak } = this.props;
+    if (!keycloak || !deliveryPlaceId || !openingHour.id) {
+      return;
+    }
+    const { token } = keycloak;
+    if (!token) {
+      return;
+    }
+    try {
+      const openingHoursService = Api.getOpeningHoursService(token);
+      const weekdaysWithHoursUpdated = openingHour.weekdays.map((day) => {
+        if (day.id === openingHourWeekday.id) {
+          return {
+            ...day,
+            hours: day.hours.map((hour, index) => {
+              if (index === hoursIndex) {
+                return {
+                  ...hour,
+                  [key]: value
+                };
+              }
+              return hour;
+            })
           }
-          return weekday;
         }
-      )};
-    });
-
-    this.setState({
-      weeks: changedWeeks
-    });
+        return day;
+      });
+      const openingHourPeriodBody = {
+        id: openingHour.id,
+        beginDate: openingHour.beginDate,
+        endDate: openingHour.endDate,
+        weekdays: weekdaysWithHoursUpdated
+      };
+      const updatedOpeningHourPeriod = await openingHoursService.updateOpeningHourPeriod(openingHourPeriodBody, deliveryPlaceId, openingHour.id);
+      this.setState({
+        openingHourPeriods: openingHourPeriods.map(item => {
+          if (item.id === updatedOpeningHourPeriod.id) {
+            return updatedOpeningHourPeriod;
+          }
+          return item;
+        })
+      });
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   /**
    * Event handler for change exceptionday data
    */
-  private onChangeExceptionHours = (day: Weekday, hoursIndex: number, key: string, value: Date | null) => {
-    const { exceptionDays } = this.state;
-    const changedDays = exceptionDays.map(exception => {
-      if (exception.id === day.id) {
-        const hoursArray = exception.hours;
-        const hoursToUpdate = exception.hours[hoursIndex];
-        const updatedHoursRow = { ...hoursToUpdate, [key]: value !== null ? value : hoursToUpdate[key] }
-        hoursArray.splice(hoursIndex, 1, updatedHoursRow);
-        const updatedDay: Weekday = {
-          ...exception,
-          hours: hoursArray
+  private onChangeExceptionHours = async (openingHour: OpeningHourException, hoursIndex: number, key: string, value: Date | null) => {
+    const { openingHourExceptions, deliveryPlaceId } = this.state;
+    const { keycloak } = this.props;
+    if (!keycloak || !deliveryPlaceId || !openingHour.id) {
+      return;
+    }
+    const { token } = keycloak;
+    if (!token) {
+      return;
+    }
+    const openingHoursService = Api.getOpeningHoursService(token);
+    const updatedHours = openingHour.hours.map((hour, index) => {
+      if (index === hoursIndex) {
+        return {
+          ...hour,
+          [key]: value
         };
-        return updatedDay;
       }
-      return exception;
+      return hour;
     });
-
+    const openingHourExceptionBody = {
+      id: openingHour.id,
+      exceptionDate: openingHour.exceptionDate,
+      hours: updatedHours
+    };
+    const updatedOpeningHourPeriod = await openingHoursService.updateOpeningHourException(openingHourExceptionBody, deliveryPlaceId, openingHour.id);
     this.setState({
-      exceptionDays: changedDays
+      openingHourExceptions: openingHourExceptions.map(item => {
+        if (item.id === updatedOpeningHourPeriod.id) {
+          return updatedOpeningHourPeriod;
+        }
+        return item;
+      })
     });
   }
 }

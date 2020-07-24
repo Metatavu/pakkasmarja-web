@@ -238,5 +238,6 @@
   "closed": "Suljettu",
   "defaultPeriods": "Vakiojaksot",
   "exceptionPeriods": "Poikkeusjaksot",
-  "deleteBlock": "Poista lohko"
+  "deleteBlock": "Poista lohko",
+  "selectDeliveryPlace": "Valitse toimituspaikka"
 }

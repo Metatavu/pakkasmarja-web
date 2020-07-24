@@ -227,6 +227,10 @@ export default class ApplicationRoles {
     return "manage-delivery-qualities";
   }
 
+  static get ADMINISTRATE_OPENING_HOURS() {
+    return "administrate-opening-hours";
+  }
+
   static get MANAGE_OPENING_HOURS() {
     return "manage-opening-hours";
   }
