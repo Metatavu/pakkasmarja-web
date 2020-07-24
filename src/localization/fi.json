@@ -226,5 +226,18 @@
   "grayBoxesReturned": "Palautettu (Harmaat laatikot)",
   "frozenCategory": "Pakastukseen",
   "freshCategory": "Tuore",
-  "databank": "Tietopankki"
+  "databank": "Tietopankki",
+  "openingHoursManagement": "Aukioloaikojen hallinta",
+  "addNewHours": "Lisää uusi",
+  "deleteHours": "Poista",
+  "qualityManagement": "Laatuhallinta",
+  "newOpeningHoursPeriod": "uusi aukioloaikalohko",
+  "newExceptionHours": "uusi poikkeusjaksolohko",
+  "editOpeningHours": "Muokkaa",
+  "previewOpeningHours": "Kalenteri",
+  "closed": "Suljettu",
+  "defaultPeriods": "Vakiojaksot",
+  "exceptionPeriods": "Poikkeusjaksot",
+  "deleteBlock": "Poista lohko",
+  "selectDeliveryPlace": "Valitse toimituspaikka"
 }

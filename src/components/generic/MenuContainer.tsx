@@ -68,8 +68,9 @@ class MenuContainer extends React.Component<Props, State> {
                   {this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_PRODUCTS) && <Dropdown.Item to="/productsManagement" as={Link}>{strings.productsManagement}</Dropdown.Item>}
                   {this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_ITEM_GROUPS) && <Dropdown.Item to="/itemGroupsManagement" as={Link}>{strings.itemGroupsManagement}</Dropdown.Item>}
                   {this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTRACTS) && <Dropdown.Item to="/contractManagement" as={Link}>{strings.contractManagement}</Dropdown.Item>}
-                  {this.props.keycloak.hasRealmRole(ApplicationRoles.MANAGE_DELIVERY_QUALITIES) && <Dropdown.Item to="/manageQualities" as={Link}>Laatu hallinta</Dropdown.Item>}
+                  {this.props.keycloak.hasRealmRole(ApplicationRoles.MANAGE_DELIVERY_QUALITIES) && <Dropdown.Item to="/manageQualities" as={Link}>{strings.qualityManagement}</Dropdown.Item>}
                   {this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_OPERATIONS) && <Dropdown.Item to="/operationsManagement" as={Link}>{strings.operations}</Dropdown.Item>}
+                  {this.props.keycloak.hasRealmRole(ApplicationRoles.MANAGE_OPENING_HOURS) && <Dropdown.Item to="/manageOpeningHours" as={Link}>{strings.openingHoursManagement}</Dropdown.Item>}
                 </Dropdown.Menu>
               </Dropdown>
             </Menu.Menu>

@@ -5,15 +5,19 @@ import { StoreState, DeliveryProduct, DeliveriesState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
-import Api, { Product, ItemGroupCategory } from "pakkasmarja-client";
+import Api, { Product, ItemGroupCategory, OpeningHourPeriod, DeliveryPlace, OpeningHourException, OpeningHourWeekday, OpeningHourInterval } from "pakkasmarja-client";
 import { ItemGroup } from "pakkasmarja-client";
-import { Grid, Header, Icon, Image, SemanticICONS, Menu, Loader, Button } from "semantic-ui-react";
+import { Grid, Header, Icon, Image, SemanticICONS, Menu, Loader, Button, Table, Select, DropdownProps } from "semantic-ui-react";
 import { Delivery } from "pakkasmarja-client";
 import strings from "src/localization/strings";
 import { Redirect } from "react-router";
 import * as _ from "lodash";
 import FreshIcon from "../../gfx/fresh-icon.png";
 import FrozenIcon from "../../gfx/frozen-icon.png";
+import * as moment from "moment";
+
+moment.locale("fi");
+
 
 /**
  * Interface for component props
@@ -29,6 +33,8 @@ interface Props {
  * Interface for component state
  */
 interface State {
+  today?: moment.Moment;
+  fourWeeksFromToday?: moment.Moment;
   keycloak?: Keycloak.KeycloakInstance;
   itemGroups?: ItemGroup[];
   activeItem?: string;
@@ -41,6 +47,17 @@ interface State {
   incomingDeliveriesCount?: number;
   deliveries?: DeliveriesState;
   loading: boolean;
+  openingHours: OpeningHourPeriod[];
+  deliveryPlaces: DeliveryPlace[];
+  deliveryPlacesOpeningHours: DeliveryPlaceOpeningHours[];
+  selectedDeliveryPlaceOpeningHours?: DeliveryPlaceOpeningHours
+}
+
+interface DeliveryPlaceOpeningHours {
+  id: string;
+  name: string;
+  openingHourPeriods: OpeningHourPeriod[];
+  openingHourExceptions: OpeningHourException[];
 }
 
 /**
@@ -58,7 +75,10 @@ class DeliveriesScreen extends React.Component<Props, State> {
     this.state = {
       pageTitle: "Toimitukset",
       redirect: false,
-      loading: false
+      loading: false,
+      openingHours: [],
+      deliveryPlaces: [],
+      deliveryPlacesOpeningHours: []
     };
   }
 
@@ -70,7 +90,11 @@ class DeliveriesScreen extends React.Component<Props, State> {
       return;
     }
     this.setState({ loading: true });
-    await this.loadDeliveriesData();
+    await Promise.all([
+      this.loadDeliveriesData(),
+      this.fetchDeliveryPlacesFromContract()
+    ]);
+    this.listDeliveryPlaceOpeningHours();
     this.setTabCounts();
     this.setState({ loading: false });
   }
@@ -116,13 +140,13 @@ class DeliveriesScreen extends React.Component<Props, State> {
 
     const freshDeliveries: Delivery[] = await deliveriesService.listDeliveries(userId, undefined, "FRESH", undefined, undefined, undefined, undefined, undefined, 0, 200);
     const frozenDeliveries: Delivery[] = await deliveriesService.listDeliveries(userId, undefined, "FROZEN", undefined, undefined, undefined, undefined, undefined, 0, 200);
-    const unfilteredProducts = await productsService.listProducts(undefined, undefined, undefined, undefined, 100);
+    const unfilteredProducts: Product[] = await productsService.listProducts(undefined, undefined, undefined, undefined, 100);
     const products: Product[] = unfilteredProducts.filter(product => product.active === true);
 
     const freshDeliveriesAndProducts: DeliveryProduct[] = freshDeliveries.map((delivery) => {
       return {
         delivery: delivery,
-        product: products.find(product => product.id === delivery.productId)
+        product: products.find(product => product.id === delivery.productId),
       };
     });
 
@@ -140,6 +164,32 @@ class DeliveriesScreen extends React.Component<Props, State> {
 
     this.setState({ deliveries: deliveriesState });
     this.props.deliveriesLoaded && this.props.deliveriesLoaded(deliveriesState);
+  }
+
+  /**
+   * Fetches contract and extracts delivery place from it
+   */
+  private fetchDeliveryPlacesFromContract = async () => {
+    const { keycloak } = this.props;
+    if (!keycloak) {
+      return;
+    }
+    const { token } = keycloak;
+    if (!token) {
+      return;
+    }
+    const contractsService = Api.getContractsService(token);
+    const deliveryPlacesService = Api.getDeliveryPlacesService(token);
+    const userContracts = await contractsService.listContracts("application/json", undefined, undefined, undefined, new Date().getFullYear());
+    const deliveryPlacePromises: Promise<DeliveryPlace>[] = [];
+    userContracts.forEach(contract => {
+      const deliveryPlace = deliveryPlacesService.findDeliveryPlace(contract.deliveryPlaceId)
+      deliveryPlacePromises.push(deliveryPlace);
+    });
+    const deliveryPlaces = await Promise.all(deliveryPlacePromises);
+    this.setState({
+      deliveryPlaces: deliveryPlaces
+    });
   }
 
   /**
@@ -243,10 +293,202 @@ class DeliveriesScreen extends React.Component<Props, State> {
                   );
                 })
               }
+              <Grid.Row>
+                <Grid.Column width={4}></Grid.Column>
+                  <Grid.Column width={8}>
+                  <Select style={{ width: "100%", marginTop: "2rem", marginBottom: "2rem" }} placeholder='Valitse toimituspaikka' options={ this.mapOptions() } onChange={ this.chooseDeliveryPlaceOpeningHours } />
+                  {
+                    this.renderOpeningHours()
+                  }
+                  </Grid.Column>
+                <Grid.Column width={4}></Grid.Column>
+              </Grid.Row>
+              
             </Grid>}
         </BasicLayout>
       );
     }
+  }
+
+  /**
+   * Method for choosing delivery place opening hours
+   * 
+   * @param event event object
+   * @param data dropdown props
+   */
+  private chooseDeliveryPlaceOpeningHours = (event: React.SyntheticEvent<HTMLElement>, data: DropdownProps) => {
+    const { value } = data;
+    if (value) {
+      const place = this.state.deliveryPlacesOpeningHours.find(item => item.id === value);
+      if (place) {
+        this.setState({
+          selectedDeliveryPlaceOpeningHours: place
+        });
+      }
+    }
+  }
+
+  /**
+   * Maps options for dropdown
+   */
+  private mapOptions = () => {
+    return this.state.deliveryPlacesOpeningHours.map(deliveryPlaceOpeningHours => {
+      return {
+        value: deliveryPlaceOpeningHours.id,
+        text: deliveryPlaceOpeningHours.name
+      }
+    });
+  }
+
+  /**
+   * Renders opening hours
+   */
+  private renderOpeningHours = () => {
+    const { selectedDeliveryPlaceOpeningHours } = this.state;
+    if (!selectedDeliveryPlaceOpeningHours) {
+      return;
+    }
+    return (
+      <Table>
+        <Table.Header>
+          <Table.Row>
+            <Table.HeaderCell colSpan="2">{ selectedDeliveryPlaceOpeningHours.name }</Table.HeaderCell>
+          </Table.Row>
+        </Table.Header>
+        <Table.Header>
+          <Table.Row>
+            <Table.HeaderCell>Päivämäärä</Table.HeaderCell>
+            <Table.HeaderCell>Aukioloajat</Table.HeaderCell>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {
+            this.renderOpeningHourPeriods(selectedDeliveryPlaceOpeningHours)
+          }
+        </Table.Body>
+      </Table>
+    );
+  }
+
+  /**
+   * Renders opening hour periods
+   * 
+   * @param deliveryPlaceOpeningHours
+   */
+  private renderOpeningHourPeriods = (deliveryPlaceOpeningHours: DeliveryPlaceOpeningHours) => {
+    const { today, fourWeeksFromToday } = this.state;
+    if (!today || !fourWeeksFromToday) {
+      return;
+    }
+    const periods = deliveryPlaceOpeningHours.openingHourPeriods;
+    periods.sort((a, b) => {
+      return moment(a.beginDate).diff(b.beginDate);
+    });
+
+    const result: JSX.Element[] = [];
+    
+    periods.map((period, index) => {
+      let beginDate = moment(period.beginDate).startOf("day");
+      let endDate = moment(period.endDate).endOf("day");
+      if (beginDate.toDate().getTime() < today.toDate().getTime()) {
+        beginDate = moment(today);
+      }
+      if (endDate.toDate().getTime() > fourWeeksFromToday.toDate().getTime()) {
+        endDate = moment(fourWeeksFromToday);
+      }
+      const dayCount = endDate.diff(beginDate, "days") + 1;
+      for (let i = 0; i < dayCount; i++) {
+        const day = beginDate;
+        const exceptionHours = deliveryPlaceOpeningHours.openingHourExceptions
+          .find(exception => moment(exception.exceptionDate).isSame(day, "day") );
+        if (exceptionHours && exceptionHours.hours && exceptionHours.hours.length) {
+          result.push(this.renderOpeningException(day, exceptionHours, index));
+        } else {
+          result.push(this.renderOpeningHourPeriod(day, period.weekdays[day.weekday()], index));
+        }
+        beginDate.add(1, "day")
+      }
+    });
+    return result;
+  }
+
+  private renderOpeningException = (day: moment.Moment, exception: OpeningHourException, key: number) => {
+    return (
+      <Table.Row key={ key }>
+        <Table.Cell>
+          { day.format("DD.MM.YYYY") }
+        </Table.Cell>
+        <Table.Cell>
+          { exception.hours.length > 0 &&
+            this.renderOpeningHourIntervals(exception.hours) ||
+            <div>{ strings.closed }</div>
+          }
+        </Table.Cell>
+      </Table.Row>
+    );
+  }
+
+  private renderOpeningHourPeriod = (day: moment.Moment, weekday: OpeningHourWeekday, key: number): JSX.Element => {
+    return (
+      <Table.Row key={ key }>
+        <Table.Cell>
+          { day.format("DD.MM.YYYY") }
+        </Table.Cell>
+        <Table.Cell>
+          { weekday.hours.length > 0 &&
+            this.renderOpeningHourIntervals(weekday.hours) ||
+            <div>{ strings.closed }</div>
+          }
+        </Table.Cell>
+      </Table.Row>
+    );
+  }
+
+  private renderOpeningHourIntervals = (hours: OpeningHourInterval[]) => {
+    return hours.map(hour => {
+      return <div>{ `${moment(hour.opens).format('HH:mm')} - ${moment(hour.closes).format('HH:mm')}` }</div>;
+    });
+  }
+
+  /**
+   * Lists opening hours in the delivery place for the next four weeks
+   * 
+   * @param event event object
+   * @param data dropdown props
+   */
+  private listDeliveryPlaceOpeningHours = async () => {
+    const { keycloak } = this.props;
+    const { deliveryPlaces } = this.state;
+    if (!keycloak || deliveryPlaces.length === 0) {
+      return;
+    }
+    const { token } = keycloak;
+    if (!token) {
+      return;
+    }
+    const openingHoursService = Api.getOpeningHoursService(token);
+    const today = moment();
+    const fourWeeksFromToday = moment(today).add(28, "day");
+    const deliveryPlacesOpeningHoursPromises = deliveryPlaces.map(async (deliveryPlace) => {
+      const name = deliveryPlace.name;
+      const deliveryPlaceId = `${ deliveryPlace.id }`;
+      const [openingHourExceptions, openingHourPeriods] = await Promise.all([
+        openingHoursService.listOpeningHourExceptions(deliveryPlaceId),
+        openingHoursService.listOpeningHourPeriods(deliveryPlaceId, today.toDate(), fourWeeksFromToday.toDate())
+      ]);
+      return {
+        id: deliveryPlaceId,
+        name: name || "",
+        openingHourPeriods: openingHourPeriods,
+        openingHourExceptions: openingHourExceptions
+      };
+    });
+    const deliveryPlacesOpeningHours =  await Promise.all(deliveryPlacesOpeningHoursPromises);
+    this.setState({
+      today,
+      fourWeeksFromToday,
+      deliveryPlacesOpeningHours
+    });
   }
 
   /**
