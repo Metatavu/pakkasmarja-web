@@ -12,6 +12,7 @@ interface Props {
   topBarButtonText?: string
   onTopBarButtonClick?: () => void
   redirectTo?: string
+  fluid?: boolean
 }
 
 class BasicLayout extends React.Component<Props, any> {
@@ -42,7 +43,7 @@ class BasicLayout extends React.Component<Props, any> {
           </Container>
           <MenuContainer />
         </div>
-        <Container style={{ marginTop: "4em", paddingBottom: "7em" }}>
+        <Container style={{ marginTop: "4em", paddingBottom: "7em" }} fluid={ this.props.fluid }>
           
             {this.props.children}
           

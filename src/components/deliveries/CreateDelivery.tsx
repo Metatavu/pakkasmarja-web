@@ -1,10 +1,10 @@
 import * as React from "react";
 import * as actions from "../../actions/";
 import { StoreState, DeliveriesState, DeliveryProduct, Options, DeliveryDataValue, deliveryNoteImg64 } from "src/types";
-import Api, { Product, DeliveryPlace, ItemGroupCategory, Delivery, DeliveryNote } from "pakkasmarja-client";
+import Api, { Product, DeliveryPlace, ItemGroupCategory, Delivery, DeliveryNote, OpeningHourInterval } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import { Header, Dropdown, Form, Input, Button, Divider, Image, Loader } from "semantic-ui-react";
+import { Header, Dropdown, Form, Input, Button, Divider, Image, Loader, Message } from "semantic-ui-react";
 import "../../styles/common.css";
 import BasicLayout from "../generic/BasicLayout";
 import DeliveryNoteModal from "./DeliveryNoteModal";
@@ -45,10 +45,12 @@ interface State {
   redirect: boolean;
   deliveryNotes: DeliveryNote[];
   deliveryNotesWithImgBase64: deliveryNoteImg64[];
-  deliveryTimeValue?: number;
+  deliveryTimeValue: string;
   openImage?: string;
   loading: boolean;
   selectedProduct?: Product;
+  selectedTime?: Date;
+  deliveryPlaceOpeningHours?: OpeningHourInterval[];
 }
 
 /**
@@ -74,7 +76,8 @@ class CreateDelivery extends React.Component<Props, State> {
       category: "",
       deliveryNotes: [],
       deliveryNotesWithImgBase64: [],
-      loading: false
+      loading: false,
+      deliveryTimeValue: moment().minutes(0).format("HH:mm"),
     };
     registerLocale('fi', fi);
   }
@@ -102,6 +105,69 @@ class CreateDelivery extends React.Component<Props, State> {
   }
 
   /**
+   * Gets delivery place opening hours on a given date
+   * 
+   * @param date date object
+   * @param deliveryPlaceId delivery place id
+   */
+  private getDeliveryPlaceOpeningHours = async (date: Date, deliveryPlaceId: string) => {
+    const { keycloak } = this.props;
+    if (!keycloak) {
+      return;
+    }
+    const { token } = keycloak;
+    if (!token) {
+      return;
+    }
+    try {
+      const openingHoursService = Api.getOpeningHoursService(token);
+      const openingHourPeriods = await openingHoursService.listOpeningHourPeriods(deliveryPlaceId, date, date);
+      const openingHourExceptions = await openingHoursService.listOpeningHourExceptions(deliveryPlaceId);
+      const chosenDate = moment(date);
+      const exception = openingHourExceptions.find(item => {
+        const exceptionDate = moment(item.exceptionDate);
+        return exceptionDate.format("YYYY-MM-DD") === chosenDate.format("YYYY-MM-DD");
+      });
+      const period = openingHourPeriods.find(period => {
+        const periodBegin = moment(period.beginDate);
+        const periodEnd = moment(period.endDate);
+        const sameAsBegin = chosenDate.format("YYYY-MM-DD") === periodBegin.format("YYYY-MM-DD");
+        const sameAsEnd = chosenDate.format("YYYY-MM-DD") === periodEnd.format("YYYY-MM-DD");
+        return chosenDate.isBetween(periodBegin, periodEnd) || sameAsBegin || sameAsEnd;
+      });
+      if (exception) {
+        this.setState({
+          deliveryPlaceOpeningHours: exception.hours,
+          selectedTime: undefined
+        });
+      } else if (period) {
+        const periodDay = period.weekdays.find((item, index) => {
+          const day = moment(period.beginDate).add(index, "days");
+          return day.format("YYYY-MM-DD") === chosenDate.format("YYYY-MM-DD");
+        });
+        if (periodDay) {
+          this.setState({
+            deliveryPlaceOpeningHours: periodDay.hours,
+            selectedTime: undefined
+          });
+        } else {
+          this.setState({
+            deliveryPlaceOpeningHours: undefined,
+            selectedTime: undefined
+          });
+        }
+      } else {
+        this.setState({
+          deliveryPlaceOpeningHours: undefined,
+          selectedTime: undefined
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  /**
    * Handle inputchange
    */
   private handleInputChange = (key: string, value: DeliveryDataValue ) => {
@@ -113,6 +179,11 @@ class CreateDelivery extends React.Component<Props, State> {
 
     const state: State = this.state;
     state[key] = value;
+
+    if (key === "date") {
+      this.getDeliveryPlaceOpeningHours(state[key] ,this.state.selectedPlaceId);
+    }
+
     this.setState(state);
   }
 
@@ -152,6 +223,7 @@ class CreateDelivery extends React.Component<Props, State> {
     return !!(
       this.state.selectedProductId
       && this.state.selectedPlaceId
+      && this.state.selectedTime
       && this.state.deliveryTimeValue
       && typeof this.state.amount === "number"
     );
@@ -190,7 +262,7 @@ class CreateDelivery extends React.Component<Props, State> {
     }
     const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
     let time: string | Date = moment(this.state.date).format("YYYY-MM-DD");
-    time = `${time} ${this.state.deliveryTimeValue}:00 +0000`
+    time = `${time} ${this.state.deliveryTimeValue} +0000`;
     time = moment(time, "YYYY-MM-DD HH:mm Z").toDate();
 
     const delivery: Delivery = {
@@ -270,9 +342,49 @@ class CreateDelivery extends React.Component<Props, State> {
   }
 
   /**
+   * Handler for selecting delivery time
+   * 
+   * @param date date object
+   * @param event event object
+   */
+  private selectTimeHandler = (date: Date | null, event: React.SyntheticEvent<any> | undefined) => {
+    if (date !== null) {
+      const deliveryTimeValue = moment(date).format("HH:mm");
+      this.setState({
+        selectedTime: date,
+        deliveryTimeValue: deliveryTimeValue
+      });
+    }
+  }
+
+  /**
+   * Includes the dates that chosen delivery place is closed
+   */
+  private includeTimes = () => {
+    const { deliveryPlaceOpeningHours } = this.state;
+    let dates: Date[] | undefined;
+    if (deliveryPlaceOpeningHours) {
+      dates = [];
+      deliveryPlaceOpeningHours.forEach(hours => {
+        const { opens, closes } = hours;
+        const current = moment(opens);
+        const end = moment(closes);
+        while(Array.isArray(dates) && current.hours() <= end.hours() && current.minutes() <= end.minutes()) {
+          dates.push(current.toDate());
+          current.add(15, "minutes");
+        }
+      });
+    }
+    return dates;
+  }
+
+  /**
    * Render method
    */
   public render() {
+
+    const includedTimes = this.includeTimes();
+
     if (this.state.redirect) {
       return <Redirect to={{
         pathname: '/incomingDeliveries',
@@ -295,16 +407,6 @@ class CreateDelivery extends React.Component<Props, State> {
         value: deliveryPlace.id || ""
       };
     });
-
-    const deliveryTimeValue: Options[] = [{
-      key: "deliveryTimeValue1",
-      text: "Ennen kello 12",
-      value: 11
-    }, {
-      key: "deliveryTimeValue2",
-      text: "Jälkeen kello 12",
-      value: 17
-    }]
 
     return (
       <BasicLayout pageTitle={"Uusi toimitus"}>
@@ -347,9 +449,14 @@ class CreateDelivery extends React.Component<Props, State> {
               </Form.Field>
               : null
             }
+            <Form.Field style={{ marginTop: 20 }}>
+              <label>{strings.deliveryPlace}</label>
+              {this.renderDropDown(deliveryPlaceOptions, strings.deliveryPlace, "selectedPlaceId")}
+            </Form.Field>
             <Form.Field>
               <label>{strings.deliveyDate}</label>
               <DatePicker
+                disabled={ !this.state.selectedPlaceId }
                 onChange={(date: Date) => {
                   this.handleInputChange("date", date)
                 }}
@@ -360,12 +467,23 @@ class CreateDelivery extends React.Component<Props, State> {
             </Form.Field>
             <Form.Field style={{ marginTop: 20 }}>
               <label>{"Ajankohta"}</label>
-              {this.renderDropDown(deliveryTimeValue, "Valitse ajankohta", "deliveryTimeValue")}
+              <DatePicker
+                disabled={ !this.state.selectedPlaceId }
+                selected={ this.state.selectedTime }
+                onChange={ this.selectTimeHandler }
+                showTimeSelect
+                showTimeSelectOnly
+                timeIntervals={ 15 }
+                timeCaption="Klo"
+                locale="fi"
+                dateFormat="HH.mm"
+                timeFormat="HH.mm"
+                includeTimes={ includedTimes }
+              />
             </Form.Field>
-            <Form.Field style={{ marginTop: 20 }}>
-              <label>{strings.deliveryPlace}</label>
-              {this.renderDropDown(deliveryPlaceOptions, strings.deliveryPlace, "selectedPlaceId")}
-            </Form.Field>
+            <Message negative style={{ display: includedTimes !== undefined && includedTimes.length === 0 ? "block" : "none" }}>
+              <Message.Header>Toimituspaikka on suljettu valittuna toimituspäivänä</Message.Header>
+            </Message>
             {this.state.deliveryNotesWithImgBase64.length > 0 ?
               this.state.deliveryNotesWithImgBase64.map((deliveryNote, i) => {
                 return (

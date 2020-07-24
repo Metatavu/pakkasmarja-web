@@ -50,6 +50,7 @@ import ManageContact from "../contact/ManageContact";
 import ManageQualities from "../qualities/ManageQualities";
 import CreateAndEditQuality from "../qualities/CreateAndEditQuality";
 import Databank from "../databank";
+import OpeningHoursScreen from "../opening-hours-management/OpeningHoursScreen";
 
 /**
  * Interface for component props
@@ -153,6 +154,7 @@ class MainPage extends React.Component<Props, {}> {
         <Route exact path="/manageQualities" component={ManageQualities} />
         <Route exact path="/quality/:deliveryQualityId" component={CreateAndEditQuality} />
         <Route exact path="/databank" component={Databank} />
+        <Route exact path="/manageOpeningHours" component={OpeningHoursScreen} />
       </div>
     );
   }
