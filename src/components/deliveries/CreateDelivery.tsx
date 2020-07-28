@@ -13,11 +13,18 @@ import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import fi from 'date-fns/esm/locale/fi';
 import strings from "src/localization/strings";
-import * as moment from "moment";
+import * as Moment from "moment";
+import { extendMoment } from "moment-range";
 import PriceChart from "../generic/PriceChart";
 import { FileService } from "src/api/file.service";
 import Lightbox from 'react-image-lightbox';
 import 'react-image-lightbox/style.css';
+import * as _ from "lodash";
+
+/**
+ * Moment extended with moment-range
+ */
+const moment = extendMoment(Moment);
 
 /**
  * Interface for component props
@@ -71,7 +78,7 @@ class CreateDelivery extends React.Component<Props, State> {
       deliveryPlaces: [],
       selectedPlaceId: "",
       amount: 0,
-      date: new Date(),
+      date: moment().startOf("day").toDate(),
       modalOpen: false,
       category: "",
       deliveryNotes: [],
@@ -83,7 +90,7 @@ class CreateDelivery extends React.Component<Props, State> {
   }
 
   /**
-   * Component did mount life-cycle event
+   * Component did mount life cycle event
    */
   public componentDidMount = async () => {
     if (!this.props.keycloak || !this.props.keycloak.token) {
@@ -112,15 +119,12 @@ class CreateDelivery extends React.Component<Props, State> {
    */
   private getDeliveryPlaceOpeningHours = async (date: Date, deliveryPlaceId: string) => {
     const { keycloak } = this.props;
-    if (!keycloak) {
+    if (!keycloak || !keycloak.token) {
       return;
     }
-    const { token } = keycloak;
-    if (!token) {
-      return;
-    }
+
     try {
-      const openingHoursService = Api.getOpeningHoursService(token);
+      const openingHoursService = Api.getOpeningHoursService(keycloak.token);
       const openingHourPeriods = await openingHoursService.listOpeningHourPeriods(deliveryPlaceId, date, date);
       const openingHourExceptions = await openingHoursService.listOpeningHourExceptions(deliveryPlaceId);
       const chosenDate = moment(date);
@@ -168,7 +172,10 @@ class CreateDelivery extends React.Component<Props, State> {
   }
 
   /**
-   * Handle inputchange
+   * Handle input change
+   * 
+   * @param key key to change
+   * @param value new value
    */
   private handleInputChange = (key: string, value: DeliveryDataValue ) => {
     if (key === "selectedProductId") {
@@ -180,15 +187,15 @@ class CreateDelivery extends React.Component<Props, State> {
     const state: State = this.state;
     state[key] = value;
 
-    if (key === "date") {
-      this.getDeliveryPlaceOpeningHours(state[key] ,this.state.selectedPlaceId);
+    if (key === "date" || key === "selectedPlaceId") {
+      this.getDeliveryPlaceOpeningHours(state.date, state.selectedPlaceId);
     }
 
     this.setState(state);
   }
 
   /**
-   * Render drop down
+   * Render dropdown
    * 
    * @param options options
    * @param placeholder placeholder
@@ -319,7 +326,7 @@ class CreateDelivery extends React.Component<Props, State> {
    * Create delivery notes
    * 
    * @param deliveryId deliveryId
-   * @param deliveryNote deliveryNote
+   * @param deliveryData delivery data
    */
   private async createDeliveryNote(deliveryId: string, deliveryData: DeliveryNote): Promise<DeliveryNote | null> {
     if (this.props.keycloak && this.props.keycloak.token && process.env.REACT_APP_API_URL) {
@@ -332,6 +339,9 @@ class CreateDelivery extends React.Component<Props, State> {
 
   /**
    * Remove note
+   * 
+   * @param note note with image
+   * @param index note index
    */
   private removeNote = (note: deliveryNoteImg64, index: number) => {
     const deliveryNotesWithImgBase64 = this.state.deliveryNotesWithImgBase64;
@@ -358,41 +368,70 @@ class CreateDelivery extends React.Component<Props, State> {
   }
 
   /**
-   * Includes the dates that chosen delivery place is closed
+   * Gets opening hours if selected delivery place has ones set for selected date
+   * 
+   * @returns date array if opening hours are found, otherwise undefined
    */
-  private includeTimes = () => {
+  private getOpeningHours = (): Date[] | undefined => {
     const { deliveryPlaceOpeningHours } = this.state;
-    let dates: Date[] | undefined;
-    if (deliveryPlaceOpeningHours) {
-      dates = [];
-      deliveryPlaceOpeningHours.forEach(hours => {
-        const { opens, closes } = hours;
-        const current = moment(opens);
-        const end = moment(closes);
-        while(Array.isArray(dates) && current.hours() <= end.hours() && current.minutes() <= end.minutes()) {
-          dates.push(current.toDate());
-          current.add(15, "minutes");
-        }
-      });
-    }
-    return dates;
+    return deliveryPlaceOpeningHours ? this.convertToDateArray(deliveryPlaceOpeningHours) : undefined;
+  }
+
+  /**
+   * Converts opening hours to date array
+   * 
+   * @param openingHours array of opening hours
+   * @return array of dates
+   */
+  private convertToDateArray = (openingHours: OpeningHourInterval[]) => {
+    return _.flatten(openingHours.map(this.mapToDateArray));
+  }
+
+  /**
+   * Maps single opening hour interval to date array
+   * 
+   * @param interval opening hour interval
+   * @returns array of dates
+   */
+  private mapToDateArray = (interval: OpeningHourInterval): Date[] => {
+    const { opens, closes } = interval;
+    const dateRange = moment.range(
+      moment(opens),
+      moment(closes)
+    );
+    const momentDateArray = Array.from(dateRange.by("minutes", { step: 15, excludeEnd: true }));
+    return momentDateArray.map(date => date.toDate());
   }
 
   /**
    * Render method
    */
   public render() {
+    const {
+      redirect,
+      deliveryPlaces,
+      selectedPlaceId,
+      products,
+      selectedProduct,
+      selectedProductId,
+      category,
+      amount,
+      selectedTime,
+      deliveryNotesWithImgBase64,
+      modalOpen,
+      openImage
+    } = this.state;
 
-    const includedTimes = this.includeTimes();
+    const includedHours = this.getOpeningHours();
 
-    if (this.state.redirect) {
+    if (redirect) {
       return <Redirect to={{
         pathname: '/incomingDeliveries',
         state: { category: this.state.category }
       }} />;
     }
 
-    const productOptions: Options[] = this.state.products && this.state.products.map((product) => {
+    const productOptions: Options[] = products && products.map((product) => {
       return {
         key: product.id,
         text: product.name,
@@ -400,7 +439,7 @@ class CreateDelivery extends React.Component<Props, State> {
       };
     });
 
-    const deliveryPlaceOptions: Options[] = this.state.deliveryPlaces && this.state.deliveryPlaces.map((deliveryPlace) => {
+    const deliveryPlaceOptions: Options[] = deliveryPlaces && deliveryPlaces.map((deliveryPlace) => {
       return {
         key: deliveryPlace.id || "",
         text: deliveryPlace.name || "",
@@ -409,49 +448,48 @@ class CreateDelivery extends React.Component<Props, State> {
     });
 
     return (
-      <BasicLayout pageTitle={"Uusi toimitus"}>
+      <BasicLayout pageTitle={ "Uusi toimitus" }>
         <Header as="h2">
-          Uusi {this.state.category === "FRESH" ? "tuore" : "pakaste"} toimitus
+          Uusi { category === "FRESH" ? "tuore" : "pakaste" } toimitus
         </Header>
-        {this.state.loading ?
-          <Loader size="medium" content={strings.loading} active /> :
+        { this.state.loading ?
+          <Loader size="medium" content={ strings.loading } active /> :
           <Form>
             <Form.Field>
-              <label>{strings.product}</label>
+              <label>{ strings.product }</label>
               {
-                this.state.products.length > 0 ?
-                  this.renderDropDown(productOptions, strings.product, "selectedProductId")
-                  :
+                products.length > 0 ?
+                  this.renderDropDown(productOptions, strings.product, "selectedProductId") :
                   <p>Ei voimassa olevaa sopimusta. Jos näin ei pitäisi olla, ole yhteydessä Pakkasmarjaan.</p>
               }
             </Form.Field>
-            {this.state.selectedProductId &&
+            { selectedProductId &&
               <Form.Field>
-                <PriceChart showLatestPrice productId={this.state.selectedProductId} />
+                <PriceChart showLatestPrice productId={ selectedProductId } />
               </Form.Field>
             }
             <Form.Field>
-              <label>{`${strings.amount} ( ${this.state.selectedProduct && this.state.selectedProduct.unitName || "Tuotetta ei ole valittu"} )`}</label>
+              <label>{`${strings.amount} ( ${selectedProduct && selectedProduct.unitName || "Tuotetta ei ole valittu"} )`}</label>
               <Input
-                placeholder={strings.amount}
-                value={this.state.amount}
+                placeholder={ strings.amount }
+                value={ amount }
                 type="number"
                 min={0}
                 onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
-                    const value = event.currentTarget.value ? parseInt(event.currentTarget.value) : "";
-                    this.handleInputChange("amount", value);
+                  const value = event.currentTarget.value ? parseInt(event.currentTarget.value) : "";
+                  this.handleInputChange("amount", value);
                 }}
               />
             </Form.Field>
-            {this.state.amount && this.state.selectedProduct ?
+            { amount && selectedProduct ?
               <Form.Field>
-                <p>= <b>{(this.state.amount * (this.state.selectedProduct.units * this.state.selectedProduct.unitSize)).toFixed(2)} KG</b></p>
+                <p>= <b>{ (amount * (selectedProduct.units * selectedProduct.unitSize)).toFixed(2) } KG</b></p>
               </Form.Field>
               : null
             }
             <Form.Field style={{ marginTop: 20 }}>
-              <label>{strings.deliveryPlace}</label>
-              {this.renderDropDown(deliveryPlaceOptions, strings.deliveryPlace, "selectedPlaceId")}
+              <label>{ strings.deliveryPlace }</label>
+              { this.renderDropDown(deliveryPlaceOptions, strings.deliveryPlace, "selectedPlaceId") }
             </Form.Field>
             <Form.Field>
               <label>{strings.deliveyDate}</label>
@@ -461,15 +499,15 @@ class CreateDelivery extends React.Component<Props, State> {
                   this.handleInputChange("date", date)
                 }}
                 selected={this.state.date}
-                dateFormat="dd.MM.yyyy"
+                dateFormat="eeeeee dd.MM.yyyy"
                 locale="fi"
               />
             </Form.Field>
             <Form.Field style={{ marginTop: 20 }}>
-              <label>{"Ajankohta"}</label>
+              <label>Ajankohta</label>
               <DatePicker
-                disabled={ !this.state.selectedPlaceId }
-                selected={ this.state.selectedTime }
+                disabled={ !selectedPlaceId }
+                selected={ selectedTime }
                 onChange={ this.selectTimeHandler }
                 showTimeSelect
                 showTimeSelectOnly
@@ -478,55 +516,95 @@ class CreateDelivery extends React.Component<Props, State> {
                 locale="fi"
                 dateFormat="HH.mm"
                 timeFormat="HH.mm"
-                includeTimes={ includedTimes }
+                includeTimes={ includedHours }
               />
             </Form.Field>
-            <Message negative style={{ display: includedTimes !== undefined && includedTimes.length === 0 ? "block" : "none" }}>
-              <Message.Header>Toimituspaikka on suljettu valittuna toimituspäivänä</Message.Header>
-            </Message>
-            {this.state.deliveryNotesWithImgBase64.length > 0 ?
-              this.state.deliveryNotesWithImgBase64.map((deliveryNote, i) => {
+            { selectedPlaceId && includedHours !== undefined && includedHours.length === 0 &&
+              <Message negative>
+                <Message.Header>
+                  Toimituspaikka on suljettu valittuna toimituspäivänä.
+                </Message.Header>
+              </Message>
+            }
+            { selectedPlaceId && includedHours === undefined &&
+              <Message negative>
+                <Message.Header>
+                  Päivän aukioloajat voivat vielä muuttua.
+                </Message.Header>
+              </Message>
+            }
+            { deliveryNotesWithImgBase64.length > 0 ?
+              deliveryNotesWithImgBase64.map((deliveryNote, i) => {
                 return (
                   <React.Fragment key={`${deliveryNote.text} ${i}`}>
-                    <h4 style={{ marginTop: 14 }}>Huomio {i + 1}</h4>
+                    <h4 style={{ marginTop: 14 }}>
+                      Huomio { i + 1 }
+                    </h4>
                     <div style={{ marginBottom: 10 }} className="delivery-note-container">
                       <div className="delivery-note-img-container">
-                        <p>{deliveryNote.img64 ? <Image onClick={() => this.setState({ openImage: deliveryNote.img64 })} src={deliveryNote.img64} size="small" /> : "Huomiolla ei ole kuvaa"}</p>
+                        <p>
+                          { deliveryNote.img64 ?
+                            <Image
+                              onClick={() => this.setState({ openImage: deliveryNote.img64 })}
+                              src={ deliveryNote.img64 }
+                              size="small"
+                            /> :
+                            "Huomiolla ei ole kuvaa"
+                          }
+                        </p>
                       </div>
                       <div className="delivery-note-text-container">
-                        <p style={{ padding: 20 }}> {deliveryNote.text}</p>
+                        <p style={{ padding: 20 }}>
+                          { deliveryNote.text }
+                        </p>
                       </div>
                       <div style={{ display: "flex", flex: 0.2, minHeight: "100px", alignItems: "center" }}>
-                        <Button onClick={() => this.removeNote(deliveryNote, i)} color="black">Poista huomio</Button>
+                        <Button onClick={() => this.removeNote(deliveryNote, i)} color="black">
+                          Poista huomio
+                        </Button>
                       </div>
                     </div>
                   </React.Fragment>
                 )
               }) : null
             }
-            <Button color="red" inverted onClick={() => this.setState({ modalOpen: true })}>{`${strings.addNote}`}</Button>
+            <Button
+              color="red"
+              inverted
+              onClick={() => this.setState({ modalOpen: true })}
+            >
+              {`${strings.addNote}`}
+            </Button>
             <Divider />
             <Button.Group floated="right" >
               <Button
                 onClick={() => this.setState({ redirect: true })}
                 inverted
-                color="red">{strings.back}</Button>
+                color="red"
+              >
+                { strings.back }
+              </Button>
               <Button.Or text="" />
-              <Button disabled={!this.isValid()} color="red" onClick={this.handleDeliverySubmit} type='submit'>
-                {this.state.category === "FRESH" ? strings.newFreshDelivery : strings.newFrozenDelivery}
+              <Button
+                disabled={ !this.isValid() }
+                color="red"
+                onClick={ this.handleDeliverySubmit }
+                type='submit'
+              >
+                { category === "FRESH" ? strings.newFreshDelivery : strings.newFrozenDelivery }
               </Button>
             </Button.Group>
           </Form>
         }
         <DeliveryNoteModal
-          modalOpen={this.state.modalOpen}
-          closeModal={() => this.setState({ modalOpen: false })}
-          addDeliveryNote={this.addDeliveryNote}
+          modalOpen={ modalOpen }
+          closeModal={ () => this.setState({ modalOpen: false }) }
+          addDeliveryNote={ this.addDeliveryNote }
         />
-        {this.state.openImage &&
+        { openImage &&
           <Lightbox
-            mainSrc={this.state.openImage}
-            onCloseRequest={() => this.setState({ openImage: undefined })}
+            mainSrc={ openImage }
+            onCloseRequest={ () => this.setState({ openImage: undefined }) }
           />
         }
       </BasicLayout>
