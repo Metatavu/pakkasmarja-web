@@ -76,35 +76,49 @@ class OpeningHoursScreen extends React.Component<Props, State> {
    * Component did mount life-cycle event
    */
   public async componentDidMount() {
-    if (!this.props.keycloak || !this.props.keycloak.token) {
+    const { keycloak } = this.props;
+    if (!keycloak || !keycloak.token) {
       return;
     }
 
     this.setState({ loading: true });
-    const manageOpeningHoursRole = this.props.keycloak.hasRealmRole(ApplicationRoles.MANAGE_NEWS_ARTICLES);
+
+    const manageOpeningHoursRole = keycloak.hasRealmRole(ApplicationRoles.MANAGE_NEWS_ARTICLES);
     if (!manageOpeningHoursRole) {
       this.setState({ loading: false });
       return;
     }
+
     await this.fetchDeliveryPlaces();
-    const tokenParsed = this.props.keycloak.tokenParsed as any;
+    const tokenParsed = keycloak.tokenParsed as any;
     const receiveFromPlaceCode = tokenParsed.receiveFromPlaceCode;
     if (receiveFromPlaceCode) {
       await this.fetchOpeningHourData(receiveFromPlaceCode);
     }
-    this.setState({ loading: false, manageOpeningHoursRole });
+
+    this.setState({
+      loading: false,
+      manageOpeningHoursRole
+    });
   }
 
   /**
    * Render
    */
   public render() {
+    const { keycloak } = this.props;
+    const {
+      loading,
+      manageOpeningHoursRole,
+      deliveryPlaces,
+      deliveryPlaceId,
+      redirectTo } = this.state;
 
-    if (!this.props.keycloak) {
+    if (!keycloak) {
       return;
     }
 
-    if (this.state.loading) {
+    if (loading) {
       return (
         <BasicLayout pageTitle={ strings.openingHoursManagement }>
           <Loader inverted>
@@ -114,23 +128,25 @@ class OpeningHoursScreen extends React.Component<Props, State> {
       );
     }
 
-    const deliveryPlace = this.state.deliveryPlaces.find(place => place.id === this.state.deliveryPlaceId);
-    const text = deliveryPlace ? deliveryPlace.name : strings.selectDeliveryPlace;
+    const deliveryPlace = deliveryPlaces.find(place => place.id === deliveryPlaceId);
+    const text = deliveryPlace ?
+      deliveryPlace.name :
+      strings.selectDeliveryPlace;
 
     return (
       <React.Fragment>
-        { this.state.manageOpeningHoursRole &&
+        { manageOpeningHoursRole &&
           <BasicLayout
             fluid={ true }
-            redirectTo={ this.state.redirectTo }
+            redirectTo={ redirectTo }
             pageTitle={ strings.openingHoursManagement }
           >
-            { this.props.keycloak.hasRealmRole(ApplicationRoles.ADMINISTRATE_OPENING_HOURS) &&
+            { keycloak.hasRealmRole(ApplicationRoles.ADMINISTRATE_OPENING_HOURS) &&
               <div style={{ display: "flex", justifyContent: "center", width: "100%", height: "100%" }}>
                 <Dropdown text={ text } options={ this.mapOptions() } onChange={ this.handleSelection } />
               </div>
             }
-            { this.state.deliveryPlaceId &&
+            { deliveryPlaceId &&
               <>
                 { this.renderEditTab() }
                 { this.renderExceptionHoursDialog() }
@@ -170,9 +186,7 @@ class OpeningHoursScreen extends React.Component<Props, State> {
     try {
       const deliveryPlacesService = Api.getDeliveryPlacesService(token);
       const deliveryPlaces = await deliveryPlacesService.listDeliveryPlaces();
-      this.setState({
-        deliveryPlaces: deliveryPlaces
-      });
+      this.setState({ deliveryPlaces });
     } catch (error) {
       console.log(error);
     }
@@ -183,26 +197,34 @@ class OpeningHoursScreen extends React.Component<Props, State> {
    */
   private fetchOpeningHourData = async (deliveryPlaceId: string) => {
     const { keycloak } = this.props;
-    if (!keycloak) {
+    if (!keycloak || !keycloak.token) {
       return;
     }
-    const { token } = keycloak;
-    if (!token) {
-      return;
-    }
+
     try {
-      const openingHoursService = Api.getOpeningHoursService(token);
-      const openingHourPeriods = await openingHoursService.listOpeningHourPeriods(deliveryPlaceId);
-      const openingHourExceptions = await openingHoursService.listOpeningHourExceptions(deliveryPlaceId);
+      const openingHoursService = Api.getOpeningHoursService(keycloak.token);
+      const [ unorderedPeriods, openingHourExceptions ] = await Promise.all([
+        openingHoursService.listOpeningHourPeriods(deliveryPlaceId),
+        openingHoursService.listOpeningHourExceptions(deliveryPlaceId)
+      ]);
+      
+      const openingHourPeriods = unorderedPeriods.sort(this.sortPeriodsAscending);
+
       this.setState({
-        deliveryPlaceId: deliveryPlaceId,
-        openingHourPeriods: openingHourPeriods,
-        openingHourExceptions: openingHourExceptions
+        deliveryPlaceId,
+        openingHourPeriods,
+        openingHourExceptions
       });
     } catch (error) {
       console.log(error);
     }
   }
+
+  /**
+   * Sorts opening hour periods to ascending order based on begin date
+   */
+  private sortPeriodsAscending = (a: OpeningHourPeriod, b: OpeningHourPeriod) =>
+    moment(a.beginDate).diff(moment(b.beginDate), "milliseconds");
 
   /**
    * Handles selecting delivery place for opening hours management
