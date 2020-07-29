@@ -35,6 +35,8 @@ class MenuContainer extends React.Component<Props, State> {
   }
 
   public render() {
+    const { authenticated, keycloak } = this.props;
+
     const unreadNews = this.countUnreads("news-");
 
     return (
@@ -50,27 +52,46 @@ class MenuContainer extends React.Component<Props, State> {
           <Menu.Item as="div">
             <Link to="/contracts">{strings.contracts}</Link>
           </Menu.Item>
-          { this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_DELIVERIES) &&
+          { authenticated && keycloak && keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_DELIVERIES) &&
             <Menu.Menu>
               <Dropdown item simple text="Vastaanotto">
                 <Dropdown.Menu>
-                  {this.props.keycloak.hasRealmRole(ApplicationRoles.RECEIVE_FRESH_BERRIES) && <Dropdown.Item to="/manageFreshDeliveries" as={Link}>Tuore toimitukset</Dropdown.Item>}
-                  {this.props.keycloak.hasRealmRole(ApplicationRoles.RECEIVE_FROZEN_BERRIES) && <Dropdown.Item to="/manageFrozenDeliveries" as={Link}>Pakaste toimitukset</Dropdown.Item>}
+                  { keycloak.hasRealmRole(ApplicationRoles.RECEIVE_FRESH_BERRIES) &&
+                    <Dropdown.Item to="/manageFreshDeliveries" as={Link}>Tuore toimitukset</Dropdown.Item>
+                  }
+                  { keycloak.hasRealmRole(ApplicationRoles.RECEIVE_FROZEN_BERRIES) &&
+                    <Dropdown.Item to="/manageFrozenDeliveries" as={Link}>Pakaste toimitukset</Dropdown.Item>
+                  }
                 </Dropdown.Menu>
               </Dropdown>
             </Menu.Menu>
           }
-          { this.props.authenticated && this.props.keycloak && this.showManagement(this.props.keycloak) &&
+          { authenticated && keycloak && this.showManagement(keycloak) &&
             <Menu.Menu>
               <Dropdown item simple text="Hallinta">
                 <Dropdown.Menu>
-                  {this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_CHAT_GROUPS) && <Dropdown.Item to="/chatManagement" as={Link}>{strings.chatManagement}</Dropdown.Item>}
-                  {this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_PRODUCTS) && <Dropdown.Item to="/productsManagement" as={Link}>{strings.productsManagement}</Dropdown.Item>}
-                  {this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_ITEM_GROUPS) && <Dropdown.Item to="/itemGroupsManagement" as={Link}>{strings.itemGroupsManagement}</Dropdown.Item>}
-                  {this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTRACTS) && <Dropdown.Item to="/contractManagement" as={Link}>{strings.contractManagement}</Dropdown.Item>}
-                  {this.props.keycloak.hasRealmRole(ApplicationRoles.MANAGE_DELIVERY_QUALITIES) && <Dropdown.Item to="/manageQualities" as={Link}>{strings.qualityManagement}</Dropdown.Item>}
-                  {this.props.keycloak.hasRealmRole(ApplicationRoles.CREATE_OPERATIONS) && <Dropdown.Item to="/operationsManagement" as={Link}>{strings.operations}</Dropdown.Item>}
-                  {this.props.keycloak.hasRealmRole(ApplicationRoles.MANAGE_OPENING_HOURS) && <Dropdown.Item to="/manageOpeningHours" as={Link}>{strings.openingHoursManagement}</Dropdown.Item>}
+                  { keycloak.hasRealmRole(ApplicationRoles.CREATE_CHAT_GROUPS) &&
+                    <Dropdown.Item to="/chatManagement" as={Link}>{strings.chatManagement}</Dropdown.Item>
+                  }
+                  { keycloak.hasRealmRole(ApplicationRoles.CREATE_PRODUCTS) &&
+                    <Dropdown.Item to="/productsManagement" as={Link}>{strings.productsManagement}</Dropdown.Item>
+                  }
+                  { keycloak.hasRealmRole(ApplicationRoles.CREATE_ITEM_GROUPS) &&
+                    <Dropdown.Item to="/itemGroupsManagement" as={Link}>{strings.itemGroupsManagement}</Dropdown.Item>
+                  }
+                  { keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTRACTS) &&
+                    <Dropdown.Item to="/contractManagement" as={Link}>{strings.contractManagement}</Dropdown.Item>
+                  }
+                  { keycloak.hasRealmRole(ApplicationRoles.MANAGE_DELIVERY_QUALITIES) &&
+                    <Dropdown.Item to="/manageQualities" as={Link}>{strings.qualityManagement}</Dropdown.Item>
+                  }
+                  { keycloak.hasRealmRole(ApplicationRoles.CREATE_OPERATIONS) &&
+                    <Dropdown.Item to="/operationsManagement" as={Link}>{strings.operations}</Dropdown.Item>
+                  }
+                  { (keycloak.hasRealmRole(ApplicationRoles.MANAGE_OPENING_HOURS) ||
+                     keycloak.hasRealmRole(ApplicationRoles.ADMINISTRATE_OPENING_HOURS)) &&
+                    <Dropdown.Item to="/manageOpeningHours" as={Link}>{strings.openingHoursManagement}</Dropdown.Item>
+                  }
                 </Dropdown.Menu>
               </Dropdown>
             </Menu.Menu>
@@ -110,6 +131,8 @@ class MenuContainer extends React.Component<Props, State> {
     || keycloak.hasRealmRole(ApplicationRoles.CREATE_ITEM_GROUPS)
     || keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTRACTS)
     || keycloak.hasRealmRole(ApplicationRoles.MANAGE_DELIVERY_QUALITIES)
+    || keycloak.hasRealmRole(ApplicationRoles.MANAGE_OPENING_HOURS)
+    || keycloak.hasRealmRole(ApplicationRoles.ADMINISTRATE_OPENING_HOURS)
     || keycloak.hasRealmRole(ApplicationRoles.CREATE_OPERATIONS)){
       return true;
     } else {
