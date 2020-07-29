@@ -426,6 +426,10 @@ class DeliveriesScreen extends React.Component<Props, State> {
       const period = confirmed ?
         openingHourPeriods[periodIndex] :
         openingHourPeriods[openingHourPeriods.length -1];
+      if (!period) {
+        return;
+      }
+      
       const weekday = period.weekdays.find(weekday => weekday.dayType === this.getWeekdayType(day));
 
       return this.renderOpeningHourDay(day, weekday!, index, confirmed);

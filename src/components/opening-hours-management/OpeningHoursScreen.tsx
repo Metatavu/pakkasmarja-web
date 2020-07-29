@@ -29,6 +29,7 @@ interface State {
   loading: boolean;
   redirectTo?: string;
   manageOpeningHoursRole: boolean;
+  administrateOpeningHoursRole: boolean;
   exceptionHoursDialogOpen: boolean;
   beginDate: Date;
   endDate: Date;
@@ -57,6 +58,7 @@ class OpeningHoursScreen extends React.Component<Props, State> {
     this.state = {
       loading: false,
       manageOpeningHoursRole: false,
+      administrateOpeningHoursRole: false,
       exceptionHoursDialogOpen: false,
       beginDate: moment().toDate(),
       endDate: moment().toDate(),
@@ -83,8 +85,9 @@ class OpeningHoursScreen extends React.Component<Props, State> {
 
     this.setState({ loading: true });
 
-    const manageOpeningHoursRole = keycloak.hasRealmRole(ApplicationRoles.MANAGE_NEWS_ARTICLES);
-    if (!manageOpeningHoursRole) {
+    const administrateOpeningHoursRole = keycloak.hasRealmRole(ApplicationRoles.ADMINISTRATE_OPENING_HOURS);
+    const manageOpeningHoursRole = keycloak.hasRealmRole(ApplicationRoles.MANAGE_OPENING_HOURS);
+    if (!administrateOpeningHoursRole && !manageOpeningHoursRole) {
       this.setState({ loading: false });
       return;
     }
@@ -98,7 +101,8 @@ class OpeningHoursScreen extends React.Component<Props, State> {
 
     this.setState({
       loading: false,
-      manageOpeningHoursRole
+      manageOpeningHoursRole,
+      administrateOpeningHoursRole
     });
   }
 
@@ -110,6 +114,7 @@ class OpeningHoursScreen extends React.Component<Props, State> {
     const {
       loading,
       manageOpeningHoursRole,
+      administrateOpeningHoursRole,
       deliveryPlaces,
       deliveryPlaceId,
       redirectTo } = this.state;
@@ -135,13 +140,13 @@ class OpeningHoursScreen extends React.Component<Props, State> {
 
     return (
       <React.Fragment>
-        { manageOpeningHoursRole &&
+        { (manageOpeningHoursRole || administrateOpeningHoursRole) &&
           <BasicLayout
             fluid={ true }
             redirectTo={ redirectTo }
             pageTitle={ strings.openingHoursManagement }
           >
-            { keycloak.hasRealmRole(ApplicationRoles.ADMINISTRATE_OPENING_HOURS) &&
+            { administrateOpeningHoursRole &&
               <div style={{ display: "flex", justifyContent: "center", width: "100%", height: "100%" }}>
                 <Dropdown text={ text } options={ this.mapOptions() } onChange={ this.handleSelection } />
               </div>
@@ -924,12 +929,20 @@ class OpeningHoursScreen extends React.Component<Props, State> {
    * 
    * @param day week day
    */
-  private renderHoursRow = (openingHour: OpeningHourPeriod | OpeningHourException, index: number, hours: OpeningHourInterval, isException?: boolean, openingHourday?: OpeningHourWeekday) => {
+  private renderHoursRow = (
+    openingHour: OpeningHourPeriod | OpeningHourException,
+    index: number,
+    hours: OpeningHourInterval,
+    isException?: boolean,
+    openingHourDay?: OpeningHourWeekday
+  ) => {
     let hoursHandler;
     if (isException && 'exceptionDate' in openingHour && 'exceptionDate') {
-      hoursHandler = (openOrClose: "opens"|"closes") => (date: Date) => this.onChangeExceptionHours(openingHour, index, openOrClose, date);
-    } else if ('beginDate' in openingHour && openingHourday) {
-      hoursHandler = (openOrClose: "opens"|"closes") => (date: Date) => this.onChangeOpeningHours(openingHour, openingHourday, index, openOrClose, date);
+      hoursHandler = (openOrClose: "opens"|"closes") =>
+        (date: Date) => this.onChangeExceptionHours(openingHour, index, openOrClose, date);
+    } else if ('beginDate' in openingHour && openingHourDay) {
+      hoursHandler = (openOrClose: "opens"|"closes") =>
+        (date: Date) => this.onChangeOpeningHours(openingHour, openingHourDay, index, openOrClose, date);
     } else {
       hoursHandler = (openOrClose: "opens"|"closes") => (date: Date) => null;
     }
@@ -970,7 +983,13 @@ class OpeningHoursScreen extends React.Component<Props, State> {
    * Event handler for change weekday data
    * 
    */
-  private onChangeOpeningHours = async (openingHour: OpeningHourPeriod, openingHourWeekday: OpeningHourWeekday, hoursIndex: number, key: string, value: Date | null) => {
+  private onChangeOpeningHours = async (
+    openingHour: OpeningHourPeriod,
+    openingHourWeekday: OpeningHourWeekday,
+    hoursIndex: number,
+    key: string,
+    value: Date | null
+  ) => {
     const { openingHourPeriods, deliveryPlaceId } = this.state;
     const { keycloak } = this.props;
     if (!keycloak || !deliveryPlaceId || !openingHour.id) {
@@ -1020,9 +1039,14 @@ class OpeningHoursScreen extends React.Component<Props, State> {
   }
 
   /**
-   * Event handler for change exceptionday data
+   * Event handler for change exception day data
    */
-  private onChangeExceptionHours = async (openingHour: OpeningHourException, hoursIndex: number, key: string, value: Date | null) => {
+  private onChangeExceptionHours = async (
+    openingHour: OpeningHourException,
+    hoursIndex: number,
+    key: string,
+    value: Date | null
+  ) => {
     const { openingHourExceptions, deliveryPlaceId } = this.state;
     const { keycloak } = this.props;
     if (!keycloak || !deliveryPlaceId || !openingHour.id) {
