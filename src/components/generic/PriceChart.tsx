@@ -122,7 +122,7 @@ class PriceChart extends React.Component<Props, State> {
           <Line type="monotone" dataKey="price" stroke="#e51d2a" strokeWidth={2} />
         </LineChart>
         {this.props.showLatestPrice && latestPrice &&
-          <p style={{ paddingTop: 10 }}><Icon name="info circle" size="large" color="red" />Tämän hetkinen hinta on {latestPrice.price} € / {latestPrice.unit.toUpperCase()} ALV 0% (päivitetty {moment(latestPrice.updatedAt).format("DD.MM.YYYY HH:mm")})</p>
+          <p style={{ paddingTop: 10 }}><Icon name="info circle" size="large" color="red" />Tämän hetkinen hinta on {latestPrice.price} € / {latestPrice.unit.toUpperCase()} ALV 0% ({ this.roundPrice(parseFloat(latestPrice.price) * 1.14) } € alv. 14%) (päivitetty {moment(latestPrice.updatedAt).format("DD.MM.YYYY HH:mm")})</p>
         }
         {this.props.showLatestPriceSimple && latestPrice &&
           <p style={{ padding: 0, margin: 0, fontSize: 13 }}><strong>Hinta:</strong> {latestPrice.price} € / {latestPrice.unit.toUpperCase()} ALV 0%
@@ -131,6 +131,15 @@ class PriceChart extends React.Component<Props, State> {
         }
       </div>
     );
+  }
+
+  /**
+   * Rounds price to 2 decimal precision
+   * 
+   * @param num number
+   */
+  private roundPrice = (num: number) => {
+    return +(Math.round(parseFloat(`${num}` + "e+2")) + "e-2");
   }
 }
 
