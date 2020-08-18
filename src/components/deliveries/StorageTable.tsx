@@ -48,7 +48,7 @@ export default class StorageDataTable extends React.Component<Props, State> {
     const cellWidth = 100 / (this.props.products.length + 1);
     const qualities = _.sortBy(this.props.qualities, (quality) => quality.name);
     return (
-      <Table celled padded selectable>
+      <Table celled padded selectable style={ window.matchMedia('(min-width: 768px)').matches ? { tableLayout: "fixed", fontSize: "0.45vw" } : {} }>
         <Table.Header>
           <Table.Row className="table-header-row">
             <Table.HeaderCell>Laatu</Table.HeaderCell>
