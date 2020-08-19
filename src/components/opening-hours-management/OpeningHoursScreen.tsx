@@ -376,8 +376,8 @@ class OpeningHoursScreen extends React.Component<Props, State> {
       return;
     }
     const today = new Date();
-    const lastMonday = new Date((today.getDay() < 1 ? -6 : 1 - today.getDay()) * 86400000 + today.getTime());
-    const nextSunday = new Date((today.getDay() < 1 ? 7 : 7 - today.getDay()) * 86400000 + today.getTime());
+    const lastMonday = moment(new Date((today.getDay() < 1 ? -6 : 1 - today.getDay()) * 86400000 + today.getTime())).startOf("day").toDate();
+    const nextSunday = moment(new Date((today.getDay() < 1 ? 7 : 7 - today.getDay()) * 86400000 + today.getTime())).endOf("day").toDate();
     const openingHourPeriodBody: OpeningHourPeriod = {
       beginDate: lastMonday,
       endDate: nextSunday,
@@ -531,8 +531,8 @@ class OpeningHoursScreen extends React.Component<Props, State> {
    */
   private renderTimeRange = (openingHourPeriod: OpeningHourPeriod) => {
     const today = new Date();
-    const lastMonday = new Date((today.getDay() < 1 ? -6 : 1 - today.getDay()) * 86400000 + today.getTime());
-    const nextSunday = new Date((today.getDay() < 1 ? 7 : 7 - today.getDay()) * 86400000 + today.getTime());
+    const lastMonday = moment(new Date((today.getDay() < 1 ? -6 : 1 - today.getDay()) * 86400000 + today.getTime())).startOf("day").toDate();
+    const nextSunday = moment(new Date((today.getDay() < 1 ? 7 : 7 - today.getDay()) * 86400000 + today.getTime())).endOf("day").toDate();
     return (
       <>
         <Form.Field style={{ display: "flex", alignItems: "center" }}>
@@ -592,15 +592,17 @@ class OpeningHoursScreen extends React.Component<Props, State> {
       }
 
       if (key === "beginDate" && date.getTime() > new Date(openingHourPeriod.endDate).getTime()) {
-        const nextSunday = new Date((date.getDay() < 1 ? 7 : 7 - date.getDay()) * 86400000 + date.getTime());
-        openingHourPeriodBody[key] = date;
+        const nextSunday = moment(new Date((date.getDay() < 1 ? 7 : 7 - date.getDay()) * 86400000 + date.getTime())).endOf("day").toDate();
+        openingHourPeriodBody[key] = moment(date).startOf("day").toDate();
         openingHourPeriodBody["endDate"] = nextSunday;
       } else if (key === "endDate" && date.getTime() < new Date(openingHourPeriod.beginDate).getTime()) {
-        const lastMonday = new Date((date.getDay() < 1 ? -6 : 1 - date.getDay()) * 86400000 + date.getTime());
-        openingHourPeriodBody[key] = date;
+        const lastMonday = moment(new Date((date.getDay() < 1 ? -6 : 1 - date.getDay()) * 86400000 + date.getTime())).startOf("day").toDate();
+        openingHourPeriodBody[key] = moment(date).endOf("day").toDate();
         openingHourPeriodBody["beginDate"] = lastMonday;
-      } else {
-        openingHourPeriodBody[key] = date;
+      } else if (key === "beginDate") {
+        openingHourPeriodBody[key] = moment(date).startOf("day").toDate();
+      } else if (key === "endDate") {
+        openingHourPeriodBody[key] = moment(date).endOf("day").toDate();
       }
 
       const openingHoursService = Api.getOpeningHoursService(token);
