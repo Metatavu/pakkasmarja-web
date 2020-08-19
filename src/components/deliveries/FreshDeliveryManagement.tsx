@@ -210,7 +210,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
           this.renderStorageTable()
         }
         {
-          <Table celled padded selectable>
+          <Table celled padded selectable style={ window.matchMedia('(min-width: 768px)').matches ? { tableLayout: "fixed", fontSize: "0.45vw" } : {} }>
             <Table.Header>
               <Table.Row className="table-header-row">
                 <Table.HeaderCell key="viljelija">Viljelijä</Table.HeaderCell>
@@ -612,7 +612,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     const cellWidth = 100 / (products.length + 1);
 
     return (
-      <Table>
+      <Table  style={ window.matchMedia('(min-width: 768px)').matches ? { tableLayout: "fixed", fontSize: "0.45vw" } : {} }>
         <Table.Body>
           <Table.Row key={"morning-summary-row"}>
             <Table.Cell style={{ color: "#fff", background: "#e01e36", fontWeight: "bold" }} key={"morning-summary-header"}> Aamuauton tilanne </Table.Cell>
