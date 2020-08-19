@@ -483,7 +483,7 @@ class CreateDelivery extends React.Component<Props, State> {
             </Form.Field>
             { selectedProductId &&
               <Form.Field>
-                <PriceChart showLatestPrice productId={ selectedProductId } />
+                <PriceChart time={ this.state.date } showLatestPrice productId={ selectedProductId } />
               </Form.Field>
             }
             <Form.Field>
