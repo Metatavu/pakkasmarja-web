@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as actions from "../../actions/";
 import { StoreState, DeliveriesState, DeliveryProduct, Options, DeliveryDataValue, deliveryNoteImg64 } from "src/types";
-import Api, { Product, DeliveryPlace, ItemGroupCategory, Delivery, DeliveryNote, OpeningHourInterval } from "pakkasmarja-client";
+import Api, { Product, DeliveryPlace, ItemGroupCategory, Delivery, DeliveryNote, OpeningHourInterval, OpeningHourPeriod } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import { Header, Dropdown, Form, Input, Button, Divider, Image, Loader, Message } from "semantic-ui-react";
@@ -14,7 +14,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import fi from 'date-fns/esm/locale/fi';
 import strings from "src/localization/strings";
 import * as Moment from "moment";
-import { extendMoment } from "moment-range";
+import { extendMoment, MomentRangeStaticMethods } from "moment-range";
 import PriceChart from "../generic/PriceChart";
 import { FileService } from "src/api/file.service";
 import Lightbox from 'react-image-lightbox';
@@ -145,11 +145,8 @@ class CreateDelivery extends React.Component<Props, State> {
           selectedTime: undefined
         });
       } else if (period) {
-        const periodDay = period.weekdays.find((item, index) => {
-          const day = moment(period.beginDate).add(index, "days");
-          return day.format("YYYY-MM-DD") === chosenDate.format("YYYY-MM-DD");
-        });
-        if (periodDay) {
+        const periodDay = this.getPeriodDay(period, chosenDate);
+        if (periodDay !== undefined) {
           this.setState({
             deliveryPlaceOpeningHours: periodDay.hours,
             selectedTime: undefined
@@ -169,6 +166,27 @@ class CreateDelivery extends React.Component<Props, State> {
     } catch (error) {
       console.log(error);
     }
+  }
+
+  /**
+   * Gets chosen date day from period
+   * 
+   * @param period period
+   * @param chosenDate chosen date
+   */
+  private getPeriodDay = (period: OpeningHourPeriod, chosenDate: MomentRangeStaticMethods & Moment.Moment) => {
+    const periodDayCount = moment(period.endDate).diff(moment(period.beginDate), "days");
+    const weekdays = period.weekdays.sort((a, b) => {
+      const order = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
+      return order.findIndex(item => item === a.dayType) - order.findIndex(item => item === b.dayType);
+    });
+    for (let i = 0; i < periodDayCount; i++) {
+      const day = moment(period.beginDate).add(i, "days");
+      if (day.format("YYYY-MM-DD") === chosenDate.format("YYYY-MM-DD")) {
+        return weekdays[day.isoWeekday() - 1];
+      }
+    }
+    return undefined;
   }
 
   /**
@@ -249,7 +267,7 @@ class CreateDelivery extends React.Component<Props, State> {
     if (deliveryNote.image) {
       const fileService = new FileService(process.env.REACT_APP_API_URL, this.props.keycloak.token);
       const imageData = await fileService.getFile(deliveryNote.image || "");
-      const src = `data:image/jpeg;base64,${imageData.data}`
+      const src = `data:image/jpeg;base64,${imageData.data}`;
       deliveryNotesWithImgBase64.push({ text: deliveryNote.text, img64: src });
     } else {
       deliveryNotesWithImgBase64.push({ text: deliveryNote.text, img64: "" });
@@ -465,7 +483,7 @@ class CreateDelivery extends React.Component<Props, State> {
             </Form.Field>
             { selectedProductId &&
               <Form.Field>
-                <PriceChart showLatestPrice productId={ selectedProductId } />
+                <PriceChart time={ this.state.date } showLatestPrice productId={ selectedProductId } />
               </Form.Field>
             }
             <Form.Field>

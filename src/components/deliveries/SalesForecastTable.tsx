@@ -61,7 +61,7 @@ export default class SalesForecastDataTable extends React.Component<Props, State
 
     return (
       <div style={{ marginBottom: "10px" }}>
-        <Table celled padded selectable inverted>
+        <Table celled padded selectable inverted style={ window.matchMedia('(min-width: 768px)').matches ? { tableLayout: "fixed", fontSize: "0.45vw" } : {} }>
           <Table.Header>
             <Table.Row className="table-header-row" style={{ background: "#e01e36", color: "#fff"}}>
               <Table.HeaderCell>{ this.props.title }</Table.HeaderCell>
