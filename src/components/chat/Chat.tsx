@@ -209,6 +209,9 @@ class Chat extends React.Component<Props, State> {
             <Comment.Author>{message.userName}</Comment.Author>
             <Comment.Metadata>{moment(message.created).format("DD.MM.YYYY HH:mm:ss")}</Comment.Metadata>
             <Comment.Text>{message.image ? <img onClick={() => this.setState({ openImage: message.image })} style={{ width: "100%" }} src={message.image} /> : message.text}</Comment.Text>
+            <Comment.Actions>
+              <Comment.Action onClick={ this.deleteMessage(message.id) }>{ strings.delete }</Comment.Action>
+            </Comment.Actions>
           </Comment.Content>
         </Comment>
       );
@@ -652,6 +655,15 @@ class Chat extends React.Component<Props, State> {
             }
             break;
           }
+          case "DELETED": {
+            const { messages } = this.state;
+            const mqttMessageId = mqttMessage.messageId;
+
+            this.setState({
+              messages: messages.filter((message) => message.id !== mqttMessageId)
+            });
+            break;
+          }
           default: {
             break;
           }
@@ -782,6 +794,32 @@ class Chat extends React.Component<Props, State> {
     this.setState({ loading: false });
     setTimeout(() => { this.setState({ pollAnswerLoading: false }) }, 4000);
     return message;
+  }
+
+  /**
+   * Method for deleting a chat message
+   *
+   * @param messageId message id
+   */
+  private deleteMessage = (messageId: number) => async () => {
+    const { threadId, keycloak } = this.props;
+    const { messages } = this.state;
+
+    if (!keycloak || !keycloak.token) {
+      return;
+    }
+
+    try {
+      const messageService = await Api.getChatMessagesService(keycloak.token);
+      await messageService.deleteChatMessage(threadId, messageId);
+      const updatedMessages = messages.filter((message) => message.id !== messageId);
+
+      this.setState({
+        messages: updatedMessages
+      });
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   private exitChat = () => {
