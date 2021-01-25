@@ -609,64 +609,72 @@ class Chat extends React.Component<Props, State> {
    */
   private onMqttMessage = async (mqttMessage: any) => {
     try {
-      if (mqttMessage.threadId && mqttMessage.threadId == this.props.threadId) {
-        switch (mqttMessage.operation) {
-          case "CREATED": {
-            const { threadId, keycloak } = this.props;
-            const mqttMessageId = mqttMessage.messageId;
-            if (!keycloak || !keycloak.token || !threadId || !mqttMessageId) {
-              return;
+      switch (mqttMessage.operation) {
+        case "CREATED": {
+
+          if (!(mqttMessage.threadId && mqttMessage.threadId == this.props.threadId)) {
+            return;
+          }
+
+          const { threadId, keycloak } = this.props;
+          const mqttMessageId = mqttMessage.messageId;
+          if (!keycloak || !keycloak.token || !threadId || !mqttMessageId) {
+            return;
+          }
+
+          const latestMessage = this.getLatestMessage();
+          const chatMessages = await Api.getChatMessagesService(keycloak.token).listChatMessages(threadId, undefined, latestMessage.toDate());
+          const messages = await this.translateMessages(chatMessages);
+
+          this.setState((prevState: State) => {
+            return {
+              loading: false,
+              messages: prevState.messages.concat(messages.reverse())
             }
+          });
 
-            const latestMessage = this.getLatestMessage();
-            const chatMessages = await Api.getChatMessagesService(keycloak.token).listChatMessages(threadId, undefined, latestMessage.toDate());
-            const messages = await this.translateMessages(chatMessages);
+          const unreadsService = Api.getUnreadsService(keycloak.token);
+          const updatedUnreads = await unreadsService.listUnreads();
+          this.props.unreadsUpdate && this.props.unreadsUpdate(updatedUnreads);
+          const { thread } = this.state;
 
-            this.setState((prevState: State) => {
-              return {
-                loading: false,
-                messages: prevState.messages.concat(messages.reverse())
-              }
-            });
-
-            const unreadsService = Api.getUnreadsService(keycloak.token);
-            const updatedUnreads = await unreadsService.listUnreads();
-            this.props.unreadsUpdate && this.props.unreadsUpdate(updatedUnreads);
-            const { thread } = this.state;
-
-            if (this.state.open) {
-              thread && this.removeUnreads(thread);
-              this.scrollToBottom();
-              break;
-            }
-
-            const unreadsAmount = this.props.unreads
-              .filter((unread: Unread) => (unread.path || "").startsWith(`chat-${thread!.groupId}-${thread!.id}-`))
-              .length;
-            unreadsAmount > 0 && this.setState({ unreadsAmount });
-            
+          if (this.state.open) {
+            thread && this.removeUnreads(thread);
+            this.scrollToBottom();
             break;
           }
-          case "READ": {
-            if (this.props.conversationType === "QUESTION") {
-              this.checkThreadRead();
-            } else if (this.state.threadPermission === "MANAGE") {
-              this.checkThreadReadAmount();
-            }
-            break;
-          }
-          case "DELETED": {
-            const { messages } = this.state;
-            const mqttMessageId = mqttMessage.messageId;
 
-            this.setState({
-              messages: messages.filter((message) => message.id !== mqttMessageId)
-            });
-            break;
+          const unreadsAmount = this.props.unreads
+            .filter((unread: Unread) => (unread.path || "").startsWith(`chat-${thread!.groupId}-${thread!.id}-`))
+            .length;
+          unreadsAmount > 0 && this.setState({ unreadsAmount });
+          
+          break;
+        }
+        case "READ": {
+
+          if (!(mqttMessage.threadId && mqttMessage.threadId == this.props.threadId)) {
+            return;
           }
-          default: {
-            break;
+
+          if (this.props.conversationType === "QUESTION") {
+            this.checkThreadRead();
+          } else if (this.state.threadPermission === "MANAGE") {
+            this.checkThreadReadAmount();
           }
+          break;
+        }
+        case "DELETED": {
+          const { id } = mqttMessage;
+          const { messages } = this.state;
+
+          this.setState({
+            messages: messages.filter((message) => message.id !== id)
+          });
+          break;
+        }
+        default: {
+          break;
         }
       }
     } catch (e) {
