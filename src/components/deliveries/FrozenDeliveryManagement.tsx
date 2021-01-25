@@ -241,6 +241,7 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
         }
         {this.state.selectedDeliveryPlaceId &&
           <CreateDeliveryModal
+            selectedDate={ this.state.selectedDate }
             deliveryPlaces={ this.state.deliveryPlaces }
             open={this.state.newDeliveryModalOpen}
             onClose={(created?: boolean) => {
