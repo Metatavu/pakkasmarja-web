@@ -612,7 +612,7 @@ class Chat extends React.Component<Props, State> {
       switch (mqttMessage.operation) {
         case "CREATED": {
 
-          if (!(mqttMessage.threadId && mqttMessage.threadId == this.props.threadId)) {
+          if (!mqttMessage.threadId || mqttMessage.threadId !== this.props.threadId) {
             return;
           }
 
