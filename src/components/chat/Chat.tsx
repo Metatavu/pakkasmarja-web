@@ -639,7 +639,7 @@ class Chat extends React.Component<Props, State> {
       switch (mqttMessage.operation) {
         case "CREATED": {
 
-          if (!(mqttMessage.threadId && mqttMessage.threadId == this.props.threadId)) {
+          if (!mqttMessage.threadId || mqttMessage.threadId !== this.props.threadId) {
             return;
           }
 
@@ -653,12 +653,10 @@ class Chat extends React.Component<Props, State> {
           const chatMessages = await Api.getChatMessagesService(keycloak.token).listChatMessages(threadId, undefined, latestMessage.toDate());
           const messages = await this.translateMessages(chatMessages);
 
-          this.setState((prevState: State) => {
-            return {
-              loading: false,
-              messages: prevState.messages.concat(messages.reverse())
-            }
-          });
+          this.setState((prevState: State) => ({
+            loading: false,
+            messages: prevState.messages.concat(messages.reverse())
+          }));
 
           const unreadsService = Api.getUnreadsService(keycloak.token);
           const updatedUnreads = await unreadsService.listUnreads();
