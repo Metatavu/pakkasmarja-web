@@ -15,6 +15,7 @@ import Lightbox from 'react-image-lightbox';
 import Dropzone from 'react-dropzone';
 import 'react-image-lightbox/style.css';
 import * as _ from "lodash";
+import ApplicationRoles from "src/utils/application-roles";
 
 const FAILSAFE_POLL_RATE = 5000;
 
@@ -210,7 +211,7 @@ class Chat extends React.Component<Props, State> {
             <Comment.Metadata>{moment(message.created).format("DD.MM.YYYY HH:mm:ss")}</Comment.Metadata>
             <Comment.Text>{message.image ? <img onClick={() => this.setState({ openImage: message.image })} style={{ width: "100%" }} src={message.image} /> : message.text}</Comment.Text>
             <Comment.Actions>
-              <Comment.Action onClick={ this.deleteMessage(message.id) }>{ strings.delete }</Comment.Action>
+              { this.renderMessageActions(message.id, message.userId) }
             </Comment.Actions>
           </Comment.Content>
         </Comment>
@@ -336,6 +337,32 @@ class Chat extends React.Component<Props, State> {
           </Modal.Actions>
         </Modal>
       </Segment.Group>
+    );
+  }
+
+  /**
+   * Method for rendering message actions
+   *
+   * @param messageId message id
+   * @param userId user id
+   */
+  private renderMessageActions = (messageId: number, userId: string) => {
+    const { keycloak } = this.props;
+
+    if (!keycloak || !keycloak.tokenParsed) {
+      return null;
+    }
+
+    const currentUserId = keycloak.tokenParsed.sub;
+
+    if (currentUserId !== userId && !keycloak.hasRealmRole(ApplicationRoles.MANAGE_THREADS)) {
+      return null;
+    }
+
+    return (
+      <Comment.Action onClick={ this.deleteMessage(messageId) }>
+        { strings.delete }
+      </Comment.Action>
     );
   }
 
