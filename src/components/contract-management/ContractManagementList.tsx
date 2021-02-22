@@ -308,8 +308,8 @@ class ContractManagementList extends React.Component<Props, State> {
     return (
       <Input
         fluid
-        value={value}
-        onChange={this.editContractQuantity(editedContract)}
+        value={ value }
+        onChange={ this.editContractQuantity(editedContract) }
       />
     );
   }
