@@ -249,15 +249,15 @@ class ContractManagementList extends React.Component<Props, State> {
 
     if (!tableEditMode) {
       return (
-        <Button onClick={this.toggleTableEditMode}>Muokkaustila</Button>
+        <Button onClick={ this.toggleTableEditMode }>Muokkaustila</Button>
       );
     }
 
     return (
-      <React.Fragment>
-        <Button onClick={this.saveTable}>Tallenna</Button>
-        <Button onClick={this.toggleTableEditMode}>Peruuta</Button>
-      </React.Fragment>
+      <>
+        <Button onClick={ this.saveTable }>Tallenna</Button>
+        <Button onClick={ this.toggleTableEditMode }>Peruuta</Button>
+      </>
     );
   }
 
