@@ -282,9 +282,9 @@ class ContractManagementList extends React.Component<Props, State> {
       <Dropdown
         fluid
         selection
-        value={value}
-        options={statusOptions}
-        onChange={this.editContractStatus(editedContract)}
+        value={ value }
+        options={ statusOptions }
+        onChange={ this.editContractStatus(editedContract) }
       />
     );
   }
