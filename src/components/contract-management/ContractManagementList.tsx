@@ -555,7 +555,7 @@ class ContractManagementList extends React.Component<Props, State> {
    * @param status status string
    * @returns contract status enum or void
    */
-  private getStatus = (status: string): Contract.StatusEnum | void => {
+  private getStatus = (status: string): Contract.StatusEnum | undefined => {
     switch (status) {
       case "APPROVED":
         return Contract.StatusEnum.APPROVED;
