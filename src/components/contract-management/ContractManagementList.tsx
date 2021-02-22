@@ -294,7 +294,7 @@ class ContractManagementList extends React.Component<Props, State> {
    *
    * @param contract contract
    */
-  private renderEditableQuantity= (contract: Contract) => {
+  private renderEditableQuantity = (contract: Contract) => {
     const { tableEditMode } = this.state;
 
     if (!tableEditMode) {
