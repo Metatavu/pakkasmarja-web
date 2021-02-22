@@ -344,7 +344,7 @@ class ContractManagementList extends React.Component<Props, State> {
    *
    * @param contract contract
    */
-  private editContractStatus = (contract: Contract) => (event: React.ChangeEvent<any>, data: DropdownProps) => {
+  private editContractStatus = (contract: Contract) => (event: React.ChangeEvent<HTMLElement>, data: DropdownProps) => {
     const { editedContracts } = this.state;
 
     const value = this.getStatus(String(data.value));
@@ -370,7 +370,7 @@ class ContractManagementList extends React.Component<Props, State> {
    *
    * @param contract contract
    */
-  private editContractQuantity = (contract: Contract) => (event: React.SyntheticEvent<any>, data: InputOnChangeData) => {
+  private editContractQuantity = (contract: Contract) => (event: React.SyntheticEvent<HTMLInputElement>, data: InputOnChangeData) => {
     const { editedContracts } = this.state;
 
     const value = parseInt(data.value) || 0;
@@ -396,7 +396,7 @@ class ContractManagementList extends React.Component<Props, State> {
    *
    * @param contract contract
    */
-  private editContractRemark = (contract: Contract) =>  (event: React.FormEvent<any>, data: TextAreaProps) => {
+  private editContractRemark = (contract: Contract) =>  (event: React.FormEvent<HTMLTextAreaElement>, data: TextAreaProps) => {
     const { editedContracts } = this.state;
 
     const value = String(data.value);
