@@ -333,8 +333,8 @@ class ContractManagementList extends React.Component<Props, State> {
     return (
       <TextArea
         fluid
-        value={value}
-        onChange={this.editContractRemark(editedContract)}
+        value={ value }
+        onChange={ this.editContractRemark(editedContract) }
       />
     );
   }
