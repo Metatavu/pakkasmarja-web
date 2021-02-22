@@ -460,7 +460,7 @@ class ContractManagementList extends React.Component<Props, State> {
         contracts: allContracts
       });
     } catch (error) {
-      console.log(error);
+      console.error("Could not update contracts: ", error);
       this.setState({
         editedContracts: [],
         tableEditMode: false
