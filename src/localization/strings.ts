@@ -245,6 +245,7 @@ export interface IStrings extends LocalizedStringsMethods {
   exceptionPeriods: string;
   deleteBlock: string;
   selectDeliveryPlace: string;
+  editMode: string;
 }
 
 const strings: IStrings = new LocalizedStrings({

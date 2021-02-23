@@ -239,5 +239,6 @@
   "defaultPeriods": "Vakiojaksot",
   "exceptionPeriods": "Poikkeusjaksot",
   "deleteBlock": "Poista lohko",
-  "selectDeliveryPlace": "Valitse toimituspaikka"
+  "selectDeliveryPlace": "Valitse toimituspaikka",
+  "editMode": "Muokkaustila"
 }
