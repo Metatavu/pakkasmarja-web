@@ -270,7 +270,7 @@ class ContractManagementList extends React.Component<Props, State> {
     const { tableEditMode } = this.state;
 
     if (!tableEditMode) {
-      return contract.status;
+      return this.getStatusText(contract.status);
     }
 
     const { editedContracts } = this.state;
