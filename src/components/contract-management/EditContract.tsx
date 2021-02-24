@@ -9,7 +9,6 @@ import "./styles.css";
 import ErrorMessage from "../generic/ErrorMessage";
 import Api, { Contact, ItemGroup, Contract, DeliveryPlace } from "pakkasmarja-client";
 import { Form, Button, Dropdown, Input, TextArea, Header, Dimmer, Loader, Checkbox } from "semantic-ui-react";
-import * as moment from "moment";
 import { Redirect } from "react-router";
 import { Link } from "react-router-dom";
 import strings from "src/localization/strings";
@@ -229,7 +228,7 @@ class EditContract extends React.Component<Props, State> {
       remarks: this.state.sapComment,
       deliverAll: this.state.deliverAllChecked,
       proposedDeliverAll: this.state.deliverAllChecked,
-      year: moment().year(),
+      year: this.state.contract.year,
       proposedDeliveryPlaceId: this.state.contract.proposedDeliveryPlaceId
     };
 

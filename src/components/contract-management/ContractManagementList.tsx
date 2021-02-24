@@ -8,7 +8,7 @@ import "../../styles/common.css";
 import "./styles.css";
 import Api, { Contract, Contact, DeliveryPlace, ContractDocumentTemplate, ItemGroupDocumentTemplate } from "pakkasmarja-client";
 import { ItemGroup } from "pakkasmarja-client";
-import { Header, Button, Dropdown, Form, List, Dimmer, Loader, Grid, Icon } from "semantic-ui-react";
+import { Header, Button, Dropdown, Form, List, Dimmer, Loader, Grid, Icon, Input, TextArea, DropdownProps, InputOnChangeData, TextAreaProps, DropdownItemProps } from "semantic-ui-react";
 import ErrorMessage from "../generic/ErrorMessage";
 import { Table } from 'semantic-ui-react';
 import { Link } from "react-router-dom";
@@ -31,6 +31,8 @@ interface Props {
  * Interface for component state
  */
 interface State {
+  tableEditMode: boolean;
+  editedContracts: Contract[];
   keycloak?: Keycloak.KeycloakInstance;
   contracts: Contract[],
   itemGroups: { [key: string] : ItemGroup },
@@ -62,6 +64,8 @@ class ContractManagementList extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
+      tableEditMode: false,
+      editedContracts: [],
       contracts: [],
       itemGroups: {},
       contacts: {},
@@ -236,6 +240,233 @@ class ContractManagementList extends React.Component<Props, State> {
       />
     );
   }
+
+  /**
+   * Method for rendering edit buttons
+   */
+  private renderEditButtons = () => {
+    const { tableEditMode } = this.state;
+
+    if (!tableEditMode) {
+      return (
+        <Button onClick={ this.toggleTableEditMode }>{ strings.editMode }</Button>
+      );
+    }
+
+    return (
+      <>
+        <Button onClick={ this.saveTable } color="red">{ strings.save }</Button>
+        <Button onClick={ this.toggleTableEditMode }>{ strings.cancel }</Button>
+      </>
+    );
+  }
+
+  /**
+   * Method for rendering contract status
+   *
+   * @param contract contract
+   */
+  private renderEditableStatus = (contract: Contract) => {
+    const { tableEditMode } = this.state;
+
+    if (!tableEditMode) {
+      return this.getStatusText(contract.status);
+    }
+
+    const { editedContracts } = this.state;
+    const statusOptions = this.getStatusOptions();
+    const editedContract = editedContracts.find(item => item.id === contract.id) || contract;
+    const value = editedContract.status;
+    
+    return (
+      <Dropdown
+        fluid
+        selection
+        value={ value }
+        options={ statusOptions }
+        onChange={ this.editContractStatus(editedContract) }
+      />
+    );
+  }
+
+  /**
+   * Method for rendering contract quantity
+   *
+   * @param contract contract
+   */
+  private renderEditableQuantity = (contract: Contract) => {
+    const { tableEditMode } = this.state;
+
+    if (!tableEditMode) {
+      return contract.contractQuantity;
+    }
+
+    const { editedContracts } = this.state;
+    const editedContract = editedContracts.find(item => item.id === contract.id) || contract;
+    const value = editedContract.contractQuantity;
+
+    return (
+      <Input
+        fluid
+        value={ value }
+        onChange={ this.editContractQuantity(editedContract) }
+      />
+    );
+  }
+
+  /**
+   * Method for rendering contract remark
+   *
+   * @param contract contract
+   */
+  private renderEditableRemark = (contract: Contract) => {
+    const { tableEditMode } = this.state;
+
+    if (!tableEditMode) {
+      return contract.remarks;
+    }
+
+    const { editedContracts } = this.state;
+    const editedContract = editedContracts.find(item => item.id === contract.id) || contract;
+    const value = editedContract.remarks;
+
+    return (
+      <TextArea
+        fluid
+        value={ value }
+        onChange={ this.editContractRemark(editedContract) }
+      />
+    );
+  }
+
+  /**
+   * Method for editing contract status
+   *
+   * @param contract contract
+   */
+  private editContractStatus = (contract: Contract) => (event: React.ChangeEvent<HTMLElement>, data: DropdownProps) => {
+    const { editedContracts } = this.state;
+
+    const value = this.getStatus(String(data.value));
+
+    if (editedContracts.includes(contract) && value) {
+      contract.status = value;
+      this.setState({ editedContracts: [...editedContracts] });
+    } else if (value) {
+      this.setState({
+        editedContracts: [
+          ...editedContracts,
+          {
+            ...contract,
+            status: value
+          }
+        ]
+      });
+    }
+  }
+
+  /**
+   * Method for editing contract quantity
+   *
+   * @param contract contract
+   */
+  private editContractQuantity = (contract: Contract) => (event: React.SyntheticEvent<HTMLInputElement>, data: InputOnChangeData) => {
+    const { editedContracts } = this.state;
+
+    const value = parseInt(data.value) || 0;
+
+    if (editedContracts.includes(contract)) {
+      contract.contractQuantity = value;
+      this.setState({ editedContracts: [...editedContracts] });
+    } else {
+      this.setState({
+        editedContracts: [
+          ...editedContracts,
+          {
+            ...contract,
+            contractQuantity: value
+          }
+        ]
+      });
+    }
+  }
+
+  /**
+   * Method for editing contract remark
+   *
+   * @param contract contract
+   */
+  private editContractRemark = (contract: Contract) =>  (event: React.FormEvent<HTMLTextAreaElement>, data: TextAreaProps) => {
+    const { editedContracts } = this.state;
+
+    const value = String(data.value);
+
+    if (editedContracts.includes(contract)) {
+      contract.remarks = value;
+      this.setState({ editedContracts: [...editedContracts] });
+    } else {
+      this.setState({
+        editedContracts: [
+          ...editedContracts,
+          {
+            ...contract,
+            remarks: value
+          }
+        ]
+      });
+    }
+  }
+
+  /**
+   * Method for toggling table edit mode state
+   */
+  private toggleTableEditMode = () => {
+    const { tableEditMode } = this.state;
+
+    this.setState({
+      editedContracts: [],
+      tableEditMode: !tableEditMode
+    });
+  }
+
+  /**
+   * Method for saving table after editing
+   */
+  private saveTable = async () => {
+    const { keycloak } = this.props;
+    const { editedContracts, contracts } = this.state;
+
+    if (!keycloak || !keycloak.token) {
+      return;
+    }
+
+    try {
+      const contractsService = Api.getContractsService(keycloak.token);
+
+      const promises = editedContracts.map(contract => 
+        contractsService.updateContract(contract, contract.id || "")
+      );
+      
+      const updatedContracts = await Promise.all(promises);
+
+      const allContracts = contracts.map(contract => {
+        const updatedContract = updatedContracts.find(item => item.id === contract.id);
+        return updatedContract || contract;
+      });
+
+      this.setState({
+        editedContracts: [],
+        tableEditMode: false,
+        contracts: allContracts
+      });
+    } catch (error) {
+      console.error("Could not update contracts: ", error);
+      this.setState({
+        editedContracts: [],
+        tableEditMode: false
+      });
+    }
+  }
   
   /**
    * Handle item group change
@@ -274,6 +505,33 @@ class ContractManagementList extends React.Component<Props, State> {
   }
 
   /**
+   * Method for getting status options
+   */
+  private getStatusOptions = (): DropdownItemProps[] => {
+    return [{
+      key: "APPROVED",
+      value: "APPROVED",
+      text: this.getStatusText("APPROVED")
+    }, {
+      key: "ON_HOLD",
+      value: "ON_HOLD",
+      text: this.getStatusText("ON_HOLD")
+    }, {
+      key: "DRAFT",
+      value: "DRAFT",
+      text: this.getStatusText("DRAFT")
+    }, {
+      key: "TERMINATED",
+      value: "TERMINATED",
+      text: this.getStatusText("TERMINATED")
+    }, {
+      key: "REJECTED",
+      value: "REJECTED",
+      text: this.getStatusText("REJECTED")
+    }];
+  }
+
+  /**
    * Get status text
    */
   private getStatusText = (statusEnum: Contract.StatusEnum) => {
@@ -288,6 +546,29 @@ class ContractManagementList extends React.Component<Props, State> {
         return strings.rejected;
       case "TERMINATED":
         return strings.terminated;
+    }
+  }
+
+  /**
+   * Method for getting status with status string
+   *
+   * @param status status string
+   * @returns contract status enum or void
+   */
+  private getStatus = (status: string): Contract.StatusEnum | undefined => {
+    switch (status) {
+      case "APPROVED":
+        return Contract.StatusEnum.APPROVED;
+      case "DRAFT":
+        return Contract.StatusEnum.DRAFT;
+      case "ON_HOLD":
+        return Contract.StatusEnum.ONHOLD;
+      case "REJECTED":
+        return Contract.StatusEnum.REJECTED;
+      case "TERMINATED":
+        return Contract.StatusEnum.TERMINATED;
+      default:
+        return;
     }
   }
 
@@ -455,27 +736,7 @@ class ContractManagementList extends React.Component<Props, State> {
       });
     }
 
-    const statusOptions = [{
-      key: "APPROVED",
-      value: "APPROVED",
-      text: this.getStatusText("APPROVED")
-    }, {
-      key: "ON_HOLD",
-      value: "ON_HOLD",
-      text: this.getStatusText("ON_HOLD")
-    }, {
-      key: "DRAFT",
-      value: "DRAFT",
-      text: this.getStatusText("DRAFT")
-    }, {
-      key: "TERMINATED",
-      value: "TERMINATED",
-      text: this.getStatusText("TERMINATED")
-    }, {
-      key: "REJECTED",
-      value: "REJECTED",
-      text: this.getStatusText("REJECTED")
-    }];
+    const statusOptions = this.getStatusOptions();
 
     return (
       <TableBasicLayout>
@@ -495,6 +756,13 @@ class ContractManagementList extends React.Component<Props, State> {
             </Form.Field>
             <Form.Field>
               <Button onClick={this.getXlsx} color="grey">{strings.downloadXLSX}</Button>
+            </Form.Field>
+          </Form.Group>
+        </Form>
+        <Form>
+          <Form.Group>
+            <Form.Field>
+              { this.renderEditButtons() }
             </Form.Field>
           </Form.Group>
         </Form>
@@ -545,14 +813,14 @@ class ContractManagementList extends React.Component<Props, State> {
                     <Table.Cell>
                       { contact ? `${contact.displayName}` : "-" }
                     </Table.Cell>
-                    <Table.Cell>
-                      { this.getStatusText(contract.status) }
+                    <Table.Cell style={{ overflow: "visible" }}>
+                      { this.renderEditableStatus(contract) }
                     </Table.Cell>
                     <Table.Cell>
                       { itemGroup ? itemGroup.displayName : ""}
                     </Table.Cell>
                     <Table.Cell>
-                      { contract.contractQuantity}
+                      { this.renderEditableQuantity(contract) }
                     </Table.Cell>
                     <Table.Cell>
                       { contract.deliveredQuantity}
@@ -560,8 +828,8 @@ class ContractManagementList extends React.Component<Props, State> {
                     <Table.Cell>
                       { deliveryPlace ? deliveryPlace.name : ""}
                     </Table.Cell>
-                    <Table.Cell  >
-                      <div className="handleOverflow">{ contract.remarks }</div>
+                    <Table.Cell>
+                        { this.renderEditableRemark(contract) }
                     </Table.Cell>
                     <Table.Cell >
                       <List>
