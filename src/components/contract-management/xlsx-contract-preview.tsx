@@ -93,7 +93,7 @@ class XlsxContractsPreview extends React.Component<Props, State> {
    */
   private hasErrors = (): boolean => {
     const { parsedXlsxObjects } = this.props;
-    return parsedXlsxObjects.some((object) => object.errors.length);
+    return parsedXlsxObjects.some(object => object.errors.length);
   }
 
   /**
