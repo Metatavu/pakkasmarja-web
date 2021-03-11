@@ -2,7 +2,6 @@ import * as React from "react";
 import "../../styles/common.css";
 import { Modal, Icon, SemanticICONS, SemanticCOLORS, Table } from "semantic-ui-react";
 import { ContractTableData, StoreState } from "src/types";
-import { Contract } from "pakkasmarja-client";
 import strings from "src/localization/strings";
 import { Redirect } from "react-router-dom";
 import { Dispatch } from "redux";
@@ -10,6 +9,7 @@ import { connect } from "react-redux";
 import * as actions from "../../actions/";
 import { PDFService } from "src/api/pdf.service";
 import FileUtils from "src/utils/FileUtils";
+import { ContractStatus } from "pakkasmarja-client";
 
 /**
  * Interface for component State
@@ -50,7 +50,7 @@ class ContractItem extends React.Component<Props, State> {
    * 
    * @param status status
    */
-  private renderItemDescription = (status: Contract.StatusEnum) => {
+  private renderItemDescription = (status: ContractStatus) => {
     switch (status) {
       case "DRAFT":
         return this.renderDescription(strings.checkDraft, "envelope", "red");

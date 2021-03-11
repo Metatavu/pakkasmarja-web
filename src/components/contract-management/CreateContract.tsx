@@ -7,7 +7,7 @@ import { connect } from "react-redux";
 import "../../styles/common.css";
 import "./styles.css";
 import ErrorMessage from "../generic/ErrorMessage";
-import Api, { Contact, ItemGroup, Contract, DeliveryPlace } from "pakkasmarja-client";
+import Api, { Contact, ItemGroup, Contract, DeliveryPlace, ContractStatus } from "pakkasmarja-client";
 import { Form, Button, Dropdown, Input, TextArea, Checkbox } from "semantic-ui-react";
 import * as moment from "moment";
 import { Redirect } from "react-router";
@@ -36,7 +36,7 @@ interface State {
   itemGroups: ItemGroup[];
   itemGroupId: string;
   sapId: string;
-  status: Contract.StatusEnum;
+  status: ContractStatus;
   quantityComment: string;
   quantity: number;
   deliveryPlaces: DeliveryPlace[];
@@ -376,7 +376,7 @@ class CreateContract extends React.Component<Props, State> {
           </Form.Field>
           <Form.Field>
             <label>{strings.status}</label>
-            {this.renderDropDown(statusOptions, this.state.status, (value: Contract.StatusEnum) => { this.setState({ status: value }) }, "Valitse tila")}
+            {this.renderDropDown(statusOptions, this.state.status, (value: ContractStatus) => { this.setState({ status: value }) }, "Valitse tila")}
           </Form.Field>
           <Form.Field>
             <label>{strings.quantityComment}</label>
