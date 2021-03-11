@@ -866,7 +866,9 @@ class ContractManagementList extends React.Component<Props, State> {
             </Form.Field>
             <Form.Field>
               <Button onClick={this.getXlsx} color="grey">{strings.downloadXLSX}</Button>
-              <Button onClick={ this.openFileListing } color="grey">{ strings.importXlsx }</Button>
+              <Button onClick={ this.openFileListing } color="grey">
+                { strings.importXlsx }
+              </Button>
               <input
                 type="file"
                 accept=".xlsx"
