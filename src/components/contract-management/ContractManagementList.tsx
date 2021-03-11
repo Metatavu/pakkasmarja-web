@@ -717,6 +717,7 @@ class ContractManagementList extends React.Component<Props, State> {
           "Authorization": `Bearer ${ keycloak.token }`
         }
       });
+
       return await response.json();
     } catch (error) {
       return Promise.reject(error);
