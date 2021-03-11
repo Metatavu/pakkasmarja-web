@@ -43,7 +43,6 @@ class ContractPreviewTable extends React.Component<Props, State> {
       <Table style={{ fontSize: 15 }}>
         <Table.Header>
           <Table.Row>
-            <Table.HeaderCell>{ strings.contractSapId }</Table.HeaderCell>
             <Table.HeaderCell>{ strings.contactSapId }</Table.HeaderCell>
             <Table.HeaderCell>{ strings.itemGroupSapId }</Table.HeaderCell>
             <Table.HeaderCell>{ strings.contractQuantity }</Table.HeaderCell>
@@ -76,12 +75,6 @@ class ContractPreviewTable extends React.Component<Props, State> {
 
       return (
         <Table.Row key={ index }>
-          <Table.Cell>
-            <>
-              { importedContract.sapId }
-              { this.renderError("sapId", object.errors) }
-            </>
-          </Table.Cell>
           <Table.Cell>
             <>
               { importedContract.contactName }

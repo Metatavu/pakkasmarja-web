@@ -16,7 +16,6 @@
   "redirectingTokeycloak": "Redirecting to keycloak...",
   "downloadXLSX": "Lataa XLSX muodossa",
   "importXlsx": "Tuo XLSX tiedosto",
-  "contractSapId": "Sopimuksen SAP-tunnus",
   "contactSapId": "Viljelijän SAP-tunnus",
   "itemGroupSapId": "Marjalajin SAP-tunnus",
   "onehundredPercentDelivery": "100% toimitus",
