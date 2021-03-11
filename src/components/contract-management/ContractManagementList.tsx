@@ -6,7 +6,7 @@ import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
 import "./styles.css";
-import Api, { Contract, Contact, DeliveryPlace, ContractDocumentTemplate, ItemGroupDocumentTemplate } from "pakkasmarja-client";
+import Api, { Contract, Contact, DeliveryPlace, ContractDocumentTemplate, ItemGroupDocumentTemplate, ContractStatus, ContractPreviewData } from "pakkasmarja-client";
 import { ItemGroup } from "pakkasmarja-client";
 import { Header, Button, Dropdown, Form, List, Dimmer, Loader, Grid, Icon, Input, TextArea, DropdownProps, InputOnChangeData, TextAreaProps, DropdownItemProps } from "semantic-ui-react";
 import ErrorMessage from "../generic/ErrorMessage";
@@ -18,6 +18,7 @@ import BasicLayout from "../generic/BasicLayout";
 import strings from "src/localization/strings";
 import { PDFService } from "src/api/pdf.service";
 import FileUtils from "src/utils/FileUtils";
+import XlsxContractsPreview from "./xlsx-contract-preview";
 
 /**
  * Interface for component props
@@ -33,6 +34,8 @@ interface Props {
 interface State {
   tableEditMode: boolean;
   editedContracts: Contract[];
+  xlsxPreviewOpen: boolean;
+  parsedXlsxObjects: ContractPreviewData[];
   keycloak?: Keycloak.KeycloakInstance;
   contracts: Contract[],
   itemGroups: { [key: string] : ItemGroup },
@@ -57,6 +60,11 @@ interface State {
 class ContractManagementList extends React.Component<Props, State> {
 
   /**
+   * Reference to input element
+   */
+  private xlsxInput = React.createRef<HTMLInputElement>();
+
+  /**
    * Constructor
    * 
    * @param props props
@@ -66,6 +74,8 @@ class ContractManagementList extends React.Component<Props, State> {
     this.state = {
       tableEditMode: false,
       editedContracts: [],
+      xlsxPreviewOpen: false,
+      parsedXlsxObjects: [],
       contracts: [],
       itemGroups: {},
       contacts: {},
@@ -497,7 +507,7 @@ class ContractManagementList extends React.Component<Props, State> {
    * 
    * @param value value
    */
-  private handleStatusChange = (value: Contract.StatusEnum) => {
+  private handleStatusChange = (value: ContractStatus) => {
     const filters = { ... this.state.filters };
     filters.status = value;
     this.setState({ filters, offset: 0 });
@@ -534,7 +544,7 @@ class ContractManagementList extends React.Component<Props, State> {
   /**
    * Get status text
    */
-  private getStatusText = (statusEnum: Contract.StatusEnum) => {
+  private getStatusText = (statusEnum: ContractStatus) => {
     switch (statusEnum) {
       case "APPROVED":
         return strings.approved;
@@ -555,18 +565,18 @@ class ContractManagementList extends React.Component<Props, State> {
    * @param status status string
    * @returns contract status enum or void
    */
-  private getStatus = (status: string): Contract.StatusEnum | undefined => {
+  private getStatus = (status: string): ContractStatus | undefined => {
     switch (status) {
       case "APPROVED":
-        return Contract.StatusEnum.APPROVED;
+        return ContractStatus.APPROVED;
       case "DRAFT":
-        return Contract.StatusEnum.DRAFT;
+        return ContractStatus.DRAFT;
       case "ON_HOLD":
-        return Contract.StatusEnum.ONHOLD;
+        return ContractStatus.ONHOLD;
       case "REJECTED":
-        return Contract.StatusEnum.REJECTED;
+        return ContractStatus.REJECTED;
       case "TERMINATED":
-        return Contract.StatusEnum.TERMINATED;
+        return ContractStatus.TERMINATED;
       default:
         return;
     }
@@ -650,6 +660,107 @@ class ContractManagementList extends React.Component<Props, State> {
 
     this.setState({ 
       contractsLoading: false
+    });
+  }
+
+  /**
+   * Method for opening file listing
+   */
+  private openFileListing = () => {
+    const input = this.xlsxInput.current;
+
+    if (!input) {
+      return;
+    }
+
+    input.click();
+  }
+
+  /**
+   * Method for importing xlsx file
+   *
+   * @param event event object
+   */
+  private importXlsx = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.item(0);
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    this.setState({ xlsxPreviewOpen: true });
+    this.setState({ parsedXlsxObjects: await this.parseXlsxFile(file) });
+  }
+
+  /**
+   * Method for parsing xlsx file
+   *
+   * @param file file
+   * @returns promise of conract preview data array
+   */
+  private parseXlsxFile = async (file: File): Promise<ContractPreviewData[]> => {
+    const { keycloak } = this.props;
+
+    if (!keycloak || !keycloak.token) {
+      return Promise.reject();
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const requestUrl = `${ process.env.REACT_APP_API_URL }/rest/v1/contractPreviews`;
+      const response = await fetch(requestUrl, {
+        method: "POST",
+        body: formData,
+        headers: {
+          "Authorization": `Bearer ${ keycloak.token }`
+        }
+      });
+
+      return await response.json();
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
+  /**
+   * Method for creating list of contracts to api
+   *
+   * @param contracts contract array
+   */
+  private createContracts = async (contracts: Contract[]) => {
+    const { keycloak } = this.props;
+
+    if (!keycloak || !keycloak.token) {
+      return;
+    }
+
+    try {
+      const contractsService = Api.getContractsService(keycloak.token);
+      const promises = contracts.map(contract =>
+        contractsService.createContract(contract)
+      );
+
+      const createdContracts = await Promise.all(promises);
+
+      this.setState({
+        xlsxPreviewOpen: false,
+        contracts: [ ...createdContracts, ...this.state.contracts ]
+      });
+      await this.loadContacts(this.state.contracts);
+    } catch (error) {
+      console.log(`Couldn't create contracts: ${error}`);
+    }
+  }
+
+  /**
+   * Method for cancelling xlsx parsed contracts
+   */
+  private cancelXlsxContracts = () => {
+    this.setState({
+      parsedXlsxObjects: [],
+      xlsxPreviewOpen: false
     });
   }
   
@@ -756,6 +867,17 @@ class ContractManagementList extends React.Component<Props, State> {
             </Form.Field>
             <Form.Field>
               <Button onClick={this.getXlsx} color="grey">{strings.downloadXLSX}</Button>
+              <Button onClick={ this.openFileListing } color="grey">
+                { strings.importXlsx }
+              </Button>
+              <input
+                type="file"
+                accept=".xlsx"
+                multiple={ false }
+                ref={ this.xlsxInput }
+                style={{ display: "none" }}
+                onChange={ this.importXlsx }
+              />
             </Form.Field>
           </Form.Group>
         </Form>
@@ -882,9 +1004,14 @@ class ContractManagementList extends React.Component<Props, State> {
                 </Button>
               </Grid.Column>
             }
-
           </Grid.Row>
         </Grid>
+        <XlsxContractsPreview
+          open={ this.state.xlsxPreviewOpen }
+          parsedXlsxObjects={ this.state.parsedXlsxObjects }
+          onAccept={ this.createContracts }
+          onCancel={ this.cancelXlsxContracts }
+        />
       </TableBasicLayout>
     );
   }
