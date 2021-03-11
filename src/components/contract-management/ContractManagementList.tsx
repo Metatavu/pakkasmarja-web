@@ -745,7 +745,7 @@ class ContractManagementList extends React.Component<Props, State> {
 
       this.setState({
         xlsxPreviewOpen: false,
-        contracts: [...createdContracts, ...this.state.contracts]
+        contracts: [ ...createdContracts, ...this.state.contracts ]
       });
       await this.loadContacts(this.state.contracts);
     } catch (error) {
