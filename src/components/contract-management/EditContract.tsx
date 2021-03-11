@@ -313,7 +313,14 @@ class EditContract extends React.Component<Props, State> {
           </Form.Field>
           <Form.Field>
             <label>{strings.status}</label>
-            {this.renderDropDown(statusOptions, this.state.status, (value: ContractStatus) => { this.setState({ status: value }) }, strings.status)}
+            {
+              this.renderDropDown(
+                statusOptions,
+                this.state.status,
+                (value: ContractStatus) => this.setState({ status: value }),
+                strings.status
+              )
+            }
           </Form.Field>
           <Form.Field>
             <label>{strings.contractAmount}</label>
