@@ -21,8 +21,7 @@ export interface IStrings extends LocalizedStringsMethods {
   welcome: string
   redirectingTokeycloak: string
   downloadXLSX: string
-  importXlsx: string
-  contractSapId: string;
+  importXlsx: string;
   contactSapId: string;
   itemGroupSapId: string;
   onehundredPercentDelivery: string;
