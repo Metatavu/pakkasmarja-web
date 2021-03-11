@@ -749,7 +749,7 @@ class ContractManagementList extends React.Component<Props, State> {
       });
       await this.loadContacts(this.state.contracts);
     } catch (error) {
-      console.log(`Couldn't create contracts: ${ error }`);
+      console.log(`Couldn't create contracts: ${error}`);
     }
   }
 
