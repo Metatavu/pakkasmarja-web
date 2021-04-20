@@ -14,6 +14,7 @@ import InDeliveryIcon from "../../gfx/indelivery_logo.png";
 import PakkasmarjaRedLogo from "../../gfx/red_logo.png";
 import * as _ from "lodash";
 import * as moment from "moment";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -230,7 +231,7 @@ class IncomingDeliveries extends React.Component<Props, State> {
     const itemGroup = await itemGroupService.findItemGroup(itemGroupId);
     const itemGroupDisplayName = itemGroup.displayName;
     const description = 'Vakuutan, että toimituksessa mainittujen marjojen alkuperämaa on Suomi, ja että liitetty kuva on otettu tämän toimituksen marjoista';
-    const luomuDescription = "Vakuutan, että toimituksessa mainittujen luomumarjojen alkuperämaa on Suomi, ja että liitetty kuva on otettu tämän toimituksen marjoista. Luomumarjat ovat myös neuvoston asetuksen (EY 834/2007) ja komission asetuksen (EY 889/2008) mukaisesti tuotettu tuote."
+    const luomuDescription = "Vakuutan, että toimituksessa mainittujen luomumarjojen alkuperämaa on Suomi, ja että liitetty kuva on otettu tämän toimituksen marjoista. Luomumarjat ovat myös neuvoston asetuksen (EY 834/2007) ja komission asetuksen (EY 889/2008) mukaisesti tuotettu tuote.";
     if (itemGroupDisplayName) {
       const isNatural = itemGroupDisplayName.toLowerCase().includes("luomu");
       this.setState({ deliveryDescription: isNatural ? luomuDescription : description });
@@ -352,7 +353,7 @@ class IncomingDeliveries extends React.Component<Props, State> {
           <Modal.Actions>
             <Button.Group>
               <Button onClick={() => this.setState({ confirmBeginDelivery: false })} color="red" inverted>Sulje</Button>
-              <Button onClick={() => this.handleBeginDelivery(this.state.deliveryProduct)} positive icon='check' labelPosition='right' content='Aloita toimitus' />
+              <AsyncButton onClick={async () => await this.handleBeginDelivery(this.state.deliveryProduct)} positive icon='check' labelPosition='right' content='Aloita toimitus' />
             </Button.Group>
           </Modal.Actions>
         </Modal>
@@ -364,7 +365,7 @@ class IncomingDeliveries extends React.Component<Props, State> {
           <Modal.Actions>
             <Button.Group>
               <Button onClick={() => this.setState({ confirmRemove: false })} color="red" inverted>Sulje</Button>
-              <Button onClick={() => this.handleRemoveDelivery(this.state.deliveryProduct)} color="red" icon='trash' labelPosition='right' content='Hylkää toimitus' />
+              <AsyncButton onClick={async () => await this.handleRemoveDelivery(this.state.deliveryProduct)} color="red" icon='trash' labelPosition='right' content='Hylkää toimitus' />
             </Button.Group>
           </Modal.Actions>
         </Modal>

@@ -15,6 +15,7 @@ import Select from "react-select/lib/Async";
 import { Link } from "react-router-dom";
 import strings from "src/localization/strings";
 import AppConfig, { AppConfigItemGroupOptions, AppConfigOptions } from "src/utils/AppConfig";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -420,7 +421,7 @@ class CreateContract extends React.Component<Props, State> {
           <Button.Group floated="right">
             <Button inverted color="red" as={Link} to={"/contractManagement"}>{strings.back}</Button>
             <Button.Or text="" />
-            <Button floated="right" color="red" loading={this.state.buttonLoading} onClick={this.handleFormSubmit}>{strings.save}</Button>
+            <AsyncButton floated="right" color="red" loading={ this.state.buttonLoading } onClick={ this.handleFormSubmit }>{ strings.save }</AsyncButton>
           </Button.Group>
         </Form>
       </BasicLayout>

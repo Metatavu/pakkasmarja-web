@@ -8,6 +8,7 @@ import { Header, Button, Input, Form, Dropdown, Modal } from "semantic-ui-react"
 import Api, { ItemGroup } from "pakkasmarja-client";
 import { Redirect } from "react-router";
 import BasicLayout from "../generic/BasicLayout";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -239,7 +240,7 @@ class CreateItemGroup extends React.Component<Props, State> {
         <Button.Group floated="right" className="modal-button-group" >
           <Button onClick={() => {this.setState({ redirect: true })}} color="black">Peruuta</Button>
           <Button.Or text="" />
-          <Button onClick={this.handleCreateClick} color="red">Lisää marjalaji</Button>
+          <AsyncButton onClick={ this.handleCreateClick } color="red">Lisää marjalaji</AsyncButton>
         </Button.Group>
         <Modal size="small" open={this.state.modalOpen} onClose={() => this.setState({ modalOpen: false })} closeIcon>
           <Modal.Content>{ this.state.modalText }</Modal.Content>

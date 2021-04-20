@@ -7,6 +7,7 @@ import { Button, Modal, Form, TextArea } from 'semantic-ui-react'
 import { Contract } from "pakkasmarja-client";
 import Api from "pakkasmarja-client";
 import strings from "src/localization/strings";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -86,7 +87,7 @@ class ContractRejectModal extends React.Component<Props, State> {
         </Modal.Content>
         <Modal.Actions>
           <Button.Group floated="right" className="contract-button-group" >
-            <Button onClick={this.rejectContract} inverted color="red">{strings.decline}</Button>
+            <AsyncButton onClick={ this.rejectContract } inverted color="red">{ strings.decline }</AsyncButton>
             <Button.Or text="" />
             <Button onClick={this.closeModal} color="black">{strings.cancel}</Button>
           </Button.Group>

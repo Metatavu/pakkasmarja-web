@@ -17,6 +17,7 @@ import fi from 'date-fns/esm/locale/fi'
 import IncomingDeliveryIcon from "../../gfx/incoming-delivery-icon.png";
 import "./styles.css"
 import CreateDeliveryModal from "./CreateDeliveryModal";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -235,7 +236,7 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
             </Modal.Content>
             <Modal.Actions>
               <Button onClick={() => this.setState({ proposalContactId: undefined, proposalProduct: undefined })} negative>Peruuta</Button>
-              <Button onClick={() => this.addProposal()} loading={this.state.addingProposal} positive icon='checkmark' labelPosition='right' content='Tee ehdotus' />
+              <AsyncButton onClick={ this.addProposal } loading={ this.state.addingProposal } positive icon='checkmark' labelPosition='right' content='Tee ehdotus' />
             </Modal.Actions>
           </Modal>
         }

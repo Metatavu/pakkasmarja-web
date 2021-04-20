@@ -13,6 +13,7 @@ import { Redirect } from "react-router";
 import { Link } from "react-router-dom";
 import strings from "src/localization/strings";
 import AppConfig, { AppConfigItemGroupOptions } from "src/utils/AppConfig";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -370,7 +371,7 @@ class EditContract extends React.Component<Props, State> {
           <Button.Group floated="right">
             <Button inverted color="red" as={Link} to={"/contractManagement"}>{strings.back}</Button>
             <Button.Or text="" />
-            <Button floated="right" color="red" loading={this.state.buttonLoading} onClick={this.handleFormEdit}>{strings.save}</Button>
+            <AsyncButton floated="right" color="red" loading={ this.state.buttonLoading } onClick={ this.handleFormEdit }>{ strings.save }</AsyncButton>
           </Button.Group>
         </Form>
       </BasicLayout>

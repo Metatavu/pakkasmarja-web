@@ -14,6 +14,7 @@ import CKEditor from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import { Link } from "react-router-dom";
 import strings from "src/localization/strings";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -279,7 +280,7 @@ class EditContractDocument extends React.Component<Props, State> {
         <Button.Group floated="right">
           <Button inverted color="red" as={Link} to={"/contractManagement"}>{strings.back}</Button>
           <Button.Or text="" />
-          <Button color="red" loading={this.state.buttonLoading} onClick={this.handleDocumentSubmit}>{strings.save}</Button>
+          <AsyncButton color="red" loading={ this.state.buttonLoading } onClick={ this.handleDocumentSubmit }>{ strings.save }</AsyncButton>
         </Button.Group>
       </BasicLayout>
     );

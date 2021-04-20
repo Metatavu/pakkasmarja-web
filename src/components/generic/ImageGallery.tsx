@@ -8,6 +8,7 @@ import { Modal, Divider, Header, Image, Loader, Grid, Button } from "semantic-ui
 import Api, { PublicFile } from "pakkasmarja-client";
 import strings from "src/localization/strings";
 import { FileService } from "src/api/file.service";
+import AsyncButton from "./asynchronous-button";
 
 /**
  * Interface combining file and data
@@ -93,9 +94,9 @@ class ImageGallery extends React.Component<Props, State> {
    * 
    * @param url url
    */
-  private onImageSelected = (url: string) => {
+  private onImageSelected = async (url: string) => {
     this.setState({ selectedImage: undefined });
-    this.props.onImageSelected(url);
+    await this.props.onImageSelected(url);
   }
 
   /**
@@ -132,13 +133,13 @@ class ImageGallery extends React.Component<Props, State> {
           <Button.Group floated="right" className="contract-button-group" >
             <Button onClick={this.props.onCloseModal} color="black">{strings.close}</Button>
             <Button.Or text="" />
-            <Button 
-              onClick={() => {
-                this.onImageSelected(this.state.selectedImage ? this.state.selectedImage.url : "")
+            <AsyncButton
+              onClick={async () => {
+                await this.onImageSelected(this.state.selectedImage ? this.state.selectedImage.url : "");
               }}
               color="red">
               {strings.save}
-            </Button>
+            </AsyncButton>
           </Button.Group>
         </Modal.Content>
       </Modal>

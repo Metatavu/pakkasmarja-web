@@ -164,12 +164,12 @@ class CreateNews extends React.Component<Props, State> {
         <ImageGallery 
           modalOpen={this.state.galleryOpen}
           onCloseModal={() => this.setState({ galleryOpen: false })}
-          onImageSelected={(url: string) => this.onImageSelected(url) }
+          onImageSelected={async (url: string) => await this.onImageSelected(url) }
         />
         <UploadNewsImageModal 
           modalOpen={this.state.uploadModalOpen}
           onCloseModal={() => this.setState({ uploadModalOpen: false })}
-          onImageSelected={(url: string) => this.onImageSelected(url) }
+          onImageSelected={async (url: string) => await this.onImageSelected(url) }
         />
       </BasicLayout>
     );

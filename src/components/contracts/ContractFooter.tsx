@@ -3,6 +3,7 @@ import "../../styles/common.css";
 import { Button } from "semantic-ui-react";
 import { Redirect } from "react-router-dom";
 import strings from "src/localization/strings";
+import AsyncButton from "../generic/asynchronous-button";
 
 
 /**
@@ -58,8 +59,8 @@ export default class ContractFooter extends React.Component<Props, State> {
         }
         {
           this.props.isActiveContract &&
-          <Button.Group floated="right" >
-            <Button onClick={this.props.downloadContractPdf} color="red">{strings.downloadContractAsPDF}</Button>
+          <Button.Group floated="right">
+            <AsyncButton onClick={ this.props.downloadContractPdf } color="red">{ strings.downloadContractAsPDF }</AsyncButton>
             <Button.Or text="" />
             <Button onClick={() => this.setState({ redirect: true })} color="black">{strings.back}</Button>
           </Button.Group>
@@ -69,7 +70,7 @@ export default class ContractFooter extends React.Component<Props, State> {
           <React.Fragment>
             <p style={{ color: "red", textAlign: "right", fontSize: "1.2em" }}>{this.props.validationErrorText}</p>
             <Button.Group floated="right" >
-              <Button onClick={this.props.acceptContract} disabled={(!this.props.canAccept || !!this.props.validationErrorText )} color="red">{this.props.approveButtonText}</Button>
+              <AsyncButton onClick={ this.props.acceptContract } disabled={ (!this.props.canAccept || !!this.props.validationErrorText ) } color="red">{ this.props.approveButtonText }</AsyncButton>
               <Button.Or text="" />
               <Button onClick={this.props.declineContract} inverted color="red">{strings.decline}</Button>
               <Button.Or text="" />

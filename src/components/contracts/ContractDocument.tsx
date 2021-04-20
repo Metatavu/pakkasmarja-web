@@ -46,7 +46,6 @@ class ContractDocument extends React.Component<Props, State> {
       return;
     }
     this.downloadContractDocumentHtml();
-
   }
 
   /**

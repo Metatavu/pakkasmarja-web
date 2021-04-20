@@ -17,6 +17,7 @@ import { FileService } from "src/api/file.service";
 import Lightbox from 'react-image-lightbox';
 import 'react-image-lightbox/style.css';
 import DeliveryNoteModal from "./DeliveryNoteModal";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -578,7 +579,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
                         <p style={{ padding: 20 }}> {deliveryNote.text}</p>
                       </div>
                       <div style={{ display: "flex", flex: 0.3, minHeight: "100px", alignItems: "center" }}>
-                        <Button onClick={() => this.removeNote(deliveryNote, i)} color="black">Poista huomio</Button>
+                        <AsyncButton onClick={async () => await this.removeNote(deliveryNote, i)} color="black">Poista huomio</AsyncButton>
                       </div>
                     </div>
                   </React.Fragment>
@@ -663,7 +664,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
   private renderSubmitButton() {
     if (this.props.delivery.status == "DONE") {
       return <Button.Group floated="right">
-        <Button disabled={!this.isValid()} color="black" onClick={this.handleDeliveryReject} type='submit'>Hylkää toimitus</Button>
+        <AsyncButton disabled={ !this.isValid() } color="black" onClick={ this.handleDeliveryReject } type='submit'>Hylkää toimitus</AsyncButton>
         <Button disabled floated="right" color="grey" type='submit'>Toimitus on jo hyväksytty</Button>;
       </Button.Group>
     }
@@ -674,21 +675,21 @@ class ManageDeliveryModal extends React.Component<Props, State> {
 
     if (this.props.delivery.status == "PROPOSAL") {
       return <Button.Group floated="right">
-        <Button disabled={!this.isValid()} color="black" onClick={this.handleDeliveryReject} type='submit'>Hylkää ehdotus</Button>
-        <Button disabled={!this.isValid()} color="green" onClick={this.handleDeliverySave} type='submit'>Muokkaa ehdotusta</Button>
-        <Button disabled={!this.isValid()} color="red" onClick={this.handleDeliveryAccept} type='submit'>Hyväksy toimitus</Button>
+        <AsyncButton disabled={ !this.isValid() } color="black" onClick={ this.handleDeliveryReject } type='submit'>Hylkää ehdotus</AsyncButton>
+        <AsyncButton disabled={ !this.isValid() } color="green" onClick={ this.handleDeliverySave } type='submit'>Muokkaa ehdotusta</AsyncButton>
+        <AsyncButton disabled={ !this.isValid() } color="red" onClick={ this.handleDeliveryAccept } type='submit'>Hyväksy toimitus</AsyncButton>
       </Button.Group>;
     }
 
     if (this.props.delivery.status == "NOT_ACCEPTED") {
       return <Button.Group floated="right">
-        <Button disabled={!this.isValid()} color="red" onClick={this.handleDeliveryAccept} type='submit'>Hyväksy toimitus</Button>
+        <AsyncButton disabled={ !this.isValid() } color="red" onClick={ this.handleDeliveryAccept } type='submit'>Hyväksy toimitus</AsyncButton>
       </Button.Group>;
     }
 
     return <Button.Group floated="right">
-      <Button disabled={!this.isValid()} color="black" onClick={this.handleDeliveryReject} type='submit'>Hylkää toimitus</Button>
-      <Button disabled={!this.isValid()} color="red" onClick={this.handleDeliveryAccept} type='submit'>Hyväksy toimitus</Button>
+      <AsyncButton disabled={ !this.isValid() } color="black" onClick={ this.handleDeliveryReject } type='submit'>Hylkää toimitus</AsyncButton>
+      <AsyncButton disabled={ !this.isValid() } color="red" onClick={ this.handleDeliveryAccept } type='submit'>Hyväksy toimitus</AsyncButton>
     </Button.Group>;
   }
 
