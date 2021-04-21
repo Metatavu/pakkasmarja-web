@@ -229,7 +229,12 @@ class CreateAndUpdateItemGroupPriceModal extends React.Component<Props, State> {
           <Button.Group floated="right" className="modal-button-group" >
             <Button onClick={this.closeModal} color="black">Sulje</Button>
             <Button.Or text="" />
-            <AsyncButton onClick={this.state.edit ? this.handleUpdatePrice : this.handleCreatePrice} color="red">{this.state.edit ? "Tallenna muutokset" : "Lisää uusi hinta"}</AsyncButton>
+            <AsyncButton
+              onClick={ this.state.edit ? this.handleUpdatePrice : this.handleCreatePrice }
+              color="red"
+            >
+              { this.state.edit ? "Tallenna muutokset" : "Lisää uusi hinta" }
+            </AsyncButton>
           </Button.Group>
         </Modal.Content>
       </Modal>
