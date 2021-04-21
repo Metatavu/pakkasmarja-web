@@ -944,7 +944,10 @@ class OpeningHoursScreen extends React.Component<Props, State> {
                 { strings.deleteHours }
                 <Icon style={{ marginRight: "1rem", marginLeft: "1rem" }} name="trash" />
               </AsyncButton>
-              <AsyncButton style={{ background: "transparent", flex: 1, padding: 0 }} onClick={ async () => { this.addOpeningHours(openingHourWeekday, openingHourPeriod) } }>
+              <AsyncButton
+                style={{ background: "transparent", flex: 1, padding: 0 }}
+                onClick={ async () => this.addOpeningHours(openingHourWeekday, openingHourPeriod) }
+              >
                 { strings.addNewHours }
                 <Icon style={{ marginRight: "1rem", marginLeft: "1rem" }} name="add circle" />
               </AsyncButton>
