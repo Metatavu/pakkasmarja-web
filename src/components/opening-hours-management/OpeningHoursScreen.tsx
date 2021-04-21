@@ -566,7 +566,7 @@ class OpeningHoursScreen extends React.Component<Props, State> {
             endDate={ openingHourPeriod.endDate }
           />
         </Form.Field>
-        <Form.Field onClick={ async () => { this.deleteOpeningHoursBlock(openingHourPeriod, openingHourPeriod.id) } } style={{ cursor: "pointer" }}>
+        <Form.Field onClick={ async () => this.deleteOpeningHoursBlock(openingHourPeriod, openingHourPeriod.id) } style={{ cursor: "pointer" }}>
           <Icon name="trash" />
         </Form.Field>
       </>
