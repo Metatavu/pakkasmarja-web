@@ -579,7 +579,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
                         <p style={{ padding: 20 }}> {deliveryNote.text}</p>
                       </div>
                       <div style={{ display: "flex", flex: 0.3, minHeight: "100px", alignItems: "center" }}>
-                        <AsyncButton onClick={async () => await this.removeNote(deliveryNote, i)} color="black">Poista huomio</AsyncButton>
+                        <AsyncButton onClick={ async () => await this.removeNote(deliveryNote, i) } color="black">Poista huomio</AsyncButton>
                       </div>
                     </div>
                   </React.Fragment>
