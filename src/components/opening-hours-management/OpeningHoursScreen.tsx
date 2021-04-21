@@ -685,7 +685,7 @@ class OpeningHoursScreen extends React.Component<Props, State> {
                   <AsyncButton
                     style={{ fontSize: "0.8rem" }}
                     color="red"
-                    onClick={ async () => { await this.deleteExceptionHoursBlock(openingHourException.id) } }
+                    onClick={ async () => await this.deleteExceptionHoursBlock(openingHourException.id) }
                   >
                     { strings.deleteBlock }
                   </AsyncButton>
