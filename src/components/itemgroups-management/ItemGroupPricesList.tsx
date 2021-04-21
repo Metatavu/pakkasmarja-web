@@ -187,7 +187,7 @@ class ItemGroupPricesList extends React.Component<Props, State> {
                       <Button.Group className="contract-button-group" >
                         <Button onClick={() => this.setState({ edit: true, itemGroupPriceId: itemGroupPrice.id, createModal: true })} color="red">Muokkaa</Button>
                         <Button.Or text="" />
-                        <AsyncButton onClick={async () => await this.handleDelete(itemGroupPrice.id || "")} color="black">Poista</AsyncButton>
+                        <AsyncButton onClick={ async () => await this.handleDelete(itemGroupPrice.id || "") } color="black">Poista</AsyncButton>
                       </Button.Group>
                     </Table.Cell>
                   </Table.Row>
