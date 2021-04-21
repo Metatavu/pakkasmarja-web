@@ -270,7 +270,11 @@ class ContractList extends React.Component<Props, State> {
             contractDatas={this.state.freshContractsPast}
           />
         }
-        <AsyncButton onClick={ async () => await this.onProposeNewContractClick("FRESH")} style={{ borderRadius: 0 } } color="red">
+        <AsyncButton
+          onClick={ async () => await this.onProposeNewContractClick("FRESH") }
+          style={{ borderRadius: 0 } }
+          color="red"
+        >
           {strings.suggestNewFreshContract}
         </AsyncButton>
         <ContractProposalModal
