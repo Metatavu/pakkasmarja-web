@@ -682,7 +682,13 @@ class OpeningHoursScreen extends React.Component<Props, State> {
             <Form>
                 <Form.Field style={{ display: "flex", marginBottom: "2rem", marginRight: "1.5rem" }}>
                   <Header style={{ marginRight: "1rem" }}>{ this.formatDate(openingHourException.exceptionDate) }</Header>
-                  <AsyncButton style={{ fontSize: "0.8rem" }} color="red" onClick={ async () => { await this.deleteExceptionHoursBlock(openingHourException.id) } }>{ strings.deleteBlock }</AsyncButton>
+                  <AsyncButton
+                    style={{ fontSize: "0.8rem" }}
+                    color="red"
+                    onClick={ async () => { await this.deleteExceptionHoursBlock(openingHourException.id) } }
+                  >
+                    { strings.deleteBlock }
+                  </AsyncButton>
                 </Form.Field>
                 <Form.Field>
                   <AsyncButton style={{ background: "transparent" }} onClick={ async () => { await this.deleteExceptionHours(openingHourException, openingHourException.id) } }>
