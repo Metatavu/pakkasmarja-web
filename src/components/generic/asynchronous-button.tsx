@@ -52,11 +52,7 @@ class AsyncButton extends React.Component<Props, State> {
   /**
    * Method for handling button press
    */
-  private handleClick = () => {
-    this.handleAsync();
-  }
-
-  private handleAsync = async () => {
+  private handleClick = async () => {
     const { onClick } = this.props;
 
     if (!onClick) {
@@ -73,7 +69,6 @@ class AsyncButton extends React.Component<Props, State> {
 
     this.setState({ loading: false });
   }
-
 }
 
 export default AsyncButton;
