@@ -224,7 +224,12 @@ class CreateAndEditQuality extends React.Component<Props, State> {
               inverted
               color="red">Takaisin</Button>
             <Button.Or text="" />
-            <AsyncButton color="red" disabled={!this.isValid()} onClick={ this.state.selectedDeliveryQualityId === "new" ? this.handleCreateClick : this.handleUpdateClick } type='submit'>
+            <AsyncButton
+              color="red"
+              disabled={ !this.isValid() }
+              onClick={ this.state.selectedDeliveryQualityId === "new" ? this.handleCreateClick : this.handleUpdateClick }
+              type='submit'
+            >
               {this.state.selectedDeliveryQualityId === "new" ? "Luo uusi laatu" : "Muokkaa laatua"}
             </AsyncButton>
           </Button.Group>
