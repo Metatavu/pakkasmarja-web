@@ -371,7 +371,13 @@ class IncomingDeliveries extends React.Component<Props, State> {
           <Modal.Actions>
             <Button.Group>
               <Button onClick={() => this.setState({ confirmRemove: false })} color="red" inverted>Sulje</Button>
-              <AsyncButton onClick={async () => await this.handleRemoveDelivery(this.state.deliveryProduct)} color="red" icon='trash' labelPosition='right' content='Hylkää toimitus' />
+              <AsyncButton
+                onClick={async () => await this.handleRemoveDelivery(this.state.deliveryProduct) }
+                color="red"
+                icon='trash'
+                labelPosition='right'
+                content='Hylkää toimitus'
+              />
             </Button.Group>
           </Modal.Actions>
         </Modal>
