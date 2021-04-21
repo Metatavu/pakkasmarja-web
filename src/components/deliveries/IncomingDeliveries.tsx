@@ -353,7 +353,13 @@ class IncomingDeliveries extends React.Component<Props, State> {
           <Modal.Actions>
             <Button.Group>
               <Button onClick={() => this.setState({ confirmBeginDelivery: false })} color="red" inverted>Sulje</Button>
-              <AsyncButton onClick={async () => await this.handleBeginDelivery(this.state.deliveryProduct)} positive icon='check' labelPosition='right' content='Aloita toimitus' />
+              <AsyncButton
+                onClick={async () => await this.handleBeginDelivery(this.state.deliveryProduct) }
+                positive
+                icon='check'
+                labelPosition='right'
+                content='Aloita toimitus'
+              />
             </Button.Group>
           </Modal.Actions>
         </Modal>
