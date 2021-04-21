@@ -937,7 +937,10 @@ class OpeningHoursScreen extends React.Component<Props, State> {
               openingHourWeekday.hours.map((hours, index) => this.renderHoursRow(openingHourPeriod, index, hours, false, openingHourWeekday))
             }
             <Form.Field style={{ display: "flex", flexDirection: "row" }}>
-              <AsyncButton style={{ background: "transparent", flex: 1, padding: 0 }} onClick={ async () => { this.deleteOpeningHours(openingHourWeekday, openingHourPeriod) } }>
+              <AsyncButton
+                style={{ background: "transparent", flex: 1, padding: 0 }}
+                onClick={ async () => this.deleteOpeningHours(openingHourWeekday, openingHourPeriod) }
+              >
                 { strings.deleteHours }
                 <Icon style={{ marginRight: "1rem", marginLeft: "1rem" }} name="trash" />
               </AsyncButton>
