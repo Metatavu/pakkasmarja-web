@@ -4,6 +4,7 @@ import { ItemGroup } from "pakkasmarja-client";
 import "../../styles/common.css";
 import "./styles.css";
 import strings from "src/localization/strings";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -117,7 +118,7 @@ export default class ContractProposalModal extends React.Component<Props, State>
             </Form.Field>
           </Form>
           <Button.Group floated="right" className="contract-button-group" >
-            <Button onClick={this.props.sendContractProposalClicked} color="red">{strings.send}</Button>
+            <AsyncButton onClick={ this.props.sendContractProposalClicked } color="red">{ strings.send }</AsyncButton>
             <Button.Or text="" />
             <Button onClick={this.closeModal} color="black">{strings.close}</Button>
           </Button.Group>

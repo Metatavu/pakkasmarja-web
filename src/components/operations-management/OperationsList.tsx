@@ -10,6 +10,7 @@ import { Table, Header, Dimmer, Loader, Grid, Button, Icon, Select, DropdownItem
 import * as moment from "moment";
 import { Link } from "react-router-dom";
 import ErrorMessage from "../generic/ErrorMessage";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -130,7 +131,7 @@ class OperationsList extends React.Component<Props, State> {
               <Select style={{ width: "100%" }} placeholder={ "Valitse" } options={ typeOptions } onChange={ this.onStartOperationChange }/>
             </Grid.Column>
             <Grid.Column floated="right" width="3">            
-              <Button fluid disabled={ !this.state.startOperation } onClick={() => this.onActionStartClick() }> Aloita </Button>
+              <AsyncButton fluid disabled={ !this.state.startOperation } onClick={ this.onActionStartClick }> Aloita </AsyncButton>
             </Grid.Column>
           </Grid.Row>
         </Grid>

@@ -10,6 +10,7 @@ import Api, { ItemGroupDocumentTemplate, ItemGroup } from "pakkasmarja-client";
 import { Button, Header, Divider, Dimmer, Loader, TextArea } from "semantic-ui-react";
 import { Redirect } from "react-router";
 import { Link } from "react-router-dom";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -205,7 +206,7 @@ class EditContractDocument extends React.Component<Props, State> {
         <Button.Group floated="right">
           <Button inverted color="red" as={Link} to={"/itemGroupsManagement"}>Takaisin</Button>
           <Button.Or text="" />
-          <Button color="red" loading={this.state.buttonLoading} onClick={this.handleDocumentSubmit}>Tallenna muutokset</Button>
+          <AsyncButton color="red" loading={ this.state.buttonLoading } onClick={ this.handleDocumentSubmit }>Tallenna muutokset</AsyncButton>
         </Button.Group>
       </BasicLayout>
     );

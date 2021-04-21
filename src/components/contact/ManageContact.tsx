@@ -9,6 +9,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import 'react-image-lightbox/style.css';
 import { Form, Input, Button, Accordion, Icon, Dropdown, Divider, Modal } from "semantic-ui-react";
 import Api, { Contact, Address } from "pakkasmarja-client";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -289,7 +290,7 @@ class ManageContact extends React.Component<Props, State> {
           </Accordion.Content>
         </Accordion>
         <Divider hidden />
-        <Button color="red" floated="right" onClick={this.handleSave} disabled={ this.detectChanges() }>Tallenna</Button>
+        <AsyncButton color="red" floated="right" onClick={ this.handleSave } disabled={ this.detectChanges() }>Tallenna</AsyncButton>
         <Modal size="tiny" open={this.state.openModal} onClose={() => this.setState({ openModal: false })}>
           <Modal.Content>
             <p>{this.state.modalText}</p>

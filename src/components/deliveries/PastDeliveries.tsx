@@ -15,6 +15,7 @@ import DatePicker, { registerLocale } from "react-datepicker";
 import fi from 'date-fns/esm/locale/fi';
 import FileUtils from "src/utils/FileUtils";
 import { PDFService } from "src/api/pdf.service";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -187,10 +188,10 @@ class PastDeliveries extends React.Component<Props, State> {
             <Icon name='remove' />
             Sulje
             </Button>
-          <Button color="green" disabled={!this.isValid()} onClick={this.downloadDeliveriesReport} >
+          <AsyncButton color="green" disabled={ !this.isValid() } onClick={ this.downloadDeliveriesReport }>
             <Icon name='checkmark' />
             Lataa raportti
-          </Button>
+          </AsyncButton>
         </Modal.Actions>
       </Modal>
     );

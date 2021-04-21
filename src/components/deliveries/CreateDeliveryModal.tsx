@@ -15,6 +15,7 @@ import * as moment from "moment";
 import { FileService } from "src/api/file.service";
 import Lightbox from "react-image-lightbox";
 import DatePicker, { registerLocale } from "react-datepicker";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -545,9 +546,9 @@ class CreateDeliveryModal extends React.Component<Props, State> {
               }) : <Divider />
             }
             <Button color="red" inverted onClick={() => this.setState({ modalOpen: true })}>{`${strings.addNote}`}</Button>
-            <Button color="red" disabled={!this.isValid()} floated="right" onClick={this.handleDeliverySubmit} type='submit'>
+            <AsyncButton color="red" disabled={ !this.isValid() } floated="right" onClick={ this.handleDeliverySubmit } type='submit'>
               Tallenna
-            </Button>
+            </AsyncButton>
           </Form>
           {this.state.openImage &&
             <Lightbox

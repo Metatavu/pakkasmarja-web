@@ -10,6 +10,7 @@ import { Checkbox, Input, Button, Dropdown, Container, Header, Divider, Form, Mo
 import "./styles.css";
 import { Link } from "react-router-dom";
 import strings from "src/localization/strings";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -213,7 +214,7 @@ class ContractTerms extends React.Component<Props, State> {
             </Form.Field>
           </Form>
           <Button.Group floated="right" className="contract-button-group" >
-            <Button onClick={this.signContractClicked} color="red">{strings.sign}</Button>
+            <AsyncButton onClick={ this.signContractClicked } color="red">{ strings.sign }</AsyncButton>
             <Button.Or text="" />
             <Button as={Link} to={`/contracts/${this.state.contract ? this.state.contract.id : ""}`} color="black">{strings.back}</Button>
           </Button.Group>

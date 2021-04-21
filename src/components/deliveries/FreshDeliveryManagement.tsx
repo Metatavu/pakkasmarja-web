@@ -21,6 +21,7 @@ import StorageDataTable from "./StorageTable";
 import TableDataUtils from "../../utils/table-data-utils";
 import SalesForecastDataTable from "./SalesForecastTable";
 import AppConfig from "../../utils/AppConfig";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -252,7 +253,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
             </Modal.Content>
             <Modal.Actions>
               <Button onClick={() => this.setState({ proposalContactId: undefined, proposalProduct: undefined })} negative>Peruuta</Button>
-              <Button onClick={() => this.addProposal()} loading={this.state.addingProposal} positive icon='checkmark' labelPosition='right' content='Tee ehdotus' />
+              <AsyncButton onClick={ this.addProposal } loading={ this.state.addingProposal } positive icon='checkmark' labelPosition='right' content='Tee ehdotus' />
             </Modal.Actions>
           </Modal>
         }

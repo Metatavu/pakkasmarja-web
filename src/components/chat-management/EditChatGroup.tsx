@@ -17,6 +17,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import CKEditor from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -221,7 +222,7 @@ class EditChatGroup extends React.Component<Props, State> {
             <Button.Group floated="right">
               <Button inverted color="red" as={Link} to={"/chatManagement"}> {strings.back} </Button>
               <Button.Or text="" />
-              <Button color="red" onClick={this.onSaveClick}> {strings.save} </Button>
+              <AsyncButton color="red" onClick={ this.onSaveClick }>{ strings.save }</AsyncButton>
             </Button.Group>
           </Form.Field>
         </Form>

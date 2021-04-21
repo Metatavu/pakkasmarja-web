@@ -15,6 +15,7 @@ import ImageGallery from "../generic/ImageGallery";
 import UploadNewsImageModal from "./UploadNewsImageModal";
 import { FileService } from "src/api/file.service";
 import strings from "src/localization/strings";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface to component props
@@ -57,8 +58,7 @@ class CreateNews extends React.Component<Props, State> {
   /**
    * Handle form submit
    */
-  private handleSubmit = async (e: React.SyntheticEvent) => {
-    e.preventDefault();
+  private handleSubmit = async () => {
 
     if (!this.props.keycloak || !this.props.keycloak.token ) {
       return;
@@ -136,19 +136,19 @@ class CreateNews extends React.Component<Props, State> {
               }}
             />
           </Form.Field>
-          <Button floated="right" color="red" style={{ marginTop: "10px" }} onClick={this.handleSubmit} type='submit'>
-            {strings.save}
-          </Button>
+          <AsyncButton floated="right" color="red" style={{ marginTop: "10px" }} onClick={ this.handleSubmit }>
+            { strings.save }
+          </AsyncButton>
         </Form>
         <ImageGallery 
           modalOpen={this.state.galleryOpen}
           onCloseModal={() => this.setState({ galleryOpen: false })}
-          onImageSelected={(url: string) => this.onImageSelected(url) }
+          onImageSelected={async (url: string) => await this.onImageSelected(url) }
         />
-        <UploadNewsImageModal 
+        <UploadNewsImageModal
           modalOpen={this.state.uploadModalOpen}
           onCloseModal={() => this.setState({ uploadModalOpen: false })}
-          onImageSelected={(url: string) => this.onImageSelected(url) }
+          onImageSelected={async (url: string) => await this.onImageSelected(url) }
         />
       </BasicLayout>
     );

@@ -19,6 +19,7 @@ import strings from "src/localization/strings";
 import { PDFService } from "src/api/pdf.service";
 import FileUtils from "src/utils/FileUtils";
 import XlsxContractsPreview from "./xlsx-contract-preview";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -265,7 +266,7 @@ class ContractManagementList extends React.Component<Props, State> {
 
     return (
       <>
-        <Button onClick={ this.saveTable } color="red">{ strings.save }</Button>
+        <AsyncButton onClick={ this.saveTable } color="red">{ strings.save }</AsyncButton>
         <Button onClick={ this.toggleTableEditMode }>{ strings.cancel }</Button>
       </>
     );
@@ -866,7 +867,7 @@ class ContractManagementList extends React.Component<Props, State> {
               {this.renderDropDown(statusOptions, this.state.filters.status || "", this.handleStatusChange, "Tila")}
             </Form.Field>
             <Form.Field>
-              <Button onClick={this.getXlsx} color="grey">{strings.downloadXLSX}</Button>
+              <AsyncButton onClick={ this.getXlsx } color="grey">{ strings.downloadXLSX }</AsyncButton>
               <Button onClick={ this.openFileListing } color="grey">
                 { strings.importXlsx }
               </Button>

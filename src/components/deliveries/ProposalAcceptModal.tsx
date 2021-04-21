@@ -10,6 +10,7 @@ import strings from "src/localization/strings";
 import Lightbox from "react-image-lightbox";
 import * as moment from "moment";
 import { FileService } from "src/api/file.service";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -290,9 +291,9 @@ class ProposalAcceptModal extends React.Component<Props, State> {
             <Button.Group floated="right" style={{ marginBottom: 10, marginTop: 10 }} >
               <Button onClick={this.closeModal} inverted color="red">{strings.close}</Button>
               <Button.Or text="" />
-              <Button onClick={this.handleProposalDecline} color="black">Hylkää ehdotus</Button>
+              <AsyncButton onClick={ this.handleProposalDecline } color="black">Hylkää ehdotus</AsyncButton>
               <Button.Or text="" />
-              <Button onClick={this.handleProposalAccept} color="red">{strings.accept} ehdotus</Button>
+              <AsyncButton onClick={ this.handleProposalAccept } color="red">{strings.accept} ehdotus</AsyncButton>
             </Button.Group>
           </Modal.Content>
         }
