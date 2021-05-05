@@ -13,6 +13,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import fi from 'date-fns/esm/locale/fi';
 import * as moment from "moment";
 import Api, { OpeningHourPeriod, DeliveryPlace, WeekdayType, OpeningHourWeekday, OpeningHourException, OpeningHourInterval } from "pakkasmarja-client";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -286,7 +287,7 @@ class OpeningHoursScreen extends React.Component<Props, State> {
             </Form.Group>
             <Form.Field style={{ display: "flex", justifyContent: "center" }}>
               <Button onClick={ this.cancelExceptionHoursDialog }>{ strings.cancel }</Button>
-              <Button onClick={ this.addNewExceptionHoursBlock } color="red">{ strings.accept }</Button>
+              <AsyncButton onClick={ this.addNewExceptionHoursBlock } color="red">{ strings.accept }</AsyncButton>
             </Form.Field>
           </Form>
         </Modal.Content>
@@ -325,9 +326,9 @@ class OpeningHoursScreen extends React.Component<Props, State> {
       <>
         <Grid padded style={{ display: "flex", justifyContent: "space-between" }}>
           <Header size="large" style={{ marginTop: 20, marginLeft: 20 }}>{ strings.defaultPeriods }</Header>
-          <Button style={{ borderRadius: 0 }} color="red" onClick={ this.addNewOpeningHoursBlock }>
+          <AsyncButton style={{ borderRadius: 0 }} color="red" onClick={ this.addNewOpeningHoursBlock }>
             { strings.newOpeningHoursPeriod }
-          </Button>
+          </AsyncButton>
         </Grid>
         { this.renderOpeningHoursBlocks() }
         <Grid style={{ height: "5rem" }}></Grid>
@@ -565,7 +566,7 @@ class OpeningHoursScreen extends React.Component<Props, State> {
             endDate={ openingHourPeriod.endDate }
           />
         </Form.Field>
-        <Form.Field onClick={ this.deleteOpeningHoursBlock(openingHourPeriod, openingHourPeriod.id) } style={{ cursor: "pointer" }}>
+        <Form.Field onClick={ async () => this.deleteOpeningHoursBlock(openingHourPeriod, openingHourPeriod.id) } style={{ cursor: "pointer" }}>
           <Icon name="trash" />
         </Form.Field>
       </>
@@ -624,7 +625,7 @@ class OpeningHoursScreen extends React.Component<Props, State> {
   /**
    * Deletes opening hours block
    */
-  private deleteOpeningHoursBlock = (openingHourPeriod: OpeningHourPeriod, openingHourExceptionId?: string) => async (event: any) => {
+  private deleteOpeningHoursBlock = async (openingHourPeriod: OpeningHourPeriod, openingHourExceptionId?: string) => {
     const { openingHourPeriods, deliveryPlaceId } = this.state;
     const { keycloak } = this.props;
     if (!keycloak || !deliveryPlaceId || !openingHourExceptionId) {
@@ -648,7 +649,7 @@ class OpeningHoursScreen extends React.Component<Props, State> {
   /**
    * Deletes exception hours block
    */
-  private deleteExceptionHoursBlock = (openingHourExceptionId?: string) => async (event: any) => {
+  private deleteExceptionHoursBlock = async (openingHourExceptionId?: string) => {
     const { openingHourExceptions, deliveryPlaceId } = this.state;
     const { keycloak } = this.props;
     if (!keycloak || !deliveryPlaceId || !openingHourExceptionId) {
@@ -681,11 +682,29 @@ class OpeningHoursScreen extends React.Component<Props, State> {
             <Form>
                 <Form.Field style={{ display: "flex", marginBottom: "2rem", marginRight: "1.5rem" }}>
                   <Header style={{ marginRight: "1rem" }}>{ this.formatDate(openingHourException.exceptionDate) }</Header>
-                  <Button style={{ fontSize: "0.8rem" }} color="red" onClick={ this.deleteExceptionHoursBlock(openingHourException.id) }>{ strings.deleteBlock }</Button>
+                  <AsyncButton
+                    style={{ fontSize: "0.8rem" }}
+                    color="red"
+                    onClick={ async () => await this.deleteExceptionHoursBlock(openingHourException.id) }
+                  >
+                    { strings.deleteBlock }
+                  </AsyncButton>
                 </Form.Field>
                 <Form.Field>
-                  <span style={{ cursor: "pointer" }} onClick={ this.deleteExceptionHours(openingHourException, openingHourException.id) }>{ strings.deleteHours }<Icon style={{ marginRight: "1rem", marginLeft: "1rem" }} name="trash" /></span>
-                  <span style={{ cursor: "pointer" }} onClick={ this.addExceptionHours(openingHourException, openingHourException.id) }>{ strings.addNewHours }<Icon style={{ marginRight: "1rem", marginLeft: "1rem" }} name="add circle" /></span>
+                  <AsyncButton
+                    style={{ background: "transparent" }}
+                    onClick={ async () => await this.deleteExceptionHours(openingHourException, openingHourException.id) }
+                  >
+                    { strings.deleteHours }
+                    <Icon style={{ marginRight: "1rem", marginLeft: "1rem" }} name="trash" />
+                  </AsyncButton>
+                  <AsyncButton
+                    style={{ background: "transparent" }}
+                    onClick={ async () => await this.addExceptionHours(openingHourException, openingHourException.id) }
+                  >
+                    { strings.addNewHours }
+                    <Icon style={{ marginRight: "1rem", marginLeft: "1rem" }} name="add circle" />
+                  </AsyncButton>
                 </Form.Field>
                 {
                   openingHourException.hours.map((hour: OpeningHourInterval, index: number) => {
@@ -722,9 +741,10 @@ class OpeningHoursScreen extends React.Component<Props, State> {
    *
    * @param openingHourException opening hour exception
    */
-  private addExceptionHours = (openingHourException: OpeningHourException, openingHourExceptionId?: string) => async (event: any) => {
+  private addExceptionHours = async (openingHourException: OpeningHourException, openingHourExceptionId?: string) => {
     const { keycloak } = this.props;
     const { openingHourExceptions, deliveryPlaceId } = this.state;
+
     if (!keycloak || !deliveryPlaceId || !openingHourExceptionId) {
       return;
     }
@@ -770,7 +790,7 @@ class OpeningHoursScreen extends React.Component<Props, State> {
    * 
    * @param weekDay week day
    */
-  private deleteExceptionHours = (openingHourException: OpeningHourException, openingHourExceptionId?: string) => async (event: any) => {
+  private deleteExceptionHours = async (openingHourException: OpeningHourException, openingHourExceptionId?: string) => {
     const { keycloak } = this.props;
     const { openingHourExceptions, deliveryPlaceId } = this.state;
     if (!keycloak || !deliveryPlaceId || !openingHourExceptionId) {
@@ -806,7 +826,7 @@ class OpeningHoursScreen extends React.Component<Props, State> {
   /**
    * Adds opening hours to the item
    */
-  private addOpeningHours = (openingHourWeekday: OpeningHourWeekday, openingHourPeriod: OpeningHourPeriod) => async (event: any) => {
+  private addOpeningHours = async (openingHourWeekday: OpeningHourWeekday, openingHourPeriod: OpeningHourPeriod) => {
     const { keycloak } = this.props;
     const { openingHourPeriods, deliveryPlaceId } = this.state;
     if (!keycloak || !deliveryPlaceId || !openingHourPeriod.id) {
@@ -859,7 +879,7 @@ class OpeningHoursScreen extends React.Component<Props, State> {
   /**
    * Deletes opening hour from the row 
    */
-  private deleteOpeningHours = (openingHourWeekday: OpeningHourWeekday, openingHourPeriod: OpeningHourPeriod) => async (event: any) => {
+  private deleteOpeningHours = async (openingHourWeekday: OpeningHourWeekday, openingHourPeriod: OpeningHourPeriod) => {
     const { keycloak } = this.props;
     const { openingHourPeriods, deliveryPlaceId } = this.state;
     if (!keycloak || !deliveryPlaceId || !openingHourPeriod.id) {
@@ -916,9 +936,21 @@ class OpeningHoursScreen extends React.Component<Props, State> {
             {
               openingHourWeekday.hours.map((hours, index) => this.renderHoursRow(openingHourPeriod, index, hours, false, openingHourWeekday))
             }
-            <Form.Field>
-              <span style={{ cursor: "pointer" }} onClick={ this.deleteOpeningHours(openingHourWeekday, openingHourPeriod) }>{ strings.deleteHours }<Icon style={{ marginRight: "1rem", marginLeft: "1rem" }} name="trash" /></span>
-              <span style={{ cursor: "pointer" }} onClick={ this.addOpeningHours(openingHourWeekday, openingHourPeriod) }>{ strings.addNewHours }<Icon style={{ marginRight: "1rem", marginLeft: "1rem" }} name="add circle" /></span>
+            <Form.Field style={{ display: "flex", flexDirection: "row" }}>
+              <AsyncButton
+                style={{ background: "transparent", flex: 1, padding: 0 }}
+                onClick={ async () => this.deleteOpeningHours(openingHourWeekday, openingHourPeriod) }
+              >
+                { strings.deleteHours }
+                <Icon style={{ marginRight: "1rem", marginLeft: "1rem" }} name="trash" />
+              </AsyncButton>
+              <AsyncButton
+                style={{ background: "transparent", flex: 1, padding: 0 }}
+                onClick={ async () => this.addOpeningHours(openingHourWeekday, openingHourPeriod) }
+              >
+                { strings.addNewHours }
+                <Icon style={{ marginRight: "1rem", marginLeft: "1rem" }} name="add circle" />
+              </AsyncButton>
             </Form.Field>
           </Form>
         </Card.Content>

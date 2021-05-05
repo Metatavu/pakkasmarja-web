@@ -20,6 +20,7 @@ import { FileService } from "src/api/file.service";
 import Lightbox from 'react-image-lightbox';
 import 'react-image-lightbox/style.css';
 import * as _ from "lodash";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Moment extended with moment-range
@@ -603,14 +604,14 @@ class CreateDelivery extends React.Component<Props, State> {
                 { strings.back }
               </Button>
               <Button.Or text="" />
-              <Button
+              <AsyncButton
                 disabled={ !this.isValid() }
                 color="red"
                 onClick={ this.handleDeliverySubmit }
                 type='submit'
               >
                 { category === "FRESH" ? strings.newFreshDelivery : strings.newFrozenDelivery }
-              </Button>
+              </AsyncButton>
             </Button.Group>
           </Form>
         }

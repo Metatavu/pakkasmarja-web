@@ -1,5 +1,5 @@
 import { KeycloakInstance } from "keycloak-js";
-import { Contract, ItemGroup, AreaDetail, Delivery, Product, WeekDeliveryPrediction, ItemGroupDocumentTemplate, ChatThread, Unread } from "pakkasmarja-client";
+import { Contract, ItemGroup, AreaDetail, Delivery, Product, WeekDeliveryPrediction, ItemGroupDocumentTemplate, ChatThread, Unread, ContractStatus } from "pakkasmarja-client";
 
 export interface StoreState {
   keycloak?: KeycloakInstance,
@@ -67,7 +67,7 @@ export interface Options {
  */
 export interface FilterContracts {
   itemGroupId?: string;
-  status?: Contract.StatusEnum;
+  status?: ContractStatus;
   year?: number;
   listAll?: string;
   firstResult?: number;

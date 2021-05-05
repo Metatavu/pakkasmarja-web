@@ -6,6 +6,7 @@ import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import { Modal, Header, Button, Table, Input } from "semantic-ui-react";
 import Api, { ProductPrice } from "pakkasmarja-client";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -156,7 +157,7 @@ class EditProductPriceModal extends React.Component<Props, State> {
           <Button.Group floated="right" className="modal-button-group" >
             <Button onClick={this.closeModal} color="black">Sulje</Button>
             <Button.Or text="" />
-            <Button onClick={this.handleUpdatePrice} color="red">{"Muokkaa hintaa"}</Button>
+            <AsyncButton onClick={ this.handleUpdatePrice } color="red">{ "Muokkaa hintaa" }</AsyncButton>
           </Button.Group>
         </Modal.Content>
       </Modal>

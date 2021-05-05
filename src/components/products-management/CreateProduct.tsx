@@ -10,6 +10,7 @@ import BasicLayout from "../generic/BasicLayout";
 import { Redirect } from "react-router";
 import "react-datepicker/dist/react-datepicker.css";
 import { Link } from "react-router-dom";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -236,7 +237,7 @@ class CreateProduct extends React.Component<Props, State> {
               inverted
               color="red">Takaisin</Button>
             <Button.Or text="" />
-            <Button color="red" disabled={ !this.isValid() } onClick={this.handleProductSubmit} type='submit'>Luo uusi tuote</Button>
+            <AsyncButton color="red" disabled={ !this.isValid() } onClick={ this.handleProductSubmit } type='submit'>Luo uusi tuote</AsyncButton>
           </Button.Group>
         </Form>
       </BasicLayout>

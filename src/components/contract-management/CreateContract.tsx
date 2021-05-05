@@ -7,7 +7,7 @@ import { connect } from "react-redux";
 import "../../styles/common.css";
 import "./styles.css";
 import ErrorMessage from "../generic/ErrorMessage";
-import Api, { Contact, ItemGroup, Contract, DeliveryPlace } from "pakkasmarja-client";
+import Api, { Contact, ItemGroup, Contract, DeliveryPlace, ContractStatus } from "pakkasmarja-client";
 import { Form, Button, Dropdown, Input, TextArea, Checkbox } from "semantic-ui-react";
 import * as moment from "moment";
 import { Redirect } from "react-router";
@@ -15,6 +15,7 @@ import Select from "react-select/lib/Async";
 import { Link } from "react-router-dom";
 import strings from "src/localization/strings";
 import AppConfig, { AppConfigItemGroupOptions, AppConfigOptions } from "src/utils/AppConfig";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -36,7 +37,7 @@ interface State {
   itemGroups: ItemGroup[];
   itemGroupId: string;
   sapId: string;
-  status: Contract.StatusEnum;
+  status: ContractStatus;
   quantityComment: string;
   quantity: number;
   deliveryPlaces: DeliveryPlace[];
@@ -376,7 +377,14 @@ class CreateContract extends React.Component<Props, State> {
           </Form.Field>
           <Form.Field>
             <label>{strings.status}</label>
-            {this.renderDropDown(statusOptions, this.state.status, (value: Contract.StatusEnum) => { this.setState({ status: value }) }, "Valitse tila")}
+            {
+              this.renderDropDown(
+                statusOptions,
+                this.state.status,
+                (value: ContractStatus) => this.setState({ status: value }),
+                "Valitse tila"
+              )
+            }
           </Form.Field>
           <Form.Field>
             <label>{strings.quantityComment}</label>
@@ -413,7 +421,7 @@ class CreateContract extends React.Component<Props, State> {
           <Button.Group floated="right">
             <Button inverted color="red" as={Link} to={"/contractManagement"}>{strings.back}</Button>
             <Button.Or text="" />
-            <Button floated="right" color="red" loading={this.state.buttonLoading} onClick={this.handleFormSubmit}>{strings.save}</Button>
+            <AsyncButton floated="right" color="red" loading={ this.state.buttonLoading } onClick={ this.handleFormSubmit }>{ strings.save }</AsyncButton>
           </Button.Group>
         </Form>
       </BasicLayout>

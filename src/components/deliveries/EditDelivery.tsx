@@ -19,6 +19,7 @@ import PriceChart from "../generic/PriceChart";
 import Lightbox from 'react-image-lightbox';
 import 'react-image-lightbox/style.css';
 import { FileService } from "src/api/file.service";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -451,7 +452,7 @@ class EditDelivery extends React.Component<Props, State> {
                         <p style={{ padding: 20 }}> {deliveryNote.text}</p>
                       </div>
                       <div style={{ display: "flex", flex: 0.2, minHeight: "100px", alignItems: "center" }}>
-                        <Button onClick={() => this.removeNote(deliveryNote, i)} color="black">Poista huomio</Button>
+                        <AsyncButton onClick={ async () => await this.removeNote(deliveryNote, i) } color="black">Poista huomio</AsyncButton>
                       </div>
                     </div>
                   </React.Fragment>
@@ -466,7 +467,7 @@ class EditDelivery extends React.Component<Props, State> {
                 inverted
                 color="red">{strings.back}</Button>
               <Button.Or text="" />
-              <Button disabled={!this.isValid()} color="red" onClick={this.handleDeliverySubmit} type='submit'>{strings.save}</Button>
+              <AsyncButton disabled={ !this.isValid() } color="red" onClick={ this.handleDeliverySubmit } type='submit'>{ strings.save }</AsyncButton>
             </Button.Group>
           </Form>}
         {this.state.openImage &&

@@ -9,6 +9,7 @@ import Dropzone from 'react-dropzone'
 import { FileService, FileResponse } from "src/api/file.service";
 import { DeliveryNote } from "pakkasmarja-client";
 import strings from "src/localization/strings";
+import AsyncButton from "../generic/asynchronous-button";
 
 
 /**
@@ -138,7 +139,7 @@ class DeliveryNoteModal extends React.Component<Props, State> {
           <Button.Group style={{paddingTop: 10, paddingBottom: 10}} floated="right">
             <Button onClick={this.closeModal} color="black">{strings.close}</Button>
             <Button.Or text="" />
-            <Button onClick={this.addDeliveryNote} color="red">{strings.save}</Button>
+            <AsyncButton onClick={ this.addDeliveryNote } color="red">{ strings.save }</AsyncButton>
           </Button.Group>
         </Modal.Content>
       </Modal >

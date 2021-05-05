@@ -13,6 +13,7 @@ import { Link } from "react-router-dom";
 import * as moment from "moment";
 import strings from "src/localization/strings";
 import * as _ from "lodash";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -342,9 +343,9 @@ class CreateWeekDeliveryPrediction extends React.Component<Props, State> {
               inverted
               color="red">{strings.back}</Button>
             <Button.Or text="" />
-            <Button disabled={!this.isValid()} onClick={this.handleSubmit} color="red">
+            <AsyncButton disabled={ !this.isValid() } onClick={ this.handleSubmit } color="red">
               {this.state.category === "FRESH" ? strings.newFreshWeekDeliveryPrediction : strings.newFrozenWeekDeliveryPrediction}
-            </Button>
+            </AsyncButton>
           </Button.Group>
         </Form>
       </BasicLayout>

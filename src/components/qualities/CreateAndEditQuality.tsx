@@ -12,6 +12,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { Link } from "react-router-dom";
 import { ChromePicker } from 'react-color';
 import * as _ from "lodash";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -223,9 +224,14 @@ class CreateAndEditQuality extends React.Component<Props, State> {
               inverted
               color="red">Takaisin</Button>
             <Button.Or text="" />
-            <Button color="red" disabled={!this.isValid()} onClick={() => this.state.selectedDeliveryQualityId === "new" ? this.handleCreateClick() : this.handleUpdateClick()} type='submit'>
+            <AsyncButton
+              color="red"
+              disabled={ !this.isValid() }
+              onClick={ this.state.selectedDeliveryQualityId === "new" ? this.handleCreateClick : this.handleUpdateClick }
+              type='submit'
+            >
               {this.state.selectedDeliveryQualityId === "new" ? "Luo uusi laatu" : "Muokkaa laatua"}
-            </Button>
+            </AsyncButton>
           </Button.Group>
         </Form>
       </BasicLayout>

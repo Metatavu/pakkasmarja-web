@@ -7,12 +7,13 @@ import { connect } from "react-redux";
 import "../../styles/common.css";
 import "./styles.css";
 import ErrorMessage from "../generic/ErrorMessage";
-import Api, { Contact, ItemGroup, Contract, DeliveryPlace } from "pakkasmarja-client";
+import Api, { Contact, ItemGroup, Contract, DeliveryPlace, ContractStatus } from "pakkasmarja-client";
 import { Form, Button, Dropdown, Input, TextArea, Header, Dimmer, Loader, Checkbox } from "semantic-ui-react";
 import { Redirect } from "react-router";
 import { Link } from "react-router-dom";
 import strings from "src/localization/strings";
 import AppConfig, { AppConfigItemGroupOptions } from "src/utils/AppConfig";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -37,7 +38,7 @@ interface State {
   contact?: Contact;
   itemGroup: ItemGroup;
   sapId: string;
-  status: Contract.StatusEnum;
+  status: ContractStatus;
   quantityComment: string;
   quantity: number;
   sapComment: string;
@@ -119,7 +120,7 @@ class EditContract extends React.Component<Props, State> {
     const deliveredQuantity: number = contract.deliveredQuantity || 0;
     const sapId: string = contract.sapId || "";
     const quantity: number = contract.contractQuantity || 0;
-    const status: Contract.StatusEnum = contract.status;
+    const status: ContractStatus = contract.status;
 
     const appConfig = await AppConfig.getAppConfig();
     if (appConfig && contract.itemGroupId) {
@@ -313,7 +314,14 @@ class EditContract extends React.Component<Props, State> {
           </Form.Field>
           <Form.Field>
             <label>{strings.status}</label>
-            {this.renderDropDown(statusOptions, this.state.status, (value: Contract.StatusEnum) => { this.setState({ status: value }) }, strings.status)}
+            {
+              this.renderDropDown(
+                statusOptions,
+                this.state.status,
+                (value: ContractStatus) => this.setState({ status: value }),
+                strings.status
+              )
+            }
           </Form.Field>
           <Form.Field>
             <label>{strings.contractAmount}</label>
@@ -363,7 +371,7 @@ class EditContract extends React.Component<Props, State> {
           <Button.Group floated="right">
             <Button inverted color="red" as={Link} to={"/contractManagement"}>{strings.back}</Button>
             <Button.Or text="" />
-            <Button floated="right" color="red" loading={this.state.buttonLoading} onClick={this.handleFormEdit}>{strings.save}</Button>
+            <AsyncButton floated="right" color="red" loading={ this.state.buttonLoading } onClick={ this.handleFormEdit }>{ strings.save }</AsyncButton>
           </Button.Group>
         </Form>
       </BasicLayout>

@@ -6,6 +6,7 @@ import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import { Modal, Header, Button, Table, Input } from "semantic-ui-react";
 import Api, { ItemGroupPrice } from "pakkasmarja-client";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -228,7 +229,12 @@ class CreateAndUpdateItemGroupPriceModal extends React.Component<Props, State> {
           <Button.Group floated="right" className="modal-button-group" >
             <Button onClick={this.closeModal} color="black">Sulje</Button>
             <Button.Or text="" />
-            <Button onClick={this.state.edit ? this.handleUpdatePrice : this.handleCreatePrice} color="red">{this.state.edit ? "Tallenna muutokset" : "Lisää uusi hinta"}</Button>
+            <AsyncButton
+              onClick={ this.state.edit ? this.handleUpdatePrice : this.handleCreatePrice }
+              color="red"
+            >
+              { this.state.edit ? "Tallenna muutokset" : "Lisää uusi hinta" }
+            </AsyncButton>
           </Button.Group>
         </Modal.Content>
       </Modal>

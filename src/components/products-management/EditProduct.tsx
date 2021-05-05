@@ -10,6 +10,7 @@ import { Form, Button, Header, Input, Divider, Dropdown, Dimmer, Loader, Checkbo
 import Api, { Product, ItemGroup } from "pakkasmarja-client";
 import { Redirect } from "react-router";
 import { Link } from "react-router-dom";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface to component props
@@ -272,7 +273,7 @@ class EditProduct extends React.Component<Props, State> {
               inverted
               color="red">Takaisin</Button>
             <Button.Or text="" />
-            <Button color="red" disabled={ !this.isValid() } onClick={this.handleUpdateProduct} type='submit'>Tallenna muutokset</Button>
+            <AsyncButton color="red" disabled={ !this.isValid() } onClick={ this.handleUpdateProduct } type='submit'>Tallenna muutokset</AsyncButton>
           </Button.Group>
         </Form>
       </BasicLayout>

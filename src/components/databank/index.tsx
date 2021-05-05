@@ -12,6 +12,7 @@ import { StoreState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import strings from "src/localization/strings";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Component props
@@ -130,7 +131,7 @@ class Databank extends React.Component<Props, State> {
             </div>
             <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
               <FormButton onClick={ this.addNewModalToggle }>Peruuta</FormButton>
-              <Button color="red" onClick={ this.addNewSharedFile }>Lisää</Button>
+              <AsyncButton color="red" onClick={ this.addNewSharedFile }>Lisää</AsyncButton>
             </div>
           </Modal.Content>
         </Modal>

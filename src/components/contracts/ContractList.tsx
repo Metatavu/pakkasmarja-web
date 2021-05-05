@@ -13,6 +13,7 @@ import strings from "src/localization/strings";
 import * as _ from "lodash";
 import ContractListContainer from "./ContractListContainer";
 import AppConfig from "src/utils/AppConfig";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Interface for component props
@@ -196,7 +197,7 @@ class ContractList extends React.Component<Props, State> {
    * @param type type
    */
   private onProposeNewContractClick = async (type: string) => {
-    this.setState({ proposeContractModalOpen: true, proposeContractModalType: type });
+    await this.setState({ proposeContractModalOpen: true, proposeContractModalType: type });
   }
 
   /**
@@ -269,9 +270,13 @@ class ContractList extends React.Component<Props, State> {
             contractDatas={this.state.freshContractsPast}
           />
         }
-        <Button onClick={() => this.onProposeNewContractClick("FRESH")} style={{ borderRadius: 0 }} color="red">
+        <AsyncButton
+          onClick={ async () => await this.onProposeNewContractClick("FRESH") }
+          style={{ borderRadius: 0 } }
+          color="red"
+        >
           {strings.suggestNewFreshContract}
-        </Button>
+        </AsyncButton>
         <ContractProposalModal
           modalOpen={this.state.proposeContractModalOpen}
           contractType={this.state.proposeContractModalType}
