@@ -40,7 +40,7 @@ interface State {
   headerContent: string,
   footerContent: string,
   contractDocumentTemplate?: ContractDocumentTemplate;
-  type: string;
+  pdfType: string;
   loading: boolean;
   buttonLoading: boolean;
 }
@@ -65,7 +65,7 @@ class EditContractDocument extends React.Component<Props, State> {
       content: "",
       headerContent: "",
       footerContent: "",
-      type: "2020",
+      pdfType: "2021",
       loading: false,
       buttonLoading: false
     };
@@ -172,7 +172,7 @@ class EditContractDocument extends React.Component<Props, State> {
     if (!this.state.contractDocumentTemplate) {
       const contractDocumentTemplate: ContractDocumentTemplate = {
         contractId: this.state.contract.id,
-        type: this.state.type,
+        type: this.state.pdfType,
         contents: this.state.content,
         header: this.state.headerContent,
         footer: this.state.footerContent
@@ -182,7 +182,7 @@ class EditContractDocument extends React.Component<Props, State> {
     } else {
       const contractDocumentTemplate: ContractDocumentTemplate = {
         contractId: this.state.contract.id,
-        type: this.state.type,
+        type: this.state.pdfType,
         contents: this.state.content,
         header: this.state.headerContent,
         footer: this.state.footerContent

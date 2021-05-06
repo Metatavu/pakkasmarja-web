@@ -33,7 +33,6 @@ interface State {
   ssn: string,
   signAuthenticationUrl: string,
   modalOpen: boolean,
-  type: string,
   modalText: string,
   pdfType: string,
   waitingSignService: boolean
@@ -58,9 +57,8 @@ class ContractTerms extends React.Component<Props, State> {
       ssn: "",
       signAuthenticationUrl: "",
       modalOpen: false,
-      type: "2020",
       modalText: "",
-      pdfType: "2020",
+      pdfType: "2021",
       waitingSignService: false
     };
   }
@@ -128,7 +126,7 @@ class ContractTerms extends React.Component<Props, State> {
     const baseUrl = `${location.protocol}//${location.hostname}${location.port ? ':' + location.port : ''}`;
     const redirectUrl = `${baseUrl}/contracts/${this.state.contract.id}`;
     const contractsService = Api.getContractsService(this.props.keycloak.token);
-    const contractSignRequest = await contractsService.createContractDocumentSignRequest({ redirectUrl: "" }, this.state.contract.id || "", this.state.type, this.state.ssn, this.state.selectedSignServiceId, redirectUrl);
+    const contractSignRequest = await contractsService.createContractDocumentSignRequest({ redirectUrl: "" }, this.state.contract.id || "", this.state.pdfType, this.state.ssn, this.state.selectedSignServiceId, redirectUrl);
     if (contractSignRequest && contractSignRequest.redirectUrl) {
       const content = strings.signingContinuesOnNewTab;
       this.setState({ modalOpen: true, modalText: content });
