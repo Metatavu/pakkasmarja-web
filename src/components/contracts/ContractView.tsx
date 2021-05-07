@@ -167,7 +167,10 @@ class ContractView extends React.Component<Props, State> {
             validationErrorText: strings.fillAllAreaDetailFields
           });
         }
-      } else if (!this.isValidContractMinimumAmount(totalAmount)) {
+      } else if (
+        !!process.env.REACT_APP_VALIDATE_MINIMUM_CONTRACT_AMOUNT &&
+        !this.isValidContractMinimumAmount(totalAmount)
+      ) {
         this.setState({
           insufficientContractAmount: true,
           validationErrorText: strings.insufficientContractAmount
@@ -374,7 +377,10 @@ class ContractView extends React.Component<Props, State> {
     }
 
     const totalAmount = this.calculateTotalAmount(contractData.areaDetailValues, minimumProfitEstimation);
-    if (!this.isValidContractMinimumAmount(totalAmount)) {
+    if (
+      !!process.env.REACT_APP_VALIDATE_MINIMUM_CONTRACT_AMOUNT &&
+      !this.isValidContractMinimumAmount(totalAmount)
+    ) {
       this.setState({
         insufficientContractAmount: true,
         validationErrorText: strings.insufficientContractAmount
