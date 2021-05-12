@@ -154,53 +154,74 @@ class EditContract extends React.Component<Props, State> {
    * Render drop down
    * 
    * @param options options
+   * @param value value
+   * @param onChange on change event handler
+   * @param placeholder placeholder
    */
-  private renderDropDown = (options: Options[], value: string | number, callBack: (value: string) => void, placeholder: string) => {
-    if (options.length <= 0) {
+  private renderDropDown = (
+    options: Options[],
+    value: string | number,
+    onChange: (value: string) => void,
+    placeholder: string
+  ) => {
+    if (options.length < 1) {
       return <Dropdown fluid />;
     }
 
     return (
       <Dropdown
         fluid
-        placeholder={placeholder}
+        placeholder={ placeholder }
         selection
-        value={value}
-        options={options}
-        onChange={(event, data) => {
-          callBack(data.value as string)
-        }
-        }
+        value={ value }
+        options={ options }
+        onChange={ (event, data) => onChange(data.value as string) }
       />
     );
   }
 
   /**
    * Render text input
+   *
+   * @param value value
+   * @param onChange on change event handler
+   * @param placeholder placeholder
+   * @param disabled disabled
    */
-  private renderTextInput = (value: string | number, onChange: (value: string) => void, placeholder: string | number, disabled: boolean) => {
+  private renderTextInput = (
+    value: string | number,
+    onChange: (value: string) => void,
+    placeholder: string | number,
+    disabled: boolean
+  ) => {
     return (
       <Input
-        type="number"
-        placeholder={placeholder}
-        value={value}
-        onChange={(event: React.FormEvent<HTMLInputElement>) => onChange(event.currentTarget.value)}
-        disabled={disabled}
+        type={ typeof value === "number" ? "number" : "text" }
+        placeholder={ placeholder }
+        value={ value }
+        onChange={ event => onChange(event.currentTarget.value) }
+        disabled={ disabled }
       />
     );
   }
 
   /**
    * Render text area
+   *
+   * @param value value
+   * @param onChange on change event handler
+   * @param placeholder 
    */
-  private renderTextArea = (value: string, onchange: (value: string) => void, placeholder: string) => {
+  private renderTextArea = (
+    value: string,
+    onchange: (value: string) => void,
+    placeholder: string
+  ) => {
     return (
       <TextArea
-        value={value}
-        onChange={(event: React.FormEvent<HTMLTextAreaElement>) => {
-          onchange(event.currentTarget.value)
-        }}
-        placeholder={placeholder}
+        value={ value }
+        onChange={ event => onchange(event.currentTarget.value) }
+        placeholder={ placeholder }
       />
     );
   }
