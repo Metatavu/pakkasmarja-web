@@ -68,22 +68,32 @@ class ChatGroupList extends React.Component<Props, State> {
       return;
     }
     
-    this.setState({loading: true});
+    this.setState({ loading: true });
     try {
-      const chatGroupsService = await Api.getChatGroupsService(this.props.keycloak.token);
+      const chatGroupsService = Api.getChatGroupsService(this.props.keycloak.token);
       const chatGroups = await chatGroupsService.listChatGroups(this.props.type);
-      const conversationListItemPromises = chatGroups.map((chatGroup: ChatGroup) => this.loadConversationItem(chatGroup));
+      const conversationListItemPromises = chatGroups.map(chatGroup => this.loadConversationItem(chatGroup));
       const conversationListItems = await Promise.all(conversationListItemPromises);
-      const sortedListItems = _.sortBy( conversationListItems, (group) => this.hasUnreadThreads(group.id!)).reverse(); 
+
+      const sortedListItems = _.orderBy(
+        conversationListItems,
+        [
+          group => this.hasUnreadThreads(group.id!),
+          group => group.title
+        ],
+        [
+          "desc",
+          "asc"
+        ]
+      );
+
       this.setState({
         conversationListItems: sortedListItems,
         loading: false
       });
     } catch (e) {
       this.props.onError && this.props.onError(strings.errorCommunicatingWithServer);
-      this.setState({
-        loading: false,
-      });
+      this.setState({ loading: false });
     }
   }
 

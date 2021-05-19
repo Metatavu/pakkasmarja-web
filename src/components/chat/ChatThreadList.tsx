@@ -95,28 +95,40 @@ class ChatThreadList extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
-    this.setState({loading: true});
+
+    this.setState({ loading: true });
+
     try {
-      const chatThreadsService = await Api.getChatThreadsService(this.props.keycloak.token);
+      const chatThreadsService = Api.getChatThreadsService(this.props.keycloak.token);
       const chatThreads = await chatThreadsService.listChatThreads(this.props.groupId, this.props.type);
-      const validChatThreads = chatThreads.filter( (thread) => {
-        if ( thread.expiresAt ){
-         return moment(moment().format("YYYY-MM-DDTHH:mm:ss.SSSSZ")).isBefore( moment(thread.expiresAt) );
-        }
-        return true;
-      });
-      const conversationListItemPromises = validChatThreads.map((chatThread: ChatThread) => this.loadConversationItem(chatThread));
+
+      const validChatThreads = chatThreads.filter(thread =>
+        thread.expiresAt ?
+          moment(moment().format("YYYY-MM-DDTHH:mm:ss.SSSSZ")).isBefore(moment(thread.expiresAt)) :
+          true
+      );
+
+      const conversationListItemPromises = validChatThreads.map(chatThread => this.loadConversationItem(chatThread));
       const conversationListItems = await Promise.all(conversationListItemPromises);
-      const sortedListItems = _.sortBy( conversationListItems, (thread) => this.hasUnreadMessages( thread.groupId , thread.id! )).reverse();;
+
+      const sortedListItems = _.orderBy(conversationListItems,
+        [
+          thread => this.hasUnreadMessages(thread.groupId, thread.id!),
+          thread => thread.date?.toString()
+        ],
+        [
+          "desc",
+          "desc"
+        ]
+      );
+
       this.setState({
         conversationListItems: sortedListItems,
         loading: false
       });
     } catch (e) {
       this.props.onError && this.props.onError(strings.errorCommunicatingWithServer);
-      this.setState({
-        loading: false,
-      });
+      this.setState({ loading: false });
     }
   }
 
