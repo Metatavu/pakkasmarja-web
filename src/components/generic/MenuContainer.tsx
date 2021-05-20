@@ -102,7 +102,11 @@ class MenuContainer extends React.Component<Props, State> {
             <Link to="/databank">{strings.databank}</Link>
           </Menu.Item>
           { authenticated && keycloak &&
-            <Menu.Item onClick={ () => this.onHelpClick(keycloak) } style={{cursor: "pointer"}} as="div">
+            <Menu.Item
+              onClick={ () => this.onHelpClick(keycloak) }
+              style={{ cursor: "pointer" }}
+              as="div"
+            >
               Apua?
             </Menu.Item>
           }
