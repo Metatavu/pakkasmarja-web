@@ -140,17 +140,15 @@ class ChatsContainer extends React.Component<Props, State> {
    * Group selection handler
    */
   private onSelectGroup = (chatGroupId: number) => {
-    if (!this.props.keycloak || !this.props.keycloak.token) {
+    const { keycloak } = this.props;
+    if (!keycloak?.token) {
       return;
     }
+
     Api
-      .getChatGroupsService(this.props.keycloak.token)
+      .getChatGroupsService(keycloak.token)
       .findChatGroup(chatGroupId)
-      .then((chatGroup) => {
-        this.setState({
-          chatGroup: chatGroup
-        });
-      });
+      .then(chatGroup => this.setState({ chatGroup }));
 
   }
 
