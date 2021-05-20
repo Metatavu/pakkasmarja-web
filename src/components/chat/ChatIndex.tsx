@@ -48,7 +48,11 @@ class ChatIndex extends React.Component<Props, State> {
   private renderChatTab = (): JSX.Element => {
     return (
       <Tab.Pane attached='bottom'>
-        <ChatThreadList search={ this.props.search } onThreadSelected={this.props.onChatThreadSelected} type="CHAT" />
+        <ChatThreadList
+          search={ this.props.search }
+          onThreadSelected={ this.props.onChatThreadSelected }
+          type="CHAT"
+        />
       </Tab.Pane>
     );
   }
