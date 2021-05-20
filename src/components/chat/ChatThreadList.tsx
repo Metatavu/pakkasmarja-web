@@ -95,28 +95,37 @@ class ChatThreadList extends React.Component<Props, State> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
-    this.setState({loading: true});
+
+    this.setState({ loading: true });
+
     try {
-      const chatThreadsService = await Api.getChatThreadsService(this.props.keycloak.token);
+      const chatThreadsService = Api.getChatThreadsService(this.props.keycloak.token);
       const chatThreads = await chatThreadsService.listChatThreads(this.props.groupId, this.props.type);
-      const validChatThreads = chatThreads.filter( (thread) => {
-        if ( thread.expiresAt ){
-         return moment(moment().format("YYYY-MM-DDTHH:mm:ss.SSSSZ")).isBefore( moment(thread.expiresAt) );
-        }
-        return true;
-      });
-      const conversationListItemPromises = validChatThreads.map((chatThread: ChatThread) => this.loadConversationItem(chatThread));
+
+      const validChatThreads = chatThreads.filter(thread =>
+        thread.expiresAt ?
+          moment(moment().format("YYYY-MM-DDTHH:mm:ss.SSSSZ")).isBefore(moment(thread.expiresAt)) :
+          true
+      );
+
+      const conversationListItemPromises = validChatThreads.map(chatThread => this.loadConversationItem(chatThread));
       const conversationListItems = await Promise.all(conversationListItemPromises);
-      const sortedListItems = _.sortBy( conversationListItems, (thread) => this.hasUnreadMessages( thread.groupId , thread.id! )).reverse();;
+
+      const itemsWithUnreads = conversationListItems.filter(({ groupId, id }) => this.hasUnreadMessages(groupId, id!));
+      const itemsWithoutUnreads = conversationListItems.filter(({ groupId, id }) => !this.hasUnreadMessages(groupId, id!));
+
+      const sortedItems = [
+        ...itemsWithUnreads.sort(this.sortItems),
+        ...itemsWithoutUnreads.sort(this.sortItems)
+      ];
+
       this.setState({
-        conversationListItems: sortedListItems,
+        conversationListItems: sortedItems,
         loading: false
       });
     } catch (e) {
       this.props.onError && this.props.onError(strings.errorCommunicatingWithServer);
-      this.setState({
-        loading: false,
-      });
+      this.setState({ loading: false });
     }
   }
 
@@ -124,14 +133,27 @@ class ChatThreadList extends React.Component<Props, State> {
    * Render
    */
   public render() {
-    const conversations = this.state.conversationListItems.map((conversationListItem) => {
+    const conversations = this.state.conversationListItems.map(conversationListItem => {
       return (
-        <Item key={conversationListItem.id} onClick={() => this.selectThread(conversationListItem.id, conversationListItem.answerType, this.props.type)} style={{ cursor: "pointer" }}>
-          <Item.Image avatar style={{width:"45px"}} src={conversationListItem.avatar} />
+        <Item
+          key={conversationListItem.id}
+          onClick={ () => this.selectThread(conversationListItem.id, conversationListItem.answerType, this.props.type) }
+          style={{ cursor: "pointer" }}
+        >
+          <Item.Image
+            avatar
+            style={{ width:"45px" }}
+            src={ conversationListItem.avatar }
+          />
           <Item.Content>
             { this.renderChatHeader(conversationListItem) }
-            {conversationListItem.answerType === "TEXT" ? <Item.Meta>{conversationListItem.subtitle}</Item.Meta> : "- KYSELY -"}
-            <Item.Extra>{moment(conversationListItem.date).format("DD.MM.YYYY HH:mm:ss")}</Item.Extra>
+            { conversationListItem.answerType === "TEXT" ?
+              <Item.Meta>{ conversationListItem.subtitle }</Item.Meta> :
+              "- KYSELY -"
+            }
+            { conversationListItem.date &&
+              <Item.Extra>{ moment(conversationListItem.date).format("DD.MM.YYYY HH:mm:ss") }</Item.Extra>
+            }
           </Item.Content>
         </Item>
       )
@@ -241,6 +263,44 @@ class ChatThreadList extends React.Component<Props, State> {
    */
   private selectThread = async (chatThreadId: number, answerType: ChatThread.AnswerTypeEnum, conversationType: ConversationType) => {
     this.props.onThreadSelected(chatThreadId, answerType, conversationType);
+  }
+
+  /**
+   * Sorts conversation list items by date and time
+   *
+   * @param a item a
+   * @param b item b
+   */
+  private sortItems = (a: ConversationListItem, b: ConversationListItem) => {
+    return !a.date && !b.date ?
+      this.sortTitlesAsc(a.title, b.title) :
+      this.sortDatesDesc(a.date, b.date);
+  }
+
+  /**
+   * Sorts titles ascending
+   *
+   * @param a title a
+   * @param b title b
+   */
+  private sortTitlesAsc = (a: string, b: string) => {
+    if (!a && !b) return 0;
+    if (!a) return 1;
+    if (!b) return -1;
+    return a.localeCompare(b);
+  }
+
+  /**
+   * Sorts dates descending
+   *
+   * @param a date a
+   * @param b date b
+   */
+  private sortDatesDesc = (a?: Date, b?: Date) => {
+    if (!a && !b) return 0;
+    if (!a) return 1;
+    if (!b) return -1;
+    return moment(b).diff(a);
   }
 }
 
