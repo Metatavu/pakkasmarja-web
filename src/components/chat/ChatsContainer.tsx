@@ -58,13 +58,22 @@ class ChatsContainer extends React.Component<Props, State> {
       );
     });
 
-    const chatTitle = chatGroup ? `Keskustelu / ${ chatGroup.title }` : "Keskustelu";
+    const chatTitle = chatGroup ?
+      `Keskustelu / ${ chatGroup.title }` :
+      "Keskustelu";
 
     return (
       <div className="chat-container" style={{ position: "fixed", right: "10px", bottom: "0", width: "350px", zIndex: 999 }}>
         <Segment.Group stacked>
-          <Segment style={{ color: "#fff", background: "rgb(229, 29, 42)" }} >
-            { chatGroup && <Button color="black" size="mini" onClick={ this.resetChatGroupId } icon="angle left"></Button> }
+          <Segment style={{ color: "#fff", background: "rgb(229, 29, 42)", cursor: "pointer" }} >
+            { chatGroup &&
+              <Button
+                color="black"
+                size="mini"
+                onClick={ this.resetChatGroupId }
+                icon="angle left"
+              />
+            }
             <span style={{ paddingLeft: "3px", cursor: "pointer" }} onClick={ this.toggleWindow }>
               { chatTitle }
               { open ? <Icon name="angle down" /> : <Icon name="angle up" /> }
@@ -80,9 +89,14 @@ class ChatsContainer extends React.Component<Props, State> {
               </div>
             }
           </Segment>
-
-          <div style={ open ? {} : {display: "none"}}>
-            <ChatIndex search={searchOpen ? searchString : ""} onResetChatGroupId={this.resetChatGroupId} chatGroup={ chatGroup } onChatGroupSelected={this.onSelectGroup} onChatThreadSelected={this.onSelectThread} />
+          <div style={ this.state.open ? {} : { display: "none" } }>
+            <ChatIndex
+              search={searchOpen ? searchString : ""}
+              onResetChatGroupId={ this.resetChatGroupId }
+              chatGroup={ chatGroup }
+              onChatGroupSelected={ this.onSelectGroup }
+              onChatThreadSelected={ this.onSelectThread }
+            />
           </div>
         </Segment.Group>
         {chatWindows}
@@ -156,17 +170,15 @@ class ChatsContainer extends React.Component<Props, State> {
    * Group selection handler
    */
   private onSelectGroup = (chatGroupId: number) => {
-    if (!this.props.keycloak || !this.props.keycloak.token) {
+    const { keycloak } = this.props;
+    if (!keycloak?.token) {
       return;
     }
+
     Api
-      .getChatGroupsService(this.props.keycloak.token)
+      .getChatGroupsService(keycloak.token)
       .findChatGroup(chatGroupId)
-      .then((chatGroup) => {
-        this.setState({
-          chatGroup: chatGroup
-        });
-      });
+      .then(chatGroup => this.setState({ chatGroup }));
 
   }
 

@@ -179,7 +179,11 @@ class Chat extends React.Component<Props, State> {
     }
 
     const { group, thread } = this.state;
-    const chatTitle = thread && group ? group.type == ChatGroupType.QUESTION ? `${thread.title} / ${group.title}` : thread.title : "Ladataan...";
+    const chatTitle = !thread || !group ?
+      "Ladataan..." :
+      group.type == ChatGroupType.QUESTION ?
+        `${thread.title} / ${group.title}` :
+        thread.title;
 
     if (this.state.pollAnswerLoading && this.state.thread && this.state.thread.answerType === "POLL") {
       return (

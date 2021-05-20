@@ -71,10 +71,10 @@ class ChatThreadList extends React.Component<Props, State> {
    */
   public componentDidUpdate = async (prevProps: Props) => {
     const { group, keycloak } = this.props;
-    const prevGroupId = prevProps.group ? prevProps.group.id : undefined;
-    const currentGroupId = group ? group.id : undefined;
-    const wasLoggedIn = prevProps.keycloak && prevProps.keycloak.token;
-    const isLoggedIn = keycloak && keycloak.token
+    const prevGroupId = prevProps.group?.id;
+    const currentGroupId = group?.id;
+    const wasLoggedIn = prevProps.keycloak?.token;
+    const isLoggedIn = keycloak?.token;
     if(prevGroupId != currentGroupId || prevProps.type != this.props.type || wasLoggedIn !== isLoggedIn ){
       if (!this.props.keycloak || !this.props.keycloak.token) {
         return;
