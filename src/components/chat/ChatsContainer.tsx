@@ -97,7 +97,7 @@ class ChatsContainer extends React.Component<Props, State> {
           </Segment>
           <div style={ this.state.open ? {} : { display: "none" } }>
             <ChatIndex
-              search={searchOpen ? searchString : ""}
+              search={ searchOpen ? searchString : "" }
               onResetChatGroupId={ this.resetChatGroupId }
               chatGroup={ chatGroup }
               onChatGroupSelected={ this.onSelectGroup }
