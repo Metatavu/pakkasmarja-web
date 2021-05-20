@@ -121,17 +121,25 @@ class ChatGroupList extends React.Component<Props, State> {
 
     const conversations = conversationListItems
       .filter(this.searchFilter)
-      .map((conversationListItem) => {
-        return (
-          <Item key={conversationListItem.id} onClick={() => this.selectGroup(conversationListItem.id)} style={{ cursor: "pointer" }}>
-            <Item.Image avatar style={{width:"45px"}} src={conversationListItem.avatar} />
-            <Item.Content>
-              { this.renderChatHeader(conversationListItem) }
-              <Item.Meta>{conversationListItem.subtitle}</Item.Meta>
-            </Item.Content>
-          </Item>
-        )
-      });
+      .map(conversationListItem =>
+        <Item
+          key={ conversationListItem.id }
+          onClick={ () => this.selectGroup(conversationListItem.id) }
+          style={{ cursor: "pointer" }}
+        >
+          <Item.Image
+            avatar
+            style={{ width: 45 }}
+            src={ conversationListItem.avatar }
+          />
+          <Item.Content>
+            { this.renderChatHeader(conversationListItem) }
+            <Item.Meta>
+              { conversationListItem.subtitle }
+            </Item.Meta>
+          </Item.Content>
+        </Item>
+      );
 
     return (
       <div style={{minHeight: "400px", maxHeight: "500px", overflow: "auto"}}>
