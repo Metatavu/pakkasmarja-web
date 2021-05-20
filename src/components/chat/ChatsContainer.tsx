@@ -79,13 +79,19 @@ class ChatsContainer extends React.Component<Props, State> {
               <Icon name={ open ? "angle down" : "angle up" }/>
               { this.renderUnreads() }
             </span>
-            { open && <span onClick={ this.toggleSearch } style={{cursor: "pointer", float: "right"}}>
-              <Icon name="search" />
-            </span>
+            { open &&
+              <span onClick={ this.toggleSearch } style={{ cursor: "pointer", float: "right" }}>
+                <Icon name="search" />
+              </span>
             }
             { open && searchOpen && 
-              <div style={{ paddingTop: "5px" }}>
-                <Input onChange={ this.onSearchStringChange } value={searchString} size="mini" fluid />
+              <div style={{ paddingTop: 5 }}>
+                <Input
+                  onChange={ this.onSearchStringChange }
+                  value={ searchString }
+                  size="mini"
+                  fluid
+                />
               </div>
             }
           </Segment>
