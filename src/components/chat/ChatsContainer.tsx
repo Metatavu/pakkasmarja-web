@@ -160,10 +160,7 @@ class ChatsContainer extends React.Component<Props, State> {
    * Toggles window
    */
    private toggleSearch = () => {
-    const { searchOpen } = this.state;
-    this.setState({
-      searchOpen: !searchOpen
-    });
+    this.setState({ searchOpen: !this.state.searchOpen });
   }
 
   /**
