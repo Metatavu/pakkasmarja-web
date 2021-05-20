@@ -6,7 +6,7 @@ import { connect } from "react-redux";
 import "./styles.css";
 import ChatIndex from "./ChatIndex";
 import Chat from "./Chat";
-import { Segment, Icon, Label, Button } from "semantic-ui-react";
+import { Segment, Icon, Label, Button, Input, InputOnChangeData } from "semantic-ui-react";
 import Api, { ChatGroup, ChatThread, Unread } from "pakkasmarja-client";
 
 /**
@@ -25,8 +25,10 @@ interface Props {
  * Interface for component state
  */
 interface State {
-  open: boolean
-  chatGroup?: ChatGroup,
+  open: boolean;
+  searchOpen: boolean;
+  chatGroup?: ChatGroup;
+  searchString: string
 }
 
 /**
@@ -37,7 +39,9 @@ class ChatsContainer extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      open: false
+      open: false,
+      searchOpen: false,
+      searchString: ""
     };
   }
 
@@ -45,7 +49,7 @@ class ChatsContainer extends React.Component<Props, State> {
    * Render
    */
   public render() {
-    const { chatGroup } = this.state;
+    const { chatGroup, searchOpen, open, searchString } = this.state;
     const chatWindows = this.props.chats.map((chatWindow, index) => {
       return (
         <div key={chatWindow.threadId} style={{ width: "350px", position: "fixed", bottom: "0", right: `${((index + 1) * 365)}px` }}>
@@ -59,21 +63,37 @@ class ChatsContainer extends React.Component<Props, State> {
     return (
       <div className="chat-container" style={{ position: "fixed", right: "10px", bottom: "0", width: "350px", zIndex: 999 }}>
         <Segment.Group stacked>
-          <Segment style={{ color: "#fff", background: "rgb(229, 29, 42)", cursor: "pointer" }} >
+          <Segment style={{ color: "#fff", background: "rgb(229, 29, 42)" }} >
             { chatGroup && <Button color="black" size="mini" onClick={ this.resetChatGroupId } icon="angle left"></Button> }
             <span style={{ paddingLeft: "3px", cursor: "pointer" }} onClick={ this.toggleWindow }>
               { chatTitle }
-              { this.state.open ? <Icon name="angle down" /> : <Icon name="angle up" /> }
+              { open ? <Icon name="angle down" /> : <Icon name="angle up" /> }
               { this.renderUnreads() }
             </span>
+            { open && <span onClick={ this.toggleSearch } style={{cursor: "pointer", float: "right"}}>
+              <Icon name="search" />
+            </span>
+            }
+            { searchOpen && 
+              <div style={{ paddingTop: "5px" }}>
+                <Input onChange={ this.onSearchStringChange } value={searchString} size="mini" fluid />
+              </div>
+            }
           </Segment>
-          <div style={this.state.open ? {} : {display: "none"}}>
-            <ChatIndex onResetChatGroupId={this.resetChatGroupId} chatGroup={ chatGroup } onChatGroupSelected={this.onSelectGroup} onChatThreadSelected={this.onSelectThread} />
+
+          <div style={ open ? {} : {display: "none"}}>
+            <ChatIndex search={searchOpen ? searchString : ""} onResetChatGroupId={this.resetChatGroupId} chatGroup={ chatGroup } onChatGroupSelected={this.onSelectGroup} onChatThreadSelected={this.onSelectThread} />
           </div>
         </Segment.Group>
         {chatWindows}
       </div>
     )
+  }
+
+  private onSearchStringChange = (event: React.SyntheticEvent<HTMLInputElement>, data: InputOnChangeData) => {
+    this.setState({
+      searchString: data.value
+    });
   }
 
   /**
@@ -110,6 +130,16 @@ class ChatsContainer extends React.Component<Props, State> {
     if (chatToClose) {
       this.props.chatClose(chatToClose);
     }
+  }
+
+  /**
+   * Toggles window
+   */
+   private toggleSearch = () => {
+    const { searchOpen } = this.state;
+    this.setState({
+      searchOpen: !searchOpen
+    });
   }
 
   /**
