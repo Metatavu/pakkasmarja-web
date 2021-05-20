@@ -62,7 +62,14 @@ class ChatsContainer extends React.Component<Props, State> {
       <div className="chat-container" style={{ position: "fixed", right: "10px", bottom: "0", width: "350px", zIndex: 999 }}>
         <Segment.Group stacked>
           <Segment style={{ color: "#fff", background: "rgb(229, 29, 42)", cursor: "pointer" }} >
-            { chatGroup && <Button color="black" size="mini" onClick={ this.resetChatGroupId } icon="angle left"></Button> }
+            { chatGroup &&
+              <Button
+                color="black"
+                size="mini"
+                onClick={ this.resetChatGroupId }
+                icon="angle left"
+              />
+            }
             <span style={{ paddingLeft: "3px", cursor: "pointer" }} onClick={ this.toggleWindow }>
               { chatTitle }
               { this.state.open ? <Icon name="angle down" /> : <Icon name="angle up" /> }
