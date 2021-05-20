@@ -157,31 +157,31 @@ class ChatThreadList extends React.Component<Props, State> {
     const { conversationListItems } = this.state;
     const conversations = conversationListItems
       .filter(this.searchFilter)
-      .map(conversationListItem => {
-        return (
-          <Item
-            key={conversationListItem.id}
-            onClick={ () => this.selectThread(conversationListItem.id, conversationListItem.answerType, this.props.type) }
-            style={{ cursor: "pointer" }}
-          >
-            <Item.Image
-              avatar
-              style={{ width:"45px" }}
-              src={ conversationListItem.avatar }
-            />
-            <Item.Content>
-              { this.renderChatHeader(conversationListItem) }
-              { conversationListItem.answerType === "TEXT" ?
-                <Item.Meta>{ conversationListItem.subtitle }</Item.Meta> :
-                "- KYSELY -"
-              }
-              { conversationListItem.date &&
-                <Item.Extra>{ moment(conversationListItem.date).format("DD.MM.YYYY HH:mm:ss") }</Item.Extra>
-              }
-            </Item.Content>
-          </Item>
-        )
-      });
+      .map(conversationListItem =>
+        <Item
+          key={ conversationListItem.id }
+          onClick={ () => this.selectThread(conversationListItem.id, conversationListItem.answerType, this.props.type) }
+          style={{ cursor: "pointer" }}
+        >
+          <Item.Image
+            avatar
+            style={{ width: 45 }}
+            src={ conversationListItem.avatar }
+          />
+          <Item.Content>
+            { this.renderChatHeader(conversationListItem) }
+            { conversationListItem.answerType === "TEXT" ?
+              <Item.Meta>{ conversationListItem.subtitle }</Item.Meta> :
+              "- KYSELY -"
+            }
+            { conversationListItem.date &&
+              <Item.Extra>
+                { moment(conversationListItem.date).format("DD.MM.YYYY HH:mm:ss") }
+              </Item.Extra>
+            }
+          </Item.Content>
+        </Item>
+      );
 
     return (
       <div style={{minHeight: "400px", maxHeight: "500px", overflow: "auto"}}>
