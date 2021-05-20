@@ -28,7 +28,7 @@ interface State {
   open: boolean;
   searchOpen: boolean;
   chatGroup?: ChatGroup;
-  searchString: string
+  searchString: string;
 }
 
 /**
