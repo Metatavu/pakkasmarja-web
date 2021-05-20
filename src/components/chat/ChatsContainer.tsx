@@ -117,9 +117,7 @@ class ChatsContainer extends React.Component<Props, State> {
    * @param data event data
    */
   private onSearchStringChange = (event: React.SyntheticEvent<HTMLInputElement>, data: InputOnChangeData) => {
-    this.setState({
-      searchString: data.value
-    });
+    this.setState({ searchString: data.value });
   }
 
   /**
