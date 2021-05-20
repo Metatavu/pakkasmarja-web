@@ -76,7 +76,7 @@ class ChatsContainer extends React.Component<Props, State> {
               { this.renderUnreads() }
             </span>
           </Segment>
-          <div style={this.state.open ? {} : {display: "none"}}>
+          <div style={ this.state.open ? {} : { display: "none" } }>
             <ChatIndex
               onResetChatGroupId={ this.resetChatGroupId }
               chatGroup={ chatGroup }
