@@ -20,6 +20,7 @@ interface Props {
   unreads: Unread[],
   onGroupSelected: (threadId: number) => void
   onError?: (errorMsg: string) => void
+  search: string
 };
 
 /**
@@ -96,22 +97,49 @@ class ChatGroupList extends React.Component<Props, State> {
       this.setState({ loading: false });
     }
   }
+  
+  /**
+   * Search filter
+   * 
+   * @param item conversation list item
+   * @returns boolean indicating if item should be filtered or not
+   */
+  private searchFilter = (item: ConversationListItem): boolean => {
+    const { search } = this.props;
+    if (!search) {
+      return true;
+    }
+
+    return item.title.split(" ").some(word => word.toLowerCase().startsWith(search.toLowerCase()));
+  }
 
   /**
    * Render
    */
   public render() {
-    const conversations = this.state.conversationListItems.map((conversationListItem) => {
-      return (
-        <Item key={conversationListItem.id} onClick={() => this.selectGroup(conversationListItem.id)} style={{ cursor: "pointer" }}>
-          <Item.Image avatar style={{width:"45px"}} src={conversationListItem.avatar} />
+    const { conversationListItems } = this.state;
+
+    const conversations = conversationListItems
+      .filter(this.searchFilter)
+      .map(conversationListItem =>
+        <Item
+          key={ conversationListItem.id }
+          onClick={ () => this.selectGroup(conversationListItem.id) }
+          style={{ cursor: "pointer" }}
+        >
+          <Item.Image
+            avatar
+            style={{ width: 45 }}
+            src={ conversationListItem.avatar }
+          />
           <Item.Content>
             { this.renderChatHeader(conversationListItem) }
-            <Item.Meta>{conversationListItem.subtitle}</Item.Meta>
+            <Item.Meta>
+              { conversationListItem.subtitle }
+            </Item.Meta>
           </Item.Content>
         </Item>
-      )
-    });
+      );
 
     return (
       <div style={{minHeight: "400px", maxHeight: "500px", overflow: "auto"}}>

@@ -7,7 +7,7 @@ import "../../styles/common.css";
 import { Tab } from "semantic-ui-react";
 import ChatThreadList from "./ChatThreadList";
 import ChatGroupList from "./ChatGroupList";
-import { ChatThread } from "pakkasmarja-client";
+import { ChatGroup, ChatThread } from "pakkasmarja-client";
 
 /**
  * Interface for component props
@@ -18,7 +18,8 @@ interface Props {
   onChatThreadSelected: (chatThreadId: number, answerType: ChatThread.AnswerTypeEnum, conversationType: ConversationType) => void
   onChatGroupSelected: (chatGroup: number) => void
   onResetChatGroupId: () => void;
-  chatGroup?: number
+  chatGroup?: ChatGroup
+  search: string;
 }
 
 /**
@@ -45,10 +46,13 @@ class ChatIndex extends React.Component<Props, State> {
    * Renders chat tab
    */
   private renderChatTab = (): JSX.Element => {
-    this.props.onResetChatGroupId();
     return (
       <Tab.Pane attached='bottom'>
-        <ChatThreadList onThreadSelected={this.props.onChatThreadSelected} type="CHAT" />
+        <ChatThreadList
+          search={ this.props.search }
+          onThreadSelected={ this.props.onChatThreadSelected }
+          type="CHAT"
+        />
       </Tab.Pane>
     );
   }
@@ -60,9 +64,18 @@ class ChatIndex extends React.Component<Props, State> {
     return (
       <Tab.Pane attached='bottom'>
         {this.props.chatGroup ? (
-          <ChatThreadList groupId={this.props.chatGroup} onThreadSelected={this.props.onChatThreadSelected} type="QUESTION" />
+          <ChatThreadList
+            search={ this.props.search }
+            group={ this.props.chatGroup }
+            onThreadSelected={ this.props.onChatThreadSelected }
+            type="QUESTION"
+          />
         ) : (
-            <ChatGroupList onGroupSelected={(chatGroupId: number) => this.props.onChatGroupSelected(chatGroupId)} type="QUESTION" />
+            <ChatGroupList
+              search={ this.props.search }
+              onGroupSelected={ chatGroupId => this.props.onChatGroupSelected(chatGroupId) }
+              type="QUESTION"
+            />
           )}
       </Tab.Pane>
     );
@@ -75,6 +88,7 @@ class ChatIndex extends React.Component<Props, State> {
     return (
       <Tab
         menu={{ color:"red", attached: 'top', fluid: true, secondary: true, pointing: true }}
+        onTabChange={() => this.props.onResetChatGroupId()}
         panes={[
           { menuItem: "Ryhmäkeskustelu", render: this.renderChatTab },
           { menuItem: "Kysymykset", render: this.renderQuestionTab }
