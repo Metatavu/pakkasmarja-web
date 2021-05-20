@@ -3,7 +3,7 @@ import { connect } from "react-redux";
 import { StoreState, ConversationType } from "src/types";
 import { Dispatch } from "redux";
 import * as actions from "../../actions/";
-import Api, { ChatThread, Unread } from "pakkasmarja-client";
+import Api, { ChatGroup, ChatThread, Unread } from "pakkasmarja-client";
 import strings from "src/localization/strings";
 import { Item, Loader, Label } from "semantic-ui-react";
 import AVATAR_PLACEHOLDER from "../../gfx/avatar.png";
@@ -17,7 +17,7 @@ import * as _ from "lodash";
 interface Props {
   authenticated: boolean;
   keycloak?: Keycloak.KeycloakInstance;
-  groupId?: number,
+  group?: ChatGroup,
   type: ConversationType,
   unreads: Unread[],
   onThreadSelected: (threadId: number, answerType: ChatThread.AnswerTypeEnum, type: ConversationType) => void
@@ -70,7 +70,12 @@ class ChatThreadList extends React.Component<Props, State> {
    * Component did mount life cycle method
    */
   public componentDidUpdate = async (prevProps: Props) => {
-    if(prevProps.groupId != this.props.groupId || prevProps.type != this.props.type){
+    const { group, keycloak } = this.props;
+    const prevGroupId = prevProps.group?.id;
+    const currentGroupId = group?.id;
+    const wasLoggedIn = prevProps.keycloak?.token;
+    const isLoggedIn = keycloak?.token;
+    if(prevGroupId != currentGroupId || prevProps.type != this.props.type || wasLoggedIn !== isLoggedIn ){
       if (!this.props.keycloak || !this.props.keycloak.token) {
         return;
       }
@@ -97,10 +102,10 @@ class ChatThreadList extends React.Component<Props, State> {
     }
 
     this.setState({ loading: true });
-
+    const { group } = this.props;
     try {
       const chatThreadsService = Api.getChatThreadsService(this.props.keycloak.token);
-      const chatThreads = await chatThreadsService.listChatThreads(this.props.groupId, this.props.type);
+      const chatThreads = await chatThreadsService.listChatThreads(group?.id, this.props.type);
 
       const validChatThreads = chatThreads.filter(thread =>
         thread.expiresAt ?
