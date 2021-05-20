@@ -147,7 +147,7 @@ class ChatThreadList extends React.Component<Props, State> {
       return true;
     }
 
-    return !!item.title.split(" ").find(word => word.toLowerCase().startsWith(search.toLowerCase()));
+    return item.title.split(" ").some(word => word.toLowerCase().startsWith(search.toLowerCase()));
   }
 
   /**
