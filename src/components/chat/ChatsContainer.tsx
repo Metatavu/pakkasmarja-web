@@ -6,8 +6,8 @@ import { connect } from "react-redux";
 import "./styles.css";
 import ChatIndex from "./ChatIndex";
 import Chat from "./Chat";
-import { Segment, Icon, Label } from "semantic-ui-react";
-import { ChatThread, Unread } from "pakkasmarja-client";
+import { Segment, Icon, Label, Button } from "semantic-ui-react";
+import Api, { ChatGroup, ChatThread, Unread } from "pakkasmarja-client";
 
 /**
  * Interface for component props
@@ -26,7 +26,7 @@ interface Props {
  */
 interface State {
   open: boolean
-  chatGroupId?: number,
+  chatGroup?: ChatGroup,
 }
 
 /**
@@ -45,6 +45,7 @@ class ChatsContainer extends React.Component<Props, State> {
    * Render
    */
   public render() {
+    const { chatGroup } = this.state;
     const chatWindows = this.props.chats.map((chatWindow, index) => {
       return (
         <div key={chatWindow.threadId} style={{ width: "350px", position: "fixed", bottom: "0", right: `${((index + 1) * 365)}px` }}>
@@ -53,21 +54,22 @@ class ChatsContainer extends React.Component<Props, State> {
       );
     });
 
+    const chatTitle = chatGroup ? `Keskustelu / ${ chatGroup.title }` : "Keskustelu";
+
     return (
       <div className="chat-container" style={{ position: "fixed", right: "10px", bottom: "0", width: "350px", zIndex: 999 }}>
         <Segment.Group stacked>
-          <Segment style={{ color: "#fff", background: "rgb(229, 29, 42)", cursor: "pointer" }} onClick={this.toggleWindow}>
-            <span>
-              Keskustelu
+          <Segment style={{ color: "#fff", background: "rgb(229, 29, 42)", cursor: "pointer" }} >
+            { chatGroup && <Button color="black" size="mini" onClick={ this.resetChatGroupId } icon="angle left"></Button> }
+            <span style={{ paddingLeft: "3px", cursor: "pointer" }} onClick={ this.toggleWindow }>
+              { chatTitle }
               { this.state.open ? <Icon name="angle down" /> : <Icon name="angle up" /> }
               { this.renderUnreads() }
             </span>
-            {
-              this.state.chatGroupId &&
-              <div className="chat-back-button" onClick={this.resetChatGroupId}></div>
-            }
           </Segment>
-          {this.state.open && <ChatIndex onResetChatGroupId={this.resetChatGroupId} chatGroup={this.state.chatGroupId} onChatGroupSelected={this.onSelectGroup} onChatThreadSelected={this.onSelectThread} />}
+          <div style={this.state.open ? {} : {display: "none"}}>
+            <ChatIndex onResetChatGroupId={this.resetChatGroupId} chatGroup={ chatGroup } onChatGroupSelected={this.onSelectGroup} onChatThreadSelected={this.onSelectThread} />
+          </div>
         </Segment.Group>
         {chatWindows}
       </div>
@@ -97,7 +99,7 @@ class ChatsContainer extends React.Component<Props, State> {
    * Reset chat group id
    */
   private resetChatGroupId = () => {
-    this.setState({ chatGroupId: undefined })
+    this.setState({ chatGroup: undefined });
   }
 
   /**
@@ -124,9 +126,18 @@ class ChatsContainer extends React.Component<Props, State> {
    * Group selection handler
    */
   private onSelectGroup = (chatGroupId: number) => {
-    this.setState({
-      chatGroupId: chatGroupId
-    });
+    if (!this.props.keycloak || !this.props.keycloak.token) {
+      return;
+    }
+    Api
+      .getChatGroupsService(this.props.keycloak.token)
+      .findChatGroup(chatGroupId)
+      .then((chatGroup) => {
+        this.setState({
+          chatGroup: chatGroup
+        });
+      });
+
   }
 
   /**

@@ -3,7 +3,7 @@ import { connect } from "react-redux";
 import { StoreState, ConversationType } from "src/types";
 import { Dispatch } from "redux";
 import * as actions from "../../actions/";
-import Api, { Contact, ChatMessage, ChatThread, Unread } from "pakkasmarja-client";
+import Api, { Contact, ChatMessage, ChatThread, Unread, ChatGroup, ChatGroupType } from "pakkasmarja-client";
 import strings from "src/localization/strings";
 import * as moment from "moment";
 import { Segment, Comment, Icon, Button, Grid, Modal, Header, Divider, Loader, Label } from "semantic-ui-react";
@@ -41,6 +41,7 @@ interface Props {
 interface State {
   messages: MessageItem[],
   unreadsAmount: number,
+  group?: ChatGroup,
   thread?: ChatThread,
   threadPermission?: ChatThread.PermissionTypeEnum,
   user?: Contact,
@@ -118,6 +119,7 @@ class Chat extends React.Component<Props, State> {
     this.setState({ loading: true });
     try {
       const thread = await Api.getChatThreadsService(keycloak.token).findChatThread(threadId);
+      const group = await Api.getChatGroupsService(keycloak.token).findChatGroup(thread.groupId);
       const maxResult = thread.answerType === "POLL" ? 1 : 30;
       const chatMessages = await Api.getChatMessagesService(keycloak.token).listChatMessages(threadId, undefined, undefined, undefined, 0, maxResult);
       thread.answerType === "TEXT" && mqttConnection.subscribe("chatmessages", this.onMqttMessage);
@@ -139,10 +141,11 @@ class Chat extends React.Component<Props, State> {
 
       this.setState({
         messages: messages.reverse(),
-        user: user,
-        thread: thread,
+        user,
+        thread,
+        group,
         threadPermission: thread.permissionType,
-        userAvatar: userAvatar,
+        userAvatar,
         loading: false,
         pollAnswers: thread.pollPredefinedTexts || []
       });
@@ -175,12 +178,15 @@ class Chat extends React.Component<Props, State> {
       return null;
     }
 
+    const { group, thread } = this.state;
+    const chatTitle = thread && group ? group.type == ChatGroupType.QUESTION ? `${thread.title} / ${group.title}` : thread.title : "Ladataan...";
+
     if (this.state.pollAnswerLoading && this.state.thread && this.state.thread.answerType === "POLL") {
       return (
         <Segment.Group stacked>
           <Segment style={{ color: "#fff", background: "rgb(229, 29, 42)", display: "flex" }}>
             <span style={{ cursor: "pointer", display: "flex", flex: "0.9" }} onClick={this.toggleWindow}>
-              { this.state.thread && this.state.thread.title ? this.state.thread.title : "Ladataan..." }
+              { chatTitle }
               { this.state.open ? (
                 <Icon name="angle down" />
                 ) : (
@@ -225,7 +231,7 @@ class Chat extends React.Component<Props, State> {
             { this.state.unreadsAmount > 0 && !this.state.open &&
               <Label color='black' circular size="mini" style={{ marginRight: "1rem" }}>{ this.state.unreadsAmount }</Label>
             }
-            {this.state.thread && this.state.thread.title ? this.state.thread.title : "Ladataan..."}
+            { chatTitle }
             {this.state.open ? (
               <Icon name="angle down" />
             ) : (
