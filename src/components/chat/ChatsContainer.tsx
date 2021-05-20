@@ -54,7 +54,9 @@ class ChatsContainer extends React.Component<Props, State> {
       );
     });
 
-    const chatTitle = chatGroup ? `Keskustelu / ${ chatGroup.title }` : "Keskustelu";
+    const chatTitle = chatGroup ?
+      `Keskustelu / ${ chatGroup.title }` :
+      "Keskustelu";
 
     return (
       <div className="chat-container" style={{ position: "fixed", right: "10px", bottom: "0", width: "350px", zIndex: 999 }}>
