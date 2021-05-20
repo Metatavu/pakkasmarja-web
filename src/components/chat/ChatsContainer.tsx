@@ -76,7 +76,7 @@ class ChatsContainer extends React.Component<Props, State> {
             }
             <span style={{ paddingLeft: "3px", cursor: "pointer" }} onClick={ this.toggleWindow }>
               { chatTitle }
-              { open ? <Icon name="angle down" /> : <Icon name="angle up" /> }
+              <Icon name={ open ? "angle down" : "angle up" }/>
               { this.renderUnreads() }
             </span>
             { open && <span onClick={ this.toggleSearch } style={{cursor: "pointer", float: "right"}}>
