@@ -77,7 +77,12 @@ class ChatsContainer extends React.Component<Props, State> {
             </span>
           </Segment>
           <div style={this.state.open ? {} : {display: "none"}}>
-            <ChatIndex onResetChatGroupId={this.resetChatGroupId} chatGroup={ chatGroup } onChatGroupSelected={this.onSelectGroup} onChatThreadSelected={this.onSelectThread} />
+            <ChatIndex
+              onResetChatGroupId={ this.resetChatGroupId }
+              chatGroup={ chatGroup }
+              onChatGroupSelected={ this.onSelectGroup }
+              onChatThreadSelected={ this.onSelectThread }
+            />
           </div>
         </Segment.Group>
         {chatWindows}
