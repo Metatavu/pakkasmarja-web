@@ -19,6 +19,7 @@ interface Props {
   onChatGroupSelected: (chatGroup: number) => void
   onResetChatGroupId: () => void;
   chatGroup?: ChatGroup
+  search: string;
 }
 
 /**
@@ -47,7 +48,7 @@ class ChatIndex extends React.Component<Props, State> {
   private renderChatTab = (): JSX.Element => {
     return (
       <Tab.Pane attached='bottom'>
-        <ChatThreadList onThreadSelected={this.props.onChatThreadSelected} type="CHAT" />
+        <ChatThreadList search={ this.props.search } onThreadSelected={this.props.onChatThreadSelected} type="CHAT" />
       </Tab.Pane>
     );
   }
@@ -59,9 +60,9 @@ class ChatIndex extends React.Component<Props, State> {
     return (
       <Tab.Pane attached='bottom'>
         {this.props.chatGroup ? (
-          <ChatThreadList group={this.props.chatGroup} onThreadSelected={this.props.onChatThreadSelected} type="QUESTION" />
+          <ChatThreadList search={ this.props.search } group={ this.props.chatGroup } onThreadSelected={ this.props.onChatThreadSelected } type="QUESTION" />
         ) : (
-            <ChatGroupList onGroupSelected={(chatGroupId: number) => this.props.onChatGroupSelected(chatGroupId)} type="QUESTION" />
+            <ChatGroupList search={ this.props.search } onGroupSelected={(chatGroupId: number) => this.props.onChatGroupSelected(chatGroupId)} type="QUESTION" />
           )}
       </Tab.Pane>
     );

@@ -23,6 +23,7 @@ interface Props {
   onThreadSelected: (threadId: number, answerType: ChatThread.AnswerTypeEnum, type: ConversationType) => void
   onBackClick?: () => void
   onError?: (errorMsg: string) => void
+  search: string
 };
 
 /**
@@ -135,34 +136,52 @@ class ChatThreadList extends React.Component<Props, State> {
   }
 
   /**
+   * Search filter
+   * 
+   * @param item conversation list item
+   * @returns boolean indicating if item should be filtered or not
+   */
+  private searchFilter = (item: ConversationListItem): boolean => {
+    const { search } = this.props;
+    if (!search) {
+      return true;
+    }
+
+    return !!item.title.split(" ").find(word => word.toLowerCase().startsWith(search.toLowerCase()));
+  }
+
+  /**
    * Render
    */
   public render() {
-    const conversations = this.state.conversationListItems.map(conversationListItem => {
-      return (
-        <Item
-          key={conversationListItem.id}
-          onClick={ () => this.selectThread(conversationListItem.id, conversationListItem.answerType, this.props.type) }
-          style={{ cursor: "pointer" }}
-        >
-          <Item.Image
-            avatar
-            style={{ width:"45px" }}
-            src={ conversationListItem.avatar }
-          />
-          <Item.Content>
-            { this.renderChatHeader(conversationListItem) }
-            { conversationListItem.answerType === "TEXT" ?
-              <Item.Meta>{ conversationListItem.subtitle }</Item.Meta> :
-              "- KYSELY -"
-            }
-            { conversationListItem.date &&
-              <Item.Extra>{ moment(conversationListItem.date).format("DD.MM.YYYY HH:mm:ss") }</Item.Extra>
-            }
-          </Item.Content>
-        </Item>
-      )
-    });
+    const { conversationListItems } = this.state;
+    const conversations = conversationListItems
+      .filter(this.searchFilter)
+      .map(conversationListItem => {
+        return (
+          <Item
+            key={conversationListItem.id}
+            onClick={ () => this.selectThread(conversationListItem.id, conversationListItem.answerType, this.props.type) }
+            style={{ cursor: "pointer" }}
+          >
+            <Item.Image
+              avatar
+              style={{ width:"45px" }}
+              src={ conversationListItem.avatar }
+            />
+            <Item.Content>
+              { this.renderChatHeader(conversationListItem) }
+              { conversationListItem.answerType === "TEXT" ?
+                <Item.Meta>{ conversationListItem.subtitle }</Item.Meta> :
+                "- KYSELY -"
+              }
+              { conversationListItem.date &&
+                <Item.Extra>{ moment(conversationListItem.date).format("DD.MM.YYYY HH:mm:ss") }</Item.Extra>
+              }
+            </Item.Content>
+          </Item>
+        )
+      });
 
     return (
       <div style={{minHeight: "400px", maxHeight: "500px", overflow: "auto"}}>

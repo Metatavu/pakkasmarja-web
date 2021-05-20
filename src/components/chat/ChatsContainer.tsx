@@ -83,7 +83,7 @@ class ChatsContainer extends React.Component<Props, State> {
               <Icon name="search" />
             </span>
             }
-            { searchOpen && 
+            { open && searchOpen && 
               <div style={{ paddingTop: "5px" }}>
                 <Input onChange={ this.onSearchStringChange } value={searchString} size="mini" fluid />
               </div>
@@ -104,6 +104,12 @@ class ChatsContainer extends React.Component<Props, State> {
     )
   }
 
+  /**
+   * Search input change handler
+   * 
+   * @param event change event
+   * @param data event data
+   */
   private onSearchStringChange = (event: React.SyntheticEvent<HTMLInputElement>, data: InputOnChangeData) => {
     this.setState({
       searchString: data.value
