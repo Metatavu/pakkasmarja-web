@@ -14,6 +14,7 @@ export interface AppConfigItemGroupOptions {
 export interface AppConfigOptions {
   "delivery": AppConfigDelieryOptions,
   "contracts-question-group": number,
+  "help-question-group": number,
   "contracts": AppConfigContractsOptions,
   "item-groups": { [key: string]: AppConfigItemGroupOptions }
 }
