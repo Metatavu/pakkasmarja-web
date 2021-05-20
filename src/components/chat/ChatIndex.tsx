@@ -60,7 +60,12 @@ class ChatIndex extends React.Component<Props, State> {
     return (
       <Tab.Pane attached='bottom'>
         {this.props.chatGroup ? (
-          <ChatThreadList search={ this.props.search } group={ this.props.chatGroup } onThreadSelected={ this.props.onChatThreadSelected } type="QUESTION" />
+          <ChatThreadList
+            search={ this.props.search }
+            group={ this.props.chatGroup }
+            onThreadSelected={ this.props.onChatThreadSelected }
+            type="QUESTION"
+          />
         ) : (
             <ChatGroupList
               search={ this.props.search }
