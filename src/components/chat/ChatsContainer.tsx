@@ -157,7 +157,7 @@ class ChatsContainer extends React.Component<Props, State> {
   }
 
   /**
-   * Toggles window
+   * Toggles search bar
    */
    private toggleSearch = () => {
     this.setState({ searchOpen: !this.state.searchOpen });
