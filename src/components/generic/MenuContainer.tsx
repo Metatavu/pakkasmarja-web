@@ -9,18 +9,20 @@ import {
   Label,
   Icon
 } from "semantic-ui-react"
-import { StoreState } from "../../types";
+import { ChatWindow, StoreState } from "../../types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import * as actions from "../../actions/";
 import ApplicationRoles from "src/utils/application-roles";
-import { Unread } from "pakkasmarja-client";
+import Api, { ChatGroupType, ChatThread, Unread } from "pakkasmarja-client";
+import AppConfig from "src/utils/AppConfig";
 
 interface Props {
-  authenticated: boolean,
-  keycloak?: KeycloakInstance,
-  onLogout?: () => void,
-  unreads: Unread[]
+  authenticated: boolean;
+  keycloak?: KeycloakInstance;
+  onLogout?: () => void;
+  chatOpen: (chat: ChatWindow) => void;
+  unreads: Unread[];
 }
 
 interface State {
@@ -99,6 +101,15 @@ class MenuContainer extends React.Component<Props, State> {
           <Menu.Item as="div">
             <Link to="/databank">{strings.databank}</Link>
           </Menu.Item>
+          { authenticated && keycloak &&
+            <Menu.Item
+              onClick={ () => this.onHelpClick(keycloak) }
+              style={{ cursor: "pointer" }}
+              as="div"
+            >
+              Apua?
+            </Menu.Item>
+          }
           { this.props.authenticated &&
             <Menu.Menu position="right">
               <Dropdown item simple text={strings.menuBarUserItemText}>
@@ -140,6 +151,33 @@ class MenuContainer extends React.Component<Props, State> {
     }
   }
   
+  private onHelpClick = async (keycloak: KeycloakInstance) => {
+    if (!keycloak.token) {
+      return;
+    }
+    
+    const appConfig = await AppConfig.getAppConfig();
+    const questionGroupId = appConfig['help-question-group'];
+    if (!questionGroupId) {
+      console.warn("Missing help question group id from app config");
+      return;
+    }
+
+    const helpThreads = await Api.getChatThreadsService(keycloak.token).listChatThreads(questionGroupId, ChatGroupType.QUESTION, keycloak.subject);
+    const thread = helpThreads.length ? helpThreads[0] : undefined;
+    if (!thread || !thread.id) {
+      console.warn("No help threads found");
+      return;
+    }
+
+    this.props.chatOpen({
+      answerType: ChatThread.AnswerTypeEnum.TEXT,
+      open: true,
+      threadId: thread.id,
+      conversationType: "QUESTION"
+    });
+  }
+
   private onAccountItemClick = () =>  {
     if (this.props.keycloak) {
       window.location.href = this.props.keycloak.createAccountUrl();
@@ -175,7 +213,8 @@ export function mapStateToProps(state: StoreState) {
 
 export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
   return {
-    onLogout: () => dispatch(actions.userLogout())
+    onLogout: () => dispatch(actions.userLogout()),
+    chatOpen: (chat: ChatWindow) => dispatch(actions.chatOpen(chat))
   };
 }
 

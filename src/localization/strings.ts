@@ -129,6 +129,7 @@ export interface IStrings extends LocalizedStringsMethods {
   confirmRejectText: string
   cancel: string
   signContractFirst: string
+  authServiceNotSelected: string
   termsNotAccepted: string
   notViableToSign: string
   ssnNotGiven: string
