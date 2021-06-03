@@ -77,7 +77,7 @@ class OperationsList extends React.Component<Props, State> {
     }
 
     this.setState({ loading: true });    
-    const operationReportsService = await Api.getOperationReportsService(this.props.keycloak.token);
+    const operationReportsService = Api.getOperationReportsService(this.props.keycloak.token);
     
     this.setState({
       operationReports: await operationReportsService.listOperationReports(undefined, undefined, undefined, this.state.firstResult, MAX_RESULTS),
@@ -123,15 +123,26 @@ class OperationsList extends React.Component<Props, State> {
               </Header>
             </Grid.Column>
           </Grid.Row>
-          <Grid.Row>
-            <Grid.Column floated="left" width="8">
+          <Grid.Row verticalAlign="middle">
+            <Grid.Column width="7">
               Aloita toimenpide
             </Grid.Column>
-            <Grid.Column floated="right" width="5">
-              <Select style={{ width: "100%" }} placeholder={ "Valitse" } options={ typeOptions } onChange={ this.onStartOperationChange }/>
+            <Grid.Column floated="right" width="6">
+              <Select
+                style={{ width: "100%" }}
+                placeholder="Valitse"
+                options={ typeOptions }
+                onChange={ this.onStartOperationChange }
+              />
             </Grid.Column>
             <Grid.Column floated="right" width="3">            
-              <AsyncButton fluid disabled={ !this.state.startOperation } onClick={ this.onActionStartClick }> Aloita </AsyncButton>
+              <AsyncButton
+                fluid
+                disabled={ !this.state.startOperation }
+                onClick={ this.onActionStartClick }
+              >
+                Aloita
+              </AsyncButton>
             </Grid.Column>
           </Grid.Row>
         </Grid>
@@ -242,7 +253,8 @@ class OperationsList extends React.Component<Props, State> {
       OperationType.SAPCONTRACTSAPIDSYNC,
       OperationType.SAPCONTRACTSYNC,
       OperationType.SAPDELIVERYPLACESYNC,
-      OperationType.SAPITEMGROUPSYNC
+      OperationType.SAPITEMGROUPSYNC,
+      OperationType.UPDATECURRENTYEARAPPROVEDCONTRACTSTOSAP
     ];
   }
 
@@ -266,9 +278,11 @@ class OperationsList extends React.Component<Props, State> {
         return "SAP toimituspaikkojen synkronointi";
       case "SAP_ITEM_GROUP_SYNC":
         return "SAP marjalajien synkronointi";
+      case "UPDATE_CURRENT_YEAR_APPROVED_CONTRACTS_TO_SAP":
+        return "Tämänvuotisten hyväksyttyjen sopimusten vienti SAP:iin";
+      default:
+        return `Unknown type ${type}`;
     }
-    
-    return `Unknown type ${type}`;
   }
 
   /**
