@@ -123,6 +123,7 @@
   "confirmRejectText": "Haluatko varmasti hylätä sopimuksen? Kirjoita perustelut alle.",
   "cancel": "Peruuta",
   "signContractFirst": "Allekirjoita sopimus ensin",
+  "authServiceNotSelected": "Sinun tulee valita tunnistautumispalvelu.",
   "termsNotAccepted": "Sinun tulee hyväksyä sopimusehdot ennen allekirjotusta.",
   "notViableToSign": "Sinun tulee olla viljelijän puolesta edustuskelpoinen.",
   "ssnNotGiven": "Sinun tulee antaa henkilötunnus.",
