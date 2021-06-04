@@ -11,6 +11,7 @@ import * as moment from "moment";
 import { Link } from "react-router-dom";
 import ErrorMessage from "../generic/ErrorMessage";
 import AsyncButton from "../generic/asynchronous-button";
+import { OperationUtils } from "../../utils/operations";
 
 /**
  * Interface for component props
@@ -108,7 +109,7 @@ class OperationsList extends React.Component<Props, State> {
     const typeOptions: DropdownItemProps[] = this.getOperationTypes().map((type) => {
       return {
         key: type,  
-        text: this.formatReportType(type),
+        text: OperationUtils.getReportDisplayName(type),
         value: type
       }
     });
@@ -238,7 +239,7 @@ class OperationsList extends React.Component<Props, State> {
    * @return formatted type
    */
   private formatOperationReportType(operationReport: OperationReport): string {
-    return this.formatReportType(operationReport.type!);
+    return OperationUtils.getReportDisplayName(operationReport.type!);
   }
 
   /**
@@ -256,33 +257,6 @@ class OperationsList extends React.Component<Props, State> {
       OperationType.SAPITEMGROUPSYNC,
       OperationType.UPDATECURRENTYEARAPPROVEDCONTRACTSTOSAP
     ];
-  }
-
-  /**
-   * Formats operation report type
-   * 
-   * @param operationReport operation report
-   * @return formatted type
-   */
-  private formatReportType(type: OperationType): string {
-    switch (type) {
-      case "ITEM_GROUP_DEFAULT_DOCUMENT_TEMPLATES":
-        return "Marjalajien oletus sopimusmallit";
-      case "SAP_CONTACT_SYNC":
-        return "SAP Yhteystietojen synkronointi";
-      case "SAP_CONTRACT_SAPID_SYNC":
-        return "Synkronoi sopimusten SAP -tunnisteet";
-      case "SAP_CONTRACT_SYNC":
-        return "SAP sopimusten synkronointi";
-      case "SAP_DELIVERY_PLACE_SYNC":
-        return "SAP toimituspaikkojen synkronointi";
-      case "SAP_ITEM_GROUP_SYNC":
-        return "SAP marjalajien synkronointi";
-      case "UPDATE_CURRENT_YEAR_APPROVED_CONTRACTS_TO_SAP":
-        return "Tämänvuotisten hyväksyttyjen sopimusten vienti SAP:iin";
-      default:
-        return `Unknown type ${type}`;
-    }
   }
 
   /**

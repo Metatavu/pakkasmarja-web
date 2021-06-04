@@ -136,7 +136,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       selectedProductId: delivery.productId,
       selectedPlaceId: delivery.deliveryPlaceId,
       selectedQualityId: delivery.qualityId,
-      date: this.props.delivery.status === "DONE" || this.props.delivery.status === "NOT_ACCEPTED" ? new Date(this.props.delivery.time) : new Date(),
+      date: this.props.delivery.time ? new Date(this.props.delivery.time) : new Date(),
       deliveryTimeValue: deliveryTime,
       deliveryQualities: deliveryQualities,
       loading: false
@@ -673,7 +673,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       return <Button disabled floated="right" color="grey" type='submit'>Toimitus hylätty</Button>;
     }
 
-    if (this.props.delivery.status == "PROPOSAL") {
+    if (this.props.delivery.status == "PROPOSAL" || this.props.delivery.status == "PLANNED") {
       return <Button.Group floated="right">
         <AsyncButton disabled={ !this.isValid() } color="black" onClick={ this.handleDeliveryReject } type='submit'>Hylkää ehdotus</AsyncButton>
         <AsyncButton disabled={ !this.isValid() } color="green" onClick={ this.handleDeliverySave } type='submit'>Muokkaa ehdotusta</AsyncButton>
