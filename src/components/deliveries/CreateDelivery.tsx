@@ -511,7 +511,7 @@ class CreateDelivery extends React.Component<Props, State> {
               { this.renderDropDown(deliveryPlaceOptions, strings.deliveryPlace, "selectedPlaceId") }
             </Form.Field>
             <Form.Field>
-              <label>{strings.deliveyDate}</label>
+              <label>{strings.deliveryDate}</label>
               <DatePicker
                 disabled={ !this.state.selectedPlaceId }
                 onChange={(date: Date) => {

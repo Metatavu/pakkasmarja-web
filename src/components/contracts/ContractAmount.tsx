@@ -125,7 +125,7 @@ export default class ContractAmount extends React.Component<Props, State> {
                   {strings.contractAmount}
                 </Grid.Column>
                 <Grid.Column>
-                  {strings.deliveriedAmount}
+                  {strings.deliveredAmount}
                 </Grid.Column>
               </Grid.Row>
               {
