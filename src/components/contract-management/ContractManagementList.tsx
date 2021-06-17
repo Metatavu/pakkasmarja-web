@@ -955,7 +955,7 @@ class ContractManagementList extends React.Component<Props, State> {
                       { this.renderEditableStatus(contract) }
                     </Table.Cell>
                     <Table.Cell>
-                      { itemGroup?.displayName ?? ""}
+                      { itemGroup?.displayName ?? "" }
                     </Table.Cell>
                     <Table.Cell>
                       { contract.proposedQuantity ?? "" }
