@@ -967,7 +967,7 @@ class ContractManagementList extends React.Component<Props, State> {
                       { contract.deliveredQuantity }
                     </Table.Cell>
                     <Table.Cell>
-                      { deliveryPlace?.name ?? ""}
+                      { deliveryPlace?.name ?? "" }
                     </Table.Cell>
                     <Table.Cell>
                         { this.renderEditableRemark(contract) }
