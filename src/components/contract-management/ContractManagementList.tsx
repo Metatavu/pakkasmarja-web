@@ -178,6 +178,7 @@ class ContractManagementList extends React.Component<Props, State> {
    */
   private loadItemGroups = async () => {
     const { keycloak } = this.props;
+
     if (!keycloak?.token) {
       return;
     }
