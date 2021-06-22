@@ -106,7 +106,7 @@ class EditDelivery extends React.Component<Props, State> {
     const deliveryTimeValue = Number(moment(delivery.time).utc().format("HH"));
     await this.setState({
       products,
-      deliveryPlaces,
+      deliveryPlaces: deliveryPlaces.filter(deliveryPlace => deliveryPlace.id !== "OTHER"),
       category,
       deliveryId,
       amount: delivery.amount,
