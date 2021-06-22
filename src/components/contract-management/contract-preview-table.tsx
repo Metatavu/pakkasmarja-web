@@ -47,7 +47,7 @@ class ContractPreviewTable extends React.Component<Props, State> {
             <Table.HeaderCell>{ strings.itemGroupSapId }</Table.HeaderCell>
             <Table.HeaderCell>{ strings.contractQuantity }</Table.HeaderCell>
             <Table.HeaderCell>{ strings.quantityComment }</Table.HeaderCell>
-            <Table.HeaderCell>{ strings.onehundredPercentDelivery }</Table.HeaderCell>
+            <Table.HeaderCell>{ strings.oneHundredPercentDelivery }</Table.HeaderCell>
             <Table.HeaderCell>{ strings.deliveryPlaceSapId }</Table.HeaderCell>
             <Table.HeaderCell>{ strings.deliveryPlaceComment }</Table.HeaderCell>
             <Table.HeaderCell>{ strings.remarkFieldSap }</Table.HeaderCell>

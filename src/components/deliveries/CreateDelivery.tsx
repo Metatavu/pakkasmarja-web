@@ -106,7 +106,7 @@ class CreateDelivery extends React.Component<Props, State> {
     const products: Product[] = unfilteredProducts.filter(product => product.active === true);
     this.setState({
       products,
-      deliveryPlaces,
+      deliveryPlaces: deliveryPlaces.filter(deliveryPlace => deliveryPlace.id !== "OTHER"),
       category,
       loading: false
     });
@@ -511,7 +511,7 @@ class CreateDelivery extends React.Component<Props, State> {
               { this.renderDropDown(deliveryPlaceOptions, strings.deliveryPlace, "selectedPlaceId") }
             </Form.Field>
             <Form.Field>
-              <label>{strings.deliveyDate}</label>
+              <label>{strings.deliveryDate}</label>
               <DatePicker
                 disabled={ !this.state.selectedPlaceId }
                 onChange={(date: Date) => {
