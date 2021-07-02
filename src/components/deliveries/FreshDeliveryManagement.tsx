@@ -940,6 +940,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
         return "Suunnitelma";
       case "PROPOSAL":
         return "Ehdotus";
+      case "DELIVERYLOAN":
+        return "Muovilaatikoiden toimitus";
       case "REJECTED":
         return "Hylätty";
       case "NOT_ACCEPTED":
@@ -994,6 +996,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
         return { color: "#000" };
       case "DONE":
         return { color: "#4bb543" };
+      case "DELIVERYLOAN":
+        return { color: "#000" };
       case "PROPOSAL":
       case "PLANNED":
         return { color: "#aaa" };
