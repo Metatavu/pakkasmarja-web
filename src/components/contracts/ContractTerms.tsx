@@ -24,18 +24,17 @@ interface Props {
  * Interface for component state
  */
 interface State {
-  authServices?: SignAuthenticationService[],
-  contract?: Contract,
-  styles?: any,
-  acceptedTerms: boolean,
-  viableToSign: boolean,
-  selectedSignServiceId: string,
-  ssn: string,
-  signAuthenticationUrl: string,
-  modalOpen: boolean,
-  modalText: string,
-  pdfType: string,
-  waitingSignService: boolean
+  authServices?: SignAuthenticationService[];
+  contract?: Contract;
+  styles?: any;
+  acceptedTerms: boolean;
+  viableToSign: boolean;
+  selectedSignServiceId: string;
+  ssn: string;
+  signAuthenticationUrl: string;
+  modalOpen: boolean;
+  modalText: string;
+  waitingSignService: boolean;
 };
 
 /**
@@ -53,12 +52,11 @@ class ContractTerms extends React.Component<Props, State> {
     this.state = {
       acceptedTerms: false,
       viableToSign: false,
-      selectedSignServiceId: "0",
+      selectedSignServiceId: "",
       ssn: "",
       signAuthenticationUrl: "",
       modalOpen: false,
       modalText: "",
-      pdfType: "2021",
       waitingSignService: false
     };
   }
@@ -97,36 +95,57 @@ class ContractTerms extends React.Component<Props, State> {
    * Sign contract clicked
    */
   private signContractClicked = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.contract) {
+    const { keycloak } = this.props;
+    const {
+      contract,
+      selectedSignServiceId,
+      acceptedTerms,
+      viableToSign,
+      ssn
+    } = this.state;
+
+    if (!keycloak?.token || !contract?.id) {
       return;
     }
 
-    if (!this.state.acceptedTerms) {
+    if (!selectedSignServiceId) {
+      const content = strings.authServiceNotSelected;
+      this.setState({ modalText: content, modalOpen: true });
+    }
+
+    if (!acceptedTerms) {
       const content = strings.termsNotAccepted;
       this.setState({ modalText: content, modalOpen: true });
       return;
     }
 
-    if (!this.state.viableToSign) {
+    if (!viableToSign) {
       const content = strings.notViableToSign;
       this.setState({ modalText: content, modalOpen: true });
       return;
     }
 
-    if (!this.state.ssn) {
+    if (!ssn) {
       const content = strings.missingInfo;
       this.setState({ modalText: content, modalOpen: true });
       return;
     }
 
-    this.setState({
-      waitingSignService: true
-    });
+    this.setState({ waitingSignService: true });
 
     const baseUrl = `${location.protocol}//${location.hostname}${location.port ? ':' + location.port : ''}`;
-    const redirectUrl = `${baseUrl}/contracts/${this.state.contract.id}`;
-    const contractsService = Api.getContractsService(this.props.keycloak.token);
-    const contractSignRequest = await contractsService.createContractDocumentSignRequest({ redirectUrl: "" }, this.state.contract.id || "", this.state.pdfType, this.state.ssn, this.state.selectedSignServiceId, redirectUrl);
+    const redirectUrl = `${baseUrl}/contracts/${contract.id}`;
+    const contractsService = Api.getContractsService(keycloak.token);
+
+    const contractSignRequest = await contractsService.createContractDocumentSignRequest(
+      { redirectUrl: "" },
+      contract.id,
+      new Date().getFullYear().toString(),
+      ssn,
+      selectedSignServiceId,
+      redirectUrl
+    );
+
     if (contractSignRequest && contractSignRequest.redirectUrl) {
       const content = strings.signingContinuesOnNewTab;
       this.setState({ modalOpen: true, modalText: content });
@@ -142,15 +161,20 @@ class ContractTerms extends React.Component<Props, State> {
    * Render method
    */
   public render() {
-    const signServiceOptions = this.state.authServices && this.state.authServices.map((authService) => {
-      return {
-        key: authService.identifier,
-        value: authService.identifier,
-        text: authService.name
-      }
-    });
+    const {
+      authServices,
+      waitingSignService,
+      contract,
+      acceptedTerms
+    } = this.state;
 
-    if (this.state.waitingSignService) {
+    const signServiceOptions = authServices?.map(authService => ({
+      key: authService.identifier,
+      value: authService.identifier,
+      text: authService.name
+    }));
+
+    if (waitingSignService) {
       return (
         <BasicLayout>
           <Dimmer active inverted>
@@ -165,18 +189,18 @@ class ContractTerms extends React.Component<Props, State> {
         <Container text>
           <Divider horizontal>
             <Header as='h2'>
-              {strings.contract}
+              { strings.contract }
             </Header>
           </Divider>
           <Form>
             <Header as='h3'>
-              {strings.formatString(strings.contractHarvestSeason, this.state.contract ? this.state.contract.year : "")}
+              { strings.formatString(strings.contractHarvestSeason, contract?.year ?? "") }
             </Header>
             <Form.Field>
               <Checkbox
-                checked={this.state.acceptedTerms}
-                onChange={() => this.setState({ acceptedTerms: !this.state.acceptedTerms })}
-                label={strings.termsAccepted}
+                checked={ acceptedTerms }
+                onChange={ () => this.setState({ acceptedTerms: !acceptedTerms }) }
+                label={ strings.termsAccepted }
               />
             </Form.Field>
             <Form.Field>
@@ -196,10 +220,9 @@ class ContractTerms extends React.Component<Props, State> {
                   placeholder={strings.signingService}
                   value={this.state.selectedSignServiceId}
                   options={signServiceOptions}
-                  onChange={(event, data) => {
-                    const value = data.value ? data.value.toString() : "";
-                    this.setState({ selectedSignServiceId: value });
-                  }}
+                  onChange={ (event, data) =>
+                    data.value && this.setState({ selectedSignServiceId: data.value.toString() })
+                  }
                 />
               }
             </Form.Field>

@@ -377,7 +377,7 @@ class EditContract extends React.Component<Props, State> {
             {this.renderTextArea(this.state.quantityComment, (value: string) => { this.setState({ quantityComment: value }) }, strings.quantityComment)}
           </Form.Field>
           <Form.Field>
-            {this.state.proposedDeliveryPlace && <p>{strings.deliveryPalceProposed} <strong>{this.state.proposedDeliveryPlace.name}</strong></p>}
+            {this.state.proposedDeliveryPlace && <p>{strings.deliveryPlaceProposed} <strong>{this.state.proposedDeliveryPlace.name}</strong></p>}
             <label>{strings.deliveryPlace}</label>
             {this.renderDropDown(deliveryPlaceOptions, this.state.deliveryPlaceId, (value: string) => { this.setState({ deliveryPlaceId: value }) }, strings.deliveryPlace)}
           </Form.Field>

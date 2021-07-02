@@ -106,7 +106,7 @@ class EditDelivery extends React.Component<Props, State> {
     const deliveryTimeValue = Number(moment(delivery.time).utc().format("HH"));
     await this.setState({
       products,
-      deliveryPlaces,
+      deliveryPlaces: deliveryPlaces.filter(deliveryPlace => deliveryPlace.id !== "OTHER"),
       category,
       deliveryId,
       amount: delivery.amount,
@@ -421,7 +421,7 @@ class EditDelivery extends React.Component<Props, State> {
               : null
             }
             <Form.Field>
-              <label>{strings.deliveyDate}</label>
+              <label>{strings.deliveryDate}</label>
               <DatePicker
                 onChange={(date: Date) => {
                   this.handleInputChange("date", date)
