@@ -3,7 +3,7 @@ import * as actions from "../../actions";
 import * as _ from "lodash";
 import * as moment from "moment";
 import { StoreState, DeliveriesState, Options, DeliveryDataValue, HttpErrorResponse, deliveryNoteImg64 } from "../../types";
-import Api, { Product, DeliveryPlace, Delivery, DeliveryNote, DeliveryQuality, ItemGroupCategory } from "pakkasmarja-client";
+import Api, { Product, DeliveryPlace, Delivery, DeliveryNote, DeliveryQuality, ItemGroupCategory, Contract } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
@@ -59,7 +59,8 @@ interface State {
   grayBoxesLoaned: number,
   grayBoxesReturned: number,
   selectedProduct?: Product,
-  productLoader: boolean
+  productLoader: boolean,
+  contracts?: Contract[]
 }
 
 /**
@@ -90,7 +91,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       grayBoxesLoaned: 0,
       grayBoxesReturned: 0,
       modalOpen: false,
-      productLoader: false
+      productLoader: false,
     };
     registerLocale('fi', fi);
   }
@@ -122,6 +123,8 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     if (!deliveryProduct) {
       throw new Error("Could not find delivery product");
     }
+
+    this.fetchContracts(deliveryProduct);
 
     const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(category, delivery.productId);
     const deliveryTime = moment(delivery.time).utc().hour() <= 12 ? 11 : 17;
@@ -180,7 +183,34 @@ class ManageDeliveryModal extends React.Component<Props, State> {
         const selectedProduct = this.state.products.find( product => product.id === value );
         this.loadDeliveryQualities();
         this.setState({ selectedProduct });
+        this.fetchContracts(selectedProduct);
     }
+  }
+
+  /**
+   * @param deliveryProduct product witch contracts will be fetched
+   */
+  private fetchContracts = async (deliveryProduct?: Product) => {
+    const { keycloak, delivery } = this.props;
+
+    const yearNow = parseInt(moment(new Date()).format("YYYY"));
+
+    if (!keycloak || !keycloak.token || !deliveryProduct) {
+      return;
+    }
+    this.setState({
+      loading: true
+    });
+
+    const contractsService = await Api.getContractsService(keycloak.token);
+    const contractsData = await contractsService.listContracts("application/json", true, undefined, deliveryProduct.itemGroupId, yearNow, "APPROVED", 0, 1000);
+
+    const contracts = contractsData.filter(contract => contract.contactId === delivery.userId)
+
+    this.setState({
+      contracts: contracts,
+      loading: false
+    })
   }
 
   /**
@@ -441,7 +471,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
 
     return (
       <Modal onClose={() => this.props.onClose()} open={this.props.open}>
-        <Modal.Header>{this.renderHeader()}</Modal.Header>
+        <Modal.Header>{ this.renderHeader() }</Modal.Header>
         <Modal.Content>
           <Form>
             <Form.Field>
@@ -697,19 +727,75 @@ class ManageDeliveryModal extends React.Component<Props, State> {
    * Renders header text
    */
   private renderHeader() {
-    if (this.props.delivery.status == "DONE") {
-      return <React.Fragment>Toimitus on jo hyväksytty</React.Fragment>
+    const { delivery } = this.props;
+
+    return (
+      <div className="modal-header">
+        { delivery.status === "DONE" &&
+            <React.Fragment>
+              Toimitus on jo hyväksytty
+            </React.Fragment>
+        }
+        { delivery.status === "REJECTED" &&
+          <React.Fragment>
+            Toimitus hylätty
+          </React.Fragment>
+        }
+        { delivery.status === "PROPOSAL" &&
+          <React.Fragment>
+            Muokkaa ehdotusta
+          </React.Fragment>
+        }
+        { delivery.status !== "PROPOSAL" && "REJECTED" && "DONE" &&
+          <React.Fragment>Hyväksy toimitus</React.Fragment>
+        }
+        { this.renderContractInfo() }
+      </div>
+    )
+  }
+
+  /**
+   * Renders contract information
+   */
+  private renderContractInfo = () => {
+    const { contracts, amount, selectedProduct } = this.state;
+
+    if (!selectedProduct) {
+      return null;
     }
 
-    if (this.props.delivery.status == "REJECTED") {
-      return <React.Fragment>Toimitus hylätty</React.Fragment>
-    }
+    var contractQuantity = 0;
+    var delivered = 0
+    var remainer = 0;
 
-    if (this.props.delivery.status == "PROPOSAL") {
-      return <React.Fragment>Muokkaa ehdotusta</React.Fragment>
-    }
+    contracts?.forEach(contract => {
+      if (!contract.contractQuantity) {
+        return;
+      }
+      delivered = delivered + (contract.deliveredQuantity || 0);
+      contractQuantity = contractQuantity + contract.contractQuantity;
+    })
 
-    return <React.Fragment>Hyväksy toimitus</React.Fragment>
+    remainer = contractQuantity - delivered - (amount * selectedProduct?.units * selectedProduct?.unitSize);
+
+    return (
+      <div className="contract-info">
+        <div>
+          { strings.contractQuantity }: { contractQuantity }Kg
+        </div>
+        <div>
+          { strings.deliveredQuantity } {delivered }Kg
+        </div>
+        <div style={{ borderTop: "5px solid #000000 " }}></div>
+        <div>
+        {
+          remainer >= 0 ?
+            <div>{ strings.contractRemainer }: { remainer }</div> :
+            <div style={{ color: "red" }}>{ strings.contractExceeded }: { Math.abs(remainer) }Kg</div>
+        }
+        </div>
+      </div>
+    )
   }
 
   /**
