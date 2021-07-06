@@ -249,5 +249,7 @@
   "exceptionPeriods": "Poikkeusjaksot",
   "deleteBlock": "Poista lohko",
   "selectDeliveryPlace": "Valitse toimituspaikka",
-  "editMode": "Muokkaustila"
+  "editMode": "Muokkaustila",
+  "contractRemainer": "Sopimusta jäljellä",
+  "contractExceeded": "Sopimus ylitetty"
 }

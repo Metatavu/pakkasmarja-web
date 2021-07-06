@@ -253,6 +253,8 @@ export interface IStrings extends LocalizedStringsMethods {
   deleteBlock: string;
   selectDeliveryPlace: string;
   editMode: string;
+  contractRemainer: string;
+  contractExceeded: string;
 }
 
 const strings: IStrings = new LocalizedStrings({
