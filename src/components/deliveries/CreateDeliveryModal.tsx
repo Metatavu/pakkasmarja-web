@@ -57,7 +57,7 @@ interface State {
   grayBoxesLoaned: number;
   grayBoxesReturned: number;
   products: Product[];
-  contractQuantitites?: ContractQuantities[];
+  contractQuantities?: ContractQuantities[];
   loading: boolean;
 }
 
@@ -108,7 +108,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       const selectedProduct = this.state.products.find((product) => product.id === productId);
       this.loadDeliveryQualities();
       this.setState({ selectedProduct });
-      this.fetchContracts(selectedProduct);
+      this.fetchContractQuantities(selectedProduct);
     }
   }
 
@@ -255,9 +255,9 @@ class CreateDeliveryModal extends React.Component<Props, State> {
   }
 
   /**
-   * @param deliveryProduct product witch contracts will be fetched
+   * @param deliveryProduct product wich contract qyantities will be fetched
    */
-  private fetchContracts = async (selectedProduct?: Product) => {
+  private fetchContractQuantities = async (selectedProduct?: Product) => {
     const { keycloak } = this.props;
     const { selectedContactId } = this.state;
 
@@ -270,10 +270,10 @@ class CreateDeliveryModal extends React.Component<Props, State> {
     });
 
     const contractsService = await Api.getContractsService(keycloak.token);
-    const contracts = await contractsService.listContractQuantities(selectedProduct?.itemGroupId, selectedContactId);
+    const contractQuantitities = await contractsService.listContractQuantities(selectedProduct?.itemGroupId, selectedContactId);
 
     this.setState({
-      contractQuantitites: contracts,
+      contractQuantities: contractQuantitities,
       loading: false
     })
   }
@@ -302,10 +302,10 @@ class CreateDeliveryModal extends React.Component<Props, State> {
    * Renders contract information
    */
   private renderContractInfo = () => {
-    const { contractQuantitites: contracts, amount, selectedProduct } = this.state;
+    const { contractQuantities, amount, selectedProduct } = this.state;
     const { keycloak } = this.props;
 
-    if (!selectedProduct || !contracts || !keycloak || !keycloak.hasRealmRole(ApplicationRoles.VIEW_CONTRACT_QUANTITIES)) {
+    if (!selectedProduct || !contractQuantities || !keycloak || !keycloak.hasRealmRole(ApplicationRoles.VIEW_CONTRACT_QUANTITIES)) {
       return null;
     }
 
@@ -313,7 +313,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
     var delivered = 0
     var remainer = 0;
 
-    contracts?.forEach(contract => {
+    contractQuantities.forEach(contract => {
       delivered = delivered + (contract.deliveredQuantity || 0);
       contractQuantity = contractQuantity + (contract.contractQuantity || 0);
     })

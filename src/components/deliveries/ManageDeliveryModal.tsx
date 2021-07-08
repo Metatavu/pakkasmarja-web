@@ -125,7 +125,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       throw new Error("Could not find delivery product");
     }
 
-    this.fetchContracts(deliveryProduct);
+    this.fetchContractQuantities(deliveryProduct);
 
     const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(category, delivery.productId);
     const deliveryTime = moment(delivery.time).utc().hour() <= 12 ? 11 : 17;
@@ -184,14 +184,14 @@ class ManageDeliveryModal extends React.Component<Props, State> {
         const selectedProduct = this.state.products.find( product => product.id === value );
         this.loadDeliveryQualities();
         this.setState({ selectedProduct });
-        this.fetchContracts(selectedProduct);
+        this.fetchContractQuantities(selectedProduct);
     }
   }
 
   /**
-   * @param deliveryProduct product witch contracts will be fetched
+   * @param deliveryProduct product wich contract quantities will be fetched
    */
-  private fetchContracts = async (deliveryProduct?: Product) => {
+  private fetchContractQuantities = async (deliveryProduct?: Product) => {
     const { keycloak, delivery } = this.props;
 
     if (!keycloak || !keycloak.token || !deliveryProduct || !delivery || !keycloak.hasRealmRole(ApplicationRoles.VIEW_CONTRACT_QUANTITIES)) {
@@ -202,10 +202,10 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     });
 
     const contractsService = await Api.getContractsService(keycloak.token);
-    const contracts = await contractsService.listContractQuantities(deliveryProduct.itemGroupId, delivery.userId);
+    const contractQuantitites = await contractsService.listContractQuantities(deliveryProduct.itemGroupId, delivery.userId);
 
     this.setState({
-      contractQuantitites: contracts,
+      contractQuantitites: contractQuantitites,
       loading: false
     })
   }
@@ -748,7 +748,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
         { delivery.status !== "PROPOSAL" && !"REJECTED" && !"DONE" &&
           <React.Fragment>Hyväksy toimitus</React.Fragment>
         }
-        { this.renderContractInfo() }
+        { this.renderContractQuantities() }
       </div>
     )
   }
@@ -756,11 +756,11 @@ class ManageDeliveryModal extends React.Component<Props, State> {
   /**
    * Renders contract information
    */
-  private renderContractInfo = () => {
-    const { contractQuantitites: contracts, amount, selectedProduct } = this.state;
+  private renderContractQuantities = () => {
+    const { contractQuantitites, amount, selectedProduct } = this.state;
     const { keycloak } = this.props;
 
-    if (!contracts?.length || !selectedProduct || !keycloak || !keycloak.hasRealmRole(ApplicationRoles.VIEW_CONTRACT_QUANTITIES)) {
+    if (!contractQuantitites?.length || !selectedProduct || !keycloak || !keycloak.hasRealmRole(ApplicationRoles.VIEW_CONTRACT_QUANTITIES)) {
       return null;
     }
 
@@ -768,7 +768,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     var delivered = 0
     var remainer = 0;
 
-    contracts?.forEach(contract => {
+    contractQuantitites?.forEach(contract => {
       if (!contract.contractQuantity) {
         return;
       }
