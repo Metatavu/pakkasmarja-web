@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as actions from "../../actions";
 import { StoreState, Options, DeliveryDataValue, deliveryNoteImg64 } from "src/types";
-import Api, { Product, Delivery, DeliveryNote, Contact, DeliveryPlace, DeliveryStatus, DeliveryQuality, ItemGroupCategory, Contract } from "pakkasmarja-client";
+import Api, { Product, Delivery, DeliveryNote, Contact, DeliveryPlace, DeliveryStatus, DeliveryQuality, ItemGroupCategory, ContractQuantities } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
@@ -16,6 +16,7 @@ import { FileService } from "src/api/file.service";
 import Lightbox from "react-image-lightbox";
 import DatePicker, { registerLocale } from "react-datepicker";
 import AsyncButton from "../generic/asynchronous-button";
+import ApplicationRoles from "src/utils/application-roles";
 
 /**
  * Interface for component props
@@ -56,7 +57,7 @@ interface State {
   grayBoxesLoaned: number;
   grayBoxesReturned: number;
   products: Product[];
-  contracts?: Contract[];
+  contractQuantitites?: ContractQuantities[];
   loading: boolean;
 }
 
@@ -253,16 +254,14 @@ class CreateDeliveryModal extends React.Component<Props, State> {
     this.props.onClose(true);
   }
 
-    /**
+  /**
    * @param deliveryProduct product witch contracts will be fetched
    */
   private fetchContracts = async (selectedProduct?: Product) => {
     const { keycloak } = this.props;
     const { selectedContactId } = this.state;
 
-    const yearNow = parseInt(moment(new Date()).format("YYYY"));
-
-    if (!keycloak || !keycloak.token || !selectedProduct) {
+    if (!keycloak || !keycloak.token || !selectedProduct || !selectedContactId || !keycloak.hasRealmRole(ApplicationRoles.VIEW_CONTRACT_QUANTITIES)) {
       return;
     }
 
@@ -271,12 +270,10 @@ class CreateDeliveryModal extends React.Component<Props, State> {
     });
 
     const contractsService = await Api.getContractsService(keycloak.token);
-    const contractsData = await contractsService.listContracts("application/json", true, undefined, selectedProduct?.itemGroupId, yearNow, "APPROVED", 0, 1000);
-
-    const contracts = contractsData.filter(contract => contract.contactId === selectedContactId)
+    const contracts = await contractsService.listContractQuantities(selectedProduct?.itemGroupId, selectedContactId);
 
     this.setState({
-      contracts: contracts,
+      contractQuantitites: contracts,
       loading: false
     })
   }
@@ -305,9 +302,10 @@ class CreateDeliveryModal extends React.Component<Props, State> {
    * Renders contract information
    */
   private renderContractInfo = () => {
-    const { contracts, amount, selectedProduct } = this.state;
+    const { contractQuantitites: contracts, amount, selectedProduct } = this.state;
+    const { keycloak } = this.props;
 
-    if (!selectedProduct) {
+    if (!selectedProduct || !contracts || !keycloak || !keycloak.hasRealmRole(ApplicationRoles.VIEW_CONTRACT_QUANTITIES)) {
       return null;
     }
 
@@ -320,7 +318,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       contractQuantity = contractQuantity + (contract.contractQuantity || 0);
     })
 
-    remainer = contractQuantity - delivered - (amount * selectedProduct?.units * selectedProduct?.unitSize);
+    remainer = contractQuantity - delivered - (amount * selectedProduct.units * selectedProduct.unitSize);
   
     return (
       <div className="contract-info">

@@ -3,7 +3,7 @@ import * as actions from "../../actions";
 import * as _ from "lodash";
 import * as moment from "moment";
 import { StoreState, DeliveriesState, Options, DeliveryDataValue, HttpErrorResponse, deliveryNoteImg64 } from "../../types";
-import Api, { Product, DeliveryPlace, Delivery, DeliveryNote, DeliveryQuality, ItemGroupCategory, Contract } from "pakkasmarja-client";
+import Api, { Product, DeliveryPlace, Delivery, DeliveryNote, DeliveryQuality, ItemGroupCategory, ContractQuantities } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
@@ -18,6 +18,7 @@ import Lightbox from 'react-image-lightbox';
 import 'react-image-lightbox/style.css';
 import DeliveryNoteModal from "./DeliveryNoteModal";
 import AsyncButton from "../generic/asynchronous-button";
+import ApplicationRoles from "src/utils/application-roles";
 
 /**
  * Interface for component props
@@ -60,7 +61,7 @@ interface State {
   grayBoxesReturned: number,
   selectedProduct?: Product,
   productLoader: boolean,
-  contracts?: Contract[]
+  contractQuantitites?: ContractQuantities[]
 }
 
 /**
@@ -193,9 +194,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
   private fetchContracts = async (deliveryProduct?: Product) => {
     const { keycloak, delivery } = this.props;
 
-    const yearNow = parseInt(moment(new Date()).format("YYYY"));
-
-    if (!keycloak || !keycloak.token || !deliveryProduct) {
+    if (!keycloak || !keycloak.token || !deliveryProduct || !delivery || !keycloak.hasRealmRole(ApplicationRoles.VIEW_CONTRACT_QUANTITIES)) {
       return;
     }
     this.setState({
@@ -203,12 +202,10 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     });
 
     const contractsService = await Api.getContractsService(keycloak.token);
-    const contractsData = await contractsService.listContracts("application/json", true, undefined, deliveryProduct.itemGroupId, yearNow, "APPROVED", 0, 1000);
-
-    const contracts = contractsData.filter(contract => contract.contactId === delivery.userId)
+    const contracts = await contractsService.listContractQuantities(deliveryProduct.itemGroupId, delivery.userId);
 
     this.setState({
-      contracts: contracts,
+      contractQuantitites: contracts,
       loading: false
     })
   }
@@ -729,6 +726,8 @@ class ManageDeliveryModal extends React.Component<Props, State> {
   private renderHeader() {
     const { delivery } = this.props;
 
+    console.log(delivery.status)
+
     return (
       <div className="modal-header">
         { delivery.status === "DONE" &&
@@ -736,7 +735,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
               Toimitus on jo hyväksytty
             </React.Fragment>
         }
-        { delivery.status === "REJECTED" &&
+        { delivery.status === "NOT_ACCEPTED" &&
           <React.Fragment>
             Toimitus hylätty
           </React.Fragment>
@@ -746,7 +745,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
             Muokkaa ehdotusta
           </React.Fragment>
         }
-        { delivery.status !== "PROPOSAL" && "REJECTED" && "DONE" &&
+        { delivery.status !== "PROPOSAL" && !"REJECTED" && !"DONE" &&
           <React.Fragment>Hyväksy toimitus</React.Fragment>
         }
         { this.renderContractInfo() }
@@ -758,9 +757,10 @@ class ManageDeliveryModal extends React.Component<Props, State> {
    * Renders contract information
    */
   private renderContractInfo = () => {
-    const { contracts, amount, selectedProduct } = this.state;
+    const { contractQuantitites: contracts, amount, selectedProduct } = this.state;
+    const { keycloak } = this.props;
 
-    if (!selectedProduct) {
+    if (!contracts?.length || !selectedProduct || !keycloak || !keycloak.hasRealmRole(ApplicationRoles.VIEW_CONTRACT_QUANTITIES)) {
       return null;
     }
 
