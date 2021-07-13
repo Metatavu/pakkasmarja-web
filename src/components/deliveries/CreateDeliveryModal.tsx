@@ -179,6 +179,12 @@ class CreateDeliveryModal extends React.Component<Props, State> {
         && this.state.selectedQualityId
         && typeof this.state.amount === 'number'
       );
+    } else if(this.state.selectedDeliveryStatus === "DELIVERYLOAN") {
+      return !!(
+        this.state.selectedDeliveryStatus
+        && this.state.selectedDeliveryPlaceId
+        && this.state.selectedContactId
+      );
     } else {
       return !!(
         this.state.selectedDeliveryStatus
@@ -477,6 +483,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
    * Render method
    */
   public render() {
+    console.log(this.isValid())
     if (this.state.loading) {
       return (
         <Modal open={this.props.open}>
