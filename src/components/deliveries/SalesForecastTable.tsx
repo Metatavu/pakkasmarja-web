@@ -16,7 +16,9 @@ interface Props {
   setRowHeader: (rowIndex: number, value: string) => void,
   getCellValue: (productId: string, rowIndex: number) => number | null,
   setCellValue: (productId: string, rowIndex: number, value: number | null) => void,
-  onAddNewRow: () => void
+  onAddNewRow: () => void,
+  removeStorageRow?: (rowIndex: number) => void,
+  storage: boolean
 }
 
 /**
@@ -51,7 +53,8 @@ export default class SalesForecastDataTable extends React.Component<Props, State
    */
   public render() {
     const rows = [];
-    
+    const { storage } = this.props;
+
     for (let rowIndex = 0; rowIndex < this.props.rowCount; rowIndex++) {
       rows.push(this.renderTableRow(rowIndex));
     };
@@ -61,24 +64,45 @@ export default class SalesForecastDataTable extends React.Component<Props, State
 
     return (
       <div style={{ marginBottom: "10px" }}>
-        <Table celled padded selectable inverted style={ window.matchMedia('(min-width: 768px)').matches ? { tableLayout: "fixed", fontSize: "0.45vw" } : {} }>
-          <Table.Header>
-            <Table.Row className="table-header-row" style={{ background: "#e01e36", color: "#fff"}}>
-              <Table.HeaderCell>{ this.props.title }</Table.HeaderCell>
-              {
-                products.map((product) => {
-                  return (
-                    <Table.HeaderCell key={product.id} style={{ "width": `${cellWidth}%` }}>{ product.name }</Table.HeaderCell>
-                  )
-                }) 
-              }
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>{ rows }</Table.Body>
-          <Table.Footer>
-            { this.renderTableFooter() }
-          </Table.Footer>
-        </Table>
+        { storage ?
+            <Table celled padded selectable style={ window.matchMedia('(min-width: 768px)').matches ? { tableLayout: "fixed", fontSize: "0.45vw" } : {} }>
+              <Table.Header>
+                <Table.Row className="table-header-row" style={{ background: "#e01e36", color: "#fff"}}>
+                  <Table.HeaderCell>{ this.props.title }</Table.HeaderCell>
+                  {
+                    products.map((product) => {
+                      return (
+                        <Table.HeaderCell key={product.id} style={{ "width": `${cellWidth}%` }}>{ product.name }</Table.HeaderCell>
+                      )
+                    }) 
+                  }
+                </Table.Row>
+              </Table.Header>
+              <Table.Body>{ rows }</Table.Body>
+              <Table.Footer>
+                { this.renderTableFooter() }
+              </Table.Footer>
+            </Table> 
+          :
+            <Table celled padded selectable inverted style={ window.matchMedia('(min-width: 768px)').matches ? { tableLayout: "fixed", fontSize: "0.45vw" } : {} }>
+              <Table.Header>
+                <Table.Row className="table-header-row" style={{ background: "#e01e36", color: "#fff"}}>
+                  <Table.HeaderCell>{ this.props.title }</Table.HeaderCell>
+                  {
+                    products.map((product) => {
+                      return (
+                        <Table.HeaderCell key={product.id} style={{ "width": `${cellWidth}%` }}>{ product.name }</Table.HeaderCell>
+                      )
+                    }) 
+                  }
+                </Table.Row>
+              </Table.Header>
+              <Table.Body>{ rows }</Table.Body>
+              <Table.Footer>
+                { this.renderTableFooter() }
+              </Table.Footer>
+            </Table>
+        }
         <div>
           <a onClick={ this.onNewClick }>
             <Icon name="plus"/> Lisää uusi
@@ -94,6 +118,7 @@ export default class SalesForecastDataTable extends React.Component<Props, State
    * @param row row data
    */
   private renderTableRow = (rowIndex: number) => {
+    const { storage } = this.props;
     const products = this.props.products;
     const cellWidth = 100 / (this.props.products.length + 1);
     const rowHeader = this.props.getRowHeader(rowIndex);
@@ -101,14 +126,14 @@ export default class SalesForecastDataTable extends React.Component<Props, State
     return (
       <Table.Row key={ `${this.props.name}-row-${rowIndex}` }>
         {
-          this.state.editRowHeader == rowIndex ? this.renderRowHeaderEditor(rowIndex) : <Table.Cell style={{ background: "#fadde1", color: "#000" }} key={ `${this.props.name}-cell-header-${rowIndex}` } onClick={ () => this.onRowHeaderCellClick(rowIndex!, rowHeader) }> { rowHeader } </Table.Cell>
+          this.state.editRowHeader == rowIndex ? this.renderRowHeaderEditor(rowIndex) : <Table.Cell style={{ background: storage ? "#fff" : "#fadde1", color: "#000" }} key={ `${this.props.name}-cell-header-${rowIndex}` } onClick={ () => this.onRowHeaderCellClick(rowIndex!, rowHeader) }> { rowHeader } </Table.Cell>
         }
         { 
           products.map((product) => {
             const value = this.props.getCellValue(product.id!, rowIndex!);
 
             return (
-              <Table.Cell style={{ background: "#fadde1", color: "#000", textAlign: "center", "width": `${cellWidth}%`, padding: 0 }} key={ `${this.props.name}-cell-${rowIndex}-${product.id}` } onClick={ () => this.onCellClick(rowIndex!, product.id!, value) }>
+              <Table.Cell style={{ background: storage ? "#fff" : "#fadde1", color: "#000", textAlign: "center", "width": `${cellWidth}%`, padding: 0 }} key={ `${this.props.name}-cell-${rowIndex}-${product.id}` } onClick={ () => this.onCellClick(rowIndex!, product.id!, value) }>
                 { this.state.editRowIndex == rowIndex && this.state.editProductId == product.id ? this.renderCellEditor(rowIndex!, product.id!) : <span style={{ }}>{ value }</span> }
               </Table.Cell>
             )
@@ -122,9 +147,10 @@ export default class SalesForecastDataTable extends React.Component<Props, State
    * Renders table footer
    */
   private renderTableFooter = () => {
+    const { storage } = this.props;
     const products = this.props.products;
     const cellWidth = 100 / (this.props.products.length + 1);
-    const cellStyle = { background: "#fadde1", color: "#000", textAlign: "center", "width": `${cellWidth}%`, padding: 0 };
+    const cellStyle = { background: storage ? "#fff" : "#fadde1", color: "#000", textAlign: "center", "width": `${cellWidth}%`, padding: 0 };
     const cells = products.map((product) => {
       let total = 0;
 
@@ -141,7 +167,7 @@ export default class SalesForecastDataTable extends React.Component<Props, State
 
     return (
       <Table.Row className="table-header-row" style={{ background: "#e01e36", color: "#fff"}}>
-        <Table.Cell style={{ background: "#fadde1", color: "#000", fontWeight: "bold" }}>Yhteensä</Table.Cell>
+        <Table.Cell style={{ background: storage ? "#fff" : "#fadde1", color: "#000", fontWeight: "bold" }}>Yhteensä</Table.Cell>
         { cells }
       </Table.Row>
     )
@@ -170,11 +196,13 @@ export default class SalesForecastDataTable extends React.Component<Props, State
    * @param productId product id
    */
   private renderRowHeaderEditor = (rowIndex: number) => {
+    const { storage } = this.props;
     return (
       <Table.Cell style={{ background: "#fadde1", color: "#000", padding: "5px" }} key={ `${this.props.name}-cell-header-${rowIndex}` }>
         <Input key={ `${this.props.name}-row-header-editor-${rowIndex}` } value={ this.state.editHeaderValue } type="text" onChange={ (event, data) => this.setState({ editHeaderValue: data.value } ) } />
         <span key={ `${this.props.name}-row-header-apply-${rowIndex}` } style={{ marginLeft: "5px" }} onClick={ (event) => this.onRowHeaderApplyClick(event, rowIndex) }><Icon key={ `${this.props.name}-header-apply-${rowIndex}-icon` } color="green" name="checkmark"/></span>
         <span key={ `${this.props.name}-row-header-cancel-${rowIndex}` } onClick={ (event) => this.onRowHeaderCancelClick(event) }><Icon key={ `${this.props.name}-header-cancel-${rowIndex}-icon` } color="red" name="cancel"/></span>
+        { storage && <span key={ `${this.props.name}-row-header-remove-${rowIndex}` } onClick={ (event) => this.onRowRemoveClick(rowIndex, event) }><Icon key={ `${this.props.name}-header-remove-${rowIndex}-icon` } color="black" name="trash"/></span> }
       </Table.Cell>
     );
   }
@@ -288,5 +316,25 @@ export default class SalesForecastDataTable extends React.Component<Props, State
       editProductId: undefined,
       editRowHeader: undefined
     });
+  }
+
+    /**
+   * Event handler for removin storage row
+   * 
+   * @param event event
+   */
+  private onRowRemoveClick = async (rowIndex:number, event: React.MouseEvent<HTMLSpanElement>) => {
+    if (!this.props.removeStorageRow) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+
+    this.setState({
+      editRowIndex: undefined,
+      editProductId: undefined,
+      editRowHeader: undefined
+    });
+    await this.props.removeStorageRow(rowIndex);
   }
 }
