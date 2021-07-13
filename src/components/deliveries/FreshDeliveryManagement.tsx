@@ -17,7 +17,6 @@ import fi from 'date-fns/esm/locale/fi'
 import IncomingDeliveryIcon from "../../gfx/incoming-delivery-icon.png";
 import "./styles.css"
 import CreateDeliveryModal from "./CreateDeliveryModal";
-import StorageDataTable from "./StorageTable";
 import TableDataUtils from "../../utils/table-data-utils";
 import SalesForecastDataTable from "./SalesForecastTable";
 import AppConfig from "../../utils/AppConfig";
@@ -290,7 +289,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       eveningSalesForecastDataSheet: undefined
     });
 
-    const storageDataSheet = await this.prepareDataSheet(await this.findOrCreateDataSheet(`fresh-storage-${formattedDate}`));
+    const storageDataSheet = await this.prepareDataSheet(await this.findOrCreateDataSheet(`fresh-storage`));
     const morningSalesForecastDataSheet = await this.prepareDataSheet(await this.findOrCreateDataSheet(`fresh-morning-sales-forecast-${formattedDate}`));
     const eveningSalesForecastDataSheet = await this.prepareDataSheet(await this.findOrCreateDataSheet(`fresh-evening-sales-forecast-${formattedDate}`));
 
@@ -327,20 +326,139 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   }
 
   /**
-   * Renders storage value
+   * Renders storage table
    */
   private renderStorageTable = () => {
-    if (!this.state.storageDataSheet) {
+    const { storageDataSheet } = this.state;
+    if (!storageDataSheet) {
       return null;
     }
 
-    const qualities = _.values(this.state.deliveryQualities);
+    return <SalesForecastDataTable
+      title="Laatu"
+      name="fresh-storage"
+      products={ this.state.products }
+      setCellValue={ this.setstorageCellValue }
+      getCellValue={ this.getstorageCellValue }
+      getRowHeader={ this.getStorageRowHeader }
+      setRowHeader={ this.setStorageRowHeader }
+      onAddNewRow={ this.addstorageRow }
+      rowCount= {storageDataSheet.data.length - 1 } 
+      storage={ true }
+      removeStorageRow={ this.removeStorageRow } 
+    />
+  }
 
-    return <StorageDataTable
-      products={this.state.products}
-      qualities={qualities}
-      getCellValue={this.getStorageTableValue}
-      onApplyValue={this.onApplyStorageTableValue} />
+  /**
+   * Returns row header for storage table 
+   * 
+   * @param rowIndex row index
+   * @return row header for storage table
+   */
+  private getStorageRowHeader = (rowIndex: number): string => {
+    const { storageDataSheet } = this.state;
+    if (!storageDataSheet) {
+      return "";
+    }
+
+    const data: string[][] = storageDataSheet.data || [[]];
+    return TableDataUtils.getCellValue(data, rowIndex + 1, 0) || "Syötä nimi";
+  }
+
+  /**
+   * Sets row header for storage table 
+   * 
+   * @param rowIndex row index
+   * @param value new value
+   */
+  private setStorageRowHeader = async (rowIndex: number, value: string) => {
+    const { storageDataSheet } = this.state;
+    if (!storageDataSheet) {
+      return;
+    }
+
+    let data: string[][] = storageDataSheet.data || [[]];
+    data = TableDataUtils.setCellValue(data, rowIndex + 1, 0, value);
+
+    console.log("strt", data)
+
+    this.setState({
+      storageDataSheet: await this.saveDataSheet(storageDataSheet, data)
+    });
+  }
+
+  /**
+   * Removes storage table row
+   * 
+   * @param rowIndex row index
+   */
+  private removeStorageRow = async (rowIndex: number) => {
+    const { storageDataSheet } = this.state;
+    if (!storageDataSheet) {
+    return;
+    }
+
+    let data: string[][] = storageDataSheet.data || [[]];
+    data.splice(rowIndex + 1, 1);
+
+    this.setState({
+      storageDataSheet: await this.saveDataSheet(storageDataSheet, data)
+    });
+  } 
+  
+
+  /**
+   * Returns cell value for storage table 
+   * 
+   * @param productId product id
+   * @param rowIndex row index
+   * @return cell value for storage table 
+   */
+  private getstorageCellValue = (productId: string, rowIndex: number): number => {
+    const { storageDataSheet } = this.state;
+    if (!storageDataSheet) {
+      return 0;
+    }
+
+    const data: string[][] = storageDataSheet.data || [[]];
+    const productIndex = TableDataUtils.findCellIndex(data, 0, productId);
+
+    return parseFloat(TableDataUtils.getCellValue(data, rowIndex + 1, productIndex) || "0") || 0;
+  }
+
+  /**
+   * Sets cell value for storage table 
+   * 
+   * @param productId product id
+   * @param rowIndex row index
+   * @param value new value 
+   */
+  private setstorageCellValue = async (productId: string, rowIndex: number, value: number | null) => {
+    const { storageDataSheet } = this.state;
+    if (!storageDataSheet) {
+      return;
+    }
+
+    let data: string[][] = storageDataSheet.data || [[]];
+    const productIndex = TableDataUtils.findCellIndex(data, 0, productId);
+    data = TableDataUtils.setCellValue(data, rowIndex + 1, productIndex, String(value));
+
+    this.setState({
+      storageDataSheet: await this.saveDataSheet(storageDataSheet, data)
+    });
+  }
+
+  /**
+   * Adds new row to storage table 
+   */
+  private addstorageRow = async () => {
+    if (!this.state.storageDataSheet) {
+      return;
+    }
+
+    this.setState({
+      storageDataSheet: await this.addDataSheetRow(this.state.storageDataSheet)
+    });
   }
 
   /**
@@ -360,7 +478,9 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       getRowHeader={this.getMorningSalesForecastRowHeader}
       setRowHeader={this.setMorningSalesForecastRowHeader}
       onAddNewRow={this.addMorningSalesForecastRow}
-      rowCount={this.state.morningSalesForecastDataSheet.data.length - 1} />
+      rowCount={this.state.morningSalesForecastDataSheet.data.length - 1}
+      storage={ false }
+    />
   }
 
   /**
@@ -466,7 +586,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       getRowHeader={this.getEveningSalesForecastRowHeader}
       setRowHeader={this.setEveningSalesForecastRowHeader}
       onAddNewRow={this.addEveningSalesForecastRow}
-      rowCount={this.state.eveningSalesForecastDataSheet.data.length - 1} />
+      rowCount={this.state.eveningSalesForecastDataSheet.data.length - 1} 
+      storage={ false } />
   }
 
   /**
@@ -708,46 +829,6 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     const cellValue = productIndex > -1 && qualityIndex > -1 ? TableDataUtils.getCellValue(data, qualityIndex, productIndex) : null;
 
     return cellValue ? parseFloat(cellValue) || null : null;
-  }
-
-  /**
-   * Applise storage table value
-   */
-  private onApplyStorageTableValue = async (productId: string, qualityId: string, value: number) => {
-    if (!this.state.storageDataSheet || !this.state.storageDataSheet.id) {
-      return;
-    }
-
-    const qualities = _.values(this.state.deliveryQualities);
-
-    let data: string[][] = this.state.storageDataSheet.data || [[]];
-    if (data.length < 1) {
-      data.push([]);
-    }
-
-    qualities.forEach((quality) => {
-      const index = TableDataUtils.findRowIndex(data, 0, quality.id!);
-      if (index == -1) {
-        data.push([quality.id!]);
-      }
-    });
-
-    this.state.products.forEach((product) => {
-      const index = TableDataUtils.findCellIndex(data, 0, product.id!);
-      if (index == -1) {
-        const cellIndex = TableDataUtils.getCellCount(data, 0) || 1;
-        data = TableDataUtils.setCellValue(data, 0, cellIndex, product.id!);
-      }
-    });
-
-    const productIndex = TableDataUtils.findCellIndex(data, 0, productId);
-    const qualityIndex = TableDataUtils.findRowIndex(data, 0, qualityId);
-
-    data = TableDataUtils.setCellValue(data, qualityIndex, productIndex, String(value));
-
-    this.setState({
-      storageDataSheet: await this.saveDataSheet(this.state.storageDataSheet, data)
-    });
   }
 
   /**
