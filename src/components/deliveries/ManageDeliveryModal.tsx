@@ -641,6 +641,8 @@ class ManageDeliveryModal extends React.Component<Props, State> {
         return "Toimituksessa";
       case "DONE":
         return "Hyväksytty";
+      case "DELIVERYLOAN":
+        return "Muovilaatikoiden toimitus";
       case "PLANNED":
         return "Suunnitelma";
       case "PROPOSAL":
