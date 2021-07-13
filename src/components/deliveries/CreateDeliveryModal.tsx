@@ -1,11 +1,11 @@
 import * as React from "react";
 import * as actions from "../../actions";
 import { StoreState, Options, DeliveryDataValue, deliveryNoteImg64 } from "src/types";
-import Api, { Product, Delivery, DeliveryNote, Contact, DeliveryPlace, DeliveryStatus, DeliveryQuality, ItemGroupCategory, Body1 } from "pakkasmarja-client";
+import Api, { Product, Delivery, DeliveryNote, Contact, DeliveryPlace, DeliveryStatus, DeliveryQuality, ItemGroupCategory, ContractQuantities, Body1 } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
-import { Dropdown, Form, Input, Button, Divider, Modal, Image } from "semantic-ui-react";
+import { Dropdown, Form, Input, Button, Divider, Modal, Image, Segment } from "semantic-ui-react";
 import DeliveryNoteModal from "./DeliveryNoteModal";
 import "react-datepicker/dist/react-datepicker.css";
 import fi from 'date-fns/esm/locale/fi';
@@ -16,6 +16,7 @@ import { FileService } from "src/api/file.service";
 import Lightbox from "react-image-lightbox";
 import DatePicker, { registerLocale } from "react-datepicker";
 import AsyncButton from "../generic/asynchronous-button";
+import ApplicationRoles from "src/utils/application-roles";
 
 /**
  * Interface for component props
@@ -57,6 +58,8 @@ interface State {
   grayBoxesReturned: number;
   products: Product[];
   deliveryLoanComment: string;
+  contractQuantities?: ContractQuantities[];
+  loading: boolean;
 }
 
 /**
@@ -87,12 +90,12 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       grayBoxesLoaned: 0,
       grayBoxesReturned: 0,
       products: [],
-      deliveryLoanComment: ""
+      deliveryLoanComment: "",
+      loading: false
     };
 
     registerLocale('fi', fi);
   }
-
 
   /**
    * Handle inputchange
@@ -107,6 +110,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       const selectedProduct = this.state.products.find((product) => product.id === productId);
       this.loadDeliveryQualities();
       this.setState({ selectedProduct });
+      this.fetchContractQuantities(selectedProduct);
     }
   }
 
@@ -305,6 +309,92 @@ class CreateDeliveryModal extends React.Component<Props, State> {
   }
 
   /**
+   * @param deliveryProduct product wich contract qyantities will be fetched
+   */
+  private fetchContractQuantities = async (selectedProduct?: Product) => {
+    const { keycloak } = this.props;
+    const { selectedContactId } = this.state;
+
+    if (!keycloak || !keycloak.token || !selectedProduct || !selectedContactId || !keycloak.hasRealmRole(ApplicationRoles.VIEW_CONTRACT_QUANTITIES)) {
+      return;
+    }
+
+    this.setState({
+      loading: true
+    });
+
+    const contractsService = await Api.getContractsService(keycloak.token);
+    const contractQuantitities = await contractsService.listContractQuantities(selectedProduct?.itemGroupId, selectedContactId);
+
+    this.setState({
+      contractQuantities: contractQuantitities,
+      loading: false
+    })
+  }
+
+  /**
+   * Renders header 
+   */
+  private renderHeader() {
+    const {  } = this.props;
+    const { selectedContactId } = this.state;
+
+
+    return (
+      <div className="modal-header">
+        <React.Fragment>
+          Uusi toimitus/ehdotus
+        </React.Fragment>
+        { selectedContactId &&
+            this.renderContractInfo() 
+        }
+      </div>
+    )
+  }
+
+  /**
+   * Renders contract information
+   */
+  private renderContractInfo = () => {
+    const { contractQuantities, amount, selectedProduct } = this.state;
+    const { keycloak } = this.props;
+
+    if (!selectedProduct || !contractQuantities || !keycloak || !keycloak.hasRealmRole(ApplicationRoles.VIEW_CONTRACT_QUANTITIES)) {
+      return null;
+    }
+
+    var contractQuantity = 0;
+    var delivered = 0
+    var remainer = 0;
+
+    contractQuantities.forEach(contract => {
+      delivered = delivered + (contract.deliveredQuantity || 0);
+      contractQuantity = contractQuantity + (contract.contractQuantity || 0);
+    })
+
+    remainer = contractQuantity - delivered - (amount * selectedProduct.units * selectedProduct.unitSize);
+  
+    return (
+      <div className="contract-info">
+        <div>
+          { strings.contractQuantity }: { contractQuantity }Kg
+        </div>
+        <div>
+          { strings.deliveredQuantity } {delivered }Kg
+        </div>
+        <div style={{ borderTop: "5px solid #000000 " }}></div>
+        <div>
+        {
+          remainer >= 0 ?
+            <div>{ strings.contractRemainer }: { remainer }Kg</div> :
+            <div style={{ color: "red" }}>{ strings.contractExceeded }: { Math.abs(remainer) }Kg</div>
+        }
+        </div>
+      </div>
+    )
+  }
+
+  /**
    * Create delivery notes
    * 
    * @param deliveryId deliveryId
@@ -387,6 +477,17 @@ class CreateDeliveryModal extends React.Component<Props, State> {
    * Render method
    */
   public render() {
+    if (this.state.loading) {
+      return (
+        <Modal open={this.props.open}>
+          <Modal.Header>Uusi toimitus/ehdotus</Modal.Header>
+          <Modal.Content>
+            <Segment loading />
+          </Modal.Content>
+        </Modal>
+      );
+    }
+    
     const productOptions: Options[] = this.state.products.map((product) => {
       return {
         key: product.id,
@@ -437,7 +538,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
 
     return (
       <Modal onClose={() => this.props.onClose()} open={this.props.open}>
-        <Modal.Header>Uusi toimitus/ehdotus</Modal.Header>
+        <Modal.Header>{ this.renderHeader() }</Modal.Header>
         <Modal.Content>
           <Form>
             <Form.Field>
