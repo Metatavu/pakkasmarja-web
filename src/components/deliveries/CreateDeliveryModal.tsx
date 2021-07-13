@@ -483,7 +483,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
    * Render method
    */
   public render() {
-    console.log(this.isValid())
+    const { category } = this.props;
     if (this.state.loading) {
       return (
         <Modal open={this.props.open}>
@@ -521,7 +521,17 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       value: 17
     }];
 
-    const deliveryStatusOptions: Options[] = [{
+    const freshDeliveryStatusOptions: Options[] = [{
+      key: "proposal",
+      text: "Ehdotus",
+      value: "PROPOSAL"
+    }, {
+      key: "done",
+      text: "Valmis toimitus",
+      value: "DONE"
+    }];
+
+    const frozenDeliveryStatusOptions: Options[] = [{
       key: "proposal",
       text: "Ehdotus",
       value: "PROPOSAL"
@@ -564,7 +574,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
             </Form.Field>
             <Form.Field>
               <label>Tila</label>
-              {this.renderDropDown(deliveryStatusOptions, "Tila", "selectedDeliveryStatus")}
+              {this.renderDropDown(category === "FRESH" ? freshDeliveryStatusOptions : frozenDeliveryStatusOptions, "Tila", "selectedDeliveryStatus")}
             </Form.Field>
             <Form.Field>
               <label>Toimituspaikka</label>
