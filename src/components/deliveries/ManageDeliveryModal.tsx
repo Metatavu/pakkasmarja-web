@@ -132,7 +132,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
 
     this.setState({
       products,
-      deliveryPlaces,
+      deliveryPlaces: deliveryPlaces.filter(deliveryPlace => deliveryPlace.name !== "Muu"),
       selectedProduct: deliveryProduct,
       userId: delivery.userId,
       deliveryId: delivery.id,

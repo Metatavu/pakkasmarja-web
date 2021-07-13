@@ -484,7 +484,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
    * Render method
    */
   public render() {
-    const { category } = this.props;
+    const { category, deliveryPlaces } = this.props;
     if (this.state.loading) {
       return (
         <Modal open={this.props.open}>
@@ -546,7 +546,8 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       value: "DELIVERYLOAN"
     }];
 
-    const deliveryPlaces: Options[] = this.props.deliveryPlaces.map((deliveryPlace) => {
+
+    const deliveryPlaceOpitons: Options[] = deliveryPlaces.filter(deliveryPlace => deliveryPlace.name !== "Muu").map((deliveryPlace) => {
       return {
         key: deliveryPlace.id,
         value: deliveryPlace.id,
@@ -579,7 +580,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
             </Form.Field>
             <Form.Field>
               <label>Toimituspaikka</label>
-              {this.renderDropDown(deliveryPlaces, "Toimituspaikka", "selectedDeliveryPlaceId")}
+              {this.renderDropDown(deliveryPlaceOpitons, "Toimituspaikka", "selectedDeliveryPlaceId")}
             </Form.Field>
             <Form.Field>
               {this.state.selectedProductId && this.props.category === "FRESH" &&
