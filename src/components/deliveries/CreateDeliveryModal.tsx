@@ -305,7 +305,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
     const { contractQuantities, amount, selectedProduct } = this.state;
     const { keycloak } = this.props;
 
-    if (!selectedProduct || !contractQuantities || !keycloak || !keycloak.hasRealmRole(ApplicationRoles.VIEW_CONTRACT_QUANTITIES)) {
+    if (!selectedProduct || !contractQuantities || !contractQuantities?.length || !keycloak || !keycloak.hasRealmRole(ApplicationRoles.VIEW_CONTRACT_QUANTITIES)) {
       return null;
     }
 
