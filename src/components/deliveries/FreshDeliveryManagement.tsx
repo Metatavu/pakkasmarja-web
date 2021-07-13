@@ -380,8 +380,6 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     let data: string[][] = storageDataSheet.data || [[]];
     data = TableDataUtils.setCellValue(data, rowIndex + 1, 0, value);
 
-    console.log("strt", data)
-
     this.setState({
       storageDataSheet: await this.saveDataSheet(storageDataSheet, data)
     });
