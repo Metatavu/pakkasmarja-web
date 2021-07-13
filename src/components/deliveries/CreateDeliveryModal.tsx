@@ -311,6 +311,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
     try {
       await deliveryLoansService.createDeliveryLoan(deliveryLoan);
     } catch (error) {
+      console.log(error);
     }
   }
 
