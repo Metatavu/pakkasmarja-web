@@ -19,7 +19,7 @@ export default class TableDataUtils {
     }
 
     const row = data[rowIndex];
-    if (row.length < cellIndex) {
+    if (!row || row.length < cellIndex) {
       return null;
     }
 

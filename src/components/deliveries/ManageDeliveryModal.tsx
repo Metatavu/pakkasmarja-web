@@ -3,7 +3,7 @@ import * as actions from "../../actions";
 import * as _ from "lodash";
 import * as moment from "moment";
 import { StoreState, DeliveriesState, Options, DeliveryDataValue, HttpErrorResponse, deliveryNoteImg64 } from "../../types";
-import Api, { Product, DeliveryPlace, Delivery, DeliveryNote, DeliveryQuality, ItemGroupCategory } from "pakkasmarja-client";
+import Api, { Product, DeliveryPlace, Delivery, DeliveryNote, DeliveryQuality, ItemGroupCategory, ContractQuantities } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
@@ -18,6 +18,7 @@ import Lightbox from 'react-image-lightbox';
 import 'react-image-lightbox/style.css';
 import DeliveryNoteModal from "./DeliveryNoteModal";
 import AsyncButton from "../generic/asynchronous-button";
+import ApplicationRoles from "src/utils/application-roles";
 
 /**
  * Interface for component props
@@ -59,7 +60,8 @@ interface State {
   grayBoxesLoaned: number,
   grayBoxesReturned: number,
   selectedProduct?: Product,
-  productLoader: boolean
+  productLoader: boolean,
+  contractQuantities?: ContractQuantities[]
 }
 
 /**
@@ -90,7 +92,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       grayBoxesLoaned: 0,
       grayBoxesReturned: 0,
       modalOpen: false,
-      productLoader: false
+      productLoader: false,
     };
     registerLocale('fi', fi);
   }
@@ -123,12 +125,14 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       throw new Error("Could not find delivery product");
     }
 
+    this.fetchContractQuantities(deliveryProduct);
+
     const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(category, delivery.productId);
     const deliveryTime = moment(delivery.time).utc().hour() <= 12 ? 11 : 17;
 
     this.setState({
       products,
-      deliveryPlaces,
+      deliveryPlaces: deliveryPlaces.filter(deliveryPlace => deliveryPlace.name !== "Muu"),
       selectedProduct: deliveryProduct,
       userId: delivery.userId,
       deliveryId: delivery.id,
@@ -180,7 +184,30 @@ class ManageDeliveryModal extends React.Component<Props, State> {
         const selectedProduct = this.state.products.find( product => product.id === value );
         this.loadDeliveryQualities();
         this.setState({ selectedProduct });
+        this.fetchContractQuantities(selectedProduct);
     }
+  }
+
+  /**
+   * @param deliveryProduct product wich contract quantities will be fetched
+   */
+  private fetchContractQuantities = async (deliveryProduct?: Product) => {
+    const { keycloak, delivery } = this.props;
+
+    if (!keycloak || !keycloak.token || !deliveryProduct || !delivery || !keycloak.hasRealmRole(ApplicationRoles.VIEW_CONTRACT_QUANTITIES)) {
+      return;
+    }
+    this.setState({
+      loading: true
+    });
+
+    const contractsService = await Api.getContractsService(keycloak.token);
+    const contractQuantitites = await contractsService.listContractQuantities(deliveryProduct.itemGroupId, delivery.userId);
+
+    this.setState({
+      contractQuantities: contractQuantitites,
+      loading: false
+    })
   }
 
   /**
@@ -441,7 +468,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
 
     return (
       <Modal onClose={() => this.props.onClose()} open={this.props.open}>
-        <Modal.Header>{this.renderHeader()}</Modal.Header>
+        <Modal.Header>{ this.renderHeader() }</Modal.Header>
         <Modal.Content>
           <Form>
             <Form.Field>
@@ -614,6 +641,8 @@ class ManageDeliveryModal extends React.Component<Props, State> {
         return "Toimituksessa";
       case "DONE":
         return "Hyväksytty";
+      case "DELIVERYLOAN":
+        return "Muovilaatikoiden toimitus";
       case "PLANNED":
         return "Suunnitelma";
       case "PROPOSAL":
@@ -697,19 +726,81 @@ class ManageDeliveryModal extends React.Component<Props, State> {
    * Renders header text
    */
   private renderHeader() {
-    if (this.props.delivery.status == "DONE") {
-      return <React.Fragment>Toimitus on jo hyväksytty</React.Fragment>
+    const { delivery } = this.props;
+
+    return (
+      <div className="modal-header">
+        { delivery.status === "DONE" &&
+            <React.Fragment>
+              Toimitus on jo hyväksytty
+            </React.Fragment>
+        }
+        { delivery.status === "NOT_ACCEPTED" &&
+          <React.Fragment>
+            Toimitus hylätty
+          </React.Fragment>
+        }
+        { delivery.status === "PROPOSAL" &&
+          <React.Fragment>
+            Muokkaa ehdotusta
+          </React.Fragment>
+        }
+        { delivery.status === "PLANNED" &&
+          <React.Fragment>
+            Muokkaa ehdotusta
+          </React.Fragment>
+        }
+        { delivery.status !== "PROPOSAL" && !"REJECTED" && !"DONE" && !"PLANNED" &&
+          <React.Fragment>Hyväksy toimitus</React.Fragment>
+        }
+        { this.renderContractQuantities() }
+      </div>
+    )
+  }
+
+  /**
+   * Renders contract information
+   */
+  private renderContractQuantities = () => {
+    const { contractQuantities, amount, selectedProduct } = this.state;
+    const { keycloak } = this.props;
+
+    if (!contractQuantities || !contractQuantities?.length || !selectedProduct || !keycloak || !keycloak.hasRealmRole(ApplicationRoles.VIEW_CONTRACT_QUANTITIES)) {
+      return null;
     }
 
-    if (this.props.delivery.status == "REJECTED") {
-      return <React.Fragment>Toimitus hylätty</React.Fragment>
-    }
+    var contractQuantity = 0;
+    var delivered = 0
+    var remainer = 0;
 
-    if (this.props.delivery.status == "PROPOSAL") {
-      return <React.Fragment>Muokkaa ehdotusta</React.Fragment>
-    }
+    contractQuantities?.forEach(contract => {
+      if (!contract.contractQuantity) {
+        return;
+      }
+      delivered = delivered + (contract.deliveredQuantity || 0);
+      contractQuantity = contractQuantity + contract.contractQuantity;
+    })
 
-    return <React.Fragment>Hyväksy toimitus</React.Fragment>
+    remainer = contractQuantity - delivered - (amount * selectedProduct?.units * selectedProduct?.unitSize);
+
+    return (
+      <div className="contract-info">
+        <div>
+          { strings.contractQuantity }: { contractQuantity }Kg
+        </div>
+        <div>
+          { strings.deliveredQuantity } {delivered }Kg
+        </div>
+        <div style={{ borderTop: "5px solid #000000 " }}></div>
+        <div>
+        {
+          remainer >= 0 ?
+            <div>{ strings.contractRemainer }: { remainer }</div> :
+            <div style={{ color: "red" }}>{ strings.contractExceeded }: { Math.abs(remainer) }Kg</div>
+        }
+        </div>
+      </div>
+    )
   }
 
   /**
@@ -726,7 +817,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       return false;
     }
 
-    if (this.props.delivery.status != "PROPOSAL" && !this.state.selectedQualityId) {
+    if (this.props.delivery.status != "PROPOSAL" || "PLANNED" && !this.state.selectedQualityId) {
       return false;
     }
 

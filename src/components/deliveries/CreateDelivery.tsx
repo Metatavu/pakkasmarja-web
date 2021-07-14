@@ -106,7 +106,7 @@ class CreateDelivery extends React.Component<Props, State> {
     const products: Product[] = unfilteredProducts.filter(product => product.active === true);
     this.setState({
       products,
-      deliveryPlaces: deliveryPlaces.filter(deliveryPlace => deliveryPlace.id !== "OTHER"),
+      deliveryPlaces: deliveryPlaces.filter(deliveryPlace => deliveryPlace.name !== "Muu"),
       category,
       loading: false
     });

@@ -406,6 +406,8 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
         return "Toimituksessa";
       case "DONE":
         return "Hyväksytty";
+      case "DELIVERYLOAN":
+        return "Muovilaatikoiden toimitus";
       case "PLANNED":
         return "Suunnitelma";
       case "PROPOSAL":
@@ -455,6 +457,8 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
   private getDeliveryTextStyle(delivery: Delivery) {
     switch (delivery.status) {
       case "DELIVERY":
+        return { color: "#000", paddingLeft: "20px" };
+      case "DELIVERYLOAN":
         return { color: "#000", paddingLeft: "20px" };
       case "DONE":
         return { color: "#4bb543", paddingLeft: "20px" };
