@@ -728,7 +728,6 @@ class ManageDeliveryModal extends React.Component<Props, State> {
   private renderHeader() {
     const { delivery } = this.props;
 
-    console.log(delivery.status)
     return (
       <div className="modal-header">
         { delivery.status === "DONE" &&
