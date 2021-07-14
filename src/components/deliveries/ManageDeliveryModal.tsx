@@ -745,7 +745,12 @@ class ManageDeliveryModal extends React.Component<Props, State> {
             Muokkaa ehdotusta
           </React.Fragment>
         }
-        { delivery.status !== "PROPOSAL" && !"REJECTED" && !"DONE" &&
+        { delivery.status === "PLANNED" &&
+          <React.Fragment>
+            Muokkaa ehdotusta
+          </React.Fragment>
+        }
+        { delivery.status !== "PROPOSAL" && !"REJECTED" && !"DONE" && !"PLANNED" &&
           <React.Fragment>Hyväksy toimitus</React.Fragment>
         }
         { this.renderContractQuantities() }
@@ -812,7 +817,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       return false;
     }
 
-    if (this.props.delivery.status != "PROPOSAL" && !this.state.selectedQualityId) {
+    if (this.props.delivery.status != "PROPOSAL" || "PLANNED" && !this.state.selectedQualityId) {
       return false;
     }
 
