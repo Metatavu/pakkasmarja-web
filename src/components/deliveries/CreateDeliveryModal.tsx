@@ -353,7 +353,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
           Uusi toimitus/ehdotus
         </React.Fragment>
         { selectedContactId &&
-            this.renderContractInfo() 
+            this.renderContractQuantities() 
         }
       </div>
     )
@@ -362,7 +362,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
   /**
    * Renders contract information
    */
-  private renderContractInfo = () => {
+  private renderContractQuantities = () => {
     const { contractQuantities, amount, selectedProduct } = this.state;
     const { keycloak } = this.props;
 
