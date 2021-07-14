@@ -750,7 +750,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
             Muokkaa ehdotusta
           </React.Fragment>
         }
-        { delivery.status !== "PROPOSAL" && !"REJECTED" && !"DONE" && !"PLANNED" &&
+        { delivery.status !== "DONE" && delivery.status !== "PROPOSAL" && delivery.status !== "NOT_ACCEPTED" && delivery.status !== "PLANNED" &&
           <React.Fragment>Hyväksy toimitus</React.Fragment>
         }
         { this.renderContractQuantities() }
