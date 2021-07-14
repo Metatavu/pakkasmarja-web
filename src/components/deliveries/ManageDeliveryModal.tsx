@@ -61,7 +61,7 @@ interface State {
   grayBoxesReturned: number,
   selectedProduct?: Product,
   productLoader: boolean,
-  contractQuantitites?: ContractQuantities[]
+  contractQuantities?: ContractQuantities[]
 }
 
 /**
@@ -205,7 +205,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     const contractQuantitites = await contractsService.listContractQuantities(deliveryProduct.itemGroupId, delivery.userId);
 
     this.setState({
-      contractQuantitites: contractQuantitites,
+      contractQuantities: contractQuantitites,
       loading: false
     })
   }
@@ -762,10 +762,10 @@ class ManageDeliveryModal extends React.Component<Props, State> {
    * Renders contract information
    */
   private renderContractQuantities = () => {
-    const { contractQuantitites, amount, selectedProduct } = this.state;
+    const { contractQuantities, amount, selectedProduct } = this.state;
     const { keycloak } = this.props;
 
-    if (!contractQuantitites?.length || !selectedProduct || !keycloak || !keycloak.hasRealmRole(ApplicationRoles.VIEW_CONTRACT_QUANTITIES)) {
+    if (!contractQuantities || !contractQuantities?.length || !selectedProduct || !keycloak || !keycloak.hasRealmRole(ApplicationRoles.VIEW_CONTRACT_QUANTITIES)) {
       return null;
     }
 
@@ -773,7 +773,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     var delivered = 0
     var remainer = 0;
 
-    contractQuantitites?.forEach(contract => {
+    contractQuantities?.forEach(contract => {
       if (!contract.contractQuantity) {
         return;
       }
