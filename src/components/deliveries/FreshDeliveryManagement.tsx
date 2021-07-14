@@ -289,7 +289,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       eveningSalesForecastDataSheet: undefined
     });
 
-    const storageDataSheet = await this.prepareDataSheet(await this.findOrCreateDataSheet(`fresh-storage-${formattedDate}`));
+    const storageDataSheet = await this.prepareDataSheet(await this.findOrCreateDataSheet(`fresh-storaga-notes-${formattedDate}`));
     const morningSalesForecastDataSheet = await this.prepareDataSheet(await this.findOrCreateDataSheet(`fresh-morning-sales-forecast-${formattedDate}`));
     const eveningSalesForecastDataSheet = await this.prepareDataSheet(await this.findOrCreateDataSheet(`fresh-evening-sales-forecast-${formattedDate}`));
 
