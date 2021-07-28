@@ -763,7 +763,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
    */
   private renderContractQuantities = () => {
     const { contractQuantities, amount, selectedProduct } = this.state;
-    const { keycloak } = this.props;
+    const { keycloak, delivery } = this.props;
 
     if (!contractQuantities || !contractQuantities?.length || !selectedProduct || !keycloak || !keycloak.hasRealmRole(ApplicationRoles.VIEW_CONTRACT_QUANTITIES)) {
       return null;
@@ -781,7 +781,12 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       contractQuantity = contractQuantity + contract.contractQuantity;
     })
 
-    remainer = contractQuantity - delivered - (amount * selectedProduct?.units * selectedProduct?.unitSize);
+    if (delivery.status === "DONE") {
+      remainer = contractQuantity - delivered;
+    } else {
+      remainer = contractQuantity - delivered - (amount * selectedProduct?.units * selectedProduct?.unitSize);
+    }
+
 
     return (
       <div className="contract-info">
