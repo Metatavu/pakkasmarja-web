@@ -624,17 +624,7 @@ class ContractManagementList extends React.Component<Props, State> {
 
     this.setState({ contractsLoading: true });
 
-    let documentTemplate = await Api.getContractsService(keycloak.token).findContractDocumentTemplate(contract.id, "");
-    documentTemplate = documentTemplate[0];
-
-    let type: string = "";
-    if (documentTemplate) {
-      type = documentTemplate.type;
-    } else {
-      let documentTemplate = await Api.getItemGroupsService(keycloak.token).findItemGroupDocumentTemplate(itemGroup.id, "") || {};
-      documentTemplate = documentTemplate[0];
-      type = documentTemplate.type || "";
-    }
+    const type = contract.year.toString();
 
     const pdfData: Response = await new PDFService(
       process.env.REACT_APP_API_URL || "",
