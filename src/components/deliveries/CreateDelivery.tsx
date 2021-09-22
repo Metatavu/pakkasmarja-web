@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as actions from "../../actions/";
-import { StoreState, DeliveriesState, DeliveryProduct, Options, DeliveryDataValue, deliveryNoteImg64 } from "src/types";
+import { StoreState, DeliveriesState, DeliveryProduct, Options, DeliveryDataValue, DeliveryNoteImage64 } from "src/types";
 import Api, { Product, DeliveryPlace, ItemGroupCategory, Delivery, DeliveryNote, OpeningHourInterval, OpeningHourPeriod } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
@@ -52,7 +52,7 @@ interface State {
   category: string;
   redirect: boolean;
   deliveryNotes: DeliveryNote[];
-  deliveryNotesWithImgBase64: deliveryNoteImg64[];
+  deliveryNotesWithImageBase64: DeliveryNoteImage64[];
   deliveryTimeValue: string;
   openImage?: string;
   loading: boolean;
@@ -83,7 +83,7 @@ class CreateDelivery extends React.Component<Props, State> {
       modalOpen: false,
       category: "",
       deliveryNotes: [],
-      deliveryNotesWithImgBase64: [],
+      deliveryNotesWithImageBase64: [],
       loading: false,
       deliveryTimeValue: moment().minutes(0).format("HH:mm"),
     };
@@ -264,19 +264,19 @@ class CreateDelivery extends React.Component<Props, State> {
     if (!process.env.REACT_APP_API_URL || !this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
-    const deliveryNotesWithImgBase64 = this.state.deliveryNotesWithImgBase64;
+    const deliveryNotesWithImageBase64 = this.state.deliveryNotesWithImageBase64;
     if (deliveryNote.image) {
       const fileService = new FileService(process.env.REACT_APP_API_URL, this.props.keycloak.token);
       const imageData = await fileService.getFile(deliveryNote.image || "");
       const src = `data:image/jpeg;base64,${imageData.data}`;
-      deliveryNotesWithImgBase64.push({ text: deliveryNote.text, img64: src });
+      deliveryNotesWithImageBase64.push({ text: deliveryNote.text, img64: src });
     } else {
-      deliveryNotesWithImgBase64.push({ text: deliveryNote.text, img64: "" });
+      deliveryNotesWithImageBase64.push({ text: deliveryNote.text, img64: "" });
     }
 
     const deliveryNotes: DeliveryNote[] = this.state.deliveryNotes || [];
     deliveryNotes.push(deliveryNote);
-    this.setState({ deliveryNotes, deliveryNotesWithImgBase64 });
+    this.setState({ deliveryNotes, deliveryNotesWithImageBase64 });
   }
 
   /**
@@ -362,12 +362,12 @@ class CreateDelivery extends React.Component<Props, State> {
    * @param note note with image
    * @param index note index
    */
-  private removeNote = (note: deliveryNoteImg64, index: number) => {
-    const deliveryNotesWithImgBase64 = this.state.deliveryNotesWithImgBase64;
-    const newNotesWith64 = deliveryNotesWithImgBase64.filter((note, i) => i !== index);
+  private removeNote = (note: DeliveryNoteImage64, index: number) => {
+    const deliveryNotesWithImageBase64 = this.state.deliveryNotesWithImageBase64;
+    const newNotesWith64 = deliveryNotesWithImageBase64.filter((note, i) => i !== index);
     const deliveryNotes = this.state.deliveryNotes;
     const newDeliveryNotes = deliveryNotes.filter((note, i) => i !== index);
-    this.setState({ deliveryNotesWithImgBase64: newNotesWith64, deliveryNotes: newDeliveryNotes });
+    this.setState({ deliveryNotesWithImageBase64: newNotesWith64, deliveryNotes: newDeliveryNotes });
   }
 
   /**
@@ -436,7 +436,7 @@ class CreateDelivery extends React.Component<Props, State> {
       category,
       amount,
       selectedTime,
-      deliveryNotesWithImgBase64,
+      deliveryNotesWithImageBase64,
       modalOpen,
       openImage
     } = this.state;
@@ -552,8 +552,8 @@ class CreateDelivery extends React.Component<Props, State> {
                 </Message.Header>
               </Message>
             }
-            { deliveryNotesWithImgBase64.length > 0 ?
-              deliveryNotesWithImgBase64.map((deliveryNote, i) => {
+            { deliveryNotesWithImageBase64.length > 0 ?
+              deliveryNotesWithImageBase64.map((deliveryNote, i) => {
                 return (
                   <React.Fragment key={`${deliveryNote.text} ${i}`}>
                     <h4 style={{ marginTop: 14 }}>

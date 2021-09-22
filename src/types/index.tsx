@@ -91,9 +91,9 @@ export interface SortedDeliveryProduct {
 }
 
 /**
- * Interface for delivery note with img base 64
+ * Interface for delivery note with image base 64
  */
-export interface deliveryNoteImg64 {
+export interface DeliveryNoteImage64 {
   id?: string;
   text?: string,
   img64?: string
