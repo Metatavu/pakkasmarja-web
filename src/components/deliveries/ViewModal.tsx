@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as Keycloak from 'keycloak-js';
 import * as actions from "../../actions/";
-import { StoreState, DeliveryProduct, deliveryNoteImg64 } from "src/types";
+import { StoreState, DeliveryProduct, DeliveryNoteImage64 } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import { Modal, Header, Button, Divider, Loader, Dimmer, Image } from "semantic-ui-react";
@@ -31,7 +31,7 @@ interface State {
   deliveryProduct?: DeliveryProduct;
   redirect: boolean;
   loading: boolean;
-  deliveryNotesWithImgBase64: deliveryNoteImg64[];
+  deliveryNotesWithImageBase64: DeliveryNoteImage64[];
   openImage?: string;
   alvAmount: number;
 };
@@ -43,7 +43,7 @@ class ViewModal extends React.Component<Props, State> {
 
   /**
    * Constructor
-   * 
+   *
    * @param props props
    */
   constructor(props: Props) {
@@ -52,7 +52,7 @@ class ViewModal extends React.Component<Props, State> {
       modalOpen: false,
       redirect: false,
       loading: false,
-      deliveryNotesWithImgBase64: [],
+      deliveryNotesWithImageBase64: [],
       alvAmount: 1.14
     };
   }
@@ -83,20 +83,20 @@ class ViewModal extends React.Component<Props, State> {
     const deliveriesService = await Api.getDeliveriesService(this.props.keycloak.token);
     const deliveryNotes = await deliveriesService.listDeliveryNotes(deliveryId);
     const fileService = new FileService(process.env.REACT_APP_API_URL, this.props.keycloak.token);
-    const deliveryNotesWithImgBase64Promises = deliveryNotes.map(async (note) => {
+    const deliveryNotesWithImageBase64Promises = deliveryNotes.map(async (note) => {
       if (note.image) {
         const imageData = await fileService.getFile(note.image || "");
         const src = `data:image/jpeg;base64,${imageData.data}`
-        const deliveryNoteImg64: deliveryNoteImg64 = { text: note.text, img64: src, id: note.id };
-        return deliveryNoteImg64;
+        const deliveryNoteImage64: DeliveryNoteImage64 = { text: note.text, img64: src, id: note.id };
+        return deliveryNoteImage64;
       } else {
-        const deliveryNoteImg64: deliveryNoteImg64 = { text: note.text, img64: "", id: note.id };
-        return deliveryNoteImg64;
+        const deliveryNoteImage64: DeliveryNoteImage64 = { text: note.text, img64: "", id: note.id };
+        return deliveryNoteImage64;
       }
 
     })
-    const deliveryNotesWithImgBase64 = await Promise.all(deliveryNotesWithImgBase64Promises.map(note => Promise.resolve(note)))
-    this.setState({ deliveryNotesWithImgBase64 });
+    const deliveryNotesWithImageBase64 = await Promise.all(deliveryNotesWithImageBase64Promises.map(note => Promise.resolve(note)))
+    this.setState({ deliveryNotesWithImageBase64: deliveryNotesWithImageBase64 });
   }
 
   /**
@@ -202,8 +202,8 @@ class ViewModal extends React.Component<Props, State> {
                   </div>
                 </div>
                 : null}
-              {this.state.deliveryNotesWithImgBase64.length > 0 ?
-                this.state.deliveryNotesWithImgBase64.map((deliveryNote, i) => {
+              {this.state.deliveryNotesWithImageBase64.length > 0 ?
+                this.state.deliveryNotesWithImageBase64.map((deliveryNote, i) => {
                   return (
                     <React.Fragment key={`${deliveryNote.text} ${i}`}>
                       <h4 style={{ marginTop: 10, marginBottom: 0 }}>Huomio {i + 1}</h4>

@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as actions from "../../actions";
-import { StoreState, Options, DeliveryDataValue, deliveryNoteImg64 } from "src/types";
-import Api, { Product, Delivery, DeliveryNote, Contact, DeliveryPlace, DeliveryStatus, DeliveryQuality, ItemGroupCategory, ContractQuantities, Body1 } from "pakkasmarja-client";
+import { StoreState, Options, DeliveryDataValue, DeliveryNoteImage64 } from "src/types";
+import Api, { Product, Delivery, DeliveryNote, Contact, DeliveryPlace, DeliveryStatus, DeliveryQuality, ItemGroupCategory, ContractQuantities } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
@@ -46,7 +46,7 @@ interface State {
   contactsLoading: boolean;
   selectedProduct?: Product;
   deliveryTimeValue?: number;
-  deliveryNoteImgs64: deliveryNoteImg64[];
+  deliveryNoteImages64: DeliveryNoteImage64[];
   openImage?: string;
   selectedDeliveryStatus: DeliveryStatus;
   deliveryQualities: DeliveryQuality[];
@@ -69,7 +69,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
 
   /**
    * Constructor
-   * 
+   *
    * @param props props
    */
   constructor(props: Props) {
@@ -81,7 +81,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       deliveryNotes: [],
       contactsLoading: false,
       contacts: [],
-      deliveryNoteImgs64: [],
+      deliveryNoteImages64: [],
       selectedDeliveryPlaceId: props.deliveryPlaceId,
       selectedDeliveryStatus: "PROPOSAL",
       selectedDate: this.props.selectedDate || new Date(),
@@ -98,131 +98,155 @@ class CreateDeliveryModal extends React.Component<Props, State> {
   }
 
   /**
-   * Handle inputchange
+   * Event handler for input change
+   *
+   * @param key key
+   * @param value value
    */
   private handleInputChange = (key: string, value: DeliveryDataValue) => {
+    const { products } = this.state;
 
-    const state: State = this.state;
-    state[key] = value;
-    this.setState(state);
+    this.setState({ ...this.state, [key]: value });
+
     if (key === "selectedProductId") {
       const productId = value as string;
-      const selectedProduct = this.state.products.find((product) => product.id === productId);
+      const selectedProduct = products.find(product => product.id === productId);
       this.loadDeliveryQualities();
-      this.setState({ selectedProduct });
+      this.setState({ selectedProduct: selectedProduct });
       this.fetchContractQuantities(selectedProduct);
     }
   }
 
   /**
-   * Handle delivery loan comment change
+   * Event handler for delivery loan comment change
+   *
+   * @param event change event
    */
   private handleDeliveryLoanCommentChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    this.setState({
-      deliveryLoanComment: event.target.value
-    })
+    this.setState({ deliveryLoanComment: event.target.value });
   }
 
   /**
    * Load delivery qualities
    */
   private loadDeliveryQualities = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token) {
+    const { keycloak, category } = this.props;
+    const { selectedProductId } = this.state;
+
+    if (!keycloak || !keycloak.token) {
       return;
     }
 
-    const deliveryQualitiesService = await Api.getDeliveryQualitiesService(this.props.keycloak.token);
-    const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(this.props.category, this.state.selectedProductId);
-    this.setState({ deliveryQualities, selectedQualityId: "" });
+    const deliveryQualitiesService = await Api.getDeliveryQualitiesService(keycloak.token);
+    const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(category, selectedProductId);
+
+    this.setState({
+      deliveryQualities: deliveryQualities,
+      selectedQualityId: ""
+    });
   }
 
   /**
    * Render drop down
-   * 
+   *
    * @param options options
    * @param placeholder placeholder
    * @param key key
    */
   private renderDropDown = (options: Options[], placeholder: string, key: string) => {
-    if (options.length <= 0) {
+    if (!options.length) {
       return <Dropdown fluid />;
     }
+
     const value = this.state[key];
 
     return (
       <Dropdown
         selection
         fluid
-        placeholder={placeholder}
-        value={value}
-        options={options}
-        onChange={(event, data) => {
-          this.handleInputChange(key, data.value)
-        }
-        }
+        placeholder={ placeholder }
+        value={ value }
+        options={ options }
+        onChange={ (event, data) => this.handleInputChange(key, data.value) }
       />
     );
   }
 
   /**
    * Returns whether form is valid or not
-   * 
+   *
    * @return whether form is valid or not
    */
   private isValid = () => {
-    if (this.state.selectedDeliveryStatus === "DONE") {
-      return !!(
-        this.state.selectedDeliveryStatus
-        && this.state.selectedDeliveryPlaceId
-        && this.state.selectedProductId
-        && this.state.selectedContactId
-        && this.state.selectedQualityId
-        && typeof this.state.amount === 'number'
-      );
-    } else if(this.state.selectedDeliveryStatus === "DELIVERYLOAN") {
-      return !!(
-        this.state.selectedDeliveryStatus
-        && this.state.selectedDeliveryPlaceId
-        && this.state.selectedContactId
-      );
-    } else {
-      return !!(
-        this.state.selectedDeliveryStatus
-        && this.state.selectedDeliveryPlaceId
-        && this.state.selectedProductId
-        && this.state.selectedContactId
-        && this.state.deliveryTimeValue
-        && typeof this.state.amount === 'number'
-      );
+    const {
+      selectedDeliveryStatus,
+      selectedDeliveryPlaceId,
+      selectedContactId,
+      selectedProductId,
+      selectedQualityId,
+      deliveryTimeValue,
+      amount
+    } = this.state;
+
+    switch (selectedDeliveryStatus) {
+      case "DONE":
+        return (
+          selectedDeliveryStatus &&
+          selectedDeliveryPlaceId &&
+          selectedProductId &&
+          selectedContactId &&
+          selectedQualityId &&
+          typeof amount === "number"
+        );
+      case "DELIVERYLOAN":
+        return (
+          selectedDeliveryStatus &&
+          selectedDeliveryPlaceId &&
+          selectedContactId
+        );
+      default:
+        return (
+          selectedDeliveryStatus &&
+          selectedDeliveryPlaceId &&
+          selectedProductId &&
+          selectedContactId &&
+          deliveryTimeValue &&
+          typeof amount === "number"
+        );
     }
   }
 
   /**
    * Add delivery note to state
-   * 
+   *
    * @param deliveryNote deliveryNote
    */
   private addDeliveryNote = (deliveryNote: DeliveryNote) => {
-    const deliveryNotes: DeliveryNote[] = this.state.deliveryNotes || [];
+    const deliveryNotes = [ ...this.state.deliveryNotes ];
     deliveryNotes.push(deliveryNote);
-    this.setState({ deliveryNotes });
-    this.getDeliveryNoteImgs(deliveryNotes)
+
+    this.setState({ deliveryNotes: deliveryNotes });
+    this.getDeliveryNoteImages(deliveryNotes);
   }
 
   /**
    * Get delivery note images as base64
-   * 
+   *
    * @param deliveryNotes deliveryNotes
    */
-  private getDeliveryNoteImgs = async (deliveryNotes: DeliveryNote[]) => {
-    if (!this.props.keycloak || !this.props.keycloak.token || !process.env.REACT_APP_API_URL) {
+  private getDeliveryNoteImages = async (deliveryNotes: DeliveryNote[]) => {
+    const { keycloak } = this.props;
+
+    if (!keycloak || !keycloak.token || !process.env.REACT_APP_API_URL) {
       return;
     }
-    const fileService = new FileService(process.env.REACT_APP_API_URL, this.props.keycloak.token);
-    const deliveryNotesImages = deliveryNotes.map(async (note) => {
+
+    const fileService = new FileService(process.env.REACT_APP_API_URL, keycloak.token);
+
+    const deliveryNotesImages = deliveryNotes.map(async note => {
       if (note.image) {
         const imageData = await fileService.getFile(note.image || "");
-        const src = `data:image/jpeg;base64,${imageData.data}`
+        const src = `data:image/jpeg;base64,${imageData.data}`;
         const deliveryNoteImg64 = { text: note.text, img64: src };
         return deliveryNoteImg64;
       } else {
@@ -230,17 +254,19 @@ class CreateDeliveryModal extends React.Component<Props, State> {
         return deliveryNoteImg64;
       }
     })
-    const deliveryNoteImgs64 = await Promise.all(deliveryNotesImages.map(note => Promise.resolve(note)));
 
-    this.setState({ deliveryNoteImgs64 });
+    const deliveryNoteImages64 = await Promise.all(deliveryNotesImages.map(note => Promise.resolve(note)));
+
+    this.setState({ deliveryNoteImages64: deliveryNoteImages64 });
   }
 
   /**
    * Handles delivery submit
    */
   private handleDeliverySubmit = async () => {
+    const { keycloak, onClose } = this.props;
     const { selectedDeliveryStatus, selectedProductId, selectedContactId } = this.state;
-    const { keycloak } = this.props;
+
     if (!keycloak || !keycloak.token || !selectedContactId) {
       return;
     }
@@ -251,110 +277,147 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       await this.createDeliveryLoan();
     }
 
-    this.props.onClose(true);
+    onClose(true);
   }
 
   /**
    * Creates new delivery
-   * 
+   *
    */
   private createDelivery = async() => {
-    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.selectedProductId || !this.state.selectedContactId) {
+    const { keycloak } = this.props;
+    const {
+      selectedProductId,
+      selectedContactId,
+      selectedDeliveryStatus,
+      selectedDeliveryPlaceId,
+      selectedDate,
+      selectedQualityId,
+      deliveryTimeValue,
+      amount,
+      deliveryNotes,
+      redBoxesLoaned,
+      redBoxesReturned,
+      grayBoxesLoaned,
+      grayBoxesReturned
+    } = this.state;
+
+    if (!keycloak || !keycloak.token || !selectedProductId || !selectedContactId) {
       return;
     }
 
-    const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
-    let time: string | Date = moment(this.state.selectedDate).format("YYYY-MM-DD");
-    time = `${time} ${this.state.deliveryTimeValue}:00 +0000`
+    const deliveryService = Api.getDeliveriesService(keycloak.token);
+    let time: string | Date = moment(selectedDate).format("YYYY-MM-DD");
+    time = `${time} ${deliveryTimeValue}:00 +0000`;
     time = moment(time, "YYYY-MM-DD HH:mm Z").toDate();
 
     const delivery: Delivery = {
-      productId: this.state.selectedProductId,
-      userId: this.state.selectedContactId,
-      time: this.state.selectedDeliveryStatus === "DONE" ? this.state.selectedDate : time,
-      status: this.state.selectedDeliveryStatus,
-      amount: this.state.amount,
+      productId: selectedProductId,
+      userId: selectedContactId,
+      time: time,
+      status: selectedDeliveryStatus,
+      amount: amount,
       price: "0",
-      deliveryPlaceId: this.state.selectedDeliveryPlaceId,
-      qualityId: this.state.selectedDeliveryStatus === "DONE" ? this.state.selectedQualityId : undefined,
-      loans: this.state.selectedDeliveryStatus === "DONE"
-        ? [
-          { item: "RED_BOX", loaned: this.state.redBoxesLoaned, returned: this.state.redBoxesReturned },
-          { item: "GRAY_BOX", loaned: this.state.grayBoxesLoaned, returned: this.state.grayBoxesReturned }]
-        : []
+      deliveryPlaceId: selectedDeliveryPlaceId,
+      qualityId: undefined,
+      loans: []
     }
 
-    const createdDelivery = await deliveryService.createDelivery(delivery);
-    await Promise.all(this.state.deliveryNotes.map((deliveryNote): Promise<DeliveryNote | null> => {
-      return this.createDeliveryNote(createdDelivery.id || "", deliveryNote);
-    }));
+    if (selectedDeliveryStatus !== "DONE") {
+      const createdDelivery = await deliveryService.createDelivery(delivery);
+      await Promise.all(deliveryNotes.map(deliveryNote => this.createDeliveryNote(createdDelivery.id || "", deliveryNote)));
+    } else {
+      delivery.status = "PROPOSAL";
+      delivery.time = selectedDate;
+      delivery.qualityId = selectedQualityId;
+      delivery.loans = [
+        { item: "RED_BOX", loaned: redBoxesLoaned, returned: redBoxesReturned },
+        { item: "GRAY_BOX", loaned: grayBoxesLoaned, returned: grayBoxesReturned }
+      ];
+
+      const createdDelivery = await deliveryService.createDelivery(delivery);
+      await Promise.all(deliveryNotes.map(deliveryNote => this.createDeliveryNote(createdDelivery.id!, deliveryNote)));
+      await deliveryService.updateDelivery({ ...createdDelivery, status: "DONE" }, createdDelivery.id!);
+    }
   }
 
     /**
    * Creates new delivery
-   * 
+   *
    */
   private createDeliveryLoan = async() => {
-      if (!this.props.keycloak || !this.props.keycloak.token || !this.state.selectedContactId) {
+    const { keycloak } = this.props;
+    const {
+      selectedContactId,
+      deliveryLoanComment,
+      redBoxesLoaned,
+      redBoxesReturned,
+      grayBoxesLoaned,
+      grayBoxesReturned
+    } = this.state;
+
+      if (!keycloak || !keycloak.token || !selectedContactId) {
         return;
       }
-    const deliveryLoansService = await Api.getDeliveryLoansService(this.props.keycloak.token);
 
-    const deliveryLoan: Body1 = {
-      comment: this.state.deliveryLoanComment,
-      contactId: this.state.selectedContactId,
-      loans: [
-        { item: "RED_BOX", loaned: this.state.redBoxesLoaned, returned: this.state.redBoxesReturned },
-        { item: "GRAY_BOX", loaned: this.state.grayBoxesLoaned, returned: this.state.grayBoxesReturned }
-      ]
-    }
     try {
-      await deliveryLoansService.createDeliveryLoan(deliveryLoan);
+      await Api.getDeliveryLoansService(keycloak.token).createDeliveryLoan({
+        comment: deliveryLoanComment,
+        contactId: selectedContactId,
+        loans: [
+          { item: "RED_BOX", loaned: redBoxesLoaned, returned: redBoxesReturned },
+          { item: "GRAY_BOX", loaned: grayBoxesLoaned, returned: grayBoxesReturned }
+        ]
+      });
     } catch (error) {
       console.log(error);
     }
   }
 
   /**
-   * @param deliveryProduct product wich contract qyantities will be fetched
+   * Fetches contract quantities
+   *
+   * @param selectedProduct selected product
    */
   private fetchContractQuantities = async (selectedProduct?: Product) => {
     const { keycloak } = this.props;
     const { selectedContactId } = this.state;
 
-    if (!keycloak || !keycloak.token || !selectedProduct || !selectedContactId || !keycloak.hasRealmRole(ApplicationRoles.VIEW_CONTRACT_QUANTITIES)) {
+    if (
+      !keycloak ||
+      !keycloak.token ||
+      !selectedProduct ||
+      !selectedContactId ||
+      !keycloak.hasRealmRole(ApplicationRoles.VIEW_CONTRACT_QUANTITIES)
+    ) {
       return;
     }
 
-    this.setState({
-      loading: true
-    });
+    this.setState({ loading: true });
 
-    const contractsService = await Api.getContractsService(keycloak.token);
-    const contractQuantitities = await contractsService.listContractQuantities(selectedProduct?.itemGroupId, selectedContactId);
+    const contractQuantities = await Api.getContractsService(keycloak.token).listContractQuantities(
+      selectedProduct?.itemGroupId,
+      selectedContactId
+    );
 
     this.setState({
-      contractQuantities: contractQuantitities,
+      contractQuantities: contractQuantities,
       loading: false
     })
   }
 
   /**
-   * Renders header 
+   * Renders header
    */
   private renderHeader() {
-    const {  } = this.props;
     const { selectedContactId } = this.state;
-
 
     return (
       <div className="modal-header">
-        <React.Fragment>
+        <>
           Uusi toimitus/ehdotus
-        </React.Fragment>
-        { selectedContactId &&
-            this.renderContractQuantities() 
-        }
+        </>
+        { selectedContactId && this.renderContractQuantities() }
       </div>
     )
   }
@@ -366,21 +429,25 @@ class CreateDeliveryModal extends React.Component<Props, State> {
     const { contractQuantities, amount, selectedProduct } = this.state;
     const { keycloak } = this.props;
 
-    if (!selectedProduct || !contractQuantities || !contractQuantities?.length || !keycloak || !keycloak.hasRealmRole(ApplicationRoles.VIEW_CONTRACT_QUANTITIES)) {
+    if (
+      !selectedProduct ||
+      !contractQuantities?.length ||
+      !keycloak?.hasRealmRole(ApplicationRoles.VIEW_CONTRACT_QUANTITIES)
+    ) {
       return null;
     }
 
     var contractQuantity = 0;
     var delivered = 0
-    var remainer = 0;
+    var remainder = 0;
 
     contractQuantities.forEach(contract => {
       delivered = delivered + (contract.deliveredQuantity || 0);
       contractQuantity = contractQuantity + (contract.contractQuantity || 0);
     })
 
-    remainer = contractQuantity - delivered - (amount * selectedProduct.units * selectedProduct.unitSize);
-  
+    remainder = contractQuantity - delivered - (amount * selectedProduct.units * selectedProduct.unitSize);
+
     return (
       <div className="contract-info">
         <div>
@@ -389,12 +456,12 @@ class CreateDeliveryModal extends React.Component<Props, State> {
         <div>
           { strings.deliveredQuantity } {delivered }Kg
         </div>
-        <div style={{ borderTop: "5px solid #000000 " }}></div>
+        <div style={{ borderTop: "5px solid #000000 " }}/>
         <div>
         {
-          remainer >= 0 ?
-            <div>{ strings.contractRemainer }: { remainer }Kg</div> :
-            <div style={{ color: "red" }}>{ strings.contractExceeded }: { Math.abs(remainer) }Kg</div>
+          remainder >= 0 ?
+            <div>{ strings.contractRemainer }: { remainder }Kg</div> :
+            <div style={{ color: "red" }}>{ strings.contractExceeded }: { Math.abs(remainder) }Kg</div>
         }
         </div>
       </div>
@@ -403,60 +470,73 @@ class CreateDeliveryModal extends React.Component<Props, State> {
 
   /**
    * Create delivery notes
-   * 
-   * @param deliveryId deliveryId
-   * @param deliveryNote deliveryNote
+   *
+   * @param deliveryId delivery ID
+   * @param deliveryNote delivery note
    */
   private async createDeliveryNote(deliveryId: string, deliveryData: DeliveryNote): Promise<DeliveryNote | null> {
-    if (this.props.keycloak && this.props.keycloak.token && process.env.REACT_APP_API_URL) {
-      const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
-      return deliveryService.createDeliveryNote(deliveryData, deliveryId || "");
+    const { keycloak } = this.props;
+    if (keycloak?.token && process.env.REACT_APP_API_URL) {
+      return Api.getDeliveriesService(keycloak.token).createDeliveryNote(deliveryData, deliveryId || "");
     }
 
     return null;
   }
 
-  private handleSearchChange = async (e: any, { searchQuery }: { searchQuery: string }) => {
-    if (!this.props.keycloak || !this.props.keycloak.token) {
+  /**
+   * Event handler for search input change
+   *
+   * @param event change event
+   * @param searchData search data
+   */
+  private handleSearchChange = async (event: any, { searchQuery }: { searchQuery: string }) => {
+    const { keycloak } = this.props;
+
+    if (!keycloak?.token) {
       return
     }
 
     this.setState({ contactsLoading: true });
-    const contacts = await Api.getContactsService(this.props.keycloak.token).listContacts(searchQuery);
+
     this.setState({
-      contacts: contacts,
+      contacts: await Api.getContactsService(keycloak.token).listContacts(searchQuery),
       contactsLoading: false
     });
   }
 
   /**
    * Remove note
+   *
+   * @param note note
+   * @param index note index
    */
-  private removeNote = (note: deliveryNoteImg64, index: number) => {
-    const deliveryNoteImgs64 = this.state.deliveryNoteImgs64;
-    const newNotesWith64 = deliveryNoteImgs64.filter((note, i) => i !== index);
-    const deliveryNotes = this.state.deliveryNotes;
+  private removeNote = (note: DeliveryNoteImage64, index: number) => {
+    const { deliveryNoteImages64, deliveryNotes } = this.state;
+    const newNotesWithImages64 = deliveryNoteImages64.filter((note, i) => i !== index);
     const newDeliveryNotes = deliveryNotes.filter((note, i) => i !== index);
-    this.setState({ deliveryNoteImgs64: newNotesWith64, deliveryNotes: newDeliveryNotes });
+
+    this.setState({
+      deliveryNoteImages64: newNotesWithImages64,
+      deliveryNotes: newDeliveryNotes
+    });
   }
 
   /**
    * Renders quality field
    */
   private renderQualityField() {
+    const { deliveryQualities } = this.state;
 
-    const deliveryQualityOptions = this.state.deliveryQualities.map((deliveryQuality) => {
-      return {
-        key: deliveryQuality.id,
-        text: deliveryQuality.name,
-        value: deliveryQuality.id
-      };
-    });
+    const deliveryQualityOptions = deliveryQualities.map((deliveryQuality) => ({
+      key: deliveryQuality.id,
+      text: deliveryQuality.name,
+      value: deliveryQuality.id
+    }));
 
     return (
       <Form.Field>
         <label>Laatu</label>
-        {deliveryQualityOptions.length > 0 ?
+        { !!deliveryQualityOptions.length ?
           this.renderDropDown(deliveryQualityOptions, "Laatu", "selectedQualityId") :
           <p style={{ color: "red" }}>Valitulla tuotteella ei ole laatuluokkia</p>
         }
@@ -470,7 +550,8 @@ class CreateDeliveryModal extends React.Component<Props, State> {
   private getProducts = async () => {
     const { keycloak, category } = this.props;
     const { selectedContactId } = this.state;
-    if (!keycloak || !keycloak.token || !selectedContactId) {
+
+    if (!keycloak?.token || !selectedContactId) {
       return;
     }
 
@@ -495,7 +576,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
         </Modal>
       );
     }
-    
+
     const productOptions: Options[] = this.state.products.map((product) => {
       return {
         key: product.id,
@@ -532,13 +613,13 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       value: "DONE"
     }];
 
-    const deliveryPlaceOpitons: Options[] = deliveryPlaces.filter(deliveryPlace => deliveryPlace.name !== "Muu").map((deliveryPlace) => {
-      return {
+    const deliveryPlaceOptions: Options[] = deliveryPlaces
+      .filter(deliveryPlace => deliveryPlace.name !== "Muu")
+      .map(deliveryPlace => ({
         key: deliveryPlace.id,
         value: deliveryPlace.id,
         text: deliveryPlace.name
-      };
-    });
+      }));
 
     return (
       <Modal onClose={() => this.props.onClose()} open={this.props.open}>
@@ -549,9 +630,9 @@ class CreateDeliveryModal extends React.Component<Props, State> {
               <label>Viljelijä</label>
               <Dropdown
                 selection
-                search={true}
-                options={contactOptions}
-                value={this.state.selectedContactId}
+                search
+                options={ contactOptions }
+                value={ this.state.selectedContactId }
                 placeholder='Valitse viljelijä'
                 onChange={(e, data) => this.setState({ selectedContactId: data.value as string }, this.getProducts)}
                 onSearchChange={this.handleSearchChange}
@@ -565,7 +646,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
             </Form.Field>
             <Form.Field>
               <label>Toimituspaikka</label>
-              {this.renderDropDown(deliveryPlaceOpitons, "Toimituspaikka", "selectedDeliveryPlaceId")}
+              {this.renderDropDown(deliveryPlaceOptions, "Toimituspaikka", "selectedDeliveryPlaceId")}
             </Form.Field>
             <Form.Field>
               {this.state.selectedProductId && this.props.category === "FRESH" &&
@@ -754,8 +835,8 @@ class CreateDeliveryModal extends React.Component<Props, State> {
                 </Form.Field>
               </React.Fragment>
             }
-            {this.state.deliveryNoteImgs64[0] ?
-              this.state.deliveryNoteImgs64.map((deliveryNote, i) => {
+            {this.state.deliveryNoteImages64[0] ?
+              this.state.deliveryNoteImages64.map((deliveryNote, i) => {
                 return (
                   <React.Fragment key={`${deliveryNote.text} ${i}`}>
                     <h4 style={{ marginTop: 14 }}>Huomio {i + 1}</h4>
@@ -800,7 +881,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
 
 /**
  * Redux mapper for mapping store state to component props
- * 
+ *
  * @param state store state
  */
 export function mapStateToProps(state: StoreState) {
@@ -811,8 +892,8 @@ export function mapStateToProps(state: StoreState) {
 }
 
 /**
- * Redux mapper for mapping component dispatches 
- * 
+ * Redux mapper for mapping component dispatches
+ *
  * @param dispatch dispatch method
  */
 export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {

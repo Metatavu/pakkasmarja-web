@@ -2,7 +2,7 @@ import * as React from "react";
 import * as actions from "../../actions";
 import * as _ from "lodash";
 import * as moment from "moment";
-import { StoreState, DeliveriesState, Options, DeliveryDataValue, HttpErrorResponse, deliveryNoteImg64 } from "../../types";
+import { StoreState, DeliveriesState, Options, DeliveryDataValue, HttpErrorResponse, DeliveryNoteImage64 } from "../../types";
 import Api, { Product, DeliveryPlace, Delivery, DeliveryNote, DeliveryQuality, ItemGroupCategory, ContractQuantities } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
@@ -50,7 +50,7 @@ interface State {
   deliveryTimeValue?: number;
   category: string,
   deliveryNotes: DeliveryNote[],
-  deliveryNotesWithImgBase64: deliveryNoteImg64[],
+  deliveryNotesWithImageBase64: DeliveryNoteImage64[],
   openImage?: string,
   deliveryId?: string,
   modalOpen: boolean,
@@ -83,7 +83,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       date: new Date(),
       category: "",
       deliveryNotes: [],
-      deliveryNotesWithImgBase64: [],
+      deliveryNotesWithImageBase64: [],
       amount: 0,
       userId: "",
       deliveryQualities: [],
@@ -247,20 +247,20 @@ class ManageDeliveryModal extends React.Component<Props, State> {
     const deliveriesService = await Api.getDeliveriesService(this.props.keycloak.token);
     const deliveryNotes = await deliveriesService.listDeliveryNotes(this.state.deliveryId);
     const fileService = new FileService(process.env.REACT_APP_API_URL, this.props.keycloak.token);
-    const deliveryNotesWithImgBase64Promises = deliveryNotes.map(async (note) => {
+    const deliveryNotesWithImageBase64Promises = deliveryNotes.map(async (note) => {
       if (note.image) {
         const imageData = await fileService.getFile(note.image || "");
         const src = `data:image/jpeg;base64,${imageData.data}`
-        const deliveryNoteImg64: deliveryNoteImg64 = { text: note.text, img64: src, id: note.id };
-        return deliveryNoteImg64;
+        const DeliveryNoteImage64: DeliveryNoteImage64 = { text: note.text, img64: src, id: note.id };
+        return DeliveryNoteImage64;
       } else {
-        const deliveryNoteImg64: deliveryNoteImg64 = { text: note.text, img64: "", id: note.id };
-        return deliveryNoteImg64;
+        const DeliveryNoteImage64: DeliveryNoteImage64 = { text: note.text, img64: "", id: note.id };
+        return DeliveryNoteImage64;
       }
 
     })
-    const deliveryNotesWithImgBase64 = await Promise.all(deliveryNotesWithImgBase64Promises.map(note => Promise.resolve(note)))
-    this.setState({ deliveryNotes, deliveryNotesWithImgBase64 });
+    const deliveryNotesWithImageBase64 = await Promise.all(deliveryNotesWithImageBase64Promises.map(note => Promise.resolve(note)))
+    this.setState({ deliveryNotes, deliveryNotesWithImageBase64 });
   }
 
   /**
@@ -280,7 +280,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
   /**
    * Remove note
    */
-  private removeNote = async (note: deliveryNoteImg64, index: number) => {
+  private removeNote = async (note: DeliveryNoteImage64, index: number) => {
     if (note.id) {
       if (!this.props.keycloak || !this.props.keycloak.token || !process.env.REACT_APP_API_URL || !this.state.deliveryId) {
         return;
@@ -299,11 +299,11 @@ class ManageDeliveryModal extends React.Component<Props, State> {
    * @param index
    */
   private filterNotes = (index: number) => {
-    const deliveryNotesWithImgBase64 = this.state.deliveryNotesWithImgBase64;
-    const newNotesWith64 = deliveryNotesWithImgBase64.filter((note, i) => i !== index);
+    const deliveryNotesWithImageBase64 = this.state.deliveryNotesWithImageBase64;
+    const newNotesWith64 = deliveryNotesWithImageBase64.filter((note, i) => i !== index);
     const deliveryNotes = this.state.deliveryNotes;
     const newDeliveryNotes = deliveryNotes.filter((note, i) => i !== index);
-    this.setState({ deliveryNotesWithImgBase64: newNotesWith64, deliveryNotes: newDeliveryNotes });
+    this.setState({ deliveryNotesWithImageBase64: newNotesWith64, deliveryNotes: newDeliveryNotes });
   }
 
   /**
@@ -593,8 +593,8 @@ class ManageDeliveryModal extends React.Component<Props, State> {
               <label>{strings.deliveryPlace}</label>
               {this.renderDropDown(deliveryPlaceOptions, "selectedPlaceId")}
             </Form.Field>
-            {this.state.deliveryNotesWithImgBase64.length > 0 ?
-              this.state.deliveryNotesWithImgBase64.map((deliveryNote, i) => {
+            {this.state.deliveryNotesWithImageBase64.length > 0 ?
+              this.state.deliveryNotesWithImageBase64.map((deliveryNote, i) => {
                 return (
                   <React.Fragment key={`${deliveryNote.text} ${i}`}>
                     <h4 style={{ marginTop: 5 }}>Huomio {i + 1}</h4>
