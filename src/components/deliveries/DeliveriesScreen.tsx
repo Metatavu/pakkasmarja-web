@@ -142,12 +142,12 @@ class DeliveriesScreen extends React.Component<Props, State> {
     }
     const userId = this.props.keycloak.subject;
 
-    const deliveriesService = await Api.getDeliveriesService(this.props.keycloak.token);
-    const productsService = await Api.getProductsService(this.props.keycloak.token);
+    const deliveriesService = Api.getDeliveriesService(this.props.keycloak.token);
+    const productsService = Api.getProductsService(this.props.keycloak.token);
 
-    const freshDeliveries: Delivery[] = await deliveriesService.listDeliveries(userId, undefined, "FRESH", undefined, undefined, undefined, undefined, undefined, 0, 1000);
-    const frozenDeliveries: Delivery[] = await deliveriesService.listDeliveries(userId, undefined, "FROZEN", undefined, undefined, undefined, undefined, undefined, 0, 1000);
-    const products: Product[] = await productsService.listProducts(undefined, undefined, undefined, undefined, 1000);
+    const freshDeliveries: Delivery[] = await deliveriesService.listDeliveries(userId, undefined, "FRESH", undefined, undefined, undefined, undefined, undefined, 0, 10000);
+    const frozenDeliveries: Delivery[] = await deliveriesService.listDeliveries(userId, undefined, "FROZEN", undefined, undefined, undefined, undefined, undefined, 0, 10000);
+    const products: Product[] = await productsService.listProducts(undefined, undefined, undefined, undefined, 10000);
 
     const freshDeliveriesAndProducts: DeliveryProduct[] = freshDeliveries.map((delivery) => {
       return {
