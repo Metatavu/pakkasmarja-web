@@ -70,8 +70,8 @@ export interface FilterContracts {
   status?: ContractStatus;
   year?: number;
   listAll?: string;
-  firstResult?: number;
-  maxResults?: number;
+  firstResult: number;
+  maxResults: number;
 }
 
 /**
