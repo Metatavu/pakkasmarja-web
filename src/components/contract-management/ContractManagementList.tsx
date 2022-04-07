@@ -36,10 +36,10 @@ interface State {
   xlsxPreviewOpen: boolean;
   parsedXlsxObjects: ContractPreviewData[];
   keycloak?: Keycloak.KeycloakInstance;
-  contracts: Contract[];
-  itemGroups: { [key: string] : ItemGroup };
-  contacts: { [key: string] : Contact };
-  deliveryPlaces: { [key: string] : DeliveryPlace };
+  contracts?: Contract[];
+  itemGroups?: { [key: string]: ItemGroup };
+  contacts?: { [key: string]: Contact };
+  deliveryPlaces?: { [key: string]: DeliveryPlace };
   contractsLoading: boolean;
   proposeContractModalOpen: boolean;
   selectedBerry: string;
@@ -75,10 +75,6 @@ class ContractManagementList extends React.Component<Props, State> {
       editedContracts: [],
       xlsxPreviewOpen: false,
       parsedXlsxObjects: [],
-      contracts: [],
-      itemGroups: {},
-      contacts: {},
-      deliveryPlaces: {},
       contractsLoading: false,
       proposeContractModalOpen: false,
       selectedBerry: "",
@@ -90,10 +86,10 @@ class ContractManagementList extends React.Component<Props, State> {
         status: undefined,
         year: undefined,
         firstResult: 0,
-        maxResults: 10
+        maxResults: 50
       },
       offset: 0,
-      limit: 10,
+      limit: 50,
       contractsLength: 0
     };
   }
@@ -102,7 +98,16 @@ class ContractManagementList extends React.Component<Props, State> {
    * Component did mount life cycle event
    */
   public async componentDidMount() {
-    await this.loadData();
+    this.loadData();
+  }
+
+  /**
+   * Component did update life cycle method
+   */
+  public componentDidUpdate = (_: Props, prevState: State) => {
+    if (JSON.stringify(prevState.filters) !== JSON.stringify(this.state.filters)) {
+      this.loadData();
+    }
   }
 
   /**
@@ -110,11 +115,8 @@ class ContractManagementList extends React.Component<Props, State> {
    */
   private loadData = async () => {
     const { keycloak } = this.props;
-    const { filters, offset, limit } = this.state;
 
-    if (!keycloak?.token) {
-      return;
-    }
+    if (!keycloak?.token) return;
 
     this.setState({
       contractsLoading: true,
@@ -122,35 +124,26 @@ class ContractManagementList extends React.Component<Props, State> {
       contracts: []
     });
 
-    const contracts: Contract[] | HttpErrorResponse = await Api
-      .getContractsService(keycloak.token)
-      .listContracts("application/json", true, undefined, filters.itemGroupId, filters.year, filters.status, offset, limit);
+    try {
+      const [ contracts, itemGroups, deliveryPlaces, contacts ] = await Promise.all([
+        this.loadContracts(),
+        this.loadItemGroups(),
+        this.loadDeliveryPlaces(),
+        this.loadContacts()
+      ]);
 
-    this.setState({ contractsLength: contracts.length });
-
-    if (this.isHttpErrorResponse(contracts)) {
-      this.renderErrorMessage(contracts);
-      return;
+      this.setState({
+        contractsLength: contracts.length,
+        contractsLoading: false,
+        contracts: contracts,
+        itemGroups: itemGroups,
+        deliveryPlaces: deliveryPlaces,
+        contacts: contacts
+      });
+    } catch (error) {
+      this.renderErrorMessage(error);
+      console.error("Error fetching contract data. Reason: ", error);
     }
-
-    await this.loadItemGroups();
-    await this.loadDeliveryPlaces();
-    await this.loadContacts(contracts);
-
-    this.setState({
-      contractsLoading: false,
-      contracts: contracts
-    });
-  }
-
-  /**
-   * Check if object is http error response
-   *
-   * @param object contracts list or HTTP error response
-   * @returns type guard that object is HTTP error response
-   */
-  private isHttpErrorResponse(object: Contract[] | HttpErrorResponse): object is HttpErrorResponse {
-    return "code" in object;
   }
 
   /**
@@ -174,18 +167,43 @@ class ContractManagementList extends React.Component<Props, State> {
   }
 
   /**
+   * Loads contracts
+   */
+  private loadContracts = async () => {
+    const { keycloak } = this.props;
+    const { filters, offset, limit } = this.state;
+
+    if (!keycloak?.token) {
+      throw new Error("No access token");
+    }
+
+    return Api.getContractsService(keycloak.token).listContracts(
+      "application/json",
+      true,
+      undefined,
+      filters.itemGroupId,
+      filters.year,
+      filters.status,
+      offset,
+      limit
+    )
+  };
+
+  /**
    * Load item groups
    */
   private loadItemGroups = async () => {
     const { keycloak } = this.props;
+    const { itemGroups } = this.state;
 
     if (!keycloak?.token) {
-      return;
+      throw new Error("No access token");
     }
 
-    this.setState({
-      itemGroups: _.keyBy(await Api.getItemGroupsService(keycloak.token).listItemGroups(), "id")
-    });
+    return itemGroups ?? _.keyBy(
+      await Api.getItemGroupsService(keycloak.token).listItemGroups(),
+      "id"
+    );
   }
 
   /**
@@ -193,14 +211,16 @@ class ContractManagementList extends React.Component<Props, State> {
    */
   private loadDeliveryPlaces = async () => {
     const { keycloak } = this.props;
+    const { deliveryPlaces } = this.state;
 
     if (!keycloak?.token) {
-      return;
+      throw new Error("No access token");
     }
 
-    this.setState({
-      deliveryPlaces: _.keyBy(await Api.getDeliveryPlacesService(keycloak.token).listDeliveryPlaces(), "id")
-    });
+    return deliveryPlaces ?? _.keyBy(
+      await Api.getDeliveryPlacesService(keycloak.token).listDeliveryPlaces(),
+      "id"
+    );
   }
 
   /**
@@ -208,28 +228,18 @@ class ContractManagementList extends React.Component<Props, State> {
    *
    * @param contracts
    */
-  private loadContacts = async (contracts: Contract[]) => {
+  private loadContacts = async () => {
     const { keycloak } = this.props;
+    const { contacts } = this.state;
 
     if (!keycloak?.token) {
-      return;
+      throw new Error("No access token");
     }
 
-    const contacts = _.clone(this.state.contacts || {});
-
-    const contactIds = _.uniq(contracts.map((contract) => {
-      return contract.contactId!;
-    }));
-
-    for (let i = 0; i < contactIds.length; i++) {
-      const contactId = contactIds[i];
-
-      if (!contacts[contactId]) {
-        contacts[contactId] = await Api.getContactsService(keycloak.token).findContact(contactId);
-      }
-    }
-
-    this.setState({ contacts });
+    return contacts ?? _.keyBy(
+      await Api.getContactsService(keycloak.token).listContacts(),
+      "id"
+    );
   }
 
   /**
@@ -240,9 +250,14 @@ class ContractManagementList extends React.Component<Props, State> {
    * @param onChange onChange function
    * @param placeholder placeholder
    */
-  private renderDropDown = (options: any, value: string | number, onChange: (value: string) => void, placeholder: string) => {
-    if (options.length <= 0) {
-      return <Dropdown fluid />;
+  private renderDropDown = (
+    options: any,
+    value: string | number,
+    onChange: (value: string) => void,
+    placeholder: string
+  ) => {
+    if (!options.length) {
+      return <Dropdown fluid/>;
     }
 
     return (
@@ -442,23 +457,20 @@ class ContractManagementList extends React.Component<Props, State> {
     const { keycloak } = this.props;
     const { editedContracts, contracts } = this.state;
 
-    if (!keycloak || !keycloak.token) {
-      return;
-    }
+    if (!keycloak?.token) return;
 
     try {
       const contractsService = Api.getContractsService(keycloak.token);
 
-      const promises = editedContracts.map(contract =>
+      const updateContractPromises = editedContracts.map(contract =>
         contractsService.updateContract(contract, contract.id || "")
       );
 
-      const updatedContracts = await Promise.all(promises);
+      const updatedContracts = await Promise.all(updateContractPromises);
 
-      const allContracts = contracts.map(contract => {
-        const updatedContract = updatedContracts.find(item => item.id === contract.id);
-        return updatedContract || contract;
-      });
+      const allContracts = (contracts || []).map(contract =>
+        updatedContracts.find(item => item.id === contract.id) ?? contract
+      );
 
       this.setState({
         editedContracts: [],
@@ -487,7 +499,6 @@ class ContractManagementList extends React.Component<Props, State> {
       },
       offset: 0
     });
-    this.loadData();
   }
 
   /**
@@ -503,7 +514,6 @@ class ContractManagementList extends React.Component<Props, State> {
       },
       offset: 0
     });
-    this.loadData();
   }
 
   /**
@@ -519,7 +529,6 @@ class ContractManagementList extends React.Component<Props, State> {
       },
       offset: 0
     });
-    this.loadData();
   }
 
   /**
@@ -570,16 +579,14 @@ class ContractManagementList extends React.Component<Props, State> {
     const { keycloak } = this.props;
     const { filters } = this.state;
 
-    if (!keycloak?.token) {
-      return;
-    }
+    if (!keycloak?.token) return;
 
     this.setState({ contractsLoading: true });
 
     const query: FilterContracts = {
       listAll: "true",
       firstResult: 0,
-      maxResults: 999
+      maxResults: 9999
     };
 
     if (filters.itemGroupId) {
@@ -652,12 +659,12 @@ class ContractManagementList extends React.Component<Props, State> {
     const file = event.target.files?.item(0);
     event.target.value = "";
 
-    if (!file) {
-      return;
-    }
+    if (!file) return;
 
-    this.setState({ xlsxPreviewOpen: true });
-    this.setState({ parsedXlsxObjects: await this.parseXlsxFile(file) });
+    this.setState({
+      xlsxPreviewOpen: true,
+      parsedXlsxObjects: await this.parseXlsxFile(file)
+    });
   }
 
   /**
@@ -669,7 +676,7 @@ class ContractManagementList extends React.Component<Props, State> {
   private parseXlsxFile = async (file: File): Promise<ContractPreviewData[]> => {
     const { keycloak } = this.props;
 
-    if (!keycloak || !keycloak.token) {
+    if (!keycloak?.token) {
       return Promise.reject();
     }
 
@@ -699,23 +706,16 @@ class ContractManagementList extends React.Component<Props, State> {
   private createContracts = async (contracts: Contract[]) => {
     const { keycloak } = this.props;
 
-    if (!keycloak || !keycloak.token) {
-      return;
-    }
+    if (!keycloak?.token) return;
 
     try {
       const contractsService = Api.getContractsService(keycloak.token);
-      const promises = contracts.map(contract =>
-        contractsService.createContract(contract)
-      );
-
-      const createdContracts = await Promise.all(promises);
+      const createdContracts = await Promise.all(contracts.map(contractsService.createContract));
 
       this.setState({
         xlsxPreviewOpen: false,
-        contracts: [ ...createdContracts, ...this.state.contracts ]
+        contracts: [ ...createdContracts, ...(this.state.contracts || []) ]
       });
-      await this.loadContacts(this.state.contracts);
     } catch (error) {
       console.log(`Could not create contracts: ${error}`);
     }
@@ -739,8 +739,11 @@ class ContractManagementList extends React.Component<Props, State> {
    * @param contract contract
    */
   private downloadPdfBlob = async (pdfData: Response, downloadTitle: string, contract: Contract) => {
-    const blob = await pdfData.blob();
-    FileUtils.downloadBlob(blob, "application/pdf", `${contract.id}-${downloadTitle}.pdf`);
+    FileUtils.downloadBlob(
+      await pdfData.blob(),
+      "application/pdf",
+      `${contract.id}-${downloadTitle}.pdf`
+    );
   }
 
   /**
@@ -758,13 +761,13 @@ class ContractManagementList extends React.Component<Props, State> {
    * @param type type
    */
   private handlePageChange = (type: string) => {
-    const { offset, contractsLength, filters } = this.state;
+    const { offset, contractsLength, filters, limit } = this.state;
 
-    if (type === "NEXT" && contractsLength === filters.maxResults) {
-      this.setState({ offset: offset + this.state.limit });
+    if (type === "NEXT" && contractsLength >= filters.maxResults) {
+      this.setState({ offset: offset + limit });
       this.loadData();
     } else if (type === "PREVIOUS" && offset > 0) {
-      this.setState({ offset: offset - this.state.limit });
+      this.setState({ offset: offset - limit });
       this.loadData();
     }
   }
@@ -806,7 +809,7 @@ class ContractManagementList extends React.Component<Props, State> {
     }
 
     const itemGroupOptions = Object
-      .values(itemGroups)
+      .values(itemGroups || [])
       .map(({ id, name }) => ({ key: id, value: id, text: name }));
 
     const yearOptions = [];
@@ -928,7 +931,7 @@ class ContractManagementList extends React.Component<Props, State> {
           </Table.Header>
           <Table.Body>
             {
-              contracts.map(contract => {
+              contracts?.map(contract => {
                 const contact = this.findContact(contract.contactId);
                 const itemGroup = this.findItemGroup(contract.itemGroupId);
                 const deliveryPlace = this.findDeliveryPlace(contract.deliveryPlaceId);
@@ -1013,7 +1016,7 @@ class ContractManagementList extends React.Component<Props, State> {
               </Grid.Column>
             }
             {
-              contractsLength == filters.maxResults &&
+              contractsLength >= filters.maxResults &&
               <Grid.Column floated="right" width="3">
                 <Button fluid onClick={ () => this.handlePageChange("NEXT") }>
                   Seuraava sivu
@@ -1040,7 +1043,8 @@ class ContractManagementList extends React.Component<Props, State> {
    * @returns contact or undefined if not found
    */
   private findContact = (contactId?: string) => {
-    return contactId ? this.state.contacts[contactId] : null;
+    const { contacts } = this.state;
+    return contactId ? (contacts || {})[contactId] : null;
   }
 
   /**
@@ -1050,7 +1054,8 @@ class ContractManagementList extends React.Component<Props, State> {
    * @returns itemGroup or undefined if not found
    */
   private findItemGroup = (itemGroupId?: string) => {
-    return itemGroupId ? this.state.itemGroups[itemGroupId] : null;
+    const { itemGroups } = this.state;
+    return itemGroupId ? (itemGroups || {})[itemGroupId] : null;
   }
 
   /**
@@ -1060,7 +1065,8 @@ class ContractManagementList extends React.Component<Props, State> {
    * @returns deliveryPlace or undefined if not found
    */
   private findDeliveryPlace = (deliveryPlaceId?: string) => {
-    return deliveryPlaceId ? this.state.deliveryPlaces[deliveryPlaceId] : null;
+    const { deliveryPlaces } = this.state;
+    return deliveryPlaceId ? (deliveryPlaces || {})[deliveryPlaceId] : null;
   }
 }
 

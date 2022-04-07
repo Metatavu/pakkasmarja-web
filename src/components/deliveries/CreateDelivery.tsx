@@ -21,6 +21,7 @@ import Lightbox from 'react-image-lightbox';
 import 'react-image-lightbox/style.css';
 import * as _ from "lodash";
 import AsyncButton from "../generic/asynchronous-button";
+import AppConfig from "src/utils/AppConfig";
 
 /**
  * Moment extended with moment-range
@@ -57,6 +58,8 @@ interface State {
   openImage?: string;
   loading: boolean;
   selectedProduct?: Product;
+  productRequiresConfirmation?: boolean;
+  confirmed?: boolean;
   selectedTime?: Date;
   deliveryPlaceOpeningHours?: OpeningHourInterval[];
 }
@@ -68,7 +71,7 @@ class CreateDelivery extends React.Component<Props, State> {
 
   /**
    * Constructor
-   * 
+   *
    * @param props props
    */
   constructor(props: Props) {
@@ -114,7 +117,7 @@ class CreateDelivery extends React.Component<Props, State> {
 
   /**
    * Gets delivery place opening hours on a given date
-   * 
+   *
    * @param date date object
    * @param deliveryPlaceId delivery place id
    */
@@ -171,7 +174,7 @@ class CreateDelivery extends React.Component<Props, State> {
 
   /**
    * Gets chosen date day from period
-   * 
+   *
    * @param period period
    * @param chosenDate chosen date
    */
@@ -191,31 +194,47 @@ class CreateDelivery extends React.Component<Props, State> {
   }
 
   /**
+   * Returns whether given product requires confirmation before it can be delivered
+   *
+   * @param product product
+   */
+  private productRequiresConfirmation = async (product?: Product) => (
+    !!product?.id &&
+    !!_.get(await AppConfig.getAppConfig(), [ "item-groups", product.itemGroupId, "require-confirmation" ])
+  );
+
+  /**
    * Handle input change
-   * 
+   *
    * @param key key to change
    * @param value new value
    */
-  private handleInputChange = (key: string, value: DeliveryDataValue ) => {
+  private handleInputChange = async (key: string, value: DeliveryDataValue) => {
+    const { products, date, selectedPlaceId } = this.state;
+
     if (key === "selectedProductId") {
-      const selectedProductId = value && value.toString() || "";
-      const selectedProduct = this.state.products.find(product => product.id === selectedProductId);
-      this.setState({ selectedProductId, selectedProduct });
+      const selectedProductId = value?.toString() || "";
+      const selectedProduct = products.find(product => product.id === selectedProductId);
+
+      if (selectedProduct) {
+        this.setState({
+          selectedProductId: selectedProductId,
+          selectedProduct: selectedProduct,
+          productRequiresConfirmation: await this.productRequiresConfirmation(selectedProduct)
+        });
+      }
     }
 
-    const state: State = this.state;
-    state[key] = value;
+    this.setState({ ...this.state, [key]: value });
 
-    if (key === "date" || key === "selectedPlaceId") {
-      this.getDeliveryPlaceOpeningHours(state.date, state.selectedPlaceId);
+    if ([ "date", "selectedPlaceId" ].includes(key)) {
+      this.getDeliveryPlaceOpeningHours(date, selectedPlaceId);
     }
-
-    this.setState(state);
   }
 
   /**
    * Render dropdown
-   * 
+   *
    * @param options options
    * @param placeholder placeholder
    * @param key key
@@ -242,7 +261,7 @@ class CreateDelivery extends React.Component<Props, State> {
 
   /**
    * Returns whether form is valid or not
-   * 
+   *
    * @return whether form is valid or not
    */
   private isValid = () => {
@@ -257,7 +276,7 @@ class CreateDelivery extends React.Component<Props, State> {
 
   /**
    * Add delivery note to state
-   * 
+   *
    * @param deliveryNote deliveryNote
    */
   private addDeliveryNote = async (deliveryNote: DeliveryNote) => {
@@ -312,8 +331,8 @@ class CreateDelivery extends React.Component<Props, State> {
   }
 
   /**
-   * Get updated delivery data 
-   * 
+   * Get updated delivery data
+   *
    * @param delivery delivery
    */
   private getUpdatedDeliveryData = (delivery: Delivery): DeliveriesState => {
@@ -343,7 +362,7 @@ class CreateDelivery extends React.Component<Props, State> {
 
   /**
    * Create delivery notes
-   * 
+   *
    * @param deliveryId deliveryId
    * @param deliveryData delivery data
    */
@@ -358,7 +377,7 @@ class CreateDelivery extends React.Component<Props, State> {
 
   /**
    * Remove note
-   * 
+   *
    * @param note note with image
    * @param index note index
    */
@@ -372,7 +391,7 @@ class CreateDelivery extends React.Component<Props, State> {
 
   /**
    * Handler for selecting delivery time
-   * 
+   *
    * @param date date object
    * @param event event object
    */
@@ -388,7 +407,7 @@ class CreateDelivery extends React.Component<Props, State> {
 
   /**
    * Gets opening hours if selected delivery place has ones set for selected date
-   * 
+   *
    * @returns date array if opening hours are found, otherwise undefined
    */
   private getOpeningHours = (): Date[] | undefined => {
@@ -398,7 +417,7 @@ class CreateDelivery extends React.Component<Props, State> {
 
   /**
    * Converts opening hours to date array
-   * 
+   *
    * @param openingHours array of opening hours
    * @return array of dates
    */
@@ -408,7 +427,7 @@ class CreateDelivery extends React.Component<Props, State> {
 
   /**
    * Maps single opening hour interval to date array
-   * 
+   *
    * @param interval opening hour interval
    * @returns array of dates
    */
@@ -633,7 +652,7 @@ class CreateDelivery extends React.Component<Props, State> {
 
 /**
  * Redux mapper for mapping store state to component props
- * 
+ *
  * @param state store state
  */
 export function mapStateToProps(state: StoreState) {
@@ -645,8 +664,8 @@ export function mapStateToProps(state: StoreState) {
 }
 
 /**
- * Redux mapper for mapping component dispatches 
- * 
+ * Redux mapper for mapping component dispatches
+ *
  * @param dispatch dispatch method
  */
 export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {

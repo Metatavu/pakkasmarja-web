@@ -49,7 +49,7 @@ export interface HttpErrorResponse {
 }
 
 /*
- * Type for delivery data value 
+ * Type for delivery data value
  */
 export type DeliveryDataValue = undefined | string | number | boolean | (string | number | boolean)[] | Date;
 
@@ -70,8 +70,8 @@ export interface FilterContracts {
   status?: ContractStatus;
   year?: number;
   listAll?: string;
-  firstResult?: number;
-  maxResults?: number;
+  firstResult: number;
+  maxResults: number;
 }
 
 /**
