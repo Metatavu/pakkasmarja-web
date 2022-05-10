@@ -233,6 +233,8 @@
   "redBoxesReturned": "Palautettu (Punaiset laatikot)",
   "grayBoxesLoaned": "Lainattu (Harmaat laatikot)",
   "grayBoxesReturned": "Palautettu (Harmaat laatikot)",
+  "orangeBoxesLoaned": "Lainattu (Oranssit laatikot)",
+  "orangeBoxesReturned": "Palautettu (Oranssit laatikot)",
   "frozenCategory": "Pakastukseen",
   "freshCategory": "Tuore",
   "databank": "Tietopankki",
