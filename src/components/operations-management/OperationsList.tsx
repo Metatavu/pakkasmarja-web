@@ -136,7 +136,7 @@ class OperationsList extends React.Component<Props, State> {
                 onChange={ this.onStartOperationChange }
               />
             </Grid.Column>
-            <Grid.Column floated="right" width="3">            
+            <Grid.Column floated="right" width="3">
               <AsyncButton
                 fluid
                 disabled={ !this.state.startOperation }
@@ -248,15 +248,7 @@ class OperationsList extends React.Component<Props, State> {
    * @return available operation types
    */
   private getOperationTypes(): OperationType[] {
-    return [
-      OperationType.ITEMGROUPDEFAULTDOCUMENTTEMPLATES,
-      OperationType.SAPCONTACTSYNC,
-      OperationType.SAPCONTRACTSAPIDSYNC,
-      OperationType.SAPCONTRACTSYNC,
-      OperationType.SAPDELIVERYPLACESYNC,
-      OperationType.SAPITEMGROUPSYNC,
-      OperationType.UPDATECURRENTYEARAPPROVEDCONTRACTSTOSAP
-    ];
+    return [ OperationType.ITEMGROUPDEFAULTDOCUMENTTEMPLATES ];
   }
 
   /**

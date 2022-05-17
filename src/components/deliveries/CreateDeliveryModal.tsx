@@ -56,6 +56,8 @@ interface State {
   redBoxesReturned: number;
   grayBoxesLoaned: number;
   grayBoxesReturned: number;
+  orangeBoxesLoaned: number;
+  orangeBoxesReturned: number;
   products: Product[];
   deliveryLoanComment: string;
   contractQuantities?: ContractQuantities[];
@@ -89,6 +91,8 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       redBoxesReturned: 0,
       grayBoxesLoaned: 0,
       grayBoxesReturned: 0,
+      orangeBoxesLoaned: 0,
+      orangeBoxesReturned: 0,
       products: [],
       deliveryLoanComment: "",
       loading: false
@@ -299,7 +303,9 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       redBoxesLoaned,
       redBoxesReturned,
       grayBoxesLoaned,
-      grayBoxesReturned
+      grayBoxesReturned,
+      orangeBoxesLoaned,
+      orangeBoxesReturned
     } = this.state;
 
     if (!keycloak || !keycloak.token || !selectedProductId || !selectedContactId) {
@@ -332,7 +338,8 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       delivery.qualityId = selectedQualityId;
       delivery.loans = [
         { item: "RED_BOX", loaned: redBoxesLoaned, returned: redBoxesReturned },
-        { item: "GRAY_BOX", loaned: grayBoxesLoaned, returned: grayBoxesReturned }
+        { item: "GRAY_BOX", loaned: grayBoxesLoaned, returned: grayBoxesReturned },
+        { item: "ORANGE_BOX", loaned: orangeBoxesLoaned, returned: orangeBoxesReturned }
       ];
 
       const createdDelivery = await deliveryService.createDelivery(delivery);
@@ -353,7 +360,9 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       redBoxesLoaned,
       redBoxesReturned,
       grayBoxesLoaned,
-      grayBoxesReturned
+      grayBoxesReturned,
+      orangeBoxesLoaned,
+      orangeBoxesReturned
     } = this.state;
 
       if (!keycloak || !keycloak.token || !selectedContactId) {
@@ -366,7 +375,8 @@ class CreateDeliveryModal extends React.Component<Props, State> {
         contactId: selectedContactId,
         loans: [
           { item: "RED_BOX", loaned: redBoxesLoaned, returned: redBoxesReturned },
-          { item: "GRAY_BOX", loaned: grayBoxesLoaned, returned: grayBoxesReturned }
+          { item: "GRAY_BOX", loaned: grayBoxesLoaned, returned: grayBoxesReturned },
+          { item: "ORANGE_BOX", loaned: orangeBoxesLoaned, returned: orangeBoxesReturned }
         ]
       });
     } catch (error) {
@@ -451,7 +461,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
     return (
       <div className="contract-info">
         <div>
-          { strings.contractQuantity }: { contractQuantity }Kg
+          { strings.contractQuantity }: { contractQuantity }Kg
         </div>
         <div>
           { strings.deliveredQuantity } {delivered }Kg
@@ -611,6 +621,10 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       key: "done",
       text: "Valmis toimitus",
       value: "DONE"
+    }, {
+      key: "loan",
+      "text": "Laatikkosiirto",
+      value: "DELIVERYLOAN"
     }];
 
     const deliveryPlaceOptions: Options[] = deliveryPlaces
@@ -720,61 +734,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
               </Form.Field>
               : null
             }
-            {
-              this.state.selectedDeliveryStatus === "DONE" && this.props.category === "FROZEN" &&
-              <React.Fragment>
-                <Form.Field>
-                  <label>{strings.redBoxesReturned}</label>
-                  <Input
-                    type="number"
-                    placeholder="Palautettu"
-                    value={this.state.redBoxesReturned}
-                    onChange={(e, data) => {
-                      this.setState({
-                        redBoxesReturned: parseInt(data.value)
-                      })
-                    }} />
-                </Form.Field>
-                <Form.Field>
-                  <label>{strings.redBoxesLoaned}</label>
-                  <Input
-                    type="number"
-                    placeholder="Lainattu"
-                    value={this.state.redBoxesLoaned}
-                    onChange={(e, data) => {
-                      this.setState({
-                        redBoxesLoaned: parseInt(data.value)
-                      })
-                    }} />
-                </Form.Field>
-                <Form.Field>
-                  <label>{strings.grayBoxesReturned}</label>
-                  <Input
-                    type="number"
-                    placeholder="Palautettu"
-                    value={this.state.grayBoxesReturned}
-                    onChange={(e, data) => {
-                      this.setState({
-                        grayBoxesReturned: parseInt(data.value)
-                      })
-                    }} />
-                </Form.Field>
-                <Form.Field>
-                  <label>{strings.grayBoxesLoaned}</label>
-                  <Input
-                    type="number"
-                    placeholder="Lainattu"
-                    value={this.state.grayBoxesLoaned}
-                    onChange={(e, data) => {
-                      this.setState({
-                        grayBoxesLoaned: parseInt(data.value)
-                      })
-                    }} />
-                </Form.Field>
-              </React.Fragment>
-            }
-            {
-              this.state.selectedDeliveryStatus === "DELIVERYLOAN" && this.props.category === "FROZEN" &&
+            { [ "DONE", "DELIVERYLOAN" ].includes(this.state.selectedDeliveryStatus) && this.props.category === "FROZEN" &&
               <React.Fragment>
                 <Form.Field>
                   <label>{strings.redBoxesReturned}</label>
@@ -825,14 +785,34 @@ class CreateDeliveryModal extends React.Component<Props, State> {
                     }} />
                 </Form.Field>
                 <Form.Field>
-                  <label>Kommentti</label>
+                  <label>{ strings.orangeBoxesReturned }</label>
                   <Input
-                    type="string"
-                    placeholder="Kommentti"
-                    onChange={ this.handleDeliveryLoanCommentChange }
-                    value={ this.state.deliveryLoanComment || ""}
+                    type="number"
+                    placeholder="Palautettu"
+                    value={ this.state.orangeBoxesReturned }
+                    onChange={ (_, data) => this.setState({ orangeBoxesReturned: parseInt(data.value) }) }
                   />
                 </Form.Field>
+                <Form.Field>
+                  <label>{ strings.orangeBoxesLoaned }</label>
+                  <Input
+                    type="number"
+                    placeholder="Lainattu"
+                    value={ this.state.orangeBoxesLoaned }
+                    onChange={ (_, data) => this.setState({ orangeBoxesLoaned: parseInt(data.value) }) }
+                  />
+                </Form.Field>
+                { this.state.selectedDeliveryStatus === "DELIVERYLOAN" &&
+                  <Form.Field>
+                    <label>Kommentti</label>
+                    <Input
+                      type="string"
+                      placeholder="Kommentti"
+                      onChange={ this.handleDeliveryLoanCommentChange }
+                      value={ this.state.deliveryLoanComment || ""}
+                    />
+                  </Form.Field>
+                }
               </React.Fragment>
             }
             {this.state.deliveryNoteImages64[0] ?
@@ -858,9 +838,11 @@ class CreateDeliveryModal extends React.Component<Props, State> {
             { this.state.selectedDeliveryStatus !== "DELIVERYLOAN" &&
               <Button color="red" inverted onClick={() => this.setState({ modalOpen: true })}>{`${strings.addNote}`}</Button>
             }
-            <AsyncButton color="red" disabled={ !this.isValid() } floated="right" onClick={ this.handleDeliverySubmit } type='submit'>
-              Tallenna
-            </AsyncButton>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <AsyncButton color="red" disabled={ !this.isValid() } onClick={ this.handleDeliverySubmit } type="submit">
+                Tallenna
+              </AsyncButton>
+            </div>
           </Form>
           {this.state.openImage &&
             <Lightbox

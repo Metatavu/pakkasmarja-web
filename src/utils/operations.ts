@@ -11,7 +11,7 @@ export class OperationUtils {
    * @param type operation type
    * @return display name
    */
-  static getReportDisplayName(type: OperationType): string {
+  static getReportDisplayName(type: OperationType | string): string {
     switch (type) {
       case "ITEM_GROUP_DEFAULT_DOCUMENT_TEMPLATES":
         return "Marjalajien oletus sopimusmallit";
