@@ -4,6 +4,7 @@ import strings from "src/localization/strings";
 import ContractPreviewTable from "./contract-preview-table";
 import { Button, Dimmer, Loader, Modal } from "semantic-ui-react";
 import { Contract, ContractPreviewData } from "pakkasmarja-client";
+import AsyncButton from "../generic/asynchronous-button";
 
 /**
  * Component props
@@ -72,7 +73,7 @@ class XlsxContractsPreview extends React.Component<Props, State> {
           <Button onClick={ onCancel }>
             { strings.cancel }
           </Button>
-          <Button
+          <AsyncButton
             color="red"
             icon='checkmark'
             labelPosition='right'
@@ -104,7 +105,6 @@ class XlsxContractsPreview extends React.Component<Props, State> {
 
     onAccept(parsedXlsxObjects.map(object => object.contract));
   }
-  
 }
 
 export default XlsxContractsPreview;

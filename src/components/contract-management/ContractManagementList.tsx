@@ -710,7 +710,9 @@ class ContractManagementList extends React.Component<Props, State> {
 
     try {
       const contractsService = Api.getContractsService(keycloak.token);
-      const createdContracts = await Promise.all(contracts.map(contractsService.createContract));
+      const createdContracts = await Promise.all(
+        contracts.map(contract => contractsService.createContract(contract))
+      );
 
       this.setState({
         xlsxPreviewOpen: false,

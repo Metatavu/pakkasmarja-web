@@ -1,8 +1,6 @@
 import * as React from "react";
-import * as actions from "../../actions/";
 import BasicLayout from "../generic/BasicLayout";
 import { StoreState } from "src/types";
-import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
 import "./styles.css";
@@ -47,7 +45,7 @@ class EditContractDocument extends React.Component<Props, State> {
 
   /**
    * Constructor
-   * 
+   *
    * @param props props
    */
   constructor(props: Props) {
@@ -68,34 +66,48 @@ class EditContractDocument extends React.Component<Props, State> {
   }
 
   /**
-   * Component did mount life-sycle event
+   * Component did mount life cycle event
    */
-  public async componentDidMount() {
-    if (!this.props.keycloak || !this.props.keycloak.token) {
+  public componentDidMount = async () => {
+    const { keycloak, match } = this.props;
+    const { params } = match;
+
+    if (!keycloak?.token) {
       return;
     }
 
-    const itemGroupId: string = this.props.match.params.itemGroupId;
-    const itemGroupDocumentTemplateId: string = this.props.match.params.itemGroupDocumentTemplateId;
-    this.setState({ 
-      itemGroupId, 
+    const itemGroupId: string = params.itemGroupId;
+    const itemGroupDocumentTemplateId: string = params.itemGroupDocumentTemplateId;
+
+    this.setState({
+      itemGroupId,
       itemGroupDocumentTemplateId,
-      loading: true });
-    await this.loadItemGroup();
-    await this.loadDocumentTemplate();
+      loading: true
+    });
+
+    await Promise.all([
+      this.loadItemGroup(),
+      this.loadDocumentTemplate()
+    ]);
+
     this.setState({ loading: false });
   }
 
   /**
-   * Load itemgroup
+   * Load item group
    */
   private loadItemGroup = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token) {
+    const { keycloak } = this.props;
+    const { itemGroupId } = this.state;
+
+    if (!keycloak?.token) {
       return;
     }
 
-    const itemGroupsService = await Api.getItemGroupsService(this.props.keycloak.token);
-    const itemGroup = await itemGroupsService.findItemGroup(this.state.itemGroupId || "");
+    const itemGroup = await Api
+      .getItemGroupsService(keycloak.token)
+      .findItemGroup(itemGroupId || "");
+
     this.setState({ itemGroup });
   }
 
@@ -103,49 +115,85 @@ class EditContractDocument extends React.Component<Props, State> {
    * Load document template
    */
   private loadDocumentTemplate = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token) {
+    const { keycloak } = this.props;
+    const { itemGroupId, itemGroupDocumentTemplateId } = this.state;
+
+    if (!keycloak?.token) {
       return;
     }
 
-    const documentTemplateService = await Api.getItemGroupsService(this.props.keycloak.token);
-    const documentTemplate: ItemGroupDocumentTemplate = await documentTemplateService.findItemGroupDocumentTemplate(this.state.itemGroupId, this.state.itemGroupDocumentTemplateId);
-    if (documentTemplate) {
-      this.setState({
-        type: documentTemplate.type ? documentTemplate.type : "",
-        content: documentTemplate.contents ? documentTemplate.contents : "",
-        headerContent: documentTemplate.header ? documentTemplate.header : "",
-        footerContent: documentTemplate.footer ? documentTemplate.footer : "",
-        documentTemplateId: documentTemplate.id ? documentTemplate.id : ""
-      });
+    const documentTemplate = await Api
+      .getItemGroupsService(keycloak.token)
+      .findItemGroupDocumentTemplate(itemGroupId, itemGroupDocumentTemplateId);
+
+    if (!documentTemplate) {
+      return;
     }
+
+    this.setState({
+      type: documentTemplate?.type ?? "",
+      content: documentTemplate?.contents ?? "",
+      headerContent: documentTemplate?.header ?? "",
+      footerContent: documentTemplate?.footer ?? "",
+      documentTemplateId: documentTemplate?.id ?? ""
+    });
   }
 
   /**
    * Handle contract document submit.
    */
   private handleDocumentSubmit = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token) {
+    const { keycloak } = this.props;
+    const {
+      type,
+      content,
+      headerContent,
+      footerContent,
+      itemGroupId,
+      documentTemplateId
+    } = this.state;
+
+    if (!keycloak?.token) {
       return;
     }
 
     this.setState({ buttonLoading: true });
 
-    const itemGroupsService = await Api.getItemGroupsService(this.props.keycloak.token);
-    const itemGroupDocumentTemplate: ItemGroupDocumentTemplate = {
-      type: this.state.type,
-      contents: this.state.content,
-      header: this.state.headerContent,
-      footer: this.state.footerContent
-    }
-    await itemGroupsService.updateItemGroupDocumentTemplate(itemGroupDocumentTemplate, this.state.itemGroupId, this.state.documentTemplateId);
-    this.setState({ buttonLoading: false, redirect: true });
+    await Api
+      .getItemGroupsService(keycloak.token)
+      .updateItemGroupDocumentTemplate(
+        {
+          type: type,
+          contents: content,
+          header: headerContent,
+          footer: footerContent
+        },
+        itemGroupId,
+        documentTemplateId
+      );
+
+    this.setState({
+      buttonLoading: false,
+      redirect: true
+    });
   }
 
   /**
    * Render method
    */
-  public render() {
-    if (this.state.loading) {
+  public render = () => {
+    const {
+      loading,
+      redirect,
+      itemGroup,
+      type,
+      headerContent,
+      content,
+      footerContent,
+      buttonLoading
+    } = this.state;
+
+    if (loading) {
       return (
         <BasicLayout>
           <Dimmer active inverted>
@@ -157,7 +205,7 @@ class EditContractDocument extends React.Component<Props, State> {
       );
     }
 
-    if (this.state.redirect) {
+    if (redirect) {
       return (
         <Redirect to="/itemGroupsManagement" />
       );
@@ -167,46 +215,56 @@ class EditContractDocument extends React.Component<Props, State> {
       <BasicLayout>
         <Divider horizontal>
           <Header as='h2'>
-            {`Muokkaat marjalajin ${this.state.itemGroup.name} sopimusmallia ${this.state.type || "(sopimustyyppiä ei löytynyt)"}`}
+            {`Muokkaat marjalajin ${itemGroup.name} sopimusmallia ${type || "(sopimustyyppiä ei löytynyt)"}`}
           </Header>
         </Divider>
-        <Header as="h4">Ylätunniste</Header>
+        <Header as="h4">
+          Ylätunniste
+        </Header>
         <div>
-          <TextArea 
-            value={this.state.headerContent}
-            onChange = {(e, data) => {
-              const headerContent = data.value as string;
-              this.setState({ headerContent });
-            }}
+          <TextArea
+            value={ headerContent }
+            onChange = { (_, data) => this.setState({ headerContent: data.value as string }) }
           />
         </div>
         <Divider />
-        <Header as="h4">Sisältö</Header>
+        <Header as="h4">
+          Sisältö
+        </Header>
         <div>
-          <TextArea 
-            value={this.state.content}
-            onChange = {(e, data) => {
-              const content = data.value as string;
-              this.setState({ content });
-            }}
+          <TextArea
+            value={ content }
+            onChange={ (_, data) => this.setState({ content: data.value as string }) }
           />
         </div>
         <Divider />
-        <Header as="h4">Alatunniste</Header>
+        <Header as="h4">
+          Alatunniste
+        </Header>
         <div>
-          <TextArea 
-            value={this.state.footerContent}
-            onChange = {(e, data) => {
-              const footerContent = data.value as string;
-              this.setState({ footerContent });
-            }}
+          <TextArea
+            value={ footerContent }
+            onChange = {(_, data) => this.setState({ footerContent: data.value as string }) }
           />
         </div>
         <Divider />
         <Button.Group floated="right">
-          <Button inverted color="red" as={Link} to={"/itemGroupsManagement"}>Takaisin</Button>
+          <Button
+            inverted
+            color="red"
+            as={ Link }
+            to="/itemGroupsManagement"
+          >
+            Takaisin
+          </Button>
           <Button.Or text="" />
-          <AsyncButton color="red" loading={ this.state.buttonLoading } onClick={ this.handleDocumentSubmit }>Tallenna muutokset</AsyncButton>
+          <AsyncButton
+            color="red"
+            loading={ buttonLoading }
+            onClick={ this.handleDocumentSubmit }
+          >
+            Tallenna muutokset
+          </AsyncButton>
         </Button.Group>
       </BasicLayout>
     );
@@ -215,24 +273,12 @@ class EditContractDocument extends React.Component<Props, State> {
 
 /**
  * Redux mapper for mapping store state to component props
- * 
+ *
  * @param state store state
  */
-export function mapStateToProps(state: StoreState) {
-  return {
-    authenticated: state.authenticated,
-    keycloak: state.keycloak
-  }
-}
+export const mapStateToProps = (state: StoreState) => ({
+  authenticated: state.authenticated,
+  keycloak: state.keycloak
+});
 
-/**
- * Redux mapper for mapping component dispatches 
- * 
- * @param dispatch dispatch method
- */
-export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
-  return {
-  };
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(EditContractDocument);
+export default connect(mapStateToProps)(EditContractDocument);

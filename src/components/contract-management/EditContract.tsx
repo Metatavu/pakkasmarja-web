@@ -357,7 +357,7 @@ class EditContract extends React.Component<Props, State> {
                 onChange={(event: any) => {
                   this.setState({ deliverAllChecked: !this.state.deliverAllChecked });
                 }}
-                label="Haluaisin toimittaa kaiken tilallani viljeltävän sadon tästä marjasta Pakkasmarjalle pakastettavaksi ja tuorekauppaan"
+                label={ strings.wantToDeliverAll }
               />
             </Form.Field>
           }
