@@ -88,7 +88,7 @@ class ContractView extends React.Component<Props, State> {
       signAuthenticationServices: [],
       redirect: false,
       navigateToTerms: false,
-      pdfType: "2021",
+      pdfType: "2022",
       missingPrerequisiteContract: false,
       insufficientContractAmount: false,
       missingAreaDetails: false,
