@@ -9,6 +9,7 @@ import { Button, Header, Divider, Dimmer, Loader, TextArea } from "semantic-ui-r
 import { Redirect } from "react-router";
 import { Link } from "react-router-dom";
 import AsyncButton from "../generic/asynchronous-button";
+import { History } from "history";
 
 /**
  * Interface for component props
@@ -18,24 +19,17 @@ interface Props {
   keycloak?: Keycloak.KeycloakInstance;
   match?: any;
   navigation?: any;
+  history: History;
 }
 
 /**
  * Interface for component state
  */
 interface State {
-  type: string;
   redirect: boolean;
-  content: string,
-  headerContent: string,
-  footerContent: string,
+  itemGroup?: ItemGroup;
   itemGroupDocumentTemplate?: ItemGroupDocumentTemplate;
   loading: boolean;
-  buttonLoading: boolean;
-  itemGroupId: string;
-  itemGroupDocumentTemplateId: string;
-  documentTemplateId: string;
-  itemGroup : ItemGroup;
 }
 
 /**
@@ -51,17 +45,8 @@ class EditContractDocument extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      type: "",
       redirect: false,
-      content: "",
-      headerContent: "",
-      footerContent: "",
-      loading: false,
-      buttonLoading: false,
-      itemGroupId: "",
-      itemGroupDocumentTemplateId: "",
-      documentTemplateId: "",
-      itemGroup: {}
+      loading: false
     };
   }
 
@@ -69,113 +54,115 @@ class EditContractDocument extends React.Component<Props, State> {
    * Component did mount life cycle event
    */
   public componentDidMount = async () => {
-    const { keycloak, match } = this.props;
-    const { params } = match;
+    const { keycloak } = this.props;
 
-    if (!keycloak?.token) {
+    const itemGroupId = this.getItemGroupId();
+    const itemGroupDocumentTemplateId = this.getItemGroupDocumentTemplateId();
+
+    if (!keycloak?.token || !itemGroupId || !itemGroupDocumentTemplateId) {
       return;
     }
 
-    const itemGroupId: string = params.itemGroupId;
-    const itemGroupDocumentTemplateId: string = params.itemGroupDocumentTemplateId;
+    this.setState({ loading: true });
 
-    this.setState({
-      itemGroupId,
-      itemGroupDocumentTemplateId,
-      loading: true
-    });
-
-    await Promise.all([
-      this.loadItemGroup(),
-      this.loadDocumentTemplate()
+    const [ itemGroup, itemGroupDocumentTemplate ] = await Promise.all([
+      this.loadItemGroup(itemGroupId),
+      this.loadDocumentTemplate(itemGroupId, itemGroupDocumentTemplateId)
     ]);
 
-    this.setState({ loading: false });
+    this.setState({
+      loading: false,
+      itemGroup: itemGroup,
+      itemGroupDocumentTemplate: itemGroupDocumentTemplate
+    });
   }
 
   /**
    * Load item group
+   *
+   * @param itemGroupId item group ID
    */
-  private loadItemGroup = async () => {
+  private loadItemGroup = async (itemGroupId: string) => {
     const { keycloak } = this.props;
-    const { itemGroupId } = this.state;
 
-    if (!keycloak?.token) {
-      return;
-    }
+    if (!keycloak?.token) return;
 
-    const itemGroup = await Api
-      .getItemGroupsService(keycloak.token)
-      .findItemGroup(itemGroupId || "");
+    return await Api.getItemGroupsService(keycloak.token)
+      .findItemGroup(itemGroupId);
+  }
 
-    this.setState({ itemGroup });
+  /**
+   * Return item group ID from URL path
+   */
+  private getItemGroupId = (): string | undefined => {
+    return this.props.match.params.itemGroupId;
+  }
+
+  /**
+   * Return item group document template ID from URL path
+   */
+  private getItemGroupDocumentTemplateId = (): string | undefined => {
+    return this.props.match.params.itemGroupDocumentTemplateId;
   }
 
   /**
    * Load document template
+   *
+   * @param itemGroupId item group ID
+   * @param documentTemplateId document template ID
    */
-  private loadDocumentTemplate = async () => {
+  private loadDocumentTemplate = async (itemGroupId: string, documentTemplateId: string) => {
     const { keycloak } = this.props;
-    const { itemGroupId, itemGroupDocumentTemplateId } = this.state;
 
-    if (!keycloak?.token) {
-      return;
-    }
+    if (!keycloak?.token) return;
 
-    const documentTemplate = await Api
-      .getItemGroupsService(keycloak.token)
-      .findItemGroupDocumentTemplate(itemGroupId, itemGroupDocumentTemplateId);
+    return await Api.getItemGroupsService(keycloak.token)
+      .findItemGroupDocumentTemplate(itemGroupId, documentTemplateId);
+  }
 
-    if (!documentTemplate) {
-      return;
-    }
+  /**
+   * Event handler item group document template property change
+   *
+   * @param key property key
+   */
+  private onDocumentTemplateChange = (key: keyof ItemGroupDocumentTemplate) =>
+    (event: React.FormEvent<HTMLTextAreaElement>) => {
+    const { itemGroupDocumentTemplate } = this.state;
+
+    console.log(event.currentTarget.value);
+
+    if (!itemGroupDocumentTemplate) return;
 
     this.setState({
-      type: documentTemplate?.type ?? "",
-      content: documentTemplate?.contents ?? "",
-      headerContent: documentTemplate?.header ?? "",
-      footerContent: documentTemplate?.footer ?? "",
-      documentTemplateId: documentTemplate?.id ?? ""
-    });
+      itemGroupDocumentTemplate: {
+        ...itemGroupDocumentTemplate,
+        [key]: event.currentTarget.value
+      }
+    })
   }
 
   /**
    * Handle contract document submit.
    */
   private handleDocumentSubmit = async () => {
-    const { keycloak } = this.props;
-    const {
-      type,
-      content,
-      headerContent,
-      footerContent,
-      itemGroupId,
-      documentTemplateId
-    } = this.state;
+    const { keycloak, history } = this.props;
+    const { itemGroupDocumentTemplate } = this.state;
+    const itemGroupId = this.getItemGroupId();
+    const itemGroupDocumentTemplateId = this.getItemGroupDocumentTemplateId();
 
-    if (!keycloak?.token) {
-      return;
-    }
+    if (!keycloak?.token || !itemGroupDocumentTemplate) return;
 
-    this.setState({ buttonLoading: true });
+    if (!itemGroupId || !itemGroupDocumentTemplateId) return;
 
     await Api
       .getItemGroupsService(keycloak.token)
       .updateItemGroupDocumentTemplate(
-        {
-          type: type,
-          contents: content,
-          header: headerContent,
-          footer: footerContent
-        },
+        itemGroupDocumentTemplate,
         itemGroupId,
-        documentTemplateId
+        itemGroupDocumentTemplateId
       );
 
-    this.setState({
-      buttonLoading: false,
-      redirect: true
-    });
+    history.push("/itemGroupsManagement");
   }
 
   /**
@@ -186,14 +173,10 @@ class EditContractDocument extends React.Component<Props, State> {
       loading,
       redirect,
       itemGroup,
-      type,
-      headerContent,
-      content,
-      footerContent,
-      buttonLoading
+      itemGroupDocumentTemplate
     } = this.state;
 
-    if (loading) {
+    if (loading || !itemGroup || !itemGroupDocumentTemplate) {
       return (
         <BasicLayout>
           <Dimmer active inverted>
@@ -207,14 +190,16 @@ class EditContractDocument extends React.Component<Props, State> {
 
     if (redirect) {
       return (
-        <Redirect to="/itemGroupsManagement" />
+        <Redirect to="" />
       );
     }
+
+    const { header, contents, footer, type } = itemGroupDocumentTemplate;
 
     return (
       <BasicLayout>
         <Divider horizontal>
-          <Header as='h2'>
+          <Header as="h2">
             {`Muokkaat marjalajin ${itemGroup.name} sopimusmallia ${type || "(sopimustyyppiä ei löytynyt)"}`}
           </Header>
         </Divider>
@@ -223,8 +208,8 @@ class EditContractDocument extends React.Component<Props, State> {
         </Header>
         <div>
           <TextArea
-            value={ headerContent }
-            onChange = { (_, data) => this.setState({ headerContent: data.value as string }) }
+            value={ header }
+            onChange={ this.onDocumentTemplateChange("header") }
           />
         </div>
         <Divider />
@@ -233,8 +218,8 @@ class EditContractDocument extends React.Component<Props, State> {
         </Header>
         <div>
           <TextArea
-            value={ content }
-            onChange={ (_, data) => this.setState({ content: data.value as string }) }
+            value={ contents }
+            onChange={ this.onDocumentTemplateChange("contents") }
           />
         </div>
         <Divider />
@@ -243,8 +228,8 @@ class EditContractDocument extends React.Component<Props, State> {
         </Header>
         <div>
           <TextArea
-            value={ footerContent }
-            onChange = {(_, data) => this.setState({ footerContent: data.value as string }) }
+            value={ footer }
+            onChange={ this.onDocumentTemplateChange("footer") }
           />
         </div>
         <Divider />
@@ -260,7 +245,6 @@ class EditContractDocument extends React.Component<Props, State> {
           <Button.Or text="" />
           <AsyncButton
             color="red"
-            loading={ buttonLoading }
             onClick={ this.handleDocumentSubmit }
           >
             Tallenna muutokset
