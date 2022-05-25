@@ -260,6 +260,33 @@ class EditContract extends React.Component<Props, State> {
   }
 
   /**
+   * Renders deliver all section
+   */
+  private renderDeliveryAll = () => {
+    const { deliverAllChecked, proposedDeliveryAll } = this.state;
+
+    return (
+      <>
+        <Header as="h5">{ strings.deliverAll }</Header>
+        <Form.Field>
+          <Checkbox
+            checked={ deliverAllChecked }
+            onChange={ () => this.setState({ deliverAllChecked: !deliverAllChecked }) }
+            label={ strings.pakkasmarjaProposal }
+          />
+        </Form.Field>
+        <Form.Field>
+          <Checkbox
+            disabled
+            checked={ proposedDeliveryAll }
+            label={ strings.farmerProposal }
+          />
+        </Form.Field>
+      </>
+    );
+  }
+
+  /**
    * Render method
    */
   public render() {
@@ -349,29 +376,7 @@ class EditContract extends React.Component<Props, State> {
             {this.renderTextInput(this.state.quantity, (value: string) => { this.setState({ quantity: parseInt(value) }) }, "0", false)}
           </Form.Field>
           <p>{strings.amountProposed} <strong>{this.state.contract && this.state.contract.proposedQuantity || "0"}</strong></p>
-          {
-            this.state.allowDeliveryAll &&
-            <Form.Field>
-              <Checkbox
-                checked={this.state.deliverAllChecked}
-                onChange={(event: any) => {
-                  this.setState({ deliverAllChecked: !this.state.deliverAllChecked });
-                }}
-                label={ strings.wantToDeliverAll }
-              />
-            </Form.Field>
-          }
-          {
-            this.state.allowDeliveryAll &&
-            <React.Fragment>
-              {
-                this.state.proposedDeliveryAll ?
-                  <p>Viljelijä haluaa toimittaa kaiken tilalla viljeltävän sadon tästä marjasta Pakkasmarjalle pakastettavaksi ja tuorekauppaan</p>
-                  :
-                  <p>Viljelijä <strong> EI </strong> halua toimittaa kaiken tilalla viljeltävän sadon tästä marjasta Pakkasmarjalle pakastettavaksi ja tuorekauppaan</p>
-              }
-            </React.Fragment>
-          }
+          { this.state.allowDeliveryAll && this.renderDeliveryAll() }
           <Form.Field>
             <label>{strings.quantityComment}</label>
             {this.renderTextArea(this.state.quantityComment, (value: string) => { this.setState({ quantityComment: value }) }, strings.quantityComment)}

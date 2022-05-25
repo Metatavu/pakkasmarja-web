@@ -65,6 +65,9 @@ export interface IStrings extends LocalizedStringsMethods {
   amountInfoTextFresh: string;
   showPastYearAmounts: string;
   wantToDeliverAll: string;
+  deliverAll: string;
+  pakkasmarjaProposal: string;
+  farmerProposal: string;
   comment: string;
   pastYearAmounts: string;
   year: string;
