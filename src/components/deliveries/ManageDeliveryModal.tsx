@@ -494,7 +494,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
         productId: selectedProductId,
         userId: userId || "",
         time: date,
-        status: "NOT_ACCEPTED",
+        status: DeliveryStatus.NOTACCEPTED,
         amount: amount,
         price: "0",
         deliveryPlaceId: selectedPlaceId,
@@ -746,15 +746,13 @@ class ManageDeliveryModal extends React.Component<Props, State> {
                 </React.Fragment>
               ))
             }
-            { delivery.status !== "DONE" &&
-              <Button
-                color="red"
-                inverted
-                onClick={ () => this.setState({ modalOpen: true }) }
-              >
-                { strings.addNote }
-              </Button>
-            }
+            <Button
+              color="red"
+              inverted
+              onClick={ () => this.setState({ modalOpen: true }) }
+            >
+              { strings.addNote }
+            </Button>
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
               { this.renderSubmitButton() }
             </div>
@@ -847,14 +845,10 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       );
     }
 
-    if (delivery.status == DeliveryStatus.REJECTED) {
+    if (delivery.status == DeliveryStatus.REJECTED || delivery.status == DeliveryStatus.NOTACCEPTED) {
       return (
         <Button.Group>
-          <Button
-            disabled
-            color="grey"
-            type="submit"
-          >
+          <Button disabled color="grey">
             Toimitus hylätty
           </Button>
         </Button.Group>
@@ -880,21 +874,6 @@ class ManageDeliveryModal extends React.Component<Props, State> {
           >
             Muokkaa ehdotusta
           </AsyncButton>
-          <AsyncButton
-            disabled={ !this.isValid() }
-            color="red"
-            onClick={ this.handleDeliveryAccept }
-            type="submit"
-          >
-            Hyväksy toimitus
-          </AsyncButton>
-        </Button.Group>
-      );
-    }
-
-    if (delivery.status == DeliveryStatus.NOTACCEPTED) {
-      return (
-        <Button.Group>
           <AsyncButton
             disabled={ !this.isValid() }
             color="red"
