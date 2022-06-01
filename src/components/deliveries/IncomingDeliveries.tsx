@@ -364,7 +364,7 @@ class IncomingDeliveries extends React.Component<Props, State> {
                                 { `${product.name} ${delivery.amount} x ${product.units} ${product.unitName}` }
                               </Item.Header>
                               <Item.Description>
-                                { moment(delivery.time).utc().format("[klo] HH.mm") }
+                                { moment(delivery.time).format("[klo] HH.mm") }
                               </Item.Description>
                             </Item.Content>
                             { this.renderStatus(deliveryProduct) }
