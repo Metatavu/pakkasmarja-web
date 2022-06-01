@@ -1,7 +1,6 @@
 import * as React from "react";
 import * as actions from "../../actions";
 import * as _ from "lodash";
-import * as moment from "moment";
 import { StoreState, DeliveriesState, Options, DeliveryDataValue, HttpErrorResponse, DeliveryNoteImage64 } from "../../types";
 import Api, { Product, DeliveryPlace, Delivery, DeliveryNote, DeliveryQuality, ItemGroupCategory, ContractQuantities, DeliveryStatus } from "pakkasmarja-client";
 import { Dispatch } from "redux";
@@ -47,7 +46,6 @@ interface State {
   selectedQualityId?: string,
   amount: number,
   date: Date,
-  deliveryTimeValue?: number;
   category: string,
   deliveryNotes: DeliveryNote[],
   deliveryNotesWithImageBase64: DeliveryNoteImage64[],
@@ -131,9 +129,6 @@ class ManageDeliveryModal extends React.Component<Props, State> {
 
     this.fetchContractQuantities(deliveryProduct);
 
-
-    const deliveryTime = moment(delivery.time).utc().hour() <= 12 ? 11 : 17;
-
     this.setState(
       {
         products,
@@ -146,7 +141,6 @@ class ManageDeliveryModal extends React.Component<Props, State> {
         selectedPlaceId: delivery.deliveryPlaceId,
         selectedQualityId: delivery.qualityId,
         date: delivery.time ? new Date(delivery.time) : new Date(),
-        deliveryTimeValue: deliveryTime,
         deliveryQualities: deliveryQualities,
         loading: false
       },
@@ -421,7 +415,6 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       date,
       deliveryId,
       userId,
-      deliveryTimeValue,
       amount
     } = this.state;
 
@@ -435,15 +428,11 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       return;
     }
 
-    const deliveryDate = moment(date).format("YYYY-MM-DD");
-    const deliveryTime = `${deliveryDate} ${deliveryTimeValue}:00 +0000`;
-    const deliveryDateTime = moment(deliveryTime, "YYYY-MM-DD HH:mm Z").toDate();
-
     try {
       const response = await Api.getDeliveriesService(keycloak.token).updateDelivery({
         productId: selectedProductId,
         userId: userId || "",
-        time: deliveryDateTime,
+        time: date,
         status: this.props.delivery.status,
         amount: amount,
         price: "0",
@@ -568,16 +557,6 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       value: deliveryPlace.id || ""
     }));
 
-    const deliveryTimeValue: Options[] = [{
-      key: "deliveryTimeValue1",
-      text: "Ennen kello 12",
-      value: 11
-    }, {
-      key: "deliveryTimeValue2",
-      text: "Jälkeen kello 12",
-      value: 17
-    }];
-
     return (
       <Modal onClose={ onClose } open={ open }>
         <Modal.Header>{ this.renderHeader() }</Modal.Header>
@@ -696,12 +675,6 @@ class ManageDeliveryModal extends React.Component<Props, State> {
                 locale="fi"
               />
             </Form.Field>
-            { delivery.status === "PROPOSAL" &&
-              <Form.Field>
-                <label>Ajankohta</label>
-                { this.renderDropDown(deliveryTimeValue, "deliveryTimeValue") }
-              </Form.Field>
-            }
             <Form.Field style={{ marginTop: 20 }}>
               <label>
                 { strings.deliveryPlace }
@@ -859,7 +832,6 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       return (
         <Button.Group>
           <AsyncButton
-            disabled={ !this.isValid() }
             color="black"
             onClick={ this.handleDeliveryReject }
             type="submit"
@@ -867,7 +839,6 @@ class ManageDeliveryModal extends React.Component<Props, State> {
             Hylkää ehdotus
           </AsyncButton>
           <AsyncButton
-            disabled={ !this.isValid() }
             color="green"
             onClick={ this.handleDeliverySave }
             type="submit"

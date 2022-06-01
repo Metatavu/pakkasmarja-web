@@ -302,62 +302,87 @@ class CreateDelivery extends React.Component<Props, State> {
    * Handles delivery submit
    */
   private handleDeliverySubmit = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.selectedPlaceId || !this.state.selectedProductId || !this.state.date || !this.props.keycloak.subject) {
+    const { keycloak, deliveriesLoaded } = this.props;
+    const {
+      selectedPlaceId,
+      selectedProductId,
+      date,
+      deliveryTimeValue,
+      amount,
+      deliveryNotes
+    } = this.state;
+
+    if (
+      !keycloak?.token ||
+      !keycloak.subject ||
+      !selectedPlaceId ||
+      !selectedProductId ||
+      !date
+    ) {
       return;
     }
-    const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
-    let time: string | Date = moment(this.state.date).format("YYYY-MM-DD");
-    time = `${time} ${this.state.deliveryTimeValue} +0000`;
-    time = moment(time, "YYYY-MM-DD HH:mm Z").toDate();
 
-    const delivery: Delivery = {
-      productId: this.state.selectedProductId,
-      userId: this.props.keycloak.subject,
+    const [ hours, minutes ] = deliveryTimeValue.split(":");
+
+    const time = moment(date)
+      .hours(Number(hours))
+      .minutes(Number(minutes))
+      .toDate();
+
+    const createdDelivery = await Api.getDeliveriesService(keycloak.token).createDelivery({
+      productId: selectedProductId,
+      userId: keycloak.subject,
       time: time,
       status: "PLANNED",
-      amount: this.state.amount,
+      amount: amount,
       price: "0",
-      deliveryPlaceId: this.state.selectedPlaceId
-    }
+      deliveryPlaceId: selectedPlaceId
+    });
 
-    const createdDelivery = await deliveryService.createDelivery(delivery);
-    const updatedDeliveries = this.getUpdatedDeliveryData(createdDelivery);
-    this.props.deliveriesLoaded && this.props.deliveriesLoaded(updatedDeliveries);
-    await Promise.all(this.state.deliveryNotes.map((deliveryNote): Promise<DeliveryNote | null> => {
-      return this.createDeliveryNote(createdDelivery.id || "", deliveryNote);
-    }));
+    const updatedDeliveries = this.addDeliveryToData(createdDelivery);
+
+    deliveriesLoaded?.(updatedDeliveries);
+
+    await Promise.all(
+      deliveryNotes.map(deliveryNote => this.createDeliveryNote(createdDelivery.id || "", deliveryNote))
+    );
 
     this.setState({ redirect: true });
   }
 
   /**
-   * Get updated delivery data
+   * Adds given delivery to delivery data
    *
    * @param delivery delivery
    */
-  private getUpdatedDeliveryData = (delivery: Delivery): DeliveriesState => {
-    if (!this.props.deliveries) {
-      return { frozenDeliveryData: [], freshDeliveryData: [] };
+  private addDeliveryToData = (delivery: Delivery): DeliveriesState => {
+    const { deliveries } = this.props;
+    const { products, category } = this.state;
+
+    if (!deliveries) {
+      return {
+        frozenDeliveryData: [],
+        freshDeliveryData: []
+      };
     }
 
     const deliveryProduct: DeliveryProduct = {
       delivery: delivery,
-      product: this.state.products.find(product => product.id === delivery.productId)
+      product: products.find(product => product.id === delivery.productId)
     };
 
-    const deliveries = { ... this.props.deliveries };
-    if (this.state.category === "FROZEN") {
-      deliveries.frozenDeliveryData.push(deliveryProduct);
-    } else {
-      deliveries.freshDeliveryData.push(deliveryProduct);
-    }
-
-    const deliveriesState: DeliveriesState = {
+    const updatedDeliveries: DeliveriesState = {
       freshDeliveryData: deliveries.freshDeliveryData || [],
       frozenDeliveryData: deliveries.frozenDeliveryData || []
+    };
+
+    if (category === "FROZEN") {
+      updatedDeliveries.frozenDeliveryData.push(deliveryProduct);
+    } else {
+      updatedDeliveries.freshDeliveryData.push(deliveryProduct);
     }
 
-    return deliveriesState;
+    return updatedDeliveries;
   }
 
   /**
