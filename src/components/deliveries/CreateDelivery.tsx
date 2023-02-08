@@ -22,6 +22,7 @@ import 'react-image-lightbox/style.css';
 import * as _ from "lodash";
 import AsyncButton from "../generic/asynchronous-button";
 import AppConfig from "src/utils/AppConfig";
+import { filterPossibleDeliveryPlaces } from "src/utils";
 
 /**
  * Moment extended with moment-range
@@ -109,7 +110,7 @@ class CreateDelivery extends React.Component<Props, State> {
     const products: Product[] = unfilteredProducts.filter(product => product.active === true);
     this.setState({
       products,
-      deliveryPlaces: deliveryPlaces.filter(deliveryPlace => deliveryPlace.name !== "Muu"),
+      deliveryPlaces: filterPossibleDeliveryPlaces(deliveryPlaces, category),
       category,
       loading: false
     });
