@@ -20,6 +20,7 @@ import Lightbox from 'react-image-lightbox';
 import 'react-image-lightbox/style.css';
 import { FileService } from "src/api/file.service";
 import AsyncButton from "../generic/asynchronous-button";
+import { filterPossibleDeliveryPlaces } from "src/utils";
 
 /**
  * Interface for component props
@@ -106,7 +107,7 @@ class EditDelivery extends React.Component<Props, State> {
     const deliveryTimeValue = Number(moment(delivery.time).utc().format("HH"));
     await this.setState({
       products,
-      deliveryPlaces: deliveryPlaces.filter(deliveryPlace => deliveryPlace.id !== "OTHER"),
+      deliveryPlaces: filterPossibleDeliveryPlaces(deliveryPlaces, category),
       category,
       deliveryId,
       amount: delivery.amount,
