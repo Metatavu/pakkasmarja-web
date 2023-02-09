@@ -35,9 +35,6 @@ import EditProduct from "../products-management/EditProduct";
 import OperationsList from "../operations-management/OperationsList";
 import OperationReport from "../operations-management/OperationReport";
 import ProductPricesList from "../products-management/ProductPricesList";
-import ChatManagementList from "../chat-management/ChatManagementList";
-import EditQuestionGroup from "../chat-management/EditQuestionGroup";
-import EditChatGroup from "../chat-management/EditChatGroup";
 import FreshDeliveryManagement from "../deliveries/FreshDeliveryManagement";
 import FrozenDeliveryManagement from "../deliveries/FrozenDeliveryManagement";
 import ProposalsView from "../deliveries/ProposalsView";
@@ -70,7 +67,7 @@ class MainPage extends React.Component<Props, {}> {
 
   /**
    * Constructor
-   * 
+   *
    * @param props props
    */
   constructor(props: Props) {
@@ -140,9 +137,6 @@ class MainPage extends React.Component<Props, {}> {
         <Route exact path="/operationsManagement" component={OperationsList} />
         <Route exact path="/operationsReports/:operationReportId" component={OperationReport} />
         <Route exact path="/productPrices/:productId" component={ProductPricesList} />
-        <Route exact path="/chatManagement" component={ChatManagementList} />
-        <Route exact path="/editQuestionGroup/:chatGroupId" component={EditQuestionGroup} />
-        <Route exact path="/editChatGroup/:chatGroupId" component={EditChatGroup} />
         <Route exact path="/manageFreshDeliveries" component={FreshDeliveryManagement} />
         <Route exact path="/manageFrozenDeliveries" component={FrozenDeliveryManagement} />
         <Route exact path="/manageWeekPredictions" component={WeekPredictionsManagement} />
@@ -163,7 +157,7 @@ class MainPage extends React.Component<Props, {}> {
     if (!this.props.keycloak || !this.props.keycloak.token) {
       return;
     }
-    
+
     const unreadsService = await Api.getUnreadsService(this.props.keycloak.token);
     this.props.unreadsUpdate(await unreadsService.listUnreads());
   }
@@ -171,7 +165,7 @@ class MainPage extends React.Component<Props, {}> {
 
 /**
  * Redux mapper for mapping store state to component props
- * 
+ *
  * @param state store state
  */
 function mapStateToProps(state: StoreState) {
@@ -182,8 +176,8 @@ function mapStateToProps(state: StoreState) {
 }
 
 /**
- * Redux mapper for mapping component dispatches 
- * 
+ * Redux mapper for mapping component dispatches
+ *
  * @param dispatch dispatch method
  */
 function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
