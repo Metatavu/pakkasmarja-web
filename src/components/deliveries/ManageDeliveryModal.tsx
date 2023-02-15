@@ -665,7 +665,7 @@ class ManageDeliveryModal extends React.Component<Props, State> {
             <Form.Field>
               <label>{ strings.deliveryDate }</label>
               <DatePicker
-                onChange={ date => date && this.handleInputChange("date", date) }
+                onChange={ date => date && this.handleInputChange("date", date as Date) }
                 showTimeSelect
                 timeFormat="HH:mm"
                 timeIntervals={ 15 }
