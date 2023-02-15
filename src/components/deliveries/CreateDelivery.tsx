@@ -1,28 +1,28 @@
 import * as React from "react";
 import * as actions from "../../actions/";
 import { StoreState, DeliveriesState, DeliveryProduct, Options, DeliveryDataValue, DeliveryNoteImage64 } from "src/types";
-import Api, { Product, DeliveryPlace, ItemGroupCategory, Delivery, DeliveryNote, OpeningHourInterval, OpeningHourPeriod } from "pakkasmarja-client";
+import Api, { Product, DeliveryPlace, ItemGroupCategory, Delivery, DeliveryNote } from "pakkasmarja-client";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
-import { Header, Dropdown, Form, Input, Button, Divider, Image, Loader, Message } from "semantic-ui-react";
+import { Header, Dropdown, Form, Input, Button, Divider, Image, Loader } from "semantic-ui-react";
 import "../../styles/common.css";
 import BasicLayout from "../generic/BasicLayout";
 import DeliveryNoteModal from "./DeliveryNoteModal";
 import { Redirect } from "react-router";
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import fi from 'date-fns/esm/locale/fi';
+import fi from "date-fns/esm/locale/fi";
 import strings from "src/localization/strings";
 import * as Moment from "moment";
-import { extendMoment, MomentRangeStaticMethods } from "moment-range";
+import { extendMoment } from "moment-range";
 import PriceChart from "../generic/PriceChart";
 import { FileService } from "src/api/file.service";
-import Lightbox from 'react-image-lightbox';
-import 'react-image-lightbox/style.css';
+import Lightbox from "react-image-lightbox";
+import "react-image-lightbox/style.css";
 import * as _ from "lodash";
 import AsyncButton from "../generic/asynchronous-button";
 import AppConfig from "src/utils/AppConfig";
-import { filterPossibleDeliveryPlaces } from "src/utils";
+import { filterPossibleDeliveryPlaces, filterSupplierDeliveryTimes } from "src/utils";
 
 /**
  * Moment extended with moment-range
@@ -55,14 +55,13 @@ interface State {
   redirect: boolean;
   deliveryNotes: DeliveryNote[];
   deliveryNotesWithImageBase64: DeliveryNoteImage64[];
-  deliveryTimeValue: string;
+  deliveryTimeValue?: string;
   openImage?: string;
   loading: boolean;
   selectedProduct?: Product;
   productRequiresConfirmation?: boolean;
   confirmed?: boolean;
   selectedTime?: Date;
-  deliveryPlaceOpeningHours?: OpeningHourInterval[];
 }
 
 /**
@@ -88,110 +87,38 @@ class CreateDelivery extends React.Component<Props, State> {
       category: "",
       deliveryNotes: [],
       deliveryNotesWithImageBase64: [],
-      loading: false,
-      deliveryTimeValue: moment().minutes(0).format("HH:mm"),
+      loading: false
     };
-    registerLocale('fi', fi);
+    registerLocale("fi", fi);
   }
 
   /**
    * Component did mount life cycle event
    */
   public componentDidMount = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token) {
-      return;
-    }
+    const { match, keycloak } = this.props;
+    if (!keycloak) return;
+
+    const { token, subject } = keycloak;
+    if (!token) return;
+
+    const category: ItemGroupCategory = match.params.category;
+
     this.setState({ loading: true });
-    const category: ItemGroupCategory = this.props.match.params.category;
-    const productsService = await Api.getProductsService(this.props.keycloak.token);
-    const deliveryPlacesService = await Api.getDeliveryPlacesService(this.props.keycloak.token);
-    const deliveryPlaces = await deliveryPlacesService.listDeliveryPlaces();
-    const unfilteredProducts = await productsService.listProducts(undefined, category, this.props.keycloak.subject, undefined, 100);
-    const products: Product[] = unfilteredProducts.filter(product => product.active === true);
+
+    const deliveryPlaces = await Api
+      .getDeliveryPlacesService(token)
+      .listDeliveryPlaces();
+    const unfilteredProducts = await Api
+      .getProductsService(token)
+      .listProducts(undefined, category, subject, undefined, 100);
+
     this.setState({
-      products,
+      products: unfilteredProducts.filter(product => product.active),
       deliveryPlaces: filterPossibleDeliveryPlaces(deliveryPlaces, category),
-      category,
+      category: category,
       loading: false
     });
-  }
-
-  /**
-   * Gets delivery place opening hours on a given date
-   *
-   * @param date date object
-   * @param deliveryPlaceId delivery place id
-   */
-  private getDeliveryPlaceOpeningHours = async (date: Date, deliveryPlaceId: string) => {
-    const { keycloak } = this.props;
-    if (!keycloak || !keycloak.token) {
-      return;
-    }
-
-    try {
-      const openingHoursService = Api.getOpeningHoursService(keycloak.token);
-      const openingHourPeriods = await openingHoursService.listOpeningHourPeriods(deliveryPlaceId, date, date);
-      const openingHourExceptions = await openingHoursService.listOpeningHourExceptions(deliveryPlaceId);
-      const chosenDate = moment(date);
-      const exception = openingHourExceptions.find(item => {
-        const exceptionDate = moment(item.exceptionDate);
-        return exceptionDate.format("YYYY-MM-DD") === chosenDate.format("YYYY-MM-DD");
-      });
-      const period = openingHourPeriods.find(period => {
-        const periodBegin = moment(period.beginDate);
-        const periodEnd = moment(period.endDate);
-        const sameAsBegin = chosenDate.format("YYYY-MM-DD") === periodBegin.format("YYYY-MM-DD");
-        const sameAsEnd = chosenDate.format("YYYY-MM-DD") === periodEnd.format("YYYY-MM-DD");
-        return chosenDate.isBetween(periodBegin, periodEnd) || sameAsBegin || sameAsEnd;
-      });
-      if (exception) {
-        this.setState({
-          deliveryPlaceOpeningHours: exception.hours,
-          selectedTime: undefined
-        });
-      } else if (period) {
-        const periodDay = this.getPeriodDay(period, chosenDate);
-        if (periodDay !== undefined) {
-          this.setState({
-            deliveryPlaceOpeningHours: periodDay.hours,
-            selectedTime: undefined
-          });
-        } else {
-          this.setState({
-            deliveryPlaceOpeningHours: undefined,
-            selectedTime: undefined
-          });
-        }
-      } else {
-        this.setState({
-          deliveryPlaceOpeningHours: undefined,
-          selectedTime: undefined
-        });
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  /**
-   * Gets chosen date day from period
-   *
-   * @param period period
-   * @param chosenDate chosen date
-   */
-  private getPeriodDay = (period: OpeningHourPeriod, chosenDate: MomentRangeStaticMethods & Moment.Moment) => {
-    const periodDayCount = moment(period.endDate).diff(moment(period.beginDate), "days");
-    const weekdays = period.weekdays.sort((a, b) => {
-      const order = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
-      return order.findIndex(item => item === a.dayType) - order.findIndex(item => item === b.dayType);
-    });
-    for (let i = 0; i < periodDayCount; i++) {
-      const day = moment(period.beginDate).add(i, "days");
-      if (day.format("YYYY-MM-DD") === chosenDate.format("YYYY-MM-DD")) {
-        return weekdays[day.isoWeekday() - 1];
-      }
-    }
-    return undefined;
   }
 
   /**
@@ -211,7 +138,7 @@ class CreateDelivery extends React.Component<Props, State> {
    * @param value new value
    */
   private handleInputChange = async (key: string, value: DeliveryDataValue) => {
-    const { products, date, selectedPlaceId } = this.state;
+    const { products } = this.state;
 
     if (key === "selectedProductId") {
       const selectedProductId = value?.toString() || "";
@@ -227,10 +154,6 @@ class CreateDelivery extends React.Component<Props, State> {
     }
 
     this.setState({ ...this.state, [key]: value });
-
-    if ([ "date", "selectedPlaceId" ].includes(key)) {
-      this.getDeliveryPlaceOpeningHours(date, selectedPlaceId);
-    }
   }
 
   /**
@@ -266,12 +189,13 @@ class CreateDelivery extends React.Component<Props, State> {
    * @return whether form is valid or not
    */
   private isValid = () => {
+    const { selectedProductId, selectedPlaceId, selectedTime, deliveryTimeValue, amount } = this.state;
     return !!(
-      this.state.selectedProductId
-      && this.state.selectedPlaceId
-      && this.state.selectedTime
-      && this.state.deliveryTimeValue
-      && typeof this.state.amount === "number"
+      selectedProductId
+      && selectedPlaceId
+      && selectedTime
+      && deliveryTimeValue
+      && typeof amount === "number"
     );
   }
 
@@ -318,7 +242,8 @@ class CreateDelivery extends React.Component<Props, State> {
       !keycloak.subject ||
       !selectedPlaceId ||
       !selectedProductId ||
-      !date
+      !date ||
+      !deliveryTimeValue
     ) {
       return;
     }
@@ -392,13 +317,14 @@ class CreateDelivery extends React.Component<Props, State> {
    * @param deliveryId deliveryId
    * @param deliveryData delivery data
    */
-  private async createDeliveryNote(deliveryId: string, deliveryData: DeliveryNote): Promise<DeliveryNote | null> {
-    if (this.props.keycloak && this.props.keycloak.token && process.env.REACT_APP_API_URL) {
-      const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
-      return deliveryService.createDeliveryNote(deliveryData, deliveryId || "");
-    }
+  private async createDeliveryNote(deliveryId: string, deliveryData: DeliveryNote) {
+    const { keycloak } = this.props;
 
-    return null;
+    if (!keycloak || !keycloak.token) return;
+
+    return Api
+      .getDeliveriesService(keycloak.token)
+      .createDeliveryNote(deliveryData, deliveryId || "");
   }
 
   /**
@@ -419,9 +345,8 @@ class CreateDelivery extends React.Component<Props, State> {
    * Handler for selecting delivery time
    *
    * @param date date object
-   * @param event event object
    */
-  private selectTimeHandler = (date: Date | null, event: React.SyntheticEvent<any> | undefined) => {
+  private selectTimeHandler = (date: Date | null) => {
     if (date !== null) {
       const deliveryTimeValue = moment(date).format("HH:mm");
       this.setState({
@@ -429,42 +354,6 @@ class CreateDelivery extends React.Component<Props, State> {
         deliveryTimeValue: deliveryTimeValue
       });
     }
-  }
-
-  /**
-   * Gets opening hours if selected delivery place has ones set for selected date
-   *
-   * @returns date array if opening hours are found, otherwise undefined
-   */
-  private getOpeningHours = (): Date[] | undefined => {
-    const { deliveryPlaceOpeningHours } = this.state;
-    return deliveryPlaceOpeningHours ? this.convertToDateArray(deliveryPlaceOpeningHours) : undefined;
-  }
-
-  /**
-   * Converts opening hours to date array
-   *
-   * @param openingHours array of opening hours
-   * @return array of dates
-   */
-  private convertToDateArray = (openingHours: OpeningHourInterval[]) => {
-    return _.flatten(openingHours.map(this.mapToDateArray));
-  }
-
-  /**
-   * Maps single opening hour interval to date array
-   *
-   * @param interval opening hour interval
-   * @returns array of dates
-   */
-  private mapToDateArray = (interval: OpeningHourInterval): Date[] => {
-    const { opens, closes } = interval;
-    const dateRange = moment.range(
-      moment(opens),
-      moment(closes)
-    );
-    const momentDateArray = Array.from(dateRange.by("minutes", { step: 15, excludeEnd: true }));
-    return momentDateArray.map(date => date.toDate());
   }
 
   /**
@@ -486,11 +375,9 @@ class CreateDelivery extends React.Component<Props, State> {
       openImage
     } = this.state;
 
-    const includedHours = this.getOpeningHours();
-
     if (redirect) {
       return <Redirect to={{
-        pathname: '/incomingDeliveries',
+        pathname: "/incomingDeliveries",
         state: { category: this.state.category }
       }} />;
     }
@@ -580,23 +467,9 @@ class CreateDelivery extends React.Component<Props, State> {
                 locale="fi"
                 dateFormat="HH.mm"
                 timeFormat="HH.mm"
-                includeTimes={ includedHours }
+                filterTime={ filterSupplierDeliveryTimes }
               />
             </Form.Field>
-            { selectedPlaceId && includedHours !== undefined && includedHours.length === 0 &&
-              <Message negative>
-                <Message.Header>
-                  Toimituspaikka on suljettu valittuna toimituspäivänä.
-                </Message.Header>
-              </Message>
-            }
-            { selectedPlaceId && includedHours === undefined &&
-              <Message negative>
-                <Message.Header>
-                  Päivän aukioloajat voivat vielä muuttua.
-                </Message.Header>
-              </Message>
-            }
             { deliveryNotesWithImageBase64.length > 0 ?
               deliveryNotesWithImageBase64.map((deliveryNote, i) => {
                 return (
@@ -653,7 +526,7 @@ class CreateDelivery extends React.Component<Props, State> {
                 disabled={ !this.isValid() }
                 color="red"
                 onClick={ this.handleDeliverySubmit }
-                type='submit'
+                type="submit"
               >
                 { category === "FRESH" ? strings.newFreshDelivery : strings.newFrozenDelivery }
               </AsyncButton>
