@@ -140,7 +140,7 @@
   "ssn": "Henkilötunnus",
   "sign": "Allekirjoita",
   "product": "Tuote",
-  "deliveryDate": "Toimituspäivä",
+  "deliveryDate": "Toimitusajankohta",
   "addNote": "Lisää huomio",
   "newFreshDelivery": "Uusi tuoretoimitus",
   "newFrozenDelivery": "Uusi pakastetoimitus",

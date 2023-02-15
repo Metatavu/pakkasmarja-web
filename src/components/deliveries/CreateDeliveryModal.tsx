@@ -11,7 +11,6 @@ import "react-datepicker/dist/react-datepicker.css";
 import fi from 'date-fns/esm/locale/fi';
 import strings from "src/localization/strings";
 import PriceChart from "../generic/PriceChart";
-import * as moment from "moment";
 import { FileService } from "src/api/file.service";
 import Lightbox from "react-image-lightbox";
 import DatePicker, { registerLocale } from "react-datepicker";
@@ -45,13 +44,12 @@ interface State {
   contacts: Contact[];
   contactsLoading: boolean;
   selectedProduct?: Product;
-  deliveryTimeValue?: number;
   deliveryNoteImages64: DeliveryNoteImage64[];
   openImage?: string;
   selectedDeliveryStatus: DeliveryStatus;
   deliveryQualities: DeliveryQuality[];
   selectedQualityId?: string;
-  selectedDate: Date;
+  selectedDate?: Date;
   redBoxesLoaned: number;
   redBoxesReturned: number;
   grayBoxesLoaned: number;
@@ -85,8 +83,8 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       contacts: [],
       deliveryNoteImages64: [],
       selectedDeliveryPlaceId: props.deliveryPlaceId,
-      selectedDeliveryStatus: "PROPOSAL",
-      selectedDate: this.props.selectedDate || new Date(),
+      selectedDeliveryStatus: "DONE",
+      selectedDate: this.props.selectedDate,
       redBoxesLoaned: 0,
       redBoxesReturned: 0,
       grayBoxesLoaned: 0,
@@ -188,7 +186,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       selectedContactId,
       selectedProductId,
       selectedQualityId,
-      deliveryTimeValue,
+      selectedDate,
       amount
     } = this.state;
 
@@ -200,6 +198,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
           selectedProductId &&
           selectedContactId &&
           selectedQualityId &&
+          selectedDate &&
           typeof amount === "number"
         );
       case "DELIVERYLOAN":
@@ -214,7 +213,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
           selectedDeliveryPlaceId &&
           selectedProductId &&
           selectedContactId &&
-          deliveryTimeValue &&
+          selectedDate &&
           typeof amount === "number"
         );
     }
@@ -297,7 +296,6 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       selectedDeliveryPlaceId,
       selectedDate,
       selectedQualityId,
-      deliveryTimeValue,
       amount,
       deliveryNotes,
       redBoxesLoaned,
@@ -308,19 +306,16 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       orangeBoxesReturned
     } = this.state;
 
-    if (!keycloak || !keycloak.token || !selectedProductId || !selectedContactId) {
+    if (!keycloak || !keycloak.token || !selectedProductId || !selectedContactId || !selectedDate) {
       return;
     }
 
     const deliveryService = Api.getDeliveriesService(keycloak.token);
-    let time: string | Date = moment(selectedDate).format("YYYY-MM-DD");
-    time = `${time} ${deliveryTimeValue}:00 +0000`;
-    time = moment(time, "YYYY-MM-DD HH:mm Z").toDate();
 
     const delivery: Delivery = {
       productId: selectedProductId,
       userId: selectedContactId,
-      time: time,
+      time: selectedDate,
       status: selectedDeliveryStatus,
       amount: amount,
       price: "0",
@@ -575,10 +570,38 @@ class CreateDeliveryModal extends React.Component<Props, State> {
    * Render method
    */
   public render() {
-    const { deliveryPlaces } = this.props;
-    if (this.state.loading) {
+    const {
+      deliveryPlaces,
+      open,
+      onClose,
+      category
+    } = this.props;
+
+    const {
+      loading,
+      products,
+      contacts,
+      selectedContactId,
+      contactsLoading,
+      selectedProductId,
+      selectedDate,
+      selectedDeliveryStatus,
+      selectedProduct,
+      amount,
+      redBoxesReturned,
+      redBoxesLoaned,
+      grayBoxesReturned,
+      grayBoxesLoaned,
+      orangeBoxesReturned,
+      orangeBoxesLoaned,
+      deliveryNoteImages64,
+      openImage,
+      modalOpen
+    } = this.state;
+
+    if (loading) {
       return (
-        <Modal open={this.props.open}>
+        <Modal open={open}>
           <Modal.Header>Uusi toimitus/ehdotus</Modal.Header>
           <Modal.Content>
             <Segment loading />
@@ -587,7 +610,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       );
     }
 
-    const productOptions: Options[] = this.state.products.map((product) => {
+    const productOptions: Options[] = products.map(product => {
       return {
         key: product.id,
         text: product.name,
@@ -595,7 +618,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       };
     });
 
-    const contactOptions: Options[] = this.state.contacts.map((contact) => {
+    const contactOptions: Options[] = contacts.map(contact => {
       return {
         key: contact.id,
         text: contact.displayName,
@@ -603,21 +626,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       };
     });
 
-    const deliveryTimeValue: Options[] = [{
-      key: "deliveryTimeValue1",
-      text: "Ennen kello 12",
-      value: 11
-    }, {
-      key: "deliveryTimeValue2",
-      text: "Jälkeen kello 12",
-      value: 17
-    }];
-
     const freshDeliveryStatusOptions: Options[] = [{
-      key: "proposal",
-      text: "Ehdotus",
-      value: "PROPOSAL"
-    }, {
       key: "done",
       text: "Valmis toimitus",
       value: "DONE"
@@ -636,7 +645,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       }));
 
     return (
-      <Modal onClose={() => this.props.onClose()} open={this.props.open}>
+      <Modal onClose={() => onClose()} open={open}>
         <Modal.Header>{ this.renderHeader() }</Modal.Header>
         <Modal.Content>
           <Form>
@@ -646,12 +655,12 @@ class CreateDeliveryModal extends React.Component<Props, State> {
                 selection
                 search
                 options={ contactOptions }
-                value={ this.state.selectedContactId }
+                value={ selectedContactId }
                 placeholder='Valitse viljelijä'
                 onChange={(e, data) => this.setState({ selectedContactId: data.value as string }, this.getProducts)}
                 onSearchChange={this.handleSearchChange}
-                disabled={this.state.contactsLoading}
-                loading={this.state.contactsLoading}
+                disabled={contactsLoading}
+                loading={contactsLoading}
               />
             </Form.Field>
             <Form.Field>
@@ -663,62 +672,47 @@ class CreateDeliveryModal extends React.Component<Props, State> {
               {this.renderDropDown(deliveryPlaceOptions, "Toimituspaikka", "selectedDeliveryPlaceId")}
             </Form.Field>
             <Form.Field>
-              {this.state.selectedProductId && this.props.category === "FRESH" &&
-                <PriceChart showLatestPrice time={this.state.selectedDate} productId={this.state.selectedProductId} />
+              {selectedProductId && category === "FRESH" &&
+                <PriceChart showLatestPrice time={selectedDate} productId={selectedProductId} />
               }
             </Form.Field>
-            { this.state.selectedDeliveryStatus !== "DELIVERYLOAN" &&
+            { selectedDeliveryStatus !== "DELIVERYLOAN" &&
               <Form.Field>
                 <label>{strings.product}</label>
-                {productOptions.length > 0 ? this.renderDropDown(productOptions, strings.product, "selectedProductId") : this.state.selectedContactId ? <p style={{ color: "red" }}>Viljelijällä ei ole voimassa olevaa sopimusta</p> : <p style={{ color: "red" }}>Valitse viljelijä</p>}
+                { productOptions.length > 0
+                  ? this.renderDropDown(productOptions, strings.product, "selectedProductId")
+                  : selectedContactId
+                    ? <p style={{ color: "red" }}>Viljelijällä ei ole voimassa olevaa sopimusta</p>
+                    : <p style={{ color: "red" }}>Valitse viljelijä</p>
+                }
               </Form.Field>
             }
-            {this.state.selectedDeliveryStatus !== "PROPOSAL" ?
-              <Form.Field>
-                <label>{strings.deliveryDate}</label>
-                <DatePicker
-                  onChange={(date: Date) => {
-                    this.setState({ selectedDate: date })
-                  }}
-                  showTimeSelect
-                  timeFormat="HH:mm"
-                  timeIntervals={15}
-                  timeCaption="aika"
-                  selected={new Date(this.state.selectedDate)}
-                  dateFormat="dd.MM.yyyy HH:mm"
-                  locale="fi"
-                />
-              </Form.Field>
-              :
-              <React.Fragment>
-                <Form.Field>
-                  <label>{strings.deliveryDate}</label>
-                  <DatePicker
-                    onChange={(date: Date) => {
-                      this.setState({ selectedDate: date })
-                    }}
-                    selected={new Date(this.state.selectedDate)}
-                    dateFormat="dd.MM.yyyy"
-                    locale="fi"
-                  />
-                </Form.Field>
-                <Form.Field>
-                  <label>{"Ajankohta"}</label>
-                  {this.renderDropDown(deliveryTimeValue, "Valitse ajankohta", "deliveryTimeValue")}
-                </Form.Field>
-              </React.Fragment>
-            }
-            {this.state.selectedDeliveryStatus === "DONE" && this.state.selectedProduct &&
+            <Form.Field>
+              <label>{strings.deliveryDate}</label>
+              <DatePicker
+                onChange={(date: Date) => {
+                  this.setState({ selectedDate: date })
+                }}
+                showTimeSelect
+                timeFormat="HH:mm"
+                timeIntervals={15}
+                timeCaption="aika"
+                selected={selectedDate}
+                dateFormat="dd.MM.yyyy HH:mm"
+                locale="fi"
+              />
+            </Form.Field>
+            {selectedDeliveryStatus === "DONE" && selectedProduct &&
               <Form.Field>
                 {this.renderQualityField()}
               </Form.Field>
             }
-            { this.state.selectedDeliveryStatus !== "DELIVERYLOAN" &&
+            { selectedDeliveryStatus !== "DELIVERYLOAN" &&
                 <Form.Field>
-                  <label>{`${strings.amount} ${this.state.selectedProduct ? `(${this.state.selectedProduct.unitName})` : ""}`}</label>
+                  <label>{`${strings.amount} ${selectedProduct ? `(${selectedProduct.unitName})` : ""}`}</label>
                   <Input
                     placeholder={strings.amount}
-                    value={this.state.amount}
+                    value={amount}
                     type="number"
                     min={0}
                     onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
@@ -728,20 +722,20 @@ class CreateDeliveryModal extends React.Component<Props, State> {
                   />
                 </Form.Field>
             }
-            {this.props.category === "FRESH" && this.state.amount && this.state.selectedProduct ?
+            {category === "FRESH" && amount && selectedProduct ?
               <Form.Field>
-                <p>= <b>{this.state.amount * this.state.selectedProduct.units * this.state.selectedProduct.unitSize} KG</b></p>
+                <p>= <b>{amount * selectedProduct.units * selectedProduct.unitSize} KG</b></p>
               </Form.Field>
               : null
             }
-            { [ "DONE", "DELIVERYLOAN" ].includes(this.state.selectedDeliveryStatus) && this.props.category === "FROZEN" &&
+            { [ "DONE", "DELIVERYLOAN" ].includes(selectedDeliveryStatus) && category === "FROZEN" &&
               <React.Fragment>
                 <Form.Field>
                   <label>{strings.redBoxesReturned}</label>
                   <Input
                     type="number"
                     placeholder="Palautettu"
-                    value={this.state.redBoxesReturned}
+                    value={redBoxesReturned}
                     onChange={(e, data) => {
                       this.setState({
                         redBoxesReturned: parseInt(data.value)
@@ -753,7 +747,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
                   <Input
                     type="number"
                     placeholder="Lainattu"
-                    value={this.state.redBoxesLoaned}
+                    value={redBoxesLoaned}
                     onChange={(e, data) => {
                       this.setState({
                         redBoxesLoaned: parseInt(data.value)
@@ -765,7 +759,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
                   <Input
                     type="number"
                     placeholder="Palautettu"
-                    value={this.state.grayBoxesReturned}
+                    value={grayBoxesReturned}
                     onChange={(e, data) => {
                       this.setState({
                         grayBoxesReturned: parseInt(data.value)
@@ -777,7 +771,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
                   <Input
                     type="number"
                     placeholder="Lainattu"
-                    value={this.state.grayBoxesLoaned}
+                    value={grayBoxesLoaned}
                     onChange={(e, data) => {
                       this.setState({
                         grayBoxesLoaned: parseInt(data.value)
@@ -789,7 +783,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
                   <Input
                     type="number"
                     placeholder="Palautettu"
-                    value={ this.state.orangeBoxesReturned }
+                    value={ orangeBoxesReturned }
                     onChange={ (_, data) => this.setState({ orangeBoxesReturned: parseInt(data.value) }) }
                   />
                 </Form.Field>
@@ -798,11 +792,11 @@ class CreateDeliveryModal extends React.Component<Props, State> {
                   <Input
                     type="number"
                     placeholder="Lainattu"
-                    value={ this.state.orangeBoxesLoaned }
+                    value={ orangeBoxesLoaned }
                     onChange={ (_, data) => this.setState({ orangeBoxesLoaned: parseInt(data.value) }) }
                   />
                 </Form.Field>
-                { this.state.selectedDeliveryStatus === "DELIVERYLOAN" &&
+                { selectedDeliveryStatus === "DELIVERYLOAN" &&
                   <Form.Field>
                     <label>Kommentti</label>
                     <Input
@@ -815,8 +809,8 @@ class CreateDeliveryModal extends React.Component<Props, State> {
                 }
               </React.Fragment>
             }
-            {this.state.deliveryNoteImages64[0] ?
-              this.state.deliveryNoteImages64.map((deliveryNote, i) => {
+            { deliveryNoteImages64[0] ?
+              deliveryNoteImages64.map((deliveryNote, i) => {
                 return (
                   <React.Fragment key={`${deliveryNote.text} ${i}`}>
                     <h4 style={{ marginTop: 14 }}>Huomio {i + 1}</h4>
@@ -835,7 +829,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
                 )
               }) : <Divider />
             }
-            { this.state.selectedDeliveryStatus !== "DELIVERYLOAN" &&
+            { selectedDeliveryStatus !== "DELIVERYLOAN" &&
               <Button color="red" inverted onClick={() => this.setState({ modalOpen: true })}>{`${strings.addNote}`}</Button>
             }
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
@@ -844,14 +838,14 @@ class CreateDeliveryModal extends React.Component<Props, State> {
               </AsyncButton>
             </div>
           </Form>
-          {this.state.openImage &&
+          {openImage &&
             <Lightbox
-              mainSrc={this.state.openImage}
+              mainSrc={openImage}
               onCloseRequest={() => this.setState({ openImage: undefined })}
             />
           }
           <DeliveryNoteModal
-            modalOpen={this.state.modalOpen}
+            modalOpen={modalOpen}
             closeModal={() => this.setState({ modalOpen: false })}
             addDeliveryNote={this.addDeliveryNote}
           />
