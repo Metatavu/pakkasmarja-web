@@ -101,7 +101,7 @@
     "@types/react-select": "^2.0.4",
     "@types/react-textarea-autosize": "^4.3.4",
     "@types/urijs": "^1.15.38",
-    "node-sass": "^4.13.1",
+    "node-sass": "^7.0.0",
     "sass-loader": "^7.1.0",
     "typescript": "^3.5.1"
   },
