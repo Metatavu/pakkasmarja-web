@@ -5,24 +5,15 @@ import { StoreState, DeliveryProduct, DeliveriesState } from "src/types";
 import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
-import Api, { Product, ItemGroupCategory, OpeningHourPeriod, DeliveryPlace, OpeningHourException, OpeningHourWeekday, OpeningHourInterval, WeekdayType } from "pakkasmarja-client";
+import Api, { Product, ItemGroupCategory, DeliveryPlace } from "pakkasmarja-client";
 import { ItemGroup } from "pakkasmarja-client";
-import { Grid, Header, Icon, Image, SemanticICONS, Menu, Loader, Button, Table, Select, DropdownProps } from "semantic-ui-react";
+import { Grid, Header, Icon, Image, SemanticICONS, Menu, Loader, Button } from "semantic-ui-react";
 import { Delivery } from "pakkasmarja-client";
 import strings from "src/localization/strings";
 import { Redirect } from "react-router";
 import * as _ from "lodash";
 import FreshIcon from "../../gfx/fresh-icon.png";
 import FrozenIcon from "../../gfx/frozen-icon.png";
-import * as Moment from "moment";
-import 'moment/locale/fi';
-import { extendMoment } from "moment-range";
-
-/**
- * Moment extended with moment-range
- */
-const moment = extendMoment(Moment);
-moment.locale("fi");
 
 /**
  * Interface for component props
@@ -38,8 +29,6 @@ interface Props {
  * Interface for component state
  */
 interface State {
-  today?: Moment.Moment;
-  fourWeeksFromToday?: Moment.Moment;
   keycloak?: Keycloak.KeycloakInstance;
   itemGroups?: ItemGroup[];
   activeItem?: string;
@@ -52,18 +41,7 @@ interface State {
   incomingDeliveriesCount?: number;
   deliveries?: DeliveriesState;
   loading: boolean;
-  openingHours: OpeningHourPeriod[];
   deliveryPlaces: DeliveryPlace[];
-  deliveryPlacesOpeningHours: DeliveryPlaceOpeningHours[];
-  selectedDeliveryPlaceOpeningHours?: DeliveryPlaceOpeningHours;
-  openingHoursNotConfirmed: boolean;
-}
-
-interface DeliveryPlaceOpeningHours {
-  id: string;
-  name: string;
-  openingHourPeriods: OpeningHourPeriod[];
-  openingHourExceptions: OpeningHourException[];
 }
 
 /**
@@ -73,7 +51,7 @@ class DeliveriesScreen extends React.Component<Props, State> {
 
   /**
    * Constructor
-   * 
+   *
    * @param props props
    */
   constructor(props: Props) {
@@ -82,10 +60,7 @@ class DeliveriesScreen extends React.Component<Props, State> {
       pageTitle: "Toimitukset",
       redirect: false,
       loading: false,
-      openingHours: [],
-      deliveryPlaces: [],
-      deliveryPlacesOpeningHours: [],
-      openingHoursNotConfirmed: false
+      deliveryPlaces: []
     };
   }
 
@@ -101,7 +76,6 @@ class DeliveriesScreen extends React.Component<Props, State> {
       this.loadDeliveriesData(),
       this.fetchDeliveryPlacesFromContract()
     ]);
-    this.listDeliveryPlaceOpeningHours();
     this.setTabCounts();
     this.setState({ loading: false });
   }
@@ -273,7 +247,7 @@ class DeliveriesScreen extends React.Component<Props, State> {
             </Grid.Column>
             <Grid.Column width={4}></Grid.Column>
           </Grid>
-          {this.state.loading ?
+          { this.state.loading ?
             <Loader size="medium" content={strings.loading} active /> :
             <Grid verticalAlign='middle'>
               {
@@ -299,246 +273,11 @@ class DeliveriesScreen extends React.Component<Props, State> {
                   );
                 })
               }
-              <Grid.Row>
-                <Grid.Column width={4}></Grid.Column>
-                  <Grid.Column width={8}>
-                  <Select style={{ width: "100%", marginTop: "2rem", marginBottom: "2rem" }} placeholder='Valitse toimituspaikka' options={ this.mapOptions() } onChange={ this.chooseDeliveryPlaceOpeningHours } />
-                  {
-                    this.renderOpeningHours()
-                  }
-                  </Grid.Column>
-                <Grid.Column width={4}></Grid.Column>
-              </Grid.Row>
-              
-            </Grid>}
+            </Grid>
+          }
         </BasicLayout>
       );
     }
-  }
-
-  /**
-   * Method for choosing delivery place opening hours
-   * 
-   * @param event event object
-   * @param data dropdown props
-   */
-  private chooseDeliveryPlaceOpeningHours = (event: React.SyntheticEvent<HTMLElement>, data: DropdownProps) => {
-    const { value } = data;
-    if (value) {
-      const place = this.state.deliveryPlacesOpeningHours.find(item => item.id === value);
-      if (place) {
-        this.setState({
-          selectedDeliveryPlaceOpeningHours: place
-        });
-      }
-    }
-  }
-
-  /**
-   * Maps options for dropdown
-   */
-  private mapOptions = () => {
-    return this.state.deliveryPlacesOpeningHours.map(deliveryPlaceOpeningHours => {
-      return {
-        value: deliveryPlaceOpeningHours.id,
-        text: deliveryPlaceOpeningHours.name
-      }
-    });
-  }
-
-  /**
-   * Renders opening hours
-   */
-  private renderOpeningHours = () => {
-    const { selectedDeliveryPlaceOpeningHours, openingHoursNotConfirmed } = this.state;
-    if (!selectedDeliveryPlaceOpeningHours) {
-      return;
-    }
-    return (
-      <>
-        { openingHoursNotConfirmed &&
-          <span><Icon color="red" name="asterisk" />Aukioloajat voivat vielä muuttua</span>
-        }
-        <Table>
-          <Table.Header>
-            <Table.Row>
-              <Table.HeaderCell colSpan="2">{ selectedDeliveryPlaceOpeningHours.name }</Table.HeaderCell>
-            </Table.Row>
-          </Table.Header>
-          <Table.Header>
-            <Table.Row>
-              <Table.HeaderCell>Päivämäärä</Table.HeaderCell>
-              <Table.HeaderCell>Aukioloajat</Table.HeaderCell>
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
-            {
-              this.renderOpeningHourPeriods(selectedDeliveryPlaceOpeningHours)
-            }
-          </Table.Body>
-        </Table>
-      </>
-    );
-  }
-
-  /**
-   * Renders opening hour periods
-   * 
-   * @param deliveryPlaceOpeningHours
-   */
-  private renderOpeningHourPeriods = (deliveryPlaceOpeningHours: DeliveryPlaceOpeningHours) => {
-    const { today, fourWeeksFromToday } = this.state;
-    if (!today || !fourWeeksFromToday) {
-      return;
-    }
-    const { openingHourPeriods, openingHourExceptions } = deliveryPlaceOpeningHours;
-    openingHourPeriods.sort((a, b) => {
-      return moment(a.beginDate).diff(b.beginDate);
-    });
-
-    const dateRange = moment.range(today.startOf("day"), fourWeeksFromToday.endOf("day"));
-    const days = Array.from(dateRange.by("day"));
-
-    const dayElements = days.map((day, index) => {
-      const foundException = openingHourExceptions.find(exception =>
-        moment(exception.exceptionDate).isSame(day, "day")
-      );
-
-      if (foundException) {
-        return this.renderOpeningHourDay(day, foundException, index, true);
-      }
-
-      const periodIndex = openingHourPeriods.findIndex(period => {
-        const range = moment.range(
-          moment(period.beginDate).startOf("day"),
-          moment(period.endDate).endOf("day")
-        );
-
-        return range.contains(day);
-      });
-
-      const confirmed = periodIndex > -1;
-      if (!confirmed && !this.state.openingHoursNotConfirmed) {
-        this.setState({ openingHoursNotConfirmed: true });
-      }
-
-      const period = confirmed ?
-        openingHourPeriods[periodIndex] :
-        openingHourPeriods[openingHourPeriods.length -1];
-      if (!period) {
-        return;
-      }
-      
-      const weekday = period.weekdays.find(weekday => weekday.dayType === this.getWeekdayType(day));
-
-      return this.renderOpeningHourDay(day, weekday!, index, confirmed);
-    });
-
-    return dayElements;
-  }
-
-  /**
-   * Get opening hour weekday type
-   * 
-   * @param date moment date
-   * @returns weekday type as WeekdayType
-   */
-  private getWeekdayType = (date: Moment.Moment): WeekdayType | undefined => {
-    const weekdayTypeArray = [
-      WeekdayType.MONDAY,
-      WeekdayType.TUESDAY,
-      WeekdayType.WEDNESDAY,
-      WeekdayType.THURSDAY,
-      WeekdayType.FRIDAY,
-      WeekdayType.SATURDAY,
-      WeekdayType.SUNDAY
-    ];
-  
-    return weekdayTypeArray[date.weekday()];
-  }
-
-  /**
-   * Renders single opening hour day
-   * 
-   * @param date date of day
-   * @param dayObject day object
-   * @param key element key
-   * @returns day as JSX element
-   */
-  private renderOpeningHourDay = (date: Moment.Moment, dayObject: OpeningHourException | OpeningHourWeekday, key: number, confirmed: boolean): JSX.Element => {
-    return (
-      <Table.Row key={ key }>
-        <Table.Cell>
-          <span style={{ marginRight: 10 }}>
-            { date.format("dd DD.MM.YYYY") }
-          </span>
-          { !confirmed &&
-            <Icon
-              color="red"
-              name="asterisk"
-            />
-          }
-        </Table.Cell>
-        <Table.Cell>
-          { dayObject.hours.length > 0 &&
-            this.renderOpeningHourIntervals(dayObject.hours) ||
-            <div>{ strings.closed }</div>
-          }
-        </Table.Cell>
-      </Table.Row>
-    );
-  }
-
-  /**
-   * Renders opening hour intervals
-   * 
-   * @param hours opening hour intervals
-   */
-  private renderOpeningHourIntervals = (hours: OpeningHourInterval[]) => {
-    return hours.map(hour => {
-      return <div>{ `${moment(hour.opens).format('HH:mm')} - ${moment(hour.closes).format('HH:mm')}` }</div>;
-    });
-  }
-
-  /**
-   * Lists opening hours in the delivery place for the next four weeks
-   * 
-   * @param event event object
-   * @param data dropdown props
-   */
-  private listDeliveryPlaceOpeningHours = async () => {
-    const { keycloak } = this.props;
-    const { deliveryPlaces } = this.state;
-    if (!keycloak || deliveryPlaces.length === 0) {
-      return;
-    }
-    const { token } = keycloak;
-    if (!token) {
-      return;
-    }
-    const openingHoursService = Api.getOpeningHoursService(token);
-    const today = moment();
-    const fourWeeksFromToday = moment(today).add(28, "day");
-    const deliveryPlacesOpeningHoursPromises = deliveryPlaces.map(async (deliveryPlace) => {
-      const name = deliveryPlace.name;
-      const deliveryPlaceId = `${ deliveryPlace.id }`;
-      const [openingHourExceptions, openingHourPeriods] = await Promise.all([
-        openingHoursService.listOpeningHourExceptions(deliveryPlaceId),
-        openingHoursService.listOpeningHourPeriods(deliveryPlaceId, today.toDate(), fourWeeksFromToday.toDate())
-      ]);
-      return {
-        id: deliveryPlaceId,
-        name: name || "",
-        openingHourPeriods: openingHourPeriods,
-        openingHourExceptions: openingHourExceptions
-      };
-    });
-    const deliveryPlacesOpeningHours =  await Promise.all(deliveryPlacesOpeningHoursPromises);
-    this.setState({
-      today,
-      fourWeeksFromToday,
-      deliveryPlacesOpeningHours
-    });
   }
 
   /**
@@ -555,7 +294,7 @@ class DeliveriesScreen extends React.Component<Props, State> {
 
 /**
  * Redux mapper for mapping store state to component props
- * 
+ *
  * @param state store state
  */
 export function mapStateToProps(state: StoreState) {
@@ -566,8 +305,8 @@ export function mapStateToProps(state: StoreState) {
 }
 
 /**
- * Redux mapper for mapping component dispatches 
- * 
+ * Redux mapper for mapping component dispatches
+ *
  * @param dispatch dispatch method
  */
 export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {

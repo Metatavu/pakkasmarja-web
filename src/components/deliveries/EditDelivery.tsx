@@ -20,6 +20,7 @@ import Lightbox from 'react-image-lightbox';
 import 'react-image-lightbox/style.css';
 import { FileService } from "src/api/file.service";
 import AsyncButton from "../generic/asynchronous-button";
+import { filterPossibleDeliveryPlaces, filterSupplierDeliveryTimes } from "src/utils";
 
 /**
  * Interface for component props
@@ -42,14 +43,13 @@ interface State {
   selectedProductId?: string;
   selectedPlaceId?: string;
   amount: number;
-  date: Date;
+  deliveryTime?: Date;
   modalOpen: boolean;
   category: string;
   redirect: boolean;
   deliveryNotes: DeliveryNote[];
   deliveryNotesWithImageBase64: DeliveryNoteImage64[];
   deliveryId?: string;
-  deliveryTimeValue: number;
   openImage?: string;
   loading: boolean;
   selectedProduct?: Product;
@@ -71,13 +71,11 @@ class EditDelivery extends React.Component<Props, State> {
       redirect: false,
       products: [],
       deliveryPlaces: [],
-      date: new Date(),
       modalOpen: false,
       category: "",
       deliveryNotes: [],
       deliveryNotesWithImageBase64: [],
       amount: 0,
-      deliveryTimeValue: 11,
       loading: false
     };
     registerLocale('fi', fi);
@@ -87,36 +85,36 @@ class EditDelivery extends React.Component<Props, State> {
    * Component did mount life-cycle event
    */
   public componentDidMount = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token || !this.props.deliveries) {
-      return;
-    }
+    const { keycloak, deliveries, match } = this.props;
+    if (!keycloak || !deliveries) return;
+
+    const { token, subject } = keycloak;
+    if (!token) return;
+
     this.setState({ loading: true });
 
-    const category: ItemGroupCategory = this.props.match.params.category;
-    const deliveryId: string = this.props.match.params.deliveryId;
+    const category: ItemGroupCategory = match.params.category;
+    const deliveryId: string = match.params.deliveryId;
 
-    const productsService = await Api.getProductsService(this.props.keycloak.token);
-    const deliveryPlacesService = await Api.getDeliveryPlacesService(this.props.keycloak.token);
-    const deliveriesService = await Api.getDeliveriesService(this.props.keycloak.token);
-    const delivery = await deliveriesService.findDelivery(deliveryId);
-    const deliveryPlaces = await deliveryPlacesService.listDeliveryPlaces();
-    const unfilteredProducts: Product[] = await productsService.listProducts(undefined, category, this.props.keycloak.subject, undefined, 100);
-    const products: Product[] = unfilteredProducts.filter(product => product.active === true);
+    const delivery = await Api.getDeliveriesService(token).findDelivery(deliveryId);
+    const deliveryPlaces = await Api.getDeliveryPlacesService(token).listDeliveryPlaces();
+    const unfilteredProducts = await Api.getProductsService(token).listProducts(undefined, category, subject, undefined, 100);
+    const products = unfilteredProducts.filter(product => product.active);
     const selectedProduct = products.find(product => product.id === delivery.productId);
-    const deliveryTimeValue = Number(moment(delivery.time).utc().format("HH"));
-    await this.setState({
+
+    this.setState({
       products,
-      deliveryPlaces: deliveryPlaces.filter(deliveryPlace => deliveryPlace.id !== "OTHER"),
+      deliveryPlaces: filterPossibleDeliveryPlaces(deliveryPlaces, category),
       category,
       deliveryId,
       amount: delivery.amount,
       selectedProductId: delivery.productId,
       selectedPlaceId: delivery.deliveryPlaceId,
-      date: delivery.time,
-      deliveryTimeValue,
+      deliveryTime: moment.utc(delivery.time).toDate(),
       loading: false,
       selectedProduct
     });
+
     this.getNotes();
   }
 
@@ -124,13 +122,16 @@ class EditDelivery extends React.Component<Props, State> {
    * Get notes
    */
   private getNotes = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token || !this.state.deliveryId || !process.env.REACT_APP_API_URL) {
+    const { keycloak } = this.props;
+    const { deliveryId } = this.state;
+
+    if (!keycloak || !keycloak.token || !deliveryId || !process.env.REACT_APP_API_URL) {
       return;
     }
-    const deliveriesService = await Api.getDeliveriesService(this.props.keycloak.token);
-    const deliveryNotes = await deliveriesService.listDeliveryNotes(this.state.deliveryId);
-    const fileService = new FileService(process.env.REACT_APP_API_URL, this.props.keycloak.token);
-    const deliveryNotesWithImageBase64Promises = deliveryNotes.map(async (note) => {
+
+    const deliveryNotes = await Api.getDeliveriesService(keycloak.token).listDeliveryNotes(deliveryId);
+    const fileService = new FileService(process.env.REACT_APP_API_URL, keycloak.token);
+    const deliveryNotesWithImageBase64Promises = deliveryNotes.map(async note => {
       if (note.image) {
         const imageData = await fileService.getFile(note.image || "");
         const src = `data:image/jpeg;base64,${imageData.data}`
@@ -152,17 +153,14 @@ class EditDelivery extends React.Component<Props, State> {
    * @param key key
    * @param value value
    */
-  private handleInputChange = async (key: string, value: DeliveryDataValue) => {
+  private handleInputChange = async (key: keyof State, value: DeliveryDataValue) => {
     if (key === "selectedProductId") {
       const selectedProductId = value && value.toString() || "";
       const selectedProduct = this.state.products.find(product => product.id === selectedProductId);
       this.setState({ selectedProductId, selectedProduct });
     }
 
-    const state: State = this.state;
-    state[key] = value;
-
-    this.setState(state);
+    this.setState({ ...this.state, [key]: value });
   }
 
   /**
@@ -171,7 +169,7 @@ class EditDelivery extends React.Component<Props, State> {
    * @param options options
    * @param key key
    */
-  private renderDropDown = (options: Options[], key: string) => {
+  private renderDropDown = (options: Options[], key: "selectedProductId" | "selectedPlaceId") => {
     if (options.length <= 0) {
       return <Dropdown fluid />;
     }
@@ -180,7 +178,7 @@ class EditDelivery extends React.Component<Props, State> {
       <Dropdown
         selection
         fluid
-        value={value}
+        value={value as string}
         options={options}
         onChange={(event, data) => {
           this.handleInputChange(key, data.value)
@@ -196,54 +194,73 @@ class EditDelivery extends React.Component<Props, State> {
    * @param deliveryNote deliveryNote
    */
   private addDeliveryNote = async (deliveryNote: DeliveryNote) => {
-    if (!process.env.REACT_APP_API_URL || !this.props.keycloak || !this.props.keycloak.token) {
-      return;
-    }
-    const deliveryNotesWithImageBase64 = this.state.deliveryNotesWithImageBase64;
+    const { deliveryNotes, deliveryNotesWithImageBase64 } = this.state;
+    const token = this.props.keycloak?.token;
+    const updatedNotesWithImageBase64 = [ ...deliveryNotesWithImageBase64 ];
+
+    if (!process.env.REACT_APP_API_URL || !token) return;
+
     if (deliveryNote.image) {
-      const fileService = new FileService(process.env.REACT_APP_API_URL, this.props.keycloak.token);
-      const imageData = await fileService.getFile(deliveryNote.image || "");
-      const src = `data:image/jpeg;base64,${imageData.data}`
-      deliveryNotesWithImageBase64.push({ text: deliveryNote.text, img64: src });
+      const imageData = await new FileService(process.env.REACT_APP_API_URL, token).getFile(deliveryNote.image || "");
+      updatedNotesWithImageBase64.push({ text: deliveryNote.text, img64: `data:image/jpeg;base64,${imageData.data}` });
     } else {
-      deliveryNotesWithImageBase64.push({ text: deliveryNote.text, img64: "" });
+      updatedNotesWithImageBase64.push({ text: deliveryNote.text, img64: "" });
     }
 
-    const deliveryNotes: DeliveryNote[] = this.state.deliveryNotes || [];
-    deliveryNotes.push(deliveryNote);
-    this.setState({ deliveryNotes, deliveryNotesWithImageBase64: deliveryNotesWithImageBase64 });
+    this.setState({
+      deliveryNotes: [ ...(deliveryNotes || []), deliveryNote ],
+      deliveryNotesWithImageBase64: updatedNotesWithImageBase64
+    });
   }
 
   /**
    * Handles delivery submit
    */
   private handleDeliverySubmit = async () => {
-    if (!this.props.keycloak || !this.props.keycloak.token || !this.props.keycloak.subject || !this.state.selectedPlaceId || !this.state.selectedProductId || !this.state.date || !this.state.deliveryId) {
+    const { keycloak, deliveriesLoaded } = this.props;
+    const {
+      selectedPlaceId,
+      selectedProductId,
+      deliveryTime: time,
+      deliveryId,
+      amount,
+      deliveryNotes
+    } = this.state;
+    const { token, subject } = keycloak || {};
+
+    if (
+      !token ||
+      !subject ||
+      !selectedPlaceId ||
+      !selectedProductId ||
+      !time ||
+      !deliveryId
+    ) {
       return;
     }
 
-    const deliveryService = await Api.getDeliveriesService(this.props.keycloak.token);
-    let time: string | Date = moment(this.state.date).format("YYYY-MM-DD");
-    time = `${time} ${this.state.deliveryTimeValue}:00 +0000`
-    time = moment(time, "YYYY-MM-DD HH:mm Z").toDate();
-    const delivery: Delivery = {
-      id: this.state.deliveryId,
-      productId: this.state.selectedProductId,
-      userId: this.props.keycloak.subject,
-      time: time,
-      status: "PLANNED",
-      amount: this.state.amount,
-      price: "0",
-      deliveryPlaceId: this.state.selectedPlaceId
-    }
+    const deliveryService = Api.getDeliveriesService(token);
 
-    const updatedDelivery = await deliveryService.updateDelivery(delivery, this.state.deliveryId);
+    const updatedDelivery = await deliveryService.updateDelivery(
+      {
+        id: deliveryId,
+        productId: selectedProductId,
+        userId: subject,
+        time: time,
+        status: "PLANNED",
+        amount: amount,
+        price: "0",
+        deliveryPlaceId: selectedPlaceId
+      },
+      deliveryId
+    );
+
     const updatedDeliveries = this.getUpdatedDeliveryData(updatedDelivery);
-    this.props.deliveriesLoaded && this.props.deliveriesLoaded(updatedDeliveries);
+    deliveriesLoaded && deliveriesLoaded(updatedDeliveries);
 
-    await Promise.all(this.state.deliveryNotes.map((deliveryNote): Promise<DeliveryNote | null> => {
-      return this.createDeliveryNote(updatedDelivery.id || "", deliveryNote);
-    }));
+    await Promise.all(
+      deliveryNotes.map(deliveryNote => this.createDeliveryNote(updatedDelivery.id || "", deliveryNote))
+    );
 
     this.setState({ redirect: true });
   }
@@ -337,7 +354,7 @@ class EditDelivery extends React.Component<Props, State> {
     return !!(
       this.state.selectedProductId
       && this.state.selectedPlaceId
-      && this.state.deliveryTimeValue
+      && this.state.deliveryTime
       && typeof this.state.amount === 'number'
     );
   }
@@ -346,101 +363,113 @@ class EditDelivery extends React.Component<Props, State> {
    * Render method
    */
   public render() {
-    if (this.state.redirect) {
+    const {
+      redirect,
+      category,
+      deliveryTime,
+      products,
+      deliveryPlaces,
+      selectedProduct,
+      selectedProductId,
+      loading,
+      amount,
+      deliveryNotesWithImageBase64,
+      openImage,
+      modalOpen
+    } = this.state;
+
+    if (redirect) {
       return <Redirect to={{
         pathname: '/incomingDeliveries',
-        state: { category: this.state.category }
+        state: { category: category }
       }} />;
     }
 
-    const productOptions: Options[] = this.state.products.map((product) => {
-      return {
-        key: product.id,
-        text: product.name,
-        value: product.id
-      };
-    });
+    const productOptions = products.map<Options>(product => ({
+      key: product.id,
+      text: product.name,
+      value: product.id
+    }));
 
-    const deliveryPlaceOptions: Options[] = this.state.deliveryPlaces && this.state.deliveryPlaces.map((deliveryPlace) => {
-      return {
-        key: deliveryPlace.id || "",
-        text: deliveryPlace.name || "",
-        value: deliveryPlace.id || ""
-      };
-    }) || [];
-
-    const deliveryTimeValue: Options[] = [{
-      key: "deliveryTimeValue1",
-      text: "Ennen kello 12",
-      value: 11
-    }, {
-      key: "deliveryTimeValue2",
-      text: "Jälkeen kello 12",
-      value: 17
-    }]
+    const deliveryPlaceOptions = (deliveryPlaces || []).map<Options>(deliveryPlace => ({
+      key: deliveryPlace.id || "",
+      text: deliveryPlace.name || "",
+      value: deliveryPlace.id || ""
+    }));
 
     return (
       <BasicLayout>
         <Header as="h2">
           {strings.editDelivery}
         </Header>
-        {this.state.loading ?
+        {loading ?
           <Loader size="medium" content={strings.loading} active /> :
           <Form>
             <Form.Field>
               <label>{strings.product}</label>
-              {
-                this.state.products.length > 0 ?
-                  this.renderDropDown(productOptions, "selectedProductId")
-                  :
-                  <p>Ei voimassa olevaa sopimusta. Jos näin ei pitäisi olla, ole yhteydessä Pakkasmarjaan.</p>
+              { products.length > 0
+                ? this.renderDropDown(productOptions, "selectedProductId")
+                : <p>Ei voimassa olevaa sopimusta. Jos näin ei pitäisi olla, ole yhteydessä Pakkasmarjaan.</p>
               }
             </Form.Field>
-            {this.state.selectedProductId &&
+            {selectedProductId &&
               <Form.Field>
-                <PriceChart showLatestPrice productId={this.state.selectedProductId} />
+                <PriceChart showLatestPrice productId={selectedProductId} />
               </Form.Field>
             }
             <Form.Field>
-              <label>{`${strings.amount} ( ${this.state.selectedProduct && this.state.selectedProduct.unitName || "Tuotetta ei ole valittu"} )`}</label>
+              <label>{`${strings.amount} ( ${selectedProduct && selectedProduct.unitName || "Tuotetta ei ole valittu"} )`}</label>
               <Input
                 type="number"
                 min={0}
                 placeholder={strings.amount}
-                value={this.state.amount}
+                value={amount}
                 onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
                   const value = event.currentTarget.value ? parseInt(event.currentTarget.value) : "";
                   this.handleInputChange("amount", value);
                 }}
               />
             </Form.Field>
-            {this.state.amount && this.state.selectedProduct ?
+            {amount && selectedProduct ?
               <Form.Field>
-                <p>= <b>{(this.state.amount * (this.state.selectedProduct.units * this.state.selectedProduct.unitSize)).toFixed(2)} KG</b></p>
+                <p>= <b>{(amount * (selectedProduct.units * selectedProduct.unitSize)).toFixed(2)} KG</b></p>
               </Form.Field>
               : null
             }
-            <Form.Field>
-              <label>{strings.deliveryDate}</label>
-              <DatePicker
-                onChange={(date: Date) => {
-                  this.handleInputChange("date", date)
-                }}
-                selected={new Date(this.state.date)}
-                dateFormat="dd.MM.yyyy"
-                locale="fi"
-              />
-            </Form.Field>
+            { deliveryTime &&
+              <Form.Field>
+                <label>{strings.deliveryDate}</label>
+                <DatePicker
+                  onChange={(date: Date) => {
+                    this.handleInputChange("deliveryTime", date)
+                  }}
+                  selected={deliveryTime}
+                  dateFormat="dd.MM.yyyy"
+                  locale="fi"
+                />
+              </Form.Field>
+            }
             <Form.Field style={{ marginTop: 20 }}>
-              <label>{"Ajankohta"}</label>
-              {this.renderDropDown(deliveryTimeValue, "deliveryTimeValue")}
+              <label>Ajankohta</label>
+              <DatePicker
+                selected={ deliveryTime }
+                onChange={ value => value && this.handleInputChange("deliveryTime", value as Date) }
+                showTimeSelect
+                showTimeSelectOnly
+                timeIntervals={ 15 }
+                timeCaption="Klo"
+                locale="fi"
+                dateFormat="HH.mm"
+                timeFormat="HH.mm"
+                filterTime={filterSupplierDeliveryTimes}
+              />
             </Form.Field>
             <Form.Field style={{ marginTop: 20 }}>
               <label>{strings.deliveryPlace}</label>
               {this.renderDropDown(deliveryPlaceOptions, "selectedPlaceId")}
             </Form.Field>
-            {this.state.deliveryNotesWithImageBase64.length > 0  ?
-              this.state.deliveryNotesWithImageBase64.map((deliveryNote, i) => {
+            {deliveryNotesWithImageBase64.length > 0  ?
+              deliveryNotesWithImageBase64.map((deliveryNote, i) => {
                 return (
                   <React.Fragment key={`${deliveryNote.text} ${i}`}>
                     <h4 style={{ marginTop: 5 }}>Huomio {i + 1}</h4>
@@ -470,14 +499,14 @@ class EditDelivery extends React.Component<Props, State> {
               <AsyncButton disabled={ !this.isValid() } color="red" onClick={ this.handleDeliverySubmit } type='submit'>{ strings.save }</AsyncButton>
             </Button.Group>
           </Form>}
-        {this.state.openImage &&
+        {openImage &&
           <Lightbox
-            mainSrc={this.state.openImage}
+            mainSrc={openImage}
             onCloseRequest={() => this.setState({ openImage: undefined })}
           />
         }
         <DeliveryNoteModal
-          modalOpen={this.state.modalOpen}
+          modalOpen={modalOpen}
           closeModal={() => this.setState({ modalOpen: false })}
           addDeliveryNote={this.addDeliveryNote}
         />

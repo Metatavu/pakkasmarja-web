@@ -14,8 +14,7 @@ import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import * as actions from "../../actions/";
 import ApplicationRoles from "src/utils/application-roles";
-import Api, { ChatGroupType, ChatThread, Unread } from "pakkasmarja-client";
-import AppConfig from "src/utils/AppConfig";
+import { Unread } from "pakkasmarja-client";
 
 interface Props {
   authenticated: boolean;
@@ -72,9 +71,6 @@ class MenuContainer extends React.Component<Props, State> {
             <Menu.Menu>
               <Dropdown item simple text="Hallinta">
                 <Dropdown.Menu>
-                  { keycloak.hasRealmRole(ApplicationRoles.CREATE_CHAT_GROUPS) &&
-                    <Dropdown.Item to="/chatManagement" as={Link}>{strings.chatManagement}</Dropdown.Item>
-                  }
                   { keycloak.hasRealmRole(ApplicationRoles.CREATE_PRODUCTS) &&
                     <Dropdown.Item to="/productsManagement" as={Link}>{strings.productsManagement}</Dropdown.Item>
                   }
@@ -101,15 +97,6 @@ class MenuContainer extends React.Component<Props, State> {
           <Menu.Item as="div">
             <Link to="/databank">{strings.databank}</Link>
           </Menu.Item>
-          { authenticated && keycloak &&
-            <Menu.Item
-              onClick={ () => this.onHelpClick(keycloak) }
-              style={{ cursor: "pointer" }}
-              as="div"
-            >
-              Apua?
-            </Menu.Item>
-          }
           { this.props.authenticated &&
             <Menu.Menu position="right">
               <Dropdown item simple text={strings.menuBarUserItemText}>
@@ -137,7 +124,7 @@ class MenuContainer extends React.Component<Props, State> {
    * Checks if management is visible
    */
   private showManagement = (keycloak: KeycloakInstance) => {
-    if(keycloak.hasRealmRole(ApplicationRoles.CREATE_CHAT_GROUPS)  
+    if(keycloak.hasRealmRole(ApplicationRoles.CREATE_CHAT_GROUPS)
     || keycloak.hasRealmRole(ApplicationRoles.CREATE_PRODUCTS)
     || keycloak.hasRealmRole(ApplicationRoles.CREATE_ITEM_GROUPS)
     || keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTRACTS)
@@ -149,33 +136,6 @@ class MenuContainer extends React.Component<Props, State> {
     } else {
       return false;
     }
-  }
-  
-  private onHelpClick = async (keycloak: KeycloakInstance) => {
-    if (!keycloak.token) {
-      return;
-    }
-    
-    const appConfig = await AppConfig.getAppConfig();
-    const questionGroupId = appConfig['help-question-group'];
-    if (!questionGroupId) {
-      console.warn("Missing help question group id from app config");
-      return;
-    }
-
-    const helpThreads = await Api.getChatThreadsService(keycloak.token).listChatThreads(questionGroupId, ChatGroupType.QUESTION, keycloak.subject);
-    const thread = helpThreads.length ? helpThreads[0] : undefined;
-    if (!thread || !thread.id) {
-      console.warn("No help threads found");
-      return;
-    }
-
-    this.props.chatOpen({
-      answerType: ChatThread.AnswerTypeEnum.TEXT,
-      open: true,
-      threadId: thread.id,
-      conversationType: "QUESTION"
-    });
   }
 
   private onAccountItemClick = () =>  {
@@ -192,7 +152,7 @@ class MenuContainer extends React.Component<Props, State> {
 
   /**
    * Counts unreads by prefix
-   * 
+   *
    * @param prefix prefix
    * @return unreads
    */

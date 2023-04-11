@@ -66,7 +66,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
 
   /**
    * Constructor
-   * 
+   *
    * @param props props
    */
   constructor(props: Props) {
@@ -182,7 +182,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     tableRows.push(this.getTableSummaryRow("now", "#44c336", deliveries, "Varastossa nyt", true));
 
     return (
-      <TableBasicLayout topBarButtonText={"+ Uusi toimitus/ehdotus viljelijälle"} onTopBarButtonClick={() => this.setState({ newDeliveryModalOpen: true })} error={this.state.error} onErrorClose={() => this.setState({ error: undefined })} pageTitle="Päiväennuste, tuoreet">
+      <TableBasicLayout topBarButtonText={"+ Uusi valmis toimitus/laatikkosiirto viljelijälle"} onTopBarButtonClick={() => this.setState({ newDeliveryModalOpen: true })} error={this.state.error} onErrorClose={() => this.setState({ error: undefined })} pageTitle="Päiväennuste, tuoreet">
         <div style={{ display: "flex", flex: 1, flexDirection: "column" }}>
           <div style={{ display: "flex", flex: 1, justifyContent: "center", padding: 10, fontSize: "1.5em" }}><p>Valitse päivämäärä</p></div>
           <div style={{ display: "flex", flex: 1, flexDirection: "row" }}>
@@ -259,7 +259,6 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
         {
           <CreateDeliveryModal
             deliveryPlaces={this.state.deliveryPlaces}
-            selectedDate={this.state.selectedDate}
             open={this.state.newDeliveryModalOpen}
             onClose={(created?: boolean) => {
               this.setState({ newDeliveryModalOpen: false });
@@ -303,7 +302,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
 
   /**
    * Finds or create datasheet by given name
-   * 
+   *
    * @param name
    * @return data sheet
    */
@@ -343,15 +342,15 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       getRowHeader={ this.getStorageRowHeader }
       setRowHeader={ this.setStorageRowHeader }
       onAddNewRow={ this.addstorageRow }
-      rowCount= {storageDataSheet.data.length - 1 } 
+      rowCount= {storageDataSheet.data.length - 1 }
       storage={ true }
-      removeStorageRow={ this.removeStorageRow } 
+      removeStorageRow={ this.removeStorageRow }
     />
   }
 
   /**
-   * Returns row header for storage table 
-   * 
+   * Returns row header for storage table
+   *
    * @param rowIndex row index
    * @return row header for storage table
    */
@@ -366,8 +365,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   }
 
   /**
-   * Sets row header for storage table 
-   * 
+   * Sets row header for storage table
+   *
    * @param rowIndex row index
    * @param value new value
    */
@@ -387,7 +386,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
 
   /**
    * Removes storage table row
-   * 
+   *
    * @param rowIndex row index
    */
   private removeStorageRow = async (rowIndex: number) => {
@@ -402,15 +401,15 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     this.setState({
       storageDataSheet: await this.saveDataSheet(storageDataSheet, data)
     });
-  } 
-  
+  }
+
 
   /**
-   * Returns cell value for storage table 
-   * 
+   * Returns cell value for storage table
+   *
    * @param productId product id
    * @param rowIndex row index
-   * @return cell value for storage table 
+   * @return cell value for storage table
    */
   private getstorageCellValue = (productId: string, rowIndex: number): number => {
     const { storageDataSheet } = this.state;
@@ -425,11 +424,11 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   }
 
   /**
-   * Sets cell value for storage table 
-   * 
+   * Sets cell value for storage table
+   *
    * @param productId product id
    * @param rowIndex row index
-   * @param value new value 
+   * @param value new value
    */
   private setstorageCellValue = async (productId: string, rowIndex: number, value: number | null) => {
     const { storageDataSheet } = this.state;
@@ -447,7 +446,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   }
 
   /**
-   * Adds new row to storage table 
+   * Adds new row to storage table
    */
   private addstorageRow = async () => {
     if (!this.state.storageDataSheet) {
@@ -482,8 +481,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   }
 
   /**
-   * Returns row header for morning sales forecast table 
-   * 
+   * Returns row header for morning sales forecast table
+   *
    * @param rowIndex row index
    * @return row header for morning sales forecast table
    */
@@ -497,8 +496,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   }
 
   /**
-   * Sets row header for morning sales forecast table 
-   * 
+   * Sets row header for morning sales forecast table
+   *
    * @param rowIndex row index
    * @param value new value
    */
@@ -516,11 +515,11 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   }
 
   /**
-   * Returns cell value for morning sales forecast table 
-   * 
+   * Returns cell value for morning sales forecast table
+   *
    * @param productId product id
    * @param rowIndex row index
-   * @return cell value for morning sales forecast table 
+   * @return cell value for morning sales forecast table
    */
   private getMorningSalesForecastCellValue = (productId: string, rowIndex: number): number => {
     if (!this.state.morningSalesForecastDataSheet) {
@@ -534,11 +533,11 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   }
 
   /**
-   * Sets cell value for morning sales forecast table 
-   * 
+   * Sets cell value for morning sales forecast table
+   *
    * @param productId product id
    * @param rowIndex row index
-   * @param value new value 
+   * @param value new value
    */
   private setMorningSalesForecastCellValue = async (productId: string, rowIndex: number, value: number | null) => {
     if (!this.state.morningSalesForecastDataSheet) {
@@ -555,7 +554,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   }
 
   /**
-   * Adds new row to morning sales forecast table 
+   * Adds new row to morning sales forecast table
    */
   private addMorningSalesForecastRow = async () => {
     if (!this.state.morningSalesForecastDataSheet) {
@@ -584,13 +583,13 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
       getRowHeader={this.getEveningSalesForecastRowHeader}
       setRowHeader={this.setEveningSalesForecastRowHeader}
       onAddNewRow={this.addEveningSalesForecastRow}
-      rowCount={this.state.eveningSalesForecastDataSheet.data.length - 1} 
+      rowCount={this.state.eveningSalesForecastDataSheet.data.length - 1}
       storage={ false } />
   }
 
   /**
-   * Returns row header for evening sales forecast table 
-   * 
+   * Returns row header for evening sales forecast table
+   *
    * @param rowIndex row index
    * @return row header for evening sales forecast table
    */
@@ -604,8 +603,8 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   }
 
   /**
-   * Sets row header for evening sales forecast table 
-   * 
+   * Sets row header for evening sales forecast table
+   *
    * @param rowIndex row index
    * @param value new value
    */
@@ -623,11 +622,11 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   }
 
   /**
-   * Returns cell value for evening sales forecast table 
-   * 
+   * Returns cell value for evening sales forecast table
+   *
    * @param productId product id
    * @param rowIndex row index
-   * @return cell value for evening sales forecast table 
+   * @return cell value for evening sales forecast table
    */
   private getEveningSalesForecastCellValue = (productId: string, rowIndex: number): number => {
     if (!this.state.eveningSalesForecastDataSheet) {
@@ -641,11 +640,11 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   }
 
   /**
-   * Sets cell value for evening sales forecast table 
-   * 
+   * Sets cell value for evening sales forecast table
+   *
    * @param productId product id
    * @param rowIndex row index
-   * @param value new value 
+   * @param value new value
    */
   private setEveningSalesForecastCellValue = async (productId: string, rowIndex: number, value: number | null) => {
     if (!this.state.eveningSalesForecastDataSheet) {
@@ -662,7 +661,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   }
 
   /**
-   * Adds new row to evening sales forecast table 
+   * Adds new row to evening sales forecast table
    */
   private addEveningSalesForecastRow = async () => {
     if (!this.state.eveningSalesForecastDataSheet) {
@@ -676,7 +675,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
 
   /**
    * Counts delivey / sale balance for morning
-   * 
+   *
    * @return delivey / sale balance for morning
    */
   private getMorningDeliveryBalance = (product: Product): number => {
@@ -699,7 +698,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
 
   /**
    * Counts delivey / sale balance for evening
-   * 
+   *
    * @return delivey / sale balance for evening
    */
   private getEveningDeliveryBalance = (product: Product): number => {
@@ -805,7 +804,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
 
   /**
    * Returns value for storage table
-   * 
+   *
    * @param productId product id
    * @param qualityId quality id
    * @returns value or null if not found
@@ -831,7 +830,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
 
   /**
    * Saves data sheet
-   * 
+   *
    * @param dataSheet data sheet
    * @param data data
    * @return saved data shseet
@@ -990,7 +989,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
 
   /**
    * Renders delivery icon
-   * 
+   *
    * @param delivery delivery
    */
   private renderDeliveryIcon(delivery: Delivery) {
@@ -1066,7 +1065,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
 
   /**
    * Returns style for delivery
-   * 
+   *
    * @param delivery delivery
    */
   private getDeliveryTextStyle(delivery: Delivery) {
@@ -1088,7 +1087,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
 
   /**
    * Lists contact deliveries by product
-   * 
+   *
    * @param contact contact
    * @param product product
    */
@@ -1096,10 +1095,10 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
     return (deliveries || []).filter((delivery) => delivery.productId == product.id && delivery.userId == contactId);
   }
 
-  
+
   /**
    * Has deliveries to other location
-   * 
+   *
    * @param contactId contactId
    * @param deliveries deliveries
    */
@@ -1125,7 +1124,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
 
   /**
    * Loads delieries from the server
-   * 
+   *
    * @param token access token
    */
   private loadDeliveries = (token: string) => {
@@ -1146,7 +1145,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
   }
 
   /**
-   * Updates table data and shows a loading screen 
+   * Updates table data and shows a loading screen
    */
   private updateTableData = async () => {
     const { keycloak } = this.props;
@@ -1174,7 +1173,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
 
   /**
    * Handles error from components
-   * 
+   *
    * @param msg error message
    */
   private handleError = (msg: string) => {
@@ -1186,7 +1185,7 @@ class FreshDeliveryManagement extends React.Component<Props, State> {
 
 /**
  * Redux mapper for mapping store state to component props
- * 
+ *
  * @param state store state
  */
 export function mapStateToProps(state: StoreState) {
@@ -1197,8 +1196,8 @@ export function mapStateToProps(state: StoreState) {
 }
 
 /**
- * Redux mapper for mapping component dispatches 
- * 
+ * Redux mapper for mapping component dispatches
+ *
  * @param dispatch dispatch method
  */
 export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {

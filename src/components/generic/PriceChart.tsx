@@ -1,12 +1,10 @@
 import * as React from "react";
-import * as actions from "../../actions/";
 import { StoreState } from "src/types";
-import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import Api, { ProductPrice } from "pakkasmarja-client";
 import * as moment from "moment";
 import { LineChart, Line, XAxis, YAxis } from "recharts";
-import { Loader, Icon } from "semantic-ui-react";
+import { Icon } from "semantic-ui-react";
 
 /**
  * Interface for component props
@@ -39,7 +37,7 @@ class PriceChart extends React.Component<Props, State> {
 
   /**
    * Constructor
-   * 
+   *
    * @param props props
    */
   constructor(props: Props) {
@@ -79,7 +77,7 @@ class PriceChart extends React.Component<Props, State> {
       if (!keycloak || !keycloak.token) {
         return;
       }
-  
+
       this.setState({ loading: true });
       const maxResults = maxValues || 20;
       const date = time ? moment(time).toDate() : undefined;
@@ -89,7 +87,7 @@ class PriceChart extends React.Component<Props, State> {
         prices: productPrices,
         loading: false
       });
-      
+
     }
   }
 
@@ -98,7 +96,7 @@ class PriceChart extends React.Component<Props, State> {
    */
   public render() {
     if (this.state.loading) {
-      return <Loader active inline />;
+      return <div style={{ height: this.props.height || 100, width: this.props.width || 300 }}/>;
     }
 
     const prices = this.state.prices;
@@ -135,7 +133,7 @@ class PriceChart extends React.Component<Props, State> {
 
   /**
    * Rounds price to 2 decimal precision
-   * 
+   *
    * @param num number
    */
   private roundPrice = (num: number) => {
@@ -145,7 +143,7 @@ class PriceChart extends React.Component<Props, State> {
 
 /**
  * Redux mapper for mapping store state to component props
- * 
+ *
  * @param state store state
  */
 function mapStateToProps(state: StoreState) {
@@ -155,14 +153,4 @@ function mapStateToProps(state: StoreState) {
   }
 }
 
-/**
- * Redux mapper for mapping component dispatches 
- * 
- * @param dispatch dispatch method
- */
-function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
-  return {
-  };
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(PriceChart);
+export default connect(mapStateToProps)(PriceChart);
