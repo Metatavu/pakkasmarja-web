@@ -1,7 +1,5 @@
 import * as React from "react";
-import * as actions from "../../actions/";
 import { StoreState } from "src/types";
-import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.css";
 import BasicLayout from "../generic/BasicLayout";
@@ -51,9 +49,9 @@ interface State {
 }
 
 /**
- * Class for manage contact component
+ * Contact screen component
  */
-class ManageContact extends React.Component<Props, State> {
+class ContactScreen extends React.Component<Props, State> {
 
   /**
    * Constructor
@@ -440,20 +438,8 @@ class ManageContact extends React.Component<Props, State> {
  *
  * @param state store state
  */
-export function mapStateToProps(state: StoreState) {
-  return {
-    keycloak: state.keycloak
-  }
-}
+const mapStateToProps = (state: StoreState) => ({
+  keycloak: state.keycloak
+});
 
-/**
- * Redux mapper for mapping component dispatches
- *
- * @param dispatch dispatch method
- */
-export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
-  return {
-  };
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(ManageContact);
+export default connect(mapStateToProps)(ContactScreen);

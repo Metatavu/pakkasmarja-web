@@ -43,11 +43,13 @@ import IncomingDeliveries from "../deliveries/IncomingDeliveries";
 import PastDeliveries from "../deliveries/PastDeliveries";
 import WeekPredictionsManagement from "../deliveries/WeekPredictionsManagement";
 import Api, { Unread } from "pakkasmarja-client";
-import ManageContact from "../contact/ManageContact";
+import ContactScreen from "../contact/ContactScreen";
 import ManageQualities from "../qualities/ManageQualities";
 import CreateAndEditQuality from "../qualities/CreateAndEditQuality";
 import Databank from "../databank";
 import OpeningHoursScreen from "../opening-hours-management/OpeningHoursScreen";
+import ManageContactsScreen from "../contact/ManageContactsScreen";
+import ManageContactScreen from "../contact/ManageContactScreen";
 
 /**
  * Interface for component props
@@ -144,11 +146,13 @@ class MainPage extends React.Component<Props, {}> {
         <Route exact path="/weekDeliveryPredictions" component={WeekDeliveryPredictions} />
         <Route exact path="/incomingDeliveries" component={IncomingDeliveries} />
         <Route exact path="/pastDeliveries" component={PastDeliveries} />
-        <Route exact path="/manageContact" component={ManageContact} />
+        <Route exact path="/profile" component={ContactScreen} />
         <Route exact path="/manageQualities" component={ManageQualities} />
         <Route exact path="/quality/:deliveryQualityId" component={CreateAndEditQuality} />
         <Route exact path="/databank" component={Databank} />
         <Route exact path="/manageOpeningHours" component={OpeningHoursScreen} />
+        <Route exact path="/manageContacts" component={ManageContactsScreen} />
+        <Route exact path="/manageContacts/:contactId" component={ManageContactScreen} />
       </div>
     );
   }
