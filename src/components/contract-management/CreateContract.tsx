@@ -58,7 +58,7 @@ class CreateContract extends React.Component<Props, State> {
 
   /**
    * Constructor
-   * 
+   *
    * @param props props
    */
   constructor(props: Props) {
@@ -85,7 +85,7 @@ class CreateContract extends React.Component<Props, State> {
 
   /**
    * Get options as promise
-   * 
+   *
    * @param inputValue input value
    * @return options promise
    */
@@ -97,7 +97,7 @@ class CreateContract extends React.Component<Props, State> {
 
   /**
    * Get options
-   * 
+   *
    * @param value value
    * @return options
    */
@@ -186,7 +186,8 @@ class CreateContract extends React.Component<Props, State> {
           if (Array.isArray(selectedOption)) {
             return;
           }
-          this.setState({ selectedOption: selectedOption })
+
+          this.setState({ selectedOption: selectedOption as any })
         }}
       />
     );
@@ -194,7 +195,7 @@ class CreateContract extends React.Component<Props, State> {
 
   /**
    * Render drop down
-   * 
+   *
    * @param options options
    * @param value value
    * @param onChange onChange function
@@ -222,7 +223,7 @@ class CreateContract extends React.Component<Props, State> {
 
   /**
    * Handle item group change
-   * 
+   *
    * @param value value
    */
   private handleItemGroupChange = (value: string) => {
@@ -237,7 +238,7 @@ class CreateContract extends React.Component<Props, State> {
 
   /**
    * Render text input
-   * 
+   *
    * @param value value
    * @param onChange on change function
    * @param placeholder placeholder
@@ -256,7 +257,7 @@ class CreateContract extends React.Component<Props, State> {
 
   /**
    * Render text area
-   * 
+   *
    * @param value value
    * @param onChange on change function
    * @param placeholder placeholder
@@ -431,7 +432,7 @@ class CreateContract extends React.Component<Props, State> {
 
 /**
  * Redux mapper for mapping store state to component props
- * 
+ *
  * @param state store state
  */
 export function mapStateToProps(state: StoreState) {
@@ -442,8 +443,8 @@ export function mapStateToProps(state: StoreState) {
 }
 
 /**
- * Redux mapper for mapping component dispatches 
- * 
+ * Redux mapper for mapping component dispatches
+ *
  * @param dispatch dispatch method
  */
 export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {

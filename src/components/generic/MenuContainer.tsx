@@ -15,6 +15,7 @@ import { connect } from "react-redux";
 import * as actions from "../../actions/";
 import ApplicationRoles from "src/utils/application-roles";
 import { Unread } from "pakkasmarja-client";
+import { AuthUtils } from "src/utils/auth";
 
 interface Props {
   authenticated: boolean;
@@ -87,8 +88,11 @@ class MenuContainer extends React.Component<Props, State> {
                     <Dropdown.Item to="/operationsManagement" as={Link}>{strings.operations}</Dropdown.Item>
                   }
                   { (keycloak.hasRealmRole(ApplicationRoles.MANAGE_OPENING_HOURS) ||
-                     keycloak.hasRealmRole(ApplicationRoles.ADMINISTRATE_OPENING_HOURS)) &&
+                    keycloak.hasRealmRole(ApplicationRoles.ADMINISTRATE_OPENING_HOURS)) &&
                     <Dropdown.Item to="/manageOpeningHours" as={Link}>{strings.openingHoursManagement}</Dropdown.Item>
+                  }
+                  { AuthUtils.canViewContacts(keycloak) &&
+                    <Dropdown.Item to="/manageContacts" as={Link}>Viljelijätietojen hallinta</Dropdown.Item>
                   }
                 </Dropdown.Menu>
               </Dropdown>
@@ -128,6 +132,8 @@ class MenuContainer extends React.Component<Props, State> {
     || keycloak.hasRealmRole(ApplicationRoles.CREATE_PRODUCTS)
     || keycloak.hasRealmRole(ApplicationRoles.CREATE_ITEM_GROUPS)
     || keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTRACTS)
+    || keycloak.hasRealmRole(ApplicationRoles.LIST_ALL_CONTACTS)
+    || keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTACTS)
     || keycloak.hasRealmRole(ApplicationRoles.MANAGE_DELIVERY_QUALITIES)
     || keycloak.hasRealmRole(ApplicationRoles.MANAGE_OPENING_HOURS)
     || keycloak.hasRealmRole(ApplicationRoles.ADMINISTRATE_OPENING_HOURS)
