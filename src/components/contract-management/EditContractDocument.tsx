@@ -52,7 +52,7 @@ class EditContractDocument extends React.Component<Props, State> {
 
   /**
    * Constructor
-   * 
+   *
    * @param props props
    */
   constructor(props: Props) {
@@ -65,7 +65,7 @@ class EditContractDocument extends React.Component<Props, State> {
       content: "",
       headerContent: "",
       footerContent: "",
-      pdfType: "2022",
+      pdfType: "2023",
       loading: false,
       buttonLoading: false
     };
@@ -289,7 +289,7 @@ class EditContractDocument extends React.Component<Props, State> {
 
 /**
  * Redux mapper for mapping store state to component props
- * 
+ *
  * @param state store state
  */
 export function mapStateToProps(state: StoreState) {
@@ -300,8 +300,8 @@ export function mapStateToProps(state: StoreState) {
 }
 
 /**
- * Redux mapper for mapping component dispatches 
- * 
+ * Redux mapper for mapping component dispatches
+ *
  * @param dispatch dispatch method
  */
 export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
