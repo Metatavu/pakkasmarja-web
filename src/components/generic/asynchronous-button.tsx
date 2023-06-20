@@ -18,6 +18,8 @@ interface State {
  */
 class AsyncButton extends React.Component<Props, State> {
 
+  private mounted: boolean = false;
+
   /**
    * Component constructor
    *
@@ -28,6 +30,20 @@ class AsyncButton extends React.Component<Props, State> {
     this.state = {
       loading: false
     }
+  }
+
+  /**
+   * Component did mount life-cycle event
+   */
+  public componentDidMount = () => {
+    this.mounted = true;
+  }
+
+  /**
+   * Component will unmount life-cycle event
+   */
+  public componentWillUnmount = () => {
+    this.mounted = false;
   }
 
   /**
@@ -67,7 +83,9 @@ class AsyncButton extends React.Component<Props, State> {
       console.warn(error);
     }
 
-    this.setState({ loading: false });
+    if (this.mounted) {
+      this.setState({ loading: false });
+    }
   }
 }
 
