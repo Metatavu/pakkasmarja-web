@@ -11,7 +11,8 @@ interface Props {
   /**
    * Parsed xlsx objects
    */
-  parsedXlsxObjects: ContractPreviewData[];
+  contractPreviews: ContractPreviewData[];
+  error?: boolean;
 }
 
 /**
@@ -38,7 +39,6 @@ class ContractPreviewTable extends React.Component<Props, State> {
    * Component render
    */
   public render = () => {
-
     return (
       <Table style={{ fontSize: 15 }}>
         <Table.Header>
@@ -64,63 +64,63 @@ class ContractPreviewTable extends React.Component<Props, State> {
    * Method for rendering table cells
    */
   private renderTableCells = () => {
-    const { parsedXlsxObjects } = this.props;
-    
-    return parsedXlsxObjects.map((object, index) => {
-      const importedContract = object.importedContract;
+    const { contractPreviews } = this.props;
+
+    return contractPreviews.map((preview, index) => {
+      const importedContract = preview.importedContract;
 
       if (!importedContract) {
         return null;
       }
 
       return (
-        <Table.Row key={ index }>
+        <Table.Row key={ index } error={ this.props.error }>
           <Table.Cell>
             <>
               { importedContract.contactName }
-              { this.renderError("contactId", object.errors) }
+              { this.renderError("contactId", preview.errors) }
             </>
           </Table.Cell>
           <Table.Cell>
             <>
               { importedContract.itemGroupName }
-              { this.renderError("itemGroupId", object.errors) }
+              { this.renderError("itemGroupId", preview.errors) }
             </>
           </Table.Cell>
           <Table.Cell>
             <>
               { importedContract.contractQuantity }
-              { this.renderError("contractQuantity", object.errors) }
+              { this.renderError("contractQuantity", preview.errors) }
             </>
           </Table.Cell>
           <Table.Cell>
             <>
               { importedContract.quantityComment }
-              { this.renderError("quantityComment", object.errors) }
+              { this.renderError("quantityComment", preview.errors) }
             </>
           </Table.Cell>
           <Table.Cell>
             <>
               { importedContract.deliverAll }
-              { this.renderError("deliverAll", object.errors) }
+              { this.renderError("deliverAll", preview.errors) }
             </>
           </Table.Cell>
           <Table.Cell>
             <>
               { importedContract.deliveryPlaceName }
-              { this.renderError("deliveryPlaceId", object.errors) }
+              { this.renderError("deliveryPlaceId", preview.errors) }
             </>
           </Table.Cell>
           <Table.Cell>
             <>
               { importedContract.deliveryPlaceComment }
-              { this.renderError("deliveryPlaceComment", object.errors) }
+              { this.renderError("deliveryPlaceComment", preview.errors) }
             </>
           </Table.Cell>
           <Table.Cell>
             <>
               { importedContract.remarks }
-              { this.renderError("remarks", object.errors) }
+              { this.renderError("remarks", preview.errors) }
             </>
           </Table.Cell>
         </Table.Row>
@@ -148,7 +148,7 @@ class ContractPreviewTable extends React.Component<Props, State> {
       />
     );
   }
-  
+
 }
 
 export default ContractPreviewTable;

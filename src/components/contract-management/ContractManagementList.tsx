@@ -4,7 +4,7 @@ import { StoreState, HttpErrorResponse, FilterContracts } from "src/types";
 import { connect } from "react-redux";
 import "../../styles/common.css";
 import "./styles.css";
-import Api, { Contract, Contact, DeliveryPlace, ContractStatus, ContractPreviewData } from "pakkasmarja-client";
+import Api, { Contract, Contact, DeliveryPlace, ContractStatus } from "pakkasmarja-client";
 import { ItemGroup } from "pakkasmarja-client";
 import { Header, Button, Dropdown, Form, List, Dimmer, Loader, Grid, Icon, Input, TextArea, DropdownProps, InputOnChangeData, TextAreaProps, DropdownItemProps } from "semantic-ui-react";
 import ErrorMessage from "../generic/ErrorMessage";
@@ -16,7 +16,7 @@ import BasicLayout from "../generic/BasicLayout";
 import strings from "src/localization/strings";
 import { PDFService } from "src/api/pdf.service";
 import FileUtils from "src/utils/FileUtils";
-import XlsxContractsPreview from "./xlsx-contract-preview";
+import XlsxContractsImporter from "./xlsx-contract-preview";
 import AsyncButton from "../generic/asynchronous-button";
 
 /**
@@ -33,8 +33,7 @@ interface Props {
 interface State {
   tableEditMode: boolean;
   editedContracts: Contract[];
-  xlsxPreviewOpen: boolean;
-  parsedXlsxObjects: ContractPreviewData[];
+  contractsBatchImportFile?: File;
   keycloak?: Keycloak.KeycloakInstance;
   contracts?: Contract[];
   itemGroups?: { [key: string]: ItemGroup };
@@ -73,8 +72,6 @@ class ContractManagementList extends React.Component<Props, State> {
     this.state = {
       tableEditMode: false,
       editedContracts: [],
-      xlsxPreviewOpen: false,
-      parsedXlsxObjects: [],
       contractsLoading: false,
       proposeContractModalOpen: false,
       selectedBerry: "",
@@ -662,74 +659,7 @@ class ContractManagementList extends React.Component<Props, State> {
     if (!file) return;
 
     this.setState({
-      xlsxPreviewOpen: true,
-      parsedXlsxObjects: await this.parseXlsxFile(file)
-    });
-  }
-
-  /**
-   * Method for parsing xlsx file
-   *
-   * @param file file
-   * @returns promise of contract preview data array
-   */
-  private parseXlsxFile = async (file: File): Promise<ContractPreviewData[]> => {
-    const { keycloak } = this.props;
-
-    if (!keycloak?.token) {
-      return Promise.reject();
-    }
-
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const requestUrl = `${ process.env.REACT_APP_API_URL }/rest/v1/contractPreviews`;
-      const response = await fetch(requestUrl, {
-        method: "POST",
-        body: formData,
-        headers: {
-          "Authorization": `Bearer ${ keycloak.token }`
-        }
-      });
-
-      return await response.json();
-    } catch (error) {
-      return Promise.reject(error);
-    }
-  }
-
-  /**
-   * Method for creating list of contracts to api
-   *
-   * @param contracts contract array
-   */
-  private createContracts = async (contracts: Contract[]) => {
-    const { keycloak } = this.props;
-
-    if (!keycloak?.token) return;
-
-    try {
-      const contractsService = Api.getContractsService(keycloak.token);
-      const createdContracts = await Promise.all(
-        contracts.map(contract => contractsService.createContract(contract))
-      );
-
-      this.setState({
-        xlsxPreviewOpen: false,
-        contracts: [ ...createdContracts, ...(this.state.contracts || []) ]
-      });
-    } catch (error) {
-      console.log(`Could not create contracts: ${error}`);
-    }
-  }
-
-  /**
-   * Method for cancelling xlsx parsed contracts
-   */
-  private cancelXlsxContracts = () => {
-    this.setState({
-      parsedXlsxObjects: [],
-      xlsxPreviewOpen: false
+      contractsBatchImportFile: file
     });
   }
 
@@ -778,6 +708,7 @@ class ContractManagementList extends React.Component<Props, State> {
    * Render method
    */
   public render() {
+    const { keycloak } = this.props;
     const {
       contractsLoading,
       errorMessage,
@@ -786,8 +717,7 @@ class ContractManagementList extends React.Component<Props, State> {
       offset,
       contracts,
       contractsLength,
-      xlsxPreviewOpen,
-      parsedXlsxObjects
+      contractsBatchImportFile
     } = this.state;
 
     if (errorMessage) {
@@ -1028,11 +958,11 @@ class ContractManagementList extends React.Component<Props, State> {
             }
           </Grid.Row>
         </Grid>
-        <XlsxContractsPreview
-          open={ xlsxPreviewOpen }
-          parsedXlsxObjects={ parsedXlsxObjects }
-          onAccept={ this.createContracts }
-          onCancel={ this.cancelXlsxContracts }
+        <XlsxContractsImporter
+          keycloak={ keycloak }
+          file={ contractsBatchImportFile }
+          onCancel={ () => this.setState({ contractsBatchImportFile: undefined }) }
+          onAcceptResults={ () => this.setState({ contractsBatchImportFile: undefined }) }
         />
       </TableBasicLayout>
     );
