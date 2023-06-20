@@ -172,7 +172,13 @@ class FrozenDeliveryManagement extends React.Component<Props, State> {
     tableRows.push(this.getTableSummaryRow(deliveries, "Klo 17 mennessä yht."))
 
     return (
-      <TableBasicLayout topBarButtonText={this.state.selectedDeliveryPlaceId ? "+ Uusi toimitus/ehdotus viljelijälle" : undefined} onTopBarButtonClick={this.state.selectedDeliveryPlaceId ? () => this.setState({ newDeliveryModalOpen: true }) : undefined} error={this.state.error} onErrorClose={() => this.setState({ error: undefined })} pageTitle="Päiväennuste, pakasteet">
+      <TableBasicLayout
+        topBarButtonText={ this.state.selectedDeliveryPlaceId ? "+ Uusi valmis toimitus/laatikkosiirto viljelijälle" : undefined }
+        onTopBarButtonClick={ this.state.selectedDeliveryPlaceId ? () => this.setState({ newDeliveryModalOpen: true }) : undefined }
+        error={ this.state.error }
+        onErrorClose={ () => this.setState({ error: undefined }) }
+        pageTitle="Päiväennuste, pakasteet"
+      >
         <div style={{ display: "flex", flex: 1, flexDirection: "column" }}>
           <div style={{ display: "flex", flex: 1, justifyContent: "center", padding: 10, fontSize: "1.5em" }}><p>Valitse toimituspaikka ja päivämäärä</p></div>
           <div style={{ display: "flex", flex: 1, flexDirection: "row" }}>

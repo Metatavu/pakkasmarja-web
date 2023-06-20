@@ -2,8 +2,8 @@ import * as React from "react";
 
 import strings from "src/localization/strings";
 import ContractPreviewTable from "./contract-preview-table";
-import { Button, Dimmer, Loader, Modal } from "semantic-ui-react";
-import { Contract, ContractPreviewData } from "pakkasmarja-client";
+import { Button, Dimmer, Header, Label, Loader, Modal, Progress } from "semantic-ui-react";
+import Api, { ContractPreviewData } from "pakkasmarja-client";
 import AsyncButton from "../generic/asynchronous-button";
 
 /**
@@ -11,32 +11,46 @@ import AsyncButton from "../generic/asynchronous-button";
  */
 interface Props {
   /**
-   * Component visible
+   * Keycloak instance
    */
-  open: boolean;
+  keycloak?: Keycloak.KeycloakInstance;
   /**
-   * Parsed xlsx objects
+   * Given file
    */
-  parsedXlsxObjects: ContractPreviewData[];
+  file?: File;
   /**
    * Contract object cancelled
    */
   onCancel: () => void;
   /**
-   * Contract object accepted
+   * Import results accepted
    */
-  onAccept: (contracts: Contract[]) => void;
+  onAcceptResults: () => void;
+}
+
+/**
+ * Import results
+ */
+interface ImportResults {
+  importing: boolean;
+  total: number;
+  succeeded: ContractPreviewData[];
+  failed: { preview: ContractPreviewData, reason: unknown }[];
 }
 
 /**
  * Component state
  */
-interface State { }
+interface State {
+  parsingFile: boolean;
+  contractPreviews: ContractPreviewData[];
+  importData?: ImportResults;
+}
 
 /**
  * Class for displaying xlsx contract preview
  */
-class XlsxContractsPreview extends React.Component<Props, State> {
+class XlsxContractsImporter extends React.Component<Props, State> {
 
   /**
    * Component constructor
@@ -45,45 +59,277 @@ class XlsxContractsPreview extends React.Component<Props, State> {
    */
   constructor(props: Props) {
     super(props);
-    this.state = { };
+    this.state = {
+      parsingFile: false,
+      contractPreviews: []
+    };
+  }
+
+  /**
+   * Component did update life-cycle event
+   *
+   * @param prevProps previous component properties
+   */
+  public componentDidUpdate = (prevProps: Props) => {
+    const { file } = this.props;
+
+    if (prevProps.file !== file && !!file) {
+      this.getContractPreviewsFromFile(file);
+    }
   }
 
   /**
    * Component render
    */
   public render = () => {
-    const { open, onCancel, parsedXlsxObjects } = this.props;
+    const { file, onCancel } = this.props;
+    const { importData } = this.state;
 
     return (
       <Modal
-        open={ open }
+        open={ !!file }
         onClose={ onCancel }
         style={{ width: "100%", height: "100%", overflow: "scroll" }}
       >
         <Modal.Header>{ strings.contractPreview }</Modal.Header>
         <Modal.Content>
-          { parsedXlsxObjects.length > 0 ?
-            <ContractPreviewTable parsedXlsxObjects={ parsedXlsxObjects } /> :
-            <Dimmer active inverted>
-              <Loader indeterminate>{ strings.gatheringContracts }</Loader>
-            </Dimmer>
-          }
+          { this.renderContent() }
         </Modal.Content>
         <Modal.Actions>
-          <Button onClick={ onCancel }>
-            { strings.cancel }
-          </Button>
-          <AsyncButton
-            color="red"
-            icon='checkmark'
-            labelPosition='right'
-            content={ strings.accept }
-            onClick={ this.accept }
-            disabled={ this.hasErrors() }
-          />
+          { !importData ? this.renderImportActions() : null }
+          { !!importData && !importData.importing ? this.renderResultsActions() : null }
         </Modal.Actions>
       </Modal>
     );
+  }
+
+  /**
+   * Renders content
+   */
+  private renderContent = () => {
+    const { contractPreviews, parsingFile, importData } = this.state;
+
+    if (parsingFile) {
+      return (
+        <Dimmer active inverted>
+          <Loader indeterminate>{ strings.gatheringContracts }</Loader>
+        </Dimmer>
+      );
+    }
+
+    if (!!importData) {
+      const { total, failed, succeeded, importing } = importData;
+      const progress = succeeded.length + failed.length;
+
+      if (importing) {
+        return (
+          <div>
+            <Progress
+              active
+              color="red"
+              label="Tuodaan sopimuksia..."
+              total={ total }
+              value={ progress }
+              progress="ratio"
+            />
+          </div>
+        );
+      }
+
+      return (
+        <>
+          <Header size="medium">Tulokset</Header>
+          <Label icon="checkmark" color="green">{ succeeded.length } sopimusta tuotu onnistuneesti</Label>
+          <p style={{ fontSize: 14 }}></p>
+          { failed.length > 0 &&
+            <>
+              <p style={{ fontSize: 14 }}>{ failed.length } sopimuksen tuonnissa tapahtui virhe</p>
+              <Header>Virheelliset sopimukset</Header>
+              <ContractPreviewTable
+                error
+                contractPreviews={ failed.map(item => item.preview) }
+              />
+            </>
+          }
+        </>
+      );
+    }
+
+    return (
+      <ContractPreviewTable contractPreviews={ contractPreviews } />
+    );
+  }
+
+  /**
+   * Renders import actions
+   */
+  private renderImportActions = () => {
+    const { parsingFile, importData, contractPreviews } = this.state;
+
+    return (
+      <>
+        <Button
+          onClick={ this.cancelImport }
+          disabled={ parsingFile || importData?.importing }
+        >
+          { strings.cancel }
+        </Button>
+        <AsyncButton
+          color="red"
+          icon="checkmark"
+          labelPosition="right"
+          content={ strings.accept }
+          onClick={ () => this.createContractsFromPreviews(contractPreviews) }
+          disabled={ parsingFile ||importData?.importing || this.hasErrors() }
+        />
+      </>
+    );
+  }
+
+  /**
+   * Renders results actions
+   */
+  private renderResultsActions = () => {
+    return (
+      <Button
+        color="red"
+        icon="checkmark"
+        labelPosition="right"
+        content="OK"
+        onClick={ this.acceptImportResults }
+      />
+    );
+  }
+
+  /**
+   * Method for parsing xlsx file
+   *
+   * @param file file
+   * @returns promise of contract preview data array
+   */
+  private parseXlsxFile = async (file: File): Promise<ContractPreviewData[]> => {
+    const { keycloak } = this.props;
+
+    if (!keycloak?.token) {
+      return Promise.reject();
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const requestUrl = `${ process.env.REACT_APP_API_URL }/rest/v1/contractPreviews`;
+      const response = await fetch(requestUrl, {
+        method: "POST",
+        body: formData,
+        headers: {
+          "Authorization": `Bearer ${ keycloak.token }`
+        }
+      });
+
+      return await response.json();
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
+  /**
+   * Method for getting contract previews from file
+   *
+   * @param file file
+   */
+  private getContractPreviewsFromFile = async (file: File) => {
+    this.setState({ parsingFile: true });
+
+    try {
+      const contractPreviews = await this.parseXlsxFile(file);
+      this.setState({ contractPreviews: contractPreviews, parsingFile: false });
+    } catch (error) {
+      this.setState({ parsingFile: false });
+    }
+  }
+
+  /**
+   * Method for creating contracts from previews
+   *
+   * @param contracts contracts
+   */
+  private createContractsFromPreviews = async (contractPreviews: ContractPreviewData[]) => {
+    const { keycloak } = this.props;
+
+    if (!keycloak?.token) return;
+
+    this.setState({
+      importData: {
+        importing: true,
+        total: contractPreviews.length,
+        succeeded: [],
+        failed: []
+      }
+    });
+
+    const contractsService = Api.getContractsService(keycloak.token);
+
+    for (const preview of contractPreviews) {
+      try {
+        const createdContract = await contractsService.createContract(preview.contract);
+
+        this.setImportData({
+          succeeded: [
+            ...this.state.importData?.succeeded || [],
+            { ...preview, contract: createdContract }
+          ]
+        });
+      } catch (error) {
+        this.setImportData({
+          failed: [
+            ...this.state.importData?.failed || [],
+            { preview: preview, reason: error }
+          ]
+        });
+      }
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    this.setImportData({ importing: false });
+  }
+
+  /**
+   * Updates results
+   *
+   * @param results results
+   */
+  private setImportData = (results: Partial<ImportResults>) => {
+    if (!this.state.importData && (!results.failed || !results.succeeded || !results.total)) return;
+
+    this.setState({ importData: Object.assign({}, this.state.importData, results) });
+  }
+
+  /**
+   * Cancels import
+   */
+  private cancelImport = () => {
+    this.reset();
+    this.props.onCancel();
+  };
+
+  /**
+   * Resets component state
+   */
+  private reset = () => {
+    this.setState({
+      contractPreviews: [],
+      parsingFile: false,
+      importData: undefined
+    });
+  };
+
+  /**
+   * Accepts import results
+   */
+  private acceptImportResults = () => {
+    this.reset();
+    this.props.onAcceptResults();
   }
 
   /**
@@ -93,18 +339,10 @@ class XlsxContractsPreview extends React.Component<Props, State> {
    * @returns boolean
    */
   private hasErrors = (): boolean => {
-    const { parsedXlsxObjects } = this.props;
-    return parsedXlsxObjects.some(object => object.errors.length);
+    const { contractPreviews } = this.state;
+    return contractPreviews.some(preview => preview.errors.length);
   }
 
-  /**
-   * Method for accepting xlsx parsed contracts
-   */
-  private accept = () => {
-    const { onAccept, parsedXlsxObjects } = this.props;
-
-    onAccept(parsedXlsxObjects.map(object => object.contract));
-  }
 }
 
-export default XlsxContractsPreview;
+export default XlsxContractsImporter;
