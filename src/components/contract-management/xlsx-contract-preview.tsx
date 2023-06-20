@@ -3,7 +3,7 @@ import * as React from "react";
 import strings from "src/localization/strings";
 import ContractPreviewTable from "./contract-preview-table";
 import { Button, Dimmer, Header, Label, Loader, Modal, Progress } from "semantic-ui-react";
-import Api, { ContractPreviewData } from "pakkasmarja-client";
+import Api, { Contract, ContractPreviewData } from "pakkasmarja-client";
 import AsyncButton from "../generic/asynchronous-button";
 
 /**
@@ -31,7 +31,7 @@ interface Props {
 /**
  * Import results
  */
-interface ImportResults {
+interface ImportData {
   importing: boolean;
   total: number;
   succeeded: ContractPreviewData[];
@@ -44,7 +44,7 @@ interface ImportResults {
 interface State {
   parsingFile: boolean;
   contractPreviews: ContractPreviewData[];
-  importData?: ImportResults;
+  importData?: ImportData;
 }
 
 /**
@@ -139,11 +139,20 @@ class XlsxContractsImporter extends React.Component<Props, State> {
       return (
         <>
           <Header size="medium">Tulokset</Header>
-          <Label icon="checkmark" color="green">{ succeeded.length } sopimusta tuotu onnistuneesti</Label>
-          <p style={{ fontSize: 14 }}></p>
+          { succeeded.length > 0 &&
+            <Label
+              content={`${succeeded.length} sopimusta tuotu onnistuneesti`}
+              icon="checkmark"
+              color="green"
+            />
+          }
           { failed.length > 0 &&
             <>
-              <p style={{ fontSize: 14 }}>{ failed.length } sopimuksen tuonnissa tapahtui virhe</p>
+              <Label
+                content={`${failed.length} sopimuksen tuonnissa tapahtui virhe`}
+                icon="warning sign"
+                color="red"
+              />
               <Header>Virheelliset sopimukset</Header>
               <ContractPreviewTable
                 error
@@ -271,7 +280,17 @@ class XlsxContractsImporter extends React.Component<Props, State> {
 
     for (const preview of contractPreviews) {
       try {
-        const createdContract = await contractsService.createContract(preview.contract);
+        const createdContract = await new Promise<Contract>((resolve, reject) => {
+          contractsService.createContract(preview.contract).then(result => {
+            const possibleContract = result as unknown as Contract | { code: number, message: string };
+
+            "code" in possibleContract ?
+              reject(possibleContract.message) :
+              resolve(possibleContract);
+          }).catch(reject)
+        });
+
+        if (!createdContract) throw new Error("Failed to create contract");
 
         this.setImportData({
           succeeded: [
@@ -280,6 +299,7 @@ class XlsxContractsImporter extends React.Component<Props, State> {
           ]
         });
       } catch (error) {
+        console.log(error);
         this.setImportData({
           failed: [
             ...this.state.importData?.failed || [],
@@ -299,10 +319,18 @@ class XlsxContractsImporter extends React.Component<Props, State> {
    *
    * @param results results
    */
-  private setImportData = (results: Partial<ImportResults>) => {
-    if (!this.state.importData && (!results.failed || !results.succeeded || !results.total)) return;
-
-    this.setState({ importData: Object.assign({}, this.state.importData, results) });
+  private setImportData = (results: Partial<ImportData>) => {
+    this.setState(prevState => ({
+      importData: {
+        ...prevState.importData || {
+          failed: [],
+          succeeded: [],
+          total: 0,
+          importing: false
+        },
+        ...results
+      }
+    }));
   }
 
   /**
