@@ -56,6 +56,8 @@ interface State {
   grayBoxesReturned: number;
   orangeBoxesLoaned: number;
   orangeBoxesReturned: number;
+  greenBoxesLoaned: number;
+  greenBoxesReturned: number;
   products: Product[];
   deliveryLoanComment: string;
   contractQuantities?: ContractQuantities[];
@@ -91,6 +93,8 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       grayBoxesReturned: 0,
       orangeBoxesLoaned: 0,
       orangeBoxesReturned: 0,
+      greenBoxesLoaned: 0,
+      greenBoxesReturned: 0,
       products: [],
       deliveryLoanComment: "",
       loading: false
@@ -303,7 +307,9 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       grayBoxesLoaned,
       grayBoxesReturned,
       orangeBoxesLoaned,
-      orangeBoxesReturned
+      orangeBoxesReturned,
+      greenBoxesLoaned,
+      greenBoxesReturned
     } = this.state;
 
     if (!keycloak || !keycloak.token || !selectedProductId || !selectedContactId || !selectedDate) {
@@ -334,7 +340,8 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       delivery.loans = [
         { item: "RED_BOX", loaned: redBoxesLoaned, returned: redBoxesReturned },
         { item: "GRAY_BOX", loaned: grayBoxesLoaned, returned: grayBoxesReturned },
-        { item: "ORANGE_BOX", loaned: orangeBoxesLoaned, returned: orangeBoxesReturned }
+        { item: "ORANGE_BOX", loaned: orangeBoxesLoaned, returned: orangeBoxesReturned },
+        { item: "GREEN_BOX", loaned: greenBoxesLoaned, returned: greenBoxesReturned }
       ];
 
       const createdDelivery = await deliveryService.createDelivery(delivery);
@@ -357,7 +364,9 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       grayBoxesLoaned,
       grayBoxesReturned,
       orangeBoxesLoaned,
-      orangeBoxesReturned
+      orangeBoxesReturned,
+      greenBoxesLoaned,
+      greenBoxesReturned
     } = this.state;
 
       if (!keycloak || !keycloak.token || !selectedContactId) {
@@ -371,7 +380,8 @@ class CreateDeliveryModal extends React.Component<Props, State> {
         loans: [
           { item: "RED_BOX", loaned: redBoxesLoaned, returned: redBoxesReturned },
           { item: "GRAY_BOX", loaned: grayBoxesLoaned, returned: grayBoxesReturned },
-          { item: "ORANGE_BOX", loaned: orangeBoxesLoaned, returned: orangeBoxesReturned }
+          { item: "ORANGE_BOX", loaned: orangeBoxesLoaned, returned: orangeBoxesReturned },
+          { item: "GREEN_BOX", loaned: greenBoxesLoaned, returned: greenBoxesReturned }
         ]
       });
     } catch (error) {
@@ -594,6 +604,8 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       grayBoxesLoaned,
       orangeBoxesReturned,
       orangeBoxesLoaned,
+      greenBoxesReturned,
+      greenBoxesLoaned,
       deliveryNoteImages64,
       openImage,
       modalOpen
@@ -794,6 +806,24 @@ class CreateDeliveryModal extends React.Component<Props, State> {
                     placeholder="Lainattu"
                     value={ orangeBoxesLoaned }
                     onChange={ (_, data) => this.setState({ orangeBoxesLoaned: parseInt(data.value) }) }
+                  />
+                </Form.Field>
+                <Form.Field>
+                  <label>{ strings.greenBoxesReturned }</label>
+                  <Input
+                    type="number"
+                    placeholder="Palautettu"
+                    value={ greenBoxesReturned }
+                    onChange={ (_, data) => this.setState({ greenBoxesReturned: parseInt(data.value) }) }
+                  />
+                </Form.Field>
+                <Form.Field>
+                  <label>{ strings.greenBoxesLoaned }</label>
+                  <Input
+                    type="number"
+                    placeholder="Lainattu"
+                    value={ greenBoxesLoaned }
+                    onChange={ (_, data) => this.setState({ greenBoxesLoaned: parseInt(data.value) }) }
                   />
                 </Form.Field>
                 { selectedDeliveryStatus === "DELIVERYLOAN" &&

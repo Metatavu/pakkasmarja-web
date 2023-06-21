@@ -241,6 +241,8 @@ export interface IStrings extends LocalizedStringsMethods {
   grayBoxesReturned: string;
   orangeBoxesLoaned: string;
   orangeBoxesReturned: string;
+  greenBoxesLoaned: string;
+  greenBoxesReturned: string;
   frozenCategory: string;
   freshCategory: string;
   databank: string;

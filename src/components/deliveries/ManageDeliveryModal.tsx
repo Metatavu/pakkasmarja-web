@@ -59,6 +59,8 @@ interface State {
   grayBoxesReturned: number,
   orangeBoxesLoaned: number,
   orangeBoxesReturned: number,
+  greenBoxesLoaned: number,
+  greenBoxesReturned: number,
   selectedProduct?: Product,
   productLoader: boolean,
   contractQuantities?: ContractQuantities[]
@@ -93,6 +95,8 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       grayBoxesReturned: 0,
       orangeBoxesLoaned: 0,
       orangeBoxesReturned: 0,
+      greenBoxesLoaned: 0,
+      greenBoxesReturned: 0,
       modalOpen: false,
       productLoader: false,
     };
@@ -367,7 +371,9 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       grayBoxesLoaned,
       grayBoxesReturned,
       orangeBoxesLoaned,
-      orangeBoxesReturned
+      orangeBoxesReturned,
+      greenBoxesLoaned,
+      greenBoxesReturned,
     } = this.state;
 
     if (!keycloak?.token || !selectedPlaceId || !selectedProductId || !deliveryId) {
@@ -387,7 +393,8 @@ class ManageDeliveryModal extends React.Component<Props, State> {
         loans: [
           { item: "RED_BOX", loaned: redBoxesLoaned, returned: redBoxesReturned },
           { item: "GRAY_BOX", loaned: grayBoxesLoaned, returned: grayBoxesReturned },
-          { item: "ORANGE_BOX", loaned: orangeBoxesLoaned, returned: orangeBoxesReturned }
+          { item: "ORANGE_BOX", loaned: orangeBoxesLoaned, returned: orangeBoxesReturned },
+          { item: "GREEN_BOX", loaned: greenBoxesLoaned, returned: greenBoxesReturned }
         ]
       }, deliveryId);
 
@@ -527,6 +534,8 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       grayBoxesLoaned,
       orangeBoxesReturned,
       orangeBoxesLoaned,
+      greenBoxesReturned,
+      greenBoxesLoaned,
       amount,
       selectedProduct,
       deliveryNotesWithImageBase64,
@@ -642,6 +651,25 @@ class ManageDeliveryModal extends React.Component<Props, State> {
                     placeholder="Lainattu"
                     value={ orangeBoxesLoaned }
                     onChange={ (_, data) => this.setState({ orangeBoxesLoaned: parseInt(data.value) }) }
+                  />
+                </Form.Field>
+
+                <Form.Field>
+                  <label>{ strings.greenBoxesReturned }</label>
+                  <Input
+                    type="number"
+                    placeholder="Palautettu"
+                    value={ greenBoxesReturned }
+                    onChange={ (_, data) => this.setState({ greenBoxesReturned: parseInt(data.value) }) }
+                  />
+                </Form.Field>
+                <Form.Field>
+                  <label>{ strings.greenBoxesLoaned }</label>
+                  <Input
+                    type="number"
+                    placeholder="Lainattu"
+                    value={ greenBoxesLoaned }
+                    onChange={ (_, data) => this.setState({ greenBoxesLoaned: parseInt(data.value) }) }
                   />
                 </Form.Field>
               </>
