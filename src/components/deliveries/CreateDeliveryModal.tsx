@@ -638,7 +638,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       };
     });
 
-    const freshDeliveryStatusOptions: Options[] = [{
+    const frozenDeliveryStatusOptions: Options[] = [{
       key: "done",
       text: "Valmis toimitus",
       value: "DONE"
@@ -646,6 +646,16 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       key: "loan",
       "text": "Laatikkosiirto",
       value: "DELIVERYLOAN"
+    }];
+
+    const freshDeliveryStatusOptions: Options[] = [{
+      key: "done",
+      text: "Valmis toimitus",
+      value: "DONE"
+    }, {
+      key: "proposal",
+      "text": "Ehdotus",
+      value: "PROPOSAL"
     }];
 
     const deliveryPlaceOptions: Options[] = deliveryPlaces
@@ -677,7 +687,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
             </Form.Field>
             <Form.Field>
               <label>Tila</label>
-              {this.renderDropDown(freshDeliveryStatusOptions, "Tila", "selectedDeliveryStatus")}
+              {this.renderDropDown(category === "FRESH" ? freshDeliveryStatusOptions : frozenDeliveryStatusOptions, "Tila", "selectedDeliveryStatus")}
             </Form.Field>
             <Form.Field>
               <label>Toimituspaikka</label>
