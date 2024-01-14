@@ -1,8 +1,6 @@
 import * as React from "react";
-import * as actions from "../../actions";
 import { StoreState, Options, DeliveryDataValue, DeliveryNoteImage64 } from "src/types";
 import Api, { Product, Delivery, DeliveryNote, Contact, DeliveryPlace, DeliveryStatus, DeliveryQuality, ItemGroupCategory, ContractQuantities } from "pakkasmarja-client";
-import { Dispatch } from "redux";
 import { connect } from "react-redux";
 import "../../styles/common.scss";
 import { Dropdown, Form, Input, Button, Divider, Modal, Image, Segment } from "semantic-ui-react";
@@ -16,6 +14,7 @@ import Lightbox from "react-image-lightbox";
 import DatePicker, { registerLocale } from "react-datepicker";
 import AsyncButton from "../generic/asynchronous-button";
 import ApplicationRoles from "src/utils/application-roles";
+import { filterPossibleDeliveryPlaces } from "src/utils";
 
 /**
  * Interface for component props
@@ -23,12 +22,12 @@ import ApplicationRoles from "src/utils/application-roles";
 interface Props {
   authenticated: boolean;
   keycloak?: Keycloak.KeycloakInstance;
-  deliveryPlaceId: string,
-  onClose: (created?: boolean) => void,
-  open: boolean,
-  deliveryPlaces: DeliveryPlace[],
-  selectedDate?: Date,
-  category: ItemGroupCategory
+  deliveryPlaceId: string;
+  onClose: (created?: boolean) => void;
+  open: boolean;
+  deliveryPlaces: DeliveryPlace[];
+  selectedDate?: Date;
+  category: ItemGroupCategory;
 }
 
 /**
@@ -37,7 +36,7 @@ interface Props {
 interface State {
   selectedProductId?: string;
   selectedContactId?: string;
-  selectedDeliveryPlaceId: string,
+  selectedDeliveryPlaceId: string;
   amount: number;
   modalOpen: boolean;
   deliveryNotes: DeliveryNote[];
@@ -100,7 +99,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       loading: false
     };
 
-    registerLocale('fi', fi);
+    registerLocale("fi", fi);
   }
 
   /**
@@ -143,8 +142,9 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       return;
     }
 
-    const deliveryQualitiesService = await Api.getDeliveryQualitiesService(keycloak.token);
-    const deliveryQualities = await deliveryQualitiesService.listDeliveryQualities(category, selectedProductId);
+    const deliveryQualities = await Api
+      .getDeliveryQualitiesService(keycloak.token)
+      .listDeliveryQualities(category, selectedProductId);
 
     this.setState({
       deliveryQualities: deliveryQualities,
@@ -160,20 +160,16 @@ class CreateDeliveryModal extends React.Component<Props, State> {
    * @param key key
    */
   private renderDropDown = (options: Options[], placeholder: string, key: string) => {
-    if (!options.length) {
-      return <Dropdown fluid />;
-    }
-
-    const value = this.state[key];
+    if (!options.length) return <Dropdown fluid />;
 
     return (
       <Dropdown
         selection
         fluid
         placeholder={ placeholder }
-        value={ value }
+        value={ this.state[key] }
         options={ options }
-        onChange={ (event, data) => this.handleInputChange(key, data.value) }
+        onChange={ (_, data) => this.handleInputChange(key, data.value) }
       />
     );
   }
@@ -229,8 +225,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
    * @param deliveryNote deliveryNote
    */
   private addDeliveryNote = (deliveryNote: DeliveryNote) => {
-    const deliveryNotes = [ ...this.state.deliveryNotes ];
-    deliveryNotes.push(deliveryNote);
+    const deliveryNotes = [ ...this.state.deliveryNotes, deliveryNote ];
 
     this.setState({ deliveryNotes: deliveryNotes });
     this.getDeliveryNoteImages(deliveryNotes);
@@ -328,7 +323,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       deliveryPlaceId: selectedDeliveryPlaceId,
       qualityId: undefined,
       loans: []
-    }
+    };
 
     if (selectedDeliveryStatus !== "DONE") {
       const createdDelivery = await deliveryService.createDelivery(delivery);
@@ -429,9 +424,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
 
     return (
       <div className="modal-header">
-        <>
-          Uusi toimitus/ehdotus
-        </>
+        <>Uusi toimitus/ehdotus</>
         { selectedContactId && this.renderContractQuantities() }
       </div>
     )
@@ -465,19 +458,14 @@ class CreateDeliveryModal extends React.Component<Props, State> {
 
     return (
       <div className="contract-info">
-        <div>
-          { strings.contractQuantity }: { contractQuantity }Kg
-        </div>
-        <div>
-          { strings.deliveredQuantity } {delivered }Kg
-        </div>
+        <div>{ strings.contractQuantity }: { contractQuantity }Kg</div>
+        <div>{ strings.deliveredQuantity } {delivered }Kg</div>
         <div style={{ borderTop: "5px solid #000000 " }}/>
         <div>
-        {
-          remainder >= 0 ?
-            <div>{ strings.contractRemainer }: { remainder }Kg</div> :
-            <div style={{ color: "red" }}>{ strings.contractExceeded }: { Math.abs(remainder) }Kg</div>
-        }
+          { remainder >= 0
+            ? <div>{ strings.contractRemainer }: { remainder }Kg</div>
+            : <div style={{ color: "red" }}>{ strings.contractExceeded }: { Math.abs(remainder) }Kg</div>
+          }
         </div>
       </div>
     )
@@ -504,7 +492,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
    * @param event change event
    * @param searchData search data
    */
-  private handleSearchChange = async (event: any, { searchQuery }: { searchQuery: string }) => {
+  private handleSearchChange = async (_: any, { searchQuery }: { searchQuery: string }) => {
     const { keycloak } = this.props;
 
     if (!keycloak?.token) {
@@ -525,10 +513,10 @@ class CreateDeliveryModal extends React.Component<Props, State> {
    * @param note note
    * @param index note index
    */
-  private removeNote = (note: DeliveryNoteImage64, index: number) => {
+  private removeNote = (_: DeliveryNoteImage64, index: number) => {
     const { deliveryNoteImages64, deliveryNotes } = this.state;
-    const newNotesWithImages64 = deliveryNoteImages64.filter((note, i) => i !== index);
-    const newDeliveryNotes = deliveryNotes.filter((note, i) => i !== index);
+    const newNotesWithImages64 = deliveryNoteImages64.filter((_, i) => i !== index);
+    const newDeliveryNotes = deliveryNotes.filter((_, i) => i !== index);
 
     this.setState({
       deliveryNoteImages64: newNotesWithImages64,
@@ -542,7 +530,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
   private renderQualityField() {
     const { deliveryQualities } = this.state;
 
-    const deliveryQualityOptions = deliveryQualities.map((deliveryQuality) => ({
+    const deliveryQualityOptions = deliveryQualities.map(deliveryQuality => ({
       key: deliveryQuality.id,
       text: deliveryQuality.name,
       value: deliveryQuality.id
@@ -551,9 +539,9 @@ class CreateDeliveryModal extends React.Component<Props, State> {
     return (
       <Form.Field>
         <label>Laatu</label>
-        { !!deliveryQualityOptions.length ?
-          this.renderDropDown(deliveryQualityOptions, "Laatu", "selectedQualityId") :
-          <p style={{ color: "red" }}>Valitulla tuotteella ei ole laatuluokkia</p>
+        { !!deliveryQualityOptions.length
+          ? this.renderDropDown(deliveryQualityOptions, "Laatu", "selectedQualityId")
+          : <p style={{ color: "red" }}>Valitulla tuotteella ei ole laatuluokkia</p>
         }
       </Form.Field>
     );
@@ -570,10 +558,11 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       return;
     }
 
-    const productsService = await Api.getProductsService(keycloak.token);
-    const unfilteredProducts = await productsService.listProducts(undefined, category, selectedContactId, undefined, 100);
-    const products: Product[] = unfilteredProducts.filter(product => product.active === true);
-    this.setState({ products });
+    const products = await Api
+      .getProductsService(keycloak.token)
+      .listProducts(undefined, category, selectedContactId, undefined, 100);
+
+    this.setState({ products: products.filter(product => product.active) });
   }
 
   /**
@@ -613,7 +602,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
 
     if (loading) {
       return (
-        <Modal open={open}>
+        <Modal open={ open }>
           <Modal.Header>Uusi toimitus/ehdotus</Modal.Header>
           <Modal.Content>
             <Segment loading />
@@ -622,52 +611,33 @@ class CreateDeliveryModal extends React.Component<Props, State> {
       );
     }
 
-    const productOptions: Options[] = products.map(product => {
-      return {
-        key: product.id,
-        text: product.name,
-        value: product.id
-      };
-    });
+    const productOptions: Options[] = products.map(product => ({
+      key: product.id,
+      text: product.name,
+      value: product.id
+    }));
 
-    const contactOptions: Options[] = contacts.map(contact => {
-      return {
-        key: contact.id,
-        text: contact.displayName,
-        value: contact.id
-      };
-    });
+    const contactOptions: Options[] = contacts.map(contact => ({
+      key: contact.id,
+      text: contact.displayName,
+      value: contact.id
+    }));
 
-    const frozenDeliveryStatusOptions: Options[] = [{
-      key: "done",
-      text: "Valmis toimitus",
-      value: "DONE"
-    }, {
-      key: "loan",
-      "text": "Laatikkosiirto",
-      value: "DELIVERYLOAN"
-    }];
+    const doneDeliveryOption: Options = { key: "done", text: "Valmis toimitus", value: "DONE" };
+    const deliveryLoanOption: Options = { key: "loan", "text": "Laatikkosiirto", value: "DELIVERYLOAN" };
+    const deliveryProposalOption: Options = { key: "proposal", "text": "Ehdotus", value: "PROPOSAL" };
 
-    const freshDeliveryStatusOptions: Options[] = [{
-      key: "done",
-      text: "Valmis toimitus",
-      value: "DONE"
-    }, {
-      key: "proposal",
-      "text": "Ehdotus",
-      value: "PROPOSAL"
-    }];
+    const frozenDeliveryStatusOptions: Options[] = [ doneDeliveryOption, deliveryLoanOption ];
+    const freshDeliveryStatusOptions: Options[] = [ doneDeliveryOption, deliveryProposalOption ];
 
-    const deliveryPlaceOptions: Options[] = deliveryPlaces
-      .filter(deliveryPlace => deliveryPlace.name !== "Muu")
-      .map(deliveryPlace => ({
-        key: deliveryPlace.id,
-        value: deliveryPlace.id,
-        text: deliveryPlace.name
-      }));
+    const deliveryPlaceOptions: Options[] = filterPossibleDeliveryPlaces(deliveryPlaces, category).map(deliveryPlace => ({
+      key: deliveryPlace.id,
+      value: deliveryPlace.id,
+      text: deliveryPlace.name
+    }));
 
     return (
-      <Modal onClose={() => onClose()} open={open}>
+      <Modal onClose={ () => onClose() } open={ open }>
         <Modal.Header>{ this.renderHeader() }</Modal.Header>
         <Modal.Content>
           <Form>
@@ -678,29 +648,29 @@ class CreateDeliveryModal extends React.Component<Props, State> {
                 search
                 options={ contactOptions }
                 value={ selectedContactId }
-                placeholder='Valitse viljelijä'
-                onChange={(e, data) => this.setState({ selectedContactId: data.value as string }, this.getProducts)}
-                onSearchChange={this.handleSearchChange}
-                disabled={contactsLoading}
-                loading={contactsLoading}
+                placeholder="Valitse viljelijä"
+                onChange={ (_, data) => this.setState({ selectedContactId: data.value as string }, this.getProducts) }
+                onSearchChange={ this.handleSearchChange }
+                disabled={ contactsLoading }
+                loading={ contactsLoading }
               />
             </Form.Field>
             <Form.Field>
               <label>Tila</label>
-              {this.renderDropDown(category === "FRESH" ? freshDeliveryStatusOptions : frozenDeliveryStatusOptions, "Tila", "selectedDeliveryStatus")}
+              { this.renderDropDown(category === "FRESH" ? freshDeliveryStatusOptions : frozenDeliveryStatusOptions, "Tila", "selectedDeliveryStatus") }
             </Form.Field>
             <Form.Field>
               <label>Toimituspaikka</label>
-              {this.renderDropDown(deliveryPlaceOptions, "Toimituspaikka", "selectedDeliveryPlaceId")}
+              { this.renderDropDown(deliveryPlaceOptions, "Toimituspaikka", "selectedDeliveryPlaceId") }
             </Form.Field>
             <Form.Field>
-              {selectedProductId && category === "FRESH" &&
-                <PriceChart showLatestPrice time={selectedDate} productId={selectedProductId} />
+              { selectedProductId && category === "FRESH" &&
+                <PriceChart showLatestPrice time={ selectedDate } productId={ selectedProductId } />
               }
             </Form.Field>
             { selectedDeliveryStatus !== "DELIVERYLOAN" &&
               <Form.Field>
-                <label>{strings.product}</label>
+                <label>{ strings.product }</label>
                 { productOptions.length > 0
                   ? this.renderDropDown(productOptions, strings.product, "selectedProductId")
                   : selectedContactId
@@ -710,95 +680,81 @@ class CreateDeliveryModal extends React.Component<Props, State> {
               </Form.Field>
             }
             <Form.Field>
-              <label>{strings.deliveryDate}</label>
+              <label>{ strings.deliveryDate }</label>
               <DatePicker
-                onChange={(date: Date) => {
-                  this.setState({ selectedDate: date })
-                }}
+                onChange={ (date: Date) => this.setState({ selectedDate: date }) }
                 showTimeSelect
                 timeFormat="HH:mm"
-                timeIntervals={15}
+                timeIntervals={ 15 }
                 timeCaption="aika"
-                selected={selectedDate}
+                selected={ selectedDate }
                 dateFormat="dd.MM.yyyy HH:mm"
                 locale="fi"
               />
             </Form.Field>
-            {selectedDeliveryStatus === "DONE" && selectedProduct &&
+            { selectedDeliveryStatus === "DONE" && selectedProduct &&
               <Form.Field>
-                {this.renderQualityField()}
+                { this.renderQualityField() }
               </Form.Field>
             }
             { selectedDeliveryStatus !== "DELIVERYLOAN" &&
                 <Form.Field>
-                  <label>{`${strings.amount} ${selectedProduct ? `(${selectedProduct.unitName})` : ""}`}</label>
+                  <label>{ `${strings.amount} ${selectedProduct ? `(${selectedProduct.unitName})` : ""}` }</label>
                   <Input
-                    placeholder={strings.amount}
-                    value={amount}
+                    placeholder={ strings.amount }
+                    value={ amount }
                     type="number"
-                    min={0}
-                    onChange={(event: React.SyntheticEvent<HTMLInputElement>) => {
+                    min={ 0 }
+                    onChange={ event => {
                       const value = event.currentTarget.value ? parseInt(event.currentTarget.value) : "";
                       this.handleInputChange("amount", value);
-                    }}
+                    } }
                   />
                 </Form.Field>
             }
             {category === "FRESH" && amount && selectedProduct ?
               <Form.Field>
-                <p>= <b>{amount * selectedProduct.units * selectedProduct.unitSize} KG</b></p>
+                <p>= <b>{ amount * selectedProduct.units * selectedProduct.unitSize } KG</b></p>
               </Form.Field>
               : null
             }
             { [ "DONE", "DELIVERYLOAN" ].includes(selectedDeliveryStatus) && category === "FROZEN" &&
               <React.Fragment>
                 <Form.Field>
-                  <label>{strings.redBoxesReturned}</label>
+                  <label>{ strings.redBoxesReturned }</label>
                   <Input
                     type="number"
                     placeholder="Palautettu"
-                    value={redBoxesReturned}
-                    onChange={(e, data) => {
-                      this.setState({
-                        redBoxesReturned: parseInt(data.value)
-                      })
-                    }} />
+                    value={ redBoxesReturned }
+                    onChange={ (_, data) => this.setState({ redBoxesReturned: parseInt(data.value) }) }
+                  />
                 </Form.Field>
                 <Form.Field>
-                  <label>{strings.redBoxesLoaned}</label>
+                  <label>{ strings.redBoxesLoaned }</label>
                   <Input
                     type="number"
                     placeholder="Lainattu"
-                    value={redBoxesLoaned}
-                    onChange={(e, data) => {
-                      this.setState({
-                        redBoxesLoaned: parseInt(data.value)
-                      })
-                    }} />
+                    value={ redBoxesLoaned }
+                    onChange={(_, data) => this.setState({ redBoxesLoaned: parseInt(data.value) }) }
+                  />
                 </Form.Field>
                 <Form.Field>
-                  <label>{strings.grayBoxesReturned}</label>
+                  <label>{ strings.grayBoxesReturned }</label>
                   <Input
                     type="number"
                     placeholder="Palautettu"
-                    value={grayBoxesReturned}
-                    onChange={(e, data) => {
-                      this.setState({
-                        grayBoxesReturned: parseInt(data.value)
-                      })
-                    }} />
+                    value={ grayBoxesReturned }
+                    onChange={ (_, data) => this.setState({ grayBoxesReturned: parseInt(data.value) }) }
+                  />
                 </Form.Field>
                 <Form.Field>
-                  <label>{strings.grayBoxesLoaned}</label>
+                  <label>{ strings.grayBoxesLoaned }</label>
                   <Input
                     type="number"
                     placeholder="Lainattu"
-                    value={grayBoxesLoaned}
-                    onChange={(e, data) => {
-                      this.setState({
-                        grayBoxesLoaned: parseInt(data.value)
-                      })
-                    }} />
+                    value={ grayBoxesLoaned }
+                    onChange={ (_, data) => this.setState({ grayBoxesLoaned: parseInt(data.value) }) }
+                  />
                 </Form.Field>
                 <Form.Field>
                   <label>{ strings.orangeBoxesReturned }</label>
@@ -843,51 +799,72 @@ class CreateDeliveryModal extends React.Component<Props, State> {
                       type="string"
                       placeholder="Kommentti"
                       onChange={ this.handleDeliveryLoanCommentChange }
-                      value={ this.state.deliveryLoanComment || ""}
+                      value={ this.state.deliveryLoanComment || "" }
                     />
                   </Form.Field>
                 }
               </React.Fragment>
             }
-            { deliveryNoteImages64[0] ?
-              deliveryNoteImages64.map((deliveryNote, i) => {
-                return (
-                  <React.Fragment key={`${deliveryNote.text} ${i}`}>
-                    <h4 style={{ marginTop: 14 }}>Huomio {i + 1}</h4>
+            { deliveryNoteImages64[0]
+              ? deliveryNoteImages64.map((deliveryNote, i) => (
+                  <React.Fragment key={ `${deliveryNote.text} ${i}` }>
+                    <h4 style={{ marginTop: 14 }}>Huomio { i + 1 }</h4>
                     <div style={{ marginBottom: 10 }} className="delivery-note-container">
                       <div className="delivery-note-img-container">
-                        <p>{deliveryNote.img64 ? <Image onClick={() => this.setState({ openImage: deliveryNote.img64 })} src={deliveryNote.img64} size="small" /> : "Ei kuvaa"}</p>
+                        <p>
+                          { deliveryNote.img64
+                            ? <Image
+                                onClick={ () => this.setState({ openImage: deliveryNote.img64 }) }
+                                src={ deliveryNote.img64 }
+                                size="small"
+                              />
+                            : "Ei kuvaa"
+                          }
+                        </p>
                       </div>
                       <div className="delivery-note-text-container">
-                        <p style={{ padding: 20 }}> {deliveryNote.text}</p>
+                        <p style={{ padding: 20 }}>{ deliveryNote.text }</p>
                       </div>
                       <div style={{ display: "flex", flex: 0.2, minHeight: "100px", alignItems: "center" }}>
-                        <Button onClick={() => this.removeNote(deliveryNote, i)} color="black">Poista huomio</Button>
+                        <Button onClick={ () => this.removeNote(deliveryNote, i) } color="black">
+                          Poista huomio
+                        </Button>
                       </div>
                     </div>
                   </React.Fragment>
-                )
-              }) : <Divider />
+                ))
+              : <Divider />
             }
             { selectedDeliveryStatus !== "DELIVERYLOAN" &&
-              <Button color="red" inverted onClick={() => this.setState({ modalOpen: true })}>{`${strings.addNote}`}</Button>
+              <Button
+                color="red"
+                inverted
+                onClick={ () => this.setState({ modalOpen: true }) }
+              >
+                {`${strings.addNote}`}
+              </Button>
             }
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <AsyncButton color="red" disabled={ !this.isValid() } onClick={ this.handleDeliverySubmit } type="submit">
+              <AsyncButton
+                color="red"
+                disabled={ !this.isValid() }
+                onClick={ this.handleDeliverySubmit }
+                type="submit"
+              >
                 Tallenna
               </AsyncButton>
             </div>
           </Form>
-          {openImage &&
+          { openImage &&
             <Lightbox
-              mainSrc={openImage}
-              onCloseRequest={() => this.setState({ openImage: undefined })}
+              mainSrc={ openImage }
+              onCloseRequest={ () => this.setState({ openImage: undefined }) }
             />
           }
           <DeliveryNoteModal
-            modalOpen={modalOpen}
-            closeModal={() => this.setState({ modalOpen: false })}
-            addDeliveryNote={this.addDeliveryNote}
+            modalOpen={ modalOpen }
+            closeModal={ () => this.setState({ modalOpen: false }) }
+            addDeliveryNote={ this.addDeliveryNote }
           />
         </Modal.Content>
       </Modal>
@@ -900,20 +877,9 @@ class CreateDeliveryModal extends React.Component<Props, State> {
  *
  * @param state store state
  */
-export function mapStateToProps(state: StoreState) {
-  return {
-    authenticated: state.authenticated,
-    keycloak: state.keycloak
-  }
-}
+export const mapStateToProps = (state: StoreState) => ({
+  authenticated: state.authenticated,
+  keycloak: state.keycloak
+});
 
-/**
- * Redux mapper for mapping component dispatches
- *
- * @param dispatch dispatch method
- */
-export function mapDispatchToProps(dispatch: Dispatch<actions.AppAction>) {
-  return {};
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(CreateDeliveryModal);
+export default connect(mapStateToProps)(CreateDeliveryModal);
