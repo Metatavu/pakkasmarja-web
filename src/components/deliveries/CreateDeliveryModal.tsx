@@ -735,7 +735,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
                     type="number"
                     placeholder="Lainattu"
                     value={ redBoxesLoaned }
-                    onChange={(_, data) => this.setState({ redBoxesLoaned: parseInt(data.value) }) }
+                    onChange={ (_, data) => this.setState({ redBoxesLoaned: parseInt(data.value) }) }
                   />
                 </Form.Field>
                 <Form.Field>
