@@ -459,7 +459,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
     return (
       <div className="contract-info">
         <div>{ strings.contractQuantity }: { contractQuantity }Kg</div>
-        <div>{ strings.deliveredQuantity } {delivered }Kg</div>
+        <div>{ strings.deliveredQuantity } { delivered }Kg</div>
         <div style={{ borderTop: "5px solid #000000 " }}/>
         <div>
           { remainder >= 0
