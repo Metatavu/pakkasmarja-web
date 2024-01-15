@@ -841,7 +841,7 @@ class CreateDeliveryModal extends React.Component<Props, State> {
                 inverted
                 onClick={ () => this.setState({ modalOpen: true }) }
               >
-                {`${strings.addNote}`}
+                { `${strings.addNote}` }
               </Button>
             }
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
