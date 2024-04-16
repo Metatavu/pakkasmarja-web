@@ -22,7 +22,7 @@
     "html-webpack-plugin": "2.29.0",
     "install": "^0.12.1",
     "jest": "22.4.2",
-    "keycloak-js": "^5.0.0",
+    "keycloak-js": "^23.0.7",
     "localized-strings": "0.0.11",
     "lodash": "^4.17.11",
     "moment": "^2.23.0",

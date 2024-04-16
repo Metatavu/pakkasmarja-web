@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as Keycloak from 'keycloak-js';
+import Keycloak, { KeycloakConfig } from 'keycloak-js';
 import {
   Grid,
   Loader
@@ -64,17 +64,26 @@ class Login extends React.Component<Props, State> {
   /**
    * Do login
    */
-  private doLogin() {
-    const kcConf = {
-      "realm": process.env.REACT_APP_REALM,
-      "url": process.env.REACT_APP_AUTH_SERVER_URL,
-      "clientId": process.env.REACT_APP_AUTH_RESOURCE
+  private doLogin = async () => {
+    const { REACT_APP_REALM, REACT_APP_AUTH_SERVER_URL, REACT_APP_AUTH_RESOURCE } = process.env;
+    if (!REACT_APP_REALM || !REACT_APP_AUTH_SERVER_URL || !REACT_APP_AUTH_RESOURCE) {
+      throw new Error("Environment variables not set properly");
+    } 
+
+    const { onLogin } = this.props;
+
+    const kcConf: KeycloakConfig = {
+      "realm": REACT_APP_REALM,
+      "url": REACT_APP_AUTH_SERVER_URL,
+      "clientId": REACT_APP_AUTH_RESOURCE
     };
     
-    const keycloak = Keycloak(kcConf);
-    keycloak.init({onLoad: "login-required", checkLoginIframe: false }).success((authenticated) => {
-      this.props.onLogin && this.props.onLogin(keycloak, authenticated);
-    });
+    const keycloak = new Keycloak(kcConf);
+    const authenticated = await keycloak.init({onLoad: "login-required", checkLoginIframe: false });
+
+    if (onLogin) {
+      onLogin(keycloak, authenticated);
+    }
   }
 
   /**

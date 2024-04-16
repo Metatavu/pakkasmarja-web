@@ -18,6 +18,7 @@ import 'react-image-lightbox/style.css';
 import DeliveryNoteModal from "./DeliveryNoteModal";
 import AsyncButton from "../generic/asynchronous-button";
 import ApplicationRoles from "src/utils/application-roles";
+import { filterPossibleDeliveryPlaces } from "src/utils";
 
 /**
  * Interface for component props
@@ -554,16 +555,16 @@ class ManageDeliveryModal extends React.Component<Props, State> {
       );
     }
 
-    const productOptions = products.map<Options>(product => ({
+    const productOptions: Options[] = products.map(product => ({
       key: product.id,
       text: product.name,
       value: product.id
     }));
 
-    const deliveryPlaceOptions = (deliveryPlaces || []).map<Options>(deliveryPlace => ({
-      key: deliveryPlace.id || "",
-      text: deliveryPlace.name || "",
-      value: deliveryPlace.id || ""
+    const deliveryPlaceOptions: Options[] = filterPossibleDeliveryPlaces(deliveryPlaces, category).map(deliveryPlace => ({
+      key: deliveryPlace.id,
+      text: deliveryPlace.name,
+      value: deliveryPlace.id
     }));
 
     return (
