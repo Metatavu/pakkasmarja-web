@@ -105,7 +105,7 @@ class MenuContainer extends React.Component<Props, State> {
             <Menu.Menu position="right">
               <Dropdown item simple text={strings.menuBarUserItemText}>
                 <Dropdown.Menu>
-                  <Dropdown.Item to="/manageContact" as={Link}><Icon name='user' color="red" />Yhteystiedot</Dropdown.Item>
+                  <Dropdown.Item to="/profile" as={Link}><Icon name='user' color="red" />Yhteystiedot</Dropdown.Item>
                   <Dropdown.Item onClick={this.onAccountItemClick}><Icon name='setting' color="red" />{strings.menuBarManageAccountText}</Dropdown.Item>
                   {
                     this.props.authenticated && this.props.keycloak && this.props.keycloak.hasRealmRole(ApplicationRoles.UPDATE_OTHER_CONTACTS) &&
